@@ -1,0 +1,37 @@
+{
+	"paths": {
+		"tmpDir": "/tmp/wxtu",
+		"sessionsDir": "/tmp/wxtu/sessions"
+	},
+	"chrome": {
+		"defaultCdpPort": 39225,
+		"defaultWxtPort": 3000,
+		"browserBinary": "chromium",
+		"defaultLocale": "en-US",
+		"localeRelaunch": true,
+		"defaultStartUrl": "https://m.youtube.com",
+		"startMinimized": false,
+		"devLogPath": ".user-data/logs/dev-chrome.log",
+		"defaultOpenPage": "popup.html"
+	},
+	"android": {
+		"defaultAvdName": "test-device",
+		"bootTimeoutMs": 180000,
+		"emulatorBinDir": "/opt/android-sdk/emulator",
+		"emulatorGpu": "host",
+		"deviceProfile": "pixel_9_pro_xl",
+		"deviceDisplayName": "Galaxy S25 Ultra",
+		"deviceOverrides": {
+			"PlayStore.enabled": "yes",
+			"hw.device.manufacturer": "Samsung",
+			"hw.device.name": "galaxy_s25_ultra",
+			"hw.keyboard": "yes",
+			"hw.lcd.density": "640",
+			"hw.lcd.height": "3840",
+			"hw.lcd.width": "2160",
+			"hw.ramSize": "4096",
+			"showDeviceFrame": "no",
+			"skin.dynamic": "yes"
+		}
+	}
+}

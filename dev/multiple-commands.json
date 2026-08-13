@@ -1,0 +1,12 @@
+[
+  {
+    "name": "SaaS Template",
+    "directory": "%h/dev/astro/saas-monorepo",
+    "commands": ["moon sns:db -- studio"]
+  },
+  {
+    "name": "Playwright UI",
+    "directory": "%h/dev/astro/saas-monorepo",
+    "commands": ["moon sns:playwright-test-ui"]
+  }
+]

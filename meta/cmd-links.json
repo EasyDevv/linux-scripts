@@ -1,0 +1,352 @@
+{
+	"sourceRoot": "~/.local/share/scripts",
+	"publicBinDir": "~/.local/usr/bin",
+	"legacyAliasPath": "~/.local/share/easydev/commands",
+	"commands": [
+		{
+			"name": "bu",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/bu.py",
+			"description": "Bun 관련 정리와 버전 동기화를 통합 CLI로 실행한다."
+		},
+		{
+			"name": "clean-empty-dir",
+			"mode": "symlink",
+			"category": "meta",
+			"target": "meta/clean-empty-dir.sh",
+			"description": "지정한 경로 아래의 빈 폴더를 재귀적으로 찾아 제거한다."
+		},
+		{
+			"name": "count-lines",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/count-lines.ts",
+			"description": "라인 수가 긴 코드 파일을 찾아 점검 대상으로 보여준다."
+		},
+		{
+			"name": "db-snapshot",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/db-snapshot.ts",
+			"description": "SQLite DB snapshot CLI — VACUUM INTO with timestamped + latest.db, retention, integrity check."
+		},
+		{
+			"name": "doc",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/doc.sh",
+			"description": "현재 llm-docs 체크아웃의 scripts/dev.ts 래퍼를 통해 개발용 doc CLI를 실행한다."
+		},
+		{
+			"name": "dev-all",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/dev-all.sh",
+			"description": "프로젝트의 .dev-all, Moon, package.json 정보를 바탕으로 dev 서비스를 실행하고 관리한다."
+		},
+		{
+			"name": "dev-stack",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/dev-stack.ts",
+			"description": "Web+API 복합 개발 서버를 --web-port/--api-port 기준으로 실행하고 executor 친화 로그 태그를 남긴다."
+		},
+		{
+			"name": "executor",
+			"mode": "wrapper",
+			"category": "dev",
+			"target": "dev/executor/executor.sh",
+			"ownedPaths": [
+				"dev/dev-stack.ts",
+				"dev/executor/executor.sh",
+				"dev/executor/paths.ts",
+				"dev/executor/types.ts",
+				"dev/executor/utils.ts",
+				"dev/executor/config.ts",
+				"dev/executor/journal.ts",
+				"dev/executor/commands.ts",
+				"dev/executor/runtime.ts",
+				"dev/executor/supervisor.ts",
+				"dev/executor/main.ts"
+			],
+			"reason": "Uses sibling TypeScript modules under dev/executor/.",
+			"description": "systemd user executor supervisor와 인스턴스 관리 CLI를 Bun 기반으로 실행한다."
+		},
+		{
+			"name": "gh-repo",
+			"mode": "symlink",
+			"category": "git",
+			"target": "git/gh-repo.sh",
+			"description": "현재 로컬 프로젝트를 GitHub 저장소와 연결하거나 새 저장소 생성을 도와준다."
+		},
+		{
+			"name": "git-commit-push",
+			"mode": "symlink",
+			"category": "git",
+			"target": "git/git-commit-push.ts",
+			"description": "git add . → 변경 많은 파일 순 5개로 커밋메시지 생성 → push 자동 실행"
+		},
+		{
+			"name": "git-delete",
+			"mode": "symlink",
+			"category": "git",
+			"target": "git/git-delete.sh",
+			"description": "Git 히스토리에서 특정 파일이나 경로를 완전히 제거한다."
+		},
+		{
+			"name": "atree",
+			"mode": "wrapper",
+			"category": "git",
+			"target": "git/atree/main.ts",
+			"ownedPaths": [
+				"git/atree/main.ts",
+				"git/atree/git.ts",
+				"git/atree/cmds.ts",
+				"git/atree/diff.ts",
+				"git/atree/README.md",
+				"git/atree/SCENARIO.md",
+				"git/atree/test/run.sh",
+				"git/atree/test/setup.sh",
+				"git/atree/test/test-lifecycle.sh",
+				"git/atree/test/test-merge-safety.sh",
+				"git/atree/test/test-merge-options.sh",
+				"git/atree/test/test-stale-lock.sh",
+				"git/atree/test/test-symlink.sh",
+				"git/atree/test/test-rm.sh",
+				"git/atree/test/concurrent.sh"
+			],
+			"reason": "Uses sibling TypeScript modules under git/atree/.",
+			"description": "Git worktree manager — new, ls, apply, diff, merge, root, sh"
+		},
+		{
+			"name": "git-init",
+			"mode": "symlink",
+			"category": "git",
+			"target": "git/git-init.ts",
+			"description": "git init → git add . → git commit -m 'Initial commit'"
+		},
+		{
+			"name": "moon-bun-init",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/moon-bun-init.sh",
+			"description": "현재 디렉터리에 Moon+Bun 모노레포 기본 설정 파일을 생성한다."
+		},
+		{
+			"name": "multiple-commands",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/multiple-commands.sh",
+			"ownedPaths": ["dev/multiple-commands.sh", "dev/multiple-commands.json"],
+			"description": "JSON 설정에 정의된 여러 명령을 병렬 실행하고 함께 관리한다."
+		},
+		{
+			"name": "control-chrome",
+			"mode": "wrapper",
+			"category": "browser",
+			"target": "dev/control-chrome/main.ts",
+			"ownedPaths": [
+				"dev/control-chrome/README.md",
+				"dev/control-chrome/main.ts",
+				"dev/control-chrome/open.ts",
+				"dev/control-chrome/close.ts",
+				"dev/control-chrome/minimize.ts",
+				"dev/control-chrome/open-extension.ts",
+				"dev/control-chrome/config.ts",
+				"dev/control-chrome/chrome-instance.ts",
+				"dev/control-chrome/browser-state.ts",
+				"dev/control-chrome/cdp.ts",
+				"dev/control-chrome/navigation.ts"
+			],
+			"reason": "Uses sibling TypeScript modules under dev/control-chrome/.",
+			"description": "개발용 Chromium 브라우저를 제어하는 통합 CLI — 실행/종료/상태/최소화/CDP/탭/확장"
+		},
+		{
+			"name": "open-extension",
+			"mode": "symlink",
+			"category": "browser",
+			"target": "browser/open-extension.sh",
+			"description": "Chrome 확장 프로그램 ID를 찾아 원하는 확장 페이지를 연다."
+		},
+		{
+			"name": "path-cleaner",
+			"mode": "symlink",
+			"category": "meta",
+			"target": "meta/path-cleaner.sh",
+			"description": "셸 설정과 PATH에서 특정 키워드 관련 항목을 찾아 정리한다."
+		},
+		{
+			"name": "port",
+			"mode": "symlink",
+			"category": "ports",
+			"target": "ports/port.sh",
+			"description": "포트 종료와 사용 가능한 포트 탐색을 통합 CLI로 실행한다."
+		},
+		{
+			"name": "qdrant",
+			"mode": "wrapper",
+			"category": "qdrant",
+			"target": "qdrant/qdrant.sh",
+			"ownedPaths": ["qdrant/qdrant.sh", "qdrant/qdrant.py"],
+			"reason": "Uses BASH_SOURCE to locate sibling qdrant.py.",
+			"description": "Qdrant 기반 프로젝트 임베딩과 검색 CLI를 실행한다."
+		},
+		{
+			"name": "rclone-backup",
+			"mode": "symlink",
+			"category": "cloud",
+			"target": "cloud/rclone-backup.sh",
+			"description": "rclone을 이용해 로컬 데이터를 원격 저장소로 백업한다."
+		},
+		{
+			"name": "rclone-new-service",
+			"mode": "symlink",
+			"category": "cloud",
+			"target": "cloud/rclone-new-service.sh",
+			"description": "rclone 작업용 systemd 서비스를 생성하거나 등록한다."
+		},
+		{
+			"name": "set-rules",
+			"mode": "symlink",
+			"category": "meta",
+			"target": "meta/set-rules.py",
+			"description": "프로젝트에 적용할 GitHub rule 링크 구성을 선택적으로 동기화한다."
+		},
+		{
+			"name": "swap-opencode",
+			"mode": "symlink",
+			"category": "meta",
+			"target": "meta/swap-opencode.py",
+			"ownedPaths": [
+				"meta/swap-opencode.py",
+				"meta/swap-opencode.presets.jsonc"
+			],
+			"description": "opencode 모델 티어를 JSONC 프리셋으로 전환한다."
+		},
+		{
+			"name": "server",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/server.sh",
+			"description": "executor@ 인스턴스 서버의 시작, 중지, 재시작과 상태·로그 확인을 관리한다."
+		},
+		{
+			"name": "unlock-sudo",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/unlock-sudo.ts",
+			"ownedPaths": [
+				"dev/unlock-sudo.ts",
+				"dev/unlock-sudo-setup.sh",
+				"dev/unlock-sudo.test.ts"
+			],
+			"description": "재부팅 전까지 현재 PC, 지정된 VM과 SSH 호스트의 sudo 비밀번호 요구를 임시 해제한다."
+		},
+		{
+			"name": "start-android-emulator",
+			"mode": "symlink",
+			"category": "android",
+			"target": "android/start-android-emulator.sh",
+			"description": "Linux/Wayland 친화 설정으로 Android 에뮬레이터를 실행한다."
+		},
+		{
+			"name": "open-android-firefox-page",
+			"mode": "symlink",
+			"category": "android",
+			"target": "android/open-android-firefox-page.sh",
+			"description": "Firefox Android의 확장 관리 페이지(settings, manager, popup)를 ADB로 연다."
+		},
+		{
+			"name": "sunshine-display-failsafe",
+			"mode": "symlink",
+			"category": "sunshine",
+			"target": "sunshine/sunshine-display-failsafe.sh",
+			"description": "Sunshine 스트리밍 비정상 종료 뒤 디스플레이 구성을 안전하게 복구한다."
+		},
+		{
+			"name": "sunshine-stream-start",
+			"mode": "symlink",
+			"category": "sunshine",
+			"target": "sunshine/sunshine-stream-start.sh",
+			"description": "Sunshine 스트리밍 시작 시 더미 디스플레이 구성을 활성화한다."
+		},
+		{
+			"name": "sunshine-stream-stop",
+			"mode": "symlink",
+			"category": "sunshine",
+			"target": "sunshine/sunshine-stream-stop.sh",
+			"description": "Sunshine 스트리밍 종료 시 기본 디스플레이 구성을 복구한다."
+		},
+		{
+			"name": "video-move",
+			"mode": "symlink",
+			"category": "media",
+			"target": "media/video-move.sh",
+			"description": "조건에 맞는 큰 비디오 파일을 다운로드 폴더에서 최근 폴더로 이동한다."
+		},
+		{
+			"name": "wxt-run-targets",
+			"mode": "symlink",
+			"category": "wxt",
+			"target": "wxt/run-wxt-targets.mjs",
+			"description": "여러 WXT 타깃 작업을 순차 실행하며 환경 파일을 맞춘다."
+		},
+		{
+			"name": "wxt-submit",
+			"mode": "symlink",
+			"category": "wxt",
+			"target": "wxt/wxt-submit.mjs",
+			"description": "브라우저 확장 zip을 Chrome, Firefox, Edge 스토어에 제출한다."
+		},
+		{
+			"name": "wxt-zip-version",
+			"mode": "symlink",
+			"category": "wxt",
+			"target": "wxt/zip-version.mjs",
+			"description": "버전을 갱신하고 확장 배포용 zip 산출물을 준비한다."
+		},
+		{
+			"name": "zju",
+			"mode": "wrapper",
+			"category": "zellij",
+			"target": "zellij/zju.py",
+			"ownedPaths": [
+				"zellij/zju.py",
+				"zellij/layout.py",
+				"zellij/pane.py",
+				"zellij/tab.py",
+				"zellij/common.py"
+			],
+			"reason": "Imports sibling modules (layout, pane, tab, common).",
+			"description": "Zellij 유틸리티 통합 CLI — 레이아웃, 패인 동기화, 탭 관리."
+		},
+		{
+			"name": "podman-deploy",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/podman-deploy.sh",
+			"description": "Podman 배포, 초기화, 제거를 통합 CLI로 실행한다."
+		},
+		{
+			"name": "route-capture",
+			"mode": "wrapper",
+			"category": "dev",
+			"target": "dev/route-capture/main.ts",
+			"ownedPaths": [
+				"dev/route-capture/main.ts",
+				"dev/route-capture/config.ts",
+				"dev/route-capture/main.test.ts"
+			],
+			"reason": "Uses sibling TypeScript modules under dev/route-capture/.",
+			"description": "SvelteKit 라우트를 정적 MHTML과 1440x1440 스크린샷으로 함께 캡처한다."
+		},
+		{
+			"name": "repo-watch",
+			"mode": "symlink",
+			"category": "git",
+			"target": "git/repo-watch.sh",
+			"description": "지정한 폴더 아래 Git 저장소의 커밋·upstream·파일 변경 상태를 TUI로 모니터링한다."
+		}
+	]
+}

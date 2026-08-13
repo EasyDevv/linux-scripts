@@ -1,0 +1,61 @@
+# ─── Python ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# ─── Node / Bun / Frontend tooling ───────────────────
+node_modules/
+dist/
+build/
+.svelte-kit/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# ─── Rust ────────────────────────────────────────────
+*target/
+
+# ─── Bun lockfiles ──────────────────────────────────
+bun.lockb
+bun.lock
+
+# ─── Secrets / env ──────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Editor / OS ─────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# ─── Runtime / logs ─────────────────────────────────
+*.log
+*.pid
+*.lock
+
+# ─── Serena: 전역 안전망 ────────────────────────────
+.serena/cache/
+.serena/project.local.yml
+dev/*/.serena/cache/
+dev/*/.serena/project.local.yml
+
+# ─── Data ─────────────────────────────────────────
+.data
+
+# /memories/ 는 의도적으로 무시하지 않음
+
+# atree-managed
+.worktree/*
+!.worktree/config.json
+
+*.kate-swp

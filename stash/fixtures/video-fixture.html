@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Video Downloader Fixture</title>
+<style>
+body { font-family: sans-serif; max-width: 960px; margin: 40px auto; padding: 0 16px; line-height: 1.5; }
+section { margin-bottom: 32px; position: relative; }
+video { width: 100%; max-width: 720px; background: #000; }
+code { background: #f2f2f2; padding: 2px 4px; }
+.download-overlay { position: absolute; top: 8px; right: 8px; z-index: 10; }
+.download-overlay button { padding: 6px 14px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 600; }
+.download-overlay button.ready { background: #1a73e8; color: #fff; }
+.download-overlay button.ready:hover { background: #1557b0; }
+.download-overlay button.running { background: #fbbc04; color: #000; cursor: default; }
+.download-overlay button.completed { background: #34a853; color: #fff; cursor: default; }
+.download-overlay button.failed { background: #ea4335; color: #fff; cursor: default; }
+.download-overlay button.disabled { background: #dadce0; color: #5f6368; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<h1>Video Downloader Fixture</h1>
+<p>Test page for <code>video-downloader</code> — direct static videos can be downloaded via the overlay buttons.</p>
+
+<section>
+<h2>MP4 Sample</h2>
+<p>Source: <code>https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4</code></p>
+<video controls muted playsinline preload="auto" src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"></video>
+</section>
+
+<section>
+<h2>WEBM Sample</h2>
+<p>Source: <code>https://media.w3.org/2010/05/sintel/trailer.webm</code></p>
+<video controls muted playsinline preload="auto" src="https://media.w3.org/2010/05/sintel/trailer.webm"></video>
+</section>
+
+<section class="hls-section">
+<h2>HLS Sample</h2>
+<p>Manifest: <code>https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8</code></p>
+<div class="download-overlay"><button class="disabled" disabled>HLS not yet supported</button></div>
+<video controls muted playsinline preload="auto" id="hls-video"></video>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.18/dist/hls.min.js"></script>
+<script>
+const hlsVideo = document.getElementById("hls-video");
+const hlsSource = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+if (window.Hls && window.Hls.isSupported()) {
+  const hls = new window.Hls({ autoStartLoad: true });
+  hls.loadSource(hlsSource);
+  hls.attachMedia(hlsVideo);
+  hls.on(window.Hls.Events.MANIFEST_PARSED, () => { hlsVideo.muted = true; void hlsVideo.play().catch(() => {}); });
+} else if (hlsVideo.canPlayType("application/vnd.apple.mpegurl")) {
+  hlsVideo.src = hlsSource;
+  hlsVideo.addEventListener("loadedmetadata", () => { hlsVideo.muted = true; void hlsVideo.play().catch(() => {}); });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>stash</title>
+<script>
+  (() => {
+    try {
+      const savedTheme = localStorage.getItem("stashTheme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    } catch {}
+  })();
+</script>
+<link rel="stylesheet" href="/ui/app.css">
+<link rel="stylesheet" href="/ui/vendor/bootstrap-icons/font/bootstrap-icons.min.css">
+<script src="/ui/vendor/htmx/htmx-4.0.0-beta6.min.js"></script>
+<script>
+  // Keep partial endpoints from replacing table content with server error pages.
+  htmx.config.noSwap = [204, 304, "4xx", "5xx"];
+</script>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>stash</h1>
+      <span class="version-badge">v0.1</span>
+    </div>
+    <div class="header-right">
+      <label class="download-limit" title="Maximum simultaneous downloads">
+        <span>Downloads</span>
+        <select id="download-limit" aria-label="Maximum simultaneous downloads">
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+        </select>
+      </label>
+      <button type="button" class="btn-icon theme-toggle" id="theme-toggle"
+              title="Use dark mode" aria-label="Use dark mode" aria-pressed="false">
+        <i class="bi bi-moon" aria-hidden="true"></i>
+      </button>
+      <div id="hls-level" class="hls-level" aria-label="Browser HLS concurrency level">
+        <span class="hls-level-label">HLS</span>
+        <button type="button" class="active" data-hls-level="1" title="Level 1: one segment at a time">1</button>
+        <button type="button" data-hls-level="2" title="Level 2: balanced">2</button>
+        <button type="button" data-hls-level="3" title="Level 3: fastest">3</button>
+        <span id="hls-concurrency" class="hls-concurrency">1x</span>
+      </div>
+      <span id="vpn-badge" hx-get="/ui/partials/vpn" hx-trigger="load, every 30s" hx-swap="innerHTML"><select class="vpn-badge vpn-location-select" name="location" aria-label="VPN location" title="Loading VPN locations" aria-busy="true" disabled><option>Loading VPN locations...</option></select></span>
+    </div>
+  </header>
+
+  <div id="jobs-pane" class="table-pane" data-list-id="jobs-list" data-checkbox-name="job_ids" data-select-all-id="select-all-jobs" data-default-sort="added" data-default-direction="desc">
+    <div class="pane-header">
+      <span>Jobs&nbsp;<span id="jobs-count" hx-get="/ui/partials/jobs-count" hx-trigger="load, every 2s" hx-config='{"timeout":4000}' hx-swap="innerHTML"></span></span>
+      <div class="toolbar">
+        <button class="btn-icon btn-primary" id="retry-failed-jobs"
+                hx-post="/ui/jobs/retry-failed"
+                hx-target="#jobs-list" hx-swap="innerHTML"
+                title="Retry all failed jobs">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+        <button class="btn-icon bulk-action" id="clear-selected-jobs"
+                hx-post="/ui/jobs/clear-selected"
+                hx-include="#jobs-list input[name='job_ids']"
+                hx-target="#jobs-list" hx-swap="innerHTML"
+                title="Clear selected jobs" disabled>
+          <i class="bi bi-eraser"></i>
+        </button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <colgroup>
+          <col data-col-key="jobs-select" data-priority="high">
+          <col data-col-key="jobs-name" data-priority="high">
+          <col data-col-key="jobs-status" data-priority="mid">
+          <col data-col-key="jobs-pct" data-priority="mid">
+          <col data-col-key="jobs-segment" data-priority="mid">
+          <col data-col-key="jobs-size" data-priority="mid">
+          <col data-col-key="jobs-speed" data-priority="mid">
+          <col data-col-key="jobs-url" data-priority="low">
+          <col data-col-key="jobs-src-url" data-priority="low">
+          <col data-col-key="jobs-added" data-priority="mid">
+          <col data-col-key="jobs-actions" data-priority="high">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="col-select" data-col-key="jobs-select" data-priority="high"><input type="checkbox" id="select-all-jobs"></th>
+            <th class="col-name" data-col-key="jobs-name" data-priority="high" data-sort-key="name">Name</th>
+            <th class="col-status" data-col-key="jobs-status" data-priority="mid" data-sort-key="status">Status</th>
+            <th class="col-pct" data-col-key="jobs-pct" data-priority="mid" data-sort-key="pct" data-sort-type="number" data-sort-default="desc">%</th>
+            <th class="col-segment" data-col-key="jobs-segment" data-priority="mid" data-sort-key="segment" data-sort-type="number" data-sort-default="desc" title="Browser HLS progress; direct downloads do not have segments">Segment</th>
+            <th class="col-size" data-col-key="jobs-size" data-priority="mid" data-sort-key="size" data-sort-type="number" data-sort-default="desc">Size</th>
+            <th class="col-speed" data-col-key="jobs-speed" data-priority="mid" data-sort-key="speed" data-sort-type="number" data-sort-default="desc">Speed</th>
+            <th class="col-url" data-col-key="jobs-url" data-priority="low" data-sort-key="url">URL</th>
+            <th class="col-src-url" data-col-key="jobs-src-url" data-priority="low" data-sort-key="src-url">Src URL</th>
+            <th class="col-added" data-col-key="jobs-added" data-priority="mid" data-sort-key="added" data-sort-type="number" data-sort-default="desc">Added</th>
+            <th class="col-actions" data-col-key="jobs-actions" data-priority="high">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="jobs-list" hx-get="/ui/partials/jobs" hx-trigger="load, every 2s" hx-config='{"timeout":4000}' hx-swap="innerHTML">
+          <tr><td colspan="11" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="splitter">
+    <div class="splitter-handle"></div>
+  </div>
+
+  <div id="files-pane" class="table-pane" data-list-id="files-section" data-checkbox-name="paths" data-select-all-id="select-all-files" data-default-sort="time" data-default-direction="desc">
+    <div class="pane-header">
+      <span>Files&nbsp;<span id="files-count" hx-get="/ui/partials/files-count" hx-trigger="load, every 5s, refresh from:body" hx-swap="innerHTML"></span></span>
+      <div class="toolbar">
+        <button class="btn-icon bulk-action" id="clear-selected-files"
+                hx-post="/ui/files/clear-selected"
+                hx-include="#files-section input[name='paths']"
+                hx-target="#files-section" hx-swap="innerHTML"
+                title="Clear selected files from list" disabled>
+          <i class="bi bi-eraser"></i>
+        </button>
+        <button class="btn-icon btn-danger bulk-action" id="delete-selected-files"
+                hx-post="/ui/files/delete-selected"
+                hx-include="#files-section input[name='paths']"
+                hx-target="#files-section" hx-swap="innerHTML"
+                hx-confirm="Delete selected files from disk?"
+                title="Delete selected files" disabled>
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <colgroup>
+          <col data-col-key="files-select" data-priority="high">
+          <col data-col-key="files-name" data-priority="high">
+          <col data-col-key="files-status" data-priority="mid">
+          <col data-col-key="files-size" data-priority="mid">
+          <col data-col-key="files-path" data-priority="mid">
+          <col data-col-key="files-url" data-priority="low">
+          <col data-col-key="files-src-url" data-priority="low">
+          <col data-col-key="files-time" data-priority="mid">
+          <col data-col-key="files-actions" data-priority="high">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="col-select" data-col-key="files-select" data-priority="high"><input type="checkbox" id="select-all-files"></th>
+            <th class="col-name" data-col-key="files-name" data-priority="high" data-sort-key="name">Name</th>
+            <th class="col-status" data-col-key="files-status" data-priority="mid" data-sort-key="status">Status</th>
+            <th class="col-size" data-col-key="files-size" data-priority="mid" data-sort-key="size" data-sort-type="number" data-sort-default="desc">Size</th>
+            <th class="col-path" data-col-key="files-path" data-priority="mid" data-sort-key="path">Path</th>
+            <th class="col-url" data-col-key="files-url" data-priority="low" data-sort-key="url">URL</th>
+            <th class="col-src-url" data-col-key="files-src-url" data-priority="low" data-sort-key="src-url">Src URL</th>
+            <th class="col-time" data-col-key="files-time" data-priority="mid" data-sort-key="time" data-sort-type="number" data-sort-default="desc">Downloaded</th>
+            <th class="col-actions" data-col-key="files-actions" data-priority="high">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="files-section" hx-get="/ui/partials/files" hx-trigger="load, every 5s, refresh from:body" hx-swap="innerHTML">
+          <tr><td colspan="9" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/ui/app.js"></script>
+</body>
+</html>

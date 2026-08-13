@@ -1,0 +1,24 @@
+{
+  "name": "dev-selector-sample-sveltekit",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "devDependencies": {
+    "@internationalized/date": "^3.8.2",
+    "@sveltejs/adapter-auto": "^4.0.0",
+    "@sveltejs/kit": "^2.20.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tailwindcss/vite": "^4.1.11",
+    "bits-ui": "^2.16.3",
+    "svelte": "^5.35.0",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.7.2",
+    "vite": "^7.0.0"
+  }
+}
