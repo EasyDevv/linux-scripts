@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::ffi::CString;
+use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -7,7 +9,7 @@ use std::time::{Duration, Instant, SystemTime};
 use futures_util::StreamExt;
 use rusqlite::Connection;
 use tokio::io::{AsyncSeekExt, AsyncWriteExt};
-use tokio::process::Command;
+use tokio::process::{Child, Command};
 use tokio::sync::{Mutex, RwLock};
 use tracing::{error, info, warn};
 
@@ -93,6 +95,7 @@ static VPN_ENSURE_LOCK: Mutex<()> = Mutex::const_new(());
 const MUX_POLL_INTERVAL: Duration = Duration::from_secs(1);
 const MUX_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(15);
 const MUX_STALL_TIMEOUT: Duration = Duration::from_secs(120);
+const MUX_PIPE_TIMEOUT: Duration = Duration::from_secs(120);
 
 pub async fn finalize_staged_output(
     staged_path: &Path,
@@ -142,9 +145,19 @@ pub async fn run_ffmpeg_mux(
     cancel: Option<&AtomicBool>,
 ) -> Result<(), String> {
     command.kill_on_drop(true);
-    let mut child = command
+    let child = command
         .spawn()
         .map_err(|error| format!("spawn ffmpeg: {error}"))?;
+    monitor_ffmpeg_mux(child, staged_path, job_id, jobs, cancel).await
+}
+
+async fn monitor_ffmpeg_mux(
+    mut child: Child,
+    staged_path: &Path,
+    job_id: &str,
+    jobs: &JobManager,
+    cancel: Option<&AtomicBool>,
+) -> Result<(), String> {
     let mut last_size = std::fs::metadata(staged_path)
         .map(|metadata| metadata.len())
         .unwrap_or(0);
@@ -199,6 +212,59 @@ pub async fn run_ffmpeg_mux(
         }
         tokio::time::sleep(MUX_POLL_INTERVAL).await;
     }
+}
+
+fn create_named_pipe(path: &Path) -> Result<(), String> {
+    let path_bytes = path.as_os_str().as_bytes();
+    let path_c = CString::new(path_bytes)
+        .map_err(|_| format!("named pipe path contains NUL: {}", path.display()))?;
+    let result = unsafe { libc::mkfifo(path_c.as_ptr(), 0o600) };
+    if result == 0 {
+        Ok(())
+    } else {
+        Err(format!(
+            "create named pipe {}: {}",
+            path.display(),
+            std::io::Error::last_os_error()
+        ))
+    }
+}
+
+async fn feed_segment_pipes(
+    mut segments: tokio::sync::mpsc::UnboundedReceiver<PathBuf>,
+    pipes: Vec<PathBuf>,
+) -> Result<(), String> {
+    let mut index = 0usize;
+    while let Some(segment_path) = segments.recv().await {
+        let pipe_path = pipes
+            .get(index)
+            .ok_or_else(|| "streaming HLS mux received too many segments".to_string())?;
+        let mut segment = tokio::fs::File::open(&segment_path)
+            .await
+            .map_err(|e| format!("open {}: {e}", segment_path.display()))?;
+        let mut pipe = tokio::time::timeout(
+            MUX_PIPE_TIMEOUT,
+            tokio::fs::OpenOptions::new().write(true).open(pipe_path),
+        )
+        .await
+        .map_err(|_| format!("open named pipe timed out: {}", pipe_path.display()))?
+        .map_err(|e| format!("open named pipe {}: {e}", pipe_path.display()))?;
+        tokio::time::timeout(MUX_PIPE_TIMEOUT, tokio::io::copy(&mut segment, &mut pipe))
+            .await
+            .map_err(|_| format!("feed named pipe timed out: {}", pipe_path.display()))?
+            .map_err(|e| format!("feed named pipe {}: {e}", pipe_path.display()))?;
+        pipe.shutdown()
+            .await
+            .map_err(|e| format!("close named pipe {}: {e}", pipe_path.display()))?;
+        index += 1;
+    }
+    if index != pipes.len() {
+        return Err(format!(
+            "streaming HLS mux received {index} of {} segments",
+            pipes.len()
+        ));
+    }
+    Ok(())
 }
 
 // ── Cancel state for in-memory active jobs ──────────────────
@@ -1370,15 +1436,80 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
             let resolved =
                 hls::fetch_and_resolve(&job.src_url, &client, cancel.clone(), &hls_headers).await?;
 
-            let (progress_tx, mut progress_rx) = tokio::sync::mpsc::unbounded_channel();
+            let mut streaming_mux = if resolved.map_uri.is_none() {
+                let pipe_dir = temp_dir.join("mux-pipes");
+                let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
+                tokio::fs::create_dir_all(&pipe_dir)
+                    .await
+                    .map_err(|e| format!("create streaming HLS pipe dir: {e}"))?;
+                let pipes = (0..resolved.segments.len())
+                    .map(|index| pipe_dir.join(format!("segment-{index:06}.ts")))
+                    .collect::<Vec<_>>();
+                for pipe in &pipes {
+                    create_named_pipe(pipe)?;
+                }
+                let concat_list_path = pipe_dir.join("segments.ffconcat");
+                let concat_list = pipes
+                    .iter()
+                    .map(|path| crate::ffmpeg_concat_entry(path))
+                    .collect::<String>();
+                tokio::fs::write(&concat_list_path, concat_list)
+                    .await
+                    .map_err(|e| format!("write streaming HLS concat list: {e}"))?;
+
+                let mut command = Command::new("ffmpeg");
+                command
+                    .arg("-y")
+                    .arg("-nostdin")
+                    .arg("-loglevel")
+                    .arg("error")
+                    .arg("-f")
+                    .arg("concat")
+                    .arg("-safe")
+                    .arg("0")
+                    .arg("-i")
+                    .arg(&concat_list_path)
+                    .arg("-c")
+                    .arg("copy")
+                    .arg("-bsf:a")
+                    .arg("aac_adtstoasc")
+                    .arg("-f")
+                    .arg("mp4")
+                    .arg(&staged_path)
+                    .stdin(std::process::Stdio::null())
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::null())
+                    .kill_on_drop(true);
+                let child = command
+                    .spawn()
+                    .map_err(|error| format!("spawn streaming HLS mux: {error}"))?;
+                let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                let feeder = tokio::spawn(feed_segment_pipes(rx, pipes));
+                info!("job {job_id}: streaming HLS segments through concat pipes");
+                Some((child, tx, feeder, pipe_dir))
+            } else {
+                None
+            };
+
+            let (progress_tx, mut progress_rx) =
+                tokio::sync::mpsc::unbounded_channel::<(u64, u64, u64)>();
             let jobs_mgr = jobs.clone();
             let jid = job_id.clone();
             let progress_task = tokio::spawn(async move {
-                let mut reported = last_completed_segments;
-                while let Some((completed, total, downloaded_bytes)) = progress_rx.recv().await {
+                let mut reported = 0u64;
+                while let Some(mut latest) = progress_rx.recv().await {
+                    while let Ok(progress) = progress_rx.try_recv() {
+                        latest = progress;
+                    }
+                    let (completed, total, downloaded_bytes) = latest;
                     if completed >= reported {
                         jobs_mgr
-                            .update_hls_progress(&jid, completed, total, downloaded_bytes)
+                            .update_hls_progress(
+                                &jid,
+                                completed.max(last_completed_segments),
+                                total,
+                                downloaded_bytes.max(last_downloaded),
+                            )
                             .await;
                         reported = completed;
                     }
@@ -1396,46 +1527,67 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                 cancel.clone(),
                 hls_progress.clone(),
                 &hls_headers,
+                streaming_mux.as_ref().map(|(_, tx, _, _)| tx),
             )
             .await;
             drop(hls_progress);
             let _ = progress_task.await;
-            let (segment_files, _segment_bytes) = segment_result?;
-
-            jobs.set_job_phase(&job_id, "prepare").await;
-
-            let concat_list_path = temp_dir.join("segments.ffconcat");
-            let concat_list = segment_files
-                .iter()
-                .map(|p| crate::ffmpeg_concat_entry(p))
-                .collect::<String>();
-            tokio::fs::write(&concat_list_path, concat_list)
-                .await
-                .map_err(|e| format!("write concat list: {e}"))?;
+            let (segment_files, _segment_bytes) = match segment_result {
+                Ok(result) => result,
+                Err(error) => {
+                    if let Some((mut child, tx, feeder, pipe_dir)) = streaming_mux.take() {
+                        drop(tx);
+                        let _ = child.kill().await;
+                        let _ = child.wait().await;
+                        feeder.abort();
+                        let _ = tokio::fs::remove_dir_all(pipe_dir).await;
+                    }
+                    return Err(error);
+                }
+            };
 
             jobs.set_job_phase(&job_id, "mux").await;
+            if let Some((child, tx, feeder, pipe_dir)) = streaming_mux {
+                drop(tx);
+                feeder
+                    .await
+                    .map_err(|e| format!("join streaming HLS feeder: {e}"))??;
+                let result =
+                    monitor_ffmpeg_mux(child, &staged_path, &job_id, &jobs, Some(&cancel)).await;
+                let _ = tokio::fs::remove_dir_all(pipe_dir).await;
+                result?;
+            } else {
+                let concat_list_path = temp_dir.join("segments.ffconcat");
+                let concat_list = segment_files
+                    .iter()
+                    .map(|path| crate::ffmpeg_concat_entry(path))
+                    .collect::<String>();
+                tokio::fs::write(&concat_list_path, concat_list)
+                    .await
+                    .map_err(|e| format!("write concat list: {e}"))?;
 
-            let mut command = Command::new("ffmpeg");
-            command
-                .arg("-y")
-                .arg("-nostdin")
-                .arg("-loglevel")
-                .arg("error")
-                .arg("-f")
-                .arg("concat")
-                .arg("-safe")
-                .arg("0")
-                .arg("-i")
-                .arg(&concat_list_path);
-            command.arg("-c").arg("copy");
-            command
-                .arg("-f")
-                .arg("mp4")
-                .arg(&staged_path)
-                .stdin(std::process::Stdio::null())
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null());
-            run_ffmpeg_mux(&mut command, &staged_path, &job_id, &jobs, Some(&cancel)).await?;
+                let mut command = Command::new("ffmpeg");
+                command
+                    .arg("-y")
+                    .arg("-nostdin")
+                    .arg("-loglevel")
+                    .arg("error")
+                    .arg("-f")
+                    .arg("concat")
+                    .arg("-safe")
+                    .arg("0")
+                    .arg("-i")
+                    .arg(&concat_list_path)
+                    .arg("-c")
+                    .arg("copy")
+                    .arg("-f")
+                    .arg("mp4")
+                    .arg(&staged_path)
+                    .stdin(std::process::Stdio::null())
+                    .stdout(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::null());
+                run_ffmpeg_mux(&mut command, &staged_path, &job_id, &jobs, Some(&cancel)).await?;
+            }
 
             let size = std::fs::metadata(&staged_path)
                 .map(|meta| meta.len())

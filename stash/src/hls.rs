@@ -194,6 +194,7 @@ pub async fn download_segments(
     cancel: Arc<AtomicBool>,
     progress: Arc<dyn Fn(u64, u64, u64) + Send + Sync>,
     headers: &[(String, String)],
+    stream_tx: Option<&tokio::sync::mpsc::UnboundedSender<PathBuf>>,
 ) -> Result<(Vec<PathBuf>, u64), String> {
     if resolved.has_encryption {
         return Err("encrypted HLS (EXT-X-KEY) is not supported".into());
@@ -226,6 +227,10 @@ pub async fn download_segments(
                 size
             }
         };
+        if let Some(tx) = stream_tx {
+            tx.send(path.clone())
+                .map_err(|_| "streaming HLS mux stopped".to_string())?;
+        }
         total_bytes += seg_bytes;
         completed += 1;
         progress(completed, total_count as u64, total_bytes);
@@ -246,6 +251,10 @@ pub async fn download_segments(
                 size
             }
         };
+        if let Some(tx) = stream_tx {
+            tx.send(path.clone())
+                .map_err(|_| "streaming HLS mux stopped".to_string())?;
+        }
         total_bytes += seg_bytes;
         completed += 1;
         progress(completed, total_count as u64, total_bytes);
@@ -434,6 +443,50 @@ mod tests {
 
         assert_eq!(tokio::fs::read(&path).await.unwrap(), b"segment-data");
         assert!(!path.with_extension("ts.part").exists());
+        let _ = tokio::fs::remove_dir_all(dir).await;
+    }
+
+    #[tokio::test]
+    async fn queues_existing_segments_in_playlist_order() {
+        let dir = std::env::temp_dir().join(format!("stash-hls-stream-{}", uuid::Uuid::new_v4()));
+        tokio::fs::create_dir_all(&dir).await.unwrap();
+        tokio::fs::write(dir.join("segment-000000.ts"), b"first")
+            .await
+            .unwrap();
+        tokio::fs::write(dir.join("segment-000001.ts"), b"second")
+            .await
+            .unwrap();
+        let resolved = ResolvedPlaylist {
+            segments: vec![
+                HlsSegment {
+                    uri: "https://example.com/first.ts".to_string(),
+                },
+                HlsSegment {
+                    uri: "https://example.com/second.ts".to_string(),
+                },
+            ],
+            has_encryption: false,
+            map_uri: None,
+        };
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let client = reqwest::Client::new();
+
+        download_segments(
+            &resolved,
+            &client,
+            &dir,
+            Arc::new(AtomicBool::new(false)),
+            Arc::new(|_, _, _| {}),
+            &[],
+            Some(&tx),
+        )
+        .await
+        .unwrap();
+
+        drop(tx);
+        assert_eq!(rx.recv().await.unwrap(), dir.join("segment-000000.ts"));
+        assert_eq!(rx.recv().await.unwrap(), dir.join("segment-000001.ts"));
+        assert!(rx.recv().await.is_none());
         let _ = tokio::fs::remove_dir_all(dir).await;
     }
 
