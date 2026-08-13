@@ -110,6 +110,7 @@ fn status_badge_class(status: &str) -> &'static str {
         "finalizing" | "assembling" | "remuxing" => "badge-finalizing",
         "queued" => "badge-queued",
         "retry_wait" => "badge-retry_wait",
+        "resource_wait" => "badge-retry_wait",
         "completed" => "badge-completed",
         "failed" => "badge-failed",
         "cancelled" => "badge-cancelled",
@@ -123,6 +124,7 @@ fn status_label(status: &str) -> &'static str {
         "finalizing" | "assembling" | "remuxing" => "Finalizing",
         "queued" => "Queued",
         "retry_wait" => "Retrying",
+        "resource_wait" => "Waiting for disk space",
         "completed" => "Completed",
         "failed" => "Failed",
         "cancelled" => "Cancelled",
@@ -375,19 +377,29 @@ pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
 
     let mut rows = String::new();
     for job in &jobs {
-        let pct_text =
-            if job.status == "finalizing" || job.status == "assembling" || job.status == "remuxing"
-            {
-                // During post-download phases the progress bar is about the file, not segments
-                fmt_pct(job.downloaded_bytes, job.total_bytes)
-            } else if job.status == "running" && job.is_hls() && job.total_segments > 0 {
-                fmt_pct(job.uploaded_segments as u64, job.total_segments as u64)
-            } else {
-                fmt_pct(job.downloaded_bytes, job.total_bytes)
-            };
+        let pct_text = if matches!(
+            job.status.as_str(),
+            "finalizing" | "assembling" | "remuxing"
+        ) {
+            match job.phase.as_str() {
+                "prepare" => "Preparing".into(),
+                "mux" => "Muxing".into(),
+                _ => "Finalizing".into(),
+            }
+        } else if job.status == "running" && job.is_browser_hls() {
+            fmt_pct(job.uploaded_segments as u64, job.total_segments as u64)
+        } else {
+            fmt_pct(job.downloaded_bytes, job.total_bytes)
+        };
         let can_cancel = matches!(
             job.status.as_str(),
-            "running" | "queued" | "retry_wait" | "finalizing" | "assembling" | "remuxing"
+            "running"
+                | "queued"
+                | "retry_wait"
+                | "resource_wait"
+                | "finalizing"
+                | "assembling"
+                | "remuxing"
         );
         let can_retry = matches!(job.status.as_str(), "completed" | "failed" | "cancelled");
         let is_terminal = matches!(job.status.as_str(), "completed" | "failed" | "cancelled");

@@ -360,15 +360,20 @@ fn unwrap_png_transport(mut data: Vec<u8>) -> Vec<u8> {
 }
 
 async fn write_file(path: &Path, data: &[u8]) -> Result<(), String> {
-    let mut f = tokio::fs::File::create(path)
+    let part_path = path.with_extension("ts.part");
+    let mut f = tokio::fs::File::create(&part_path)
         .await
-        .map_err(|e| format!("create {}: {e}", path.display()))?;
+        .map_err(|e| format!("create {}: {e}", part_path.display()))?;
     f.write_all(data)
         .await
-        .map_err(|e| format!("write {}: {e}", path.display()))?;
+        .map_err(|e| format!("write {}: {e}", part_path.display()))?;
     f.flush()
         .await
-        .map_err(|e| format!("flush {}: {e}", path.display()))
+        .map_err(|e| format!("flush {}: {e}", part_path.display()))?;
+    drop(f);
+    tokio::fs::rename(&part_path, path)
+        .await
+        .map_err(|e| format!("commit {}: {e}", path.display()))
 }
 
 #[cfg(test)]
@@ -417,6 +422,19 @@ mod tests {
         transport[188] = 0x47;
         wrapped.extend_from_slice(&transport);
         assert_eq!(unwrap_png_transport(wrapped), transport);
+    }
+
+    #[tokio::test]
+    async fn write_file_commits_atomically_without_leaving_part_file() {
+        let dir = std::env::temp_dir().join(format!("stash-hls-write-{}", uuid::Uuid::new_v4()));
+        tokio::fs::create_dir_all(&dir).await.unwrap();
+        let path = dir.join("segment-000001.ts");
+
+        write_file(&path, b"segment-data").await.unwrap();
+
+        assert_eq!(tokio::fs::read(&path).await.unwrap(), b"segment-data");
+        assert!(!path.with_extension("ts.part").exists());
+        let _ = tokio::fs::remove_dir_all(dir).await;
     }
 
     #[test]

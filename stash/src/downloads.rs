@@ -15,7 +15,84 @@ use crate::config::{AppConfig, VpnConfig};
 use crate::hls;
 use crate::store::{self, JobPart, JobRow, unix_now};
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FailureKind {
+    Cancelled,
+    DiskFull,
+    IpBlocked,
+    Transient,
+    Permanent,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum DiskSpaceAction {
+    Continue,
+    Pause,
+    StayPaused,
+    Resume,
+}
+
+fn disk_space_action(
+    paused: bool,
+    available: u64,
+    pause_below: u64,
+    resume_above: u64,
+) -> DiskSpaceAction {
+    if paused {
+        if available >= resume_above {
+            DiskSpaceAction::Resume
+        } else {
+            DiskSpaceAction::StayPaused
+        }
+    } else if available < pause_below {
+        DiskSpaceAction::Pause
+    } else {
+        DiskSpaceAction::Continue
+    }
+}
+
+fn classify_failure(message: &str) -> FailureKind {
+    let lower = message.to_ascii_lowercase();
+    if lower == "cancelled" {
+        FailureKind::Cancelled
+    } else if lower.contains("no space left on device")
+        || lower.contains("storage full")
+        || lower.contains("os error 28")
+    {
+        FailureKind::DiskFull
+    } else if lower.contains("http 403") || lower.contains("403 forbidden") {
+        FailureKind::IpBlocked
+    } else if ["http 400", "http 401", "http 404", "http 405", "http 410"]
+        .iter()
+        .any(|status| lower.contains(status))
+        || lower.contains("encrypted hls")
+        || lower.contains("playlist has no segments")
+    {
+        FailureKind::Permanent
+    } else {
+        FailureKind::Transient
+    }
+}
+
+fn retry_delay(base_secs: u64, retry_count: u32, job_id: &str) -> u64 {
+    let exponent = retry_count.min(6);
+    let scaled = base_secs.saturating_mul(1_u64 << exponent);
+    let jitter_window = scaled.div_ceil(4).max(1);
+    let hash = job_id.bytes().fold(0_u64, |value, byte| {
+        value.wrapping_mul(31).wrapping_add(byte as u64)
+    });
+    scaled.saturating_add(hash % jitter_window)
+}
+
+fn available_space(path: &Path) -> std::io::Result<u64> {
+    fs2::available_space(path)
+}
+
 static VPN_ENSURE_LOCK: Mutex<()> = Mutex::const_new(());
+
+const MUX_POLL_INTERVAL: Duration = Duration::from_secs(1);
+const MUX_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(15);
+const MUX_STALL_TIMEOUT: Duration = Duration::from_secs(120);
 
 pub async fn finalize_staged_output(
     staged_path: &Path,
@@ -57,6 +134,73 @@ pub async fn finalize_staged_output(
     Ok(final_path)
 }
 
+pub async fn run_ffmpeg_mux(
+    command: &mut Command,
+    staged_path: &Path,
+    job_id: &str,
+    jobs: &JobManager,
+    cancel: Option<&AtomicBool>,
+) -> Result<(), String> {
+    command.kill_on_drop(true);
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("spawn ffmpeg: {error}"))?;
+    let mut last_size = std::fs::metadata(staged_path)
+        .map(|metadata| metadata.len())
+        .unwrap_or(0);
+    let mut last_growth = Instant::now();
+    let mut last_heartbeat = Instant::now();
+
+    loop {
+        if cancel.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
+            let _ = child.kill().await;
+            let _ = child.wait().await;
+            return Err("cancelled".into());
+        }
+
+        match child
+            .try_wait()
+            .map_err(|error| format!("wait ffmpeg: {error}"))?
+        {
+            Some(status) if status.success() => return Ok(()),
+            Some(status) => return Err(format!("HLS remux failed: {status}")),
+            None => {}
+        }
+
+        let size = std::fs::metadata(staged_path)
+            .map(|metadata| metadata.len())
+            .unwrap_or(0);
+        if size != last_size {
+            last_size = size;
+            last_growth = Instant::now();
+        } else if last_growth.elapsed() >= MUX_STALL_TIMEOUT {
+            let _ = child.kill().await;
+            let _ = child.wait().await;
+            return Err(format!(
+                "HLS remux stalled: output did not grow for {} seconds",
+                MUX_STALL_TIMEOUT.as_secs()
+            ));
+        }
+
+        if last_heartbeat.elapsed() >= MUX_HEARTBEAT_INTERVAL {
+            let still_finalizing = jobs.get_job(job_id).await.is_some_and(|job| {
+                matches!(
+                    job.status.as_str(),
+                    "finalizing" | "assembling" | "remuxing"
+                )
+            });
+            if !still_finalizing {
+                let _ = child.kill().await;
+                let _ = child.wait().await;
+                return Err("cancelled".into());
+            }
+            jobs.set_job_phase(job_id, "mux").await;
+            last_heartbeat = Instant::now();
+        }
+        tokio::time::sleep(MUX_POLL_INTERVAL).await;
+    }
+}
+
 // ── Cancel state for in-memory active jobs ──────────────────
 
 type CancelMap = Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>;
@@ -66,13 +210,18 @@ type CancelMap = Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>;
 pub struct JobManager {
     db: Arc<Mutex<Connection>>,
     active: CancelMap,
+    resource_paused: Arc<AtomicBool>,
+    available_space: Arc<AtomicU64>,
 }
 
 impl JobManager {
     pub fn new(db: Connection) -> Self {
+        let resource_paused = store::has_resource_wait_jobs(&db).unwrap_or(false);
         Self {
             db: Arc::new(Mutex::new(db)),
             active: Arc::new(Mutex::new(HashMap::new())),
+            resource_paused: Arc::new(AtomicBool::new(resource_paused)),
+            available_space: Arc::new(AtomicU64::new(u64::MAX)),
         }
     }
 
@@ -263,10 +412,16 @@ impl JobManager {
         let _ = store::save_probe_result(&db, id, total, ranges, etag, last_modified, now);
     }
 
-    pub async fn complete_job(&self, id: &str, file_path: &str, total_bytes: u64) {
+    pub async fn complete_job(
+        &self,
+        id: &str,
+        file_path: &str,
+        total_bytes: u64,
+    ) -> Result<(), String> {
         let now = unix_now();
         let db = self.db.lock().await;
-        let _ = store::complete_job(&db, id, file_path, total_bytes, now);
+        store::complete_job(&db, id, file_path, total_bytes, now)
+            .map_err(|error| format!("complete job in database: {error}"))?;
         // Also mark in downloaded_files with route url and source url
         if let Ok(path) = std::fs::canonicalize(file_path) {
             if let Ok(Some(job)) = store::get_job(&db, id) {
@@ -283,6 +438,7 @@ impl JobManager {
                 let _ = store::mark_download(&db, &path, url_opt, src_opt, None);
             }
         }
+        Ok(())
     }
 
     pub async fn fail_or_retry(
@@ -292,9 +448,61 @@ impl JobManager {
         max_retries: u32,
         retry_interval: u64,
     ) -> bool {
+        if classify_failure(error_msg) == FailureKind::DiskFull {
+            self.pause_for_disk(0).await;
+            return false;
+        }
         let now = unix_now();
         let db = self.db.lock().await;
-        store::schedule_retry(&db, id, error_msg, now, max_retries, retry_interval).unwrap_or(false)
+        match classify_failure(error_msg) {
+            FailureKind::Permanent => {
+                let _ = store::fail_job(&db, id, error_msg, now);
+                false
+            }
+            FailureKind::DiskFull => unreachable!(),
+            _ => {
+                let retry_count = store::get_job(&db, id)
+                    .ok()
+                    .flatten()
+                    .map(|job| job.retry_count)
+                    .unwrap_or(0);
+                let delay = retry_delay(retry_interval, retry_count, id);
+                store::schedule_retry(&db, id, error_msg, now, max_retries, delay).unwrap_or(false)
+            }
+        }
+    }
+
+    pub fn is_resource_paused(&self) -> bool {
+        self.resource_paused.load(Ordering::Relaxed)
+    }
+
+    pub fn available_space(&self) -> u64 {
+        self.available_space.load(Ordering::Relaxed)
+    }
+
+    pub async fn pause_for_disk(&self, available: u64) -> usize {
+        self.resource_paused.store(true, Ordering::Relaxed);
+        self.available_space.store(available, Ordering::Relaxed);
+        let active = self.active.lock().await;
+        for flag in active.values() {
+            flag.store(true, Ordering::Relaxed);
+        }
+        drop(active);
+        let db = self.db.lock().await;
+        store::pause_jobs_for_resource(
+            &db,
+            &format!("insufficient disk space: {available} bytes available"),
+            unix_now(),
+        )
+        .unwrap_or(0)
+    }
+
+    pub async fn resume_after_disk(&self, available: u64) -> usize {
+        self.available_space.store(available, Ordering::Relaxed);
+        let db = self.db.lock().await;
+        let resumed = store::resume_resource_wait_jobs(&db, unix_now()).unwrap_or(0);
+        self.resource_paused.store(false, Ordering::Relaxed);
+        resumed
     }
 
     pub async fn cancel_job(&self, id: &str) -> bool {
@@ -766,10 +974,7 @@ fn bytes_to_human(b: u64) -> String {
 }
 
 fn is_hls_url(url: &str) -> bool {
-    let path = url.split('?').next().unwrap_or(url).to_ascii_lowercase();
-    path.ends_with(".m3u8")
-        || path.ends_with(".m3u")
-        || (path.contains(".urlset/") && path.ends_with(".txt"))
+    store::is_hls_url(url)
 }
 
 // ── Probe ───────────────────────────────────────────────────
@@ -856,8 +1061,27 @@ async fn download_single(
         }
     }
     let resp = req.send().await.map_err(|e| format!("request: {e}"))?;
-    if !resp.status().is_success() && resp.status().as_u16() != 206 {
+    if resume_offset > 0 && resp.status().as_u16() != 206 {
+        return Err(format!(
+            "resume response ignored Range: HTTP {}",
+            resp.status()
+        ));
+    }
+    if resume_offset == 0 && !resp.status().is_success() {
         return Err(format!("HTTP {}", resp.status()));
+    }
+    if resume_offset > 0 {
+        let expected_prefix = format!("bytes {resume_offset}-");
+        let actual_range = resp
+            .headers()
+            .get("content-range")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or("");
+        if !actual_range.starts_with(&expected_prefix) {
+            return Err(format!(
+                "resume response has invalid Content-Range '{actual_range}'"
+            ));
+        }
     }
     let total = if resume_offset > 0 {
         // For Range requests, total may be content-range or content-length
@@ -944,8 +1168,19 @@ async fn download_chunked(
                 }
             }
             let resp = req.send().await.map_err(|e| format!("chunk {i}: {e}"))?;
-            if !resp.status().is_success() && resp.status().as_u16() != 206 {
-                return Err(format!("chunk {i}: status {}", resp.status()));
+            if resp.status().as_u16() != 206 {
+                return Err(format!("chunk {i}: HTTP {}", resp.status()));
+            }
+            let expected_range = format!("bytes {range_start}-{end}/{total_size}");
+            let actual_range = resp
+                .headers()
+                .get("content-range")
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("");
+            if actual_range != expected_range {
+                return Err(format!(
+                    "chunk {i}: invalid Content-Range '{actual_range}', expected '{expected_range}'"
+                ));
             }
             let mut file = tokio::fs::OpenOptions::new()
                 .create(true)
@@ -1037,8 +1272,8 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
     let filename = sanitize_filename(&job.filename);
     let target_name = filename;
     let temp_dir = PathBuf::from(&job.temp_dir);
-    let final_dir = config.download_root.join(".video-downloader");
-    let final_path = final_dir.join(&target_name);
+    let final_dir = config.download_root.clone();
+    let final_path = crate::config::final_download_path(&config, &target_name);
     let staged_path = final_dir.join(format!(".{job_id}.{target_name}.staged"));
 
     // Create temp/final dirs
@@ -1077,6 +1312,7 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
 
     let client = http_client::build(&config);
     let last_downloaded = job.downloaded_bytes;
+    let last_completed_segments = job.uploaded_segments as u64;
     let flush_interval =
         tokio::time::Duration::from_millis(config.scheduler.progress_flush_interval_ms);
 
@@ -1138,7 +1374,7 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
             let jobs_mgr = jobs.clone();
             let jid = job_id.clone();
             let progress_task = tokio::spawn(async move {
-                let mut reported = last_downloaded;
+                let mut reported = last_completed_segments;
                 while let Some((completed, total, downloaded_bytes)) = progress_rx.recv().await {
                     if completed >= reported {
                         jobs_mgr
@@ -1192,31 +1428,14 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                 .arg("-i")
                 .arg(&concat_list_path);
             command.arg("-c").arg("copy");
-            let mut child = command
+            command
                 .arg("-f")
                 .arg("mp4")
                 .arg(&staged_path)
                 .stdin(std::process::Stdio::null())
                 .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .spawn()
-                .map_err(|e| format!("spawn ffmpeg: {e}"))?;
-
-            let mux_result: Result<(), String> = loop {
-                if cancel.load(Ordering::Relaxed) {
-                    let _ = child.start_kill();
-                    let _ = child.wait().await;
-                    break Err("cancelled".into());
-                }
-                match child.try_wait().map_err(|e| format!("wait ffmpeg: {e}"))? {
-                    Some(status) if status.success() => break Ok(()),
-                    Some(status) => {
-                        break Err(format!("HLS remux failed: {status}"));
-                    }
-                    None => tokio::time::sleep(Duration::from_millis(500)).await,
-                }
-            };
-            mux_result?;
+                .stderr(std::process::Stdio::null());
+            run_ffmpeg_mux(&mut command, &staged_path, &job_id, &jobs, Some(&cancel)).await?;
 
             let size = std::fs::metadata(&staged_path)
                 .map(|meta| meta.len())
@@ -1362,8 +1581,21 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                 Ok(final_path) => {
                     let finalize_elapsed = finalize_started.elapsed().unwrap_or_default();
                     let total_elapsed = SystemTime::now().duration_since(start).unwrap_or_default();
-                    jobs.complete_job(&job_id, &final_path.display().to_string(), size)
+                    if let Err(error) = jobs
+                        .complete_job(&job_id, &final_path.display().to_string(), size)
+                        .await
+                    {
+                        error!("job {job_id}: {error}");
+                        jobs.fail_or_retry(
+                            &job_id,
+                            &error,
+                            config.retry.max_retries,
+                            config.retry.retry_interval_secs,
+                        )
                         .await;
+                        jobs.unregister_active(&job_id).await;
+                        return;
+                    }
                     jobs.unregister_active(&job_id).await;
                     let _ = tokio::fs::remove_dir_all(&temp_dir).await;
                     info!(
@@ -1402,7 +1634,12 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                     .get_job(&job_id)
                     .await
                     .is_some_and(|job| matches!(job.status.as_str(), "queued" | "retry_wait"));
-            if was_requeued {
+            if classify_failure(&e) == FailureKind::DiskFull {
+                let available = available_space(&config.temp_root).unwrap_or(0);
+                let paused = jobs.pause_for_disk(available).await;
+                warn!("job {job_id}: disk full, paused {paused} jobs");
+                jobs.unregister_active(&job_id).await;
+            } else if was_requeued || jobs.is_resource_paused() {
                 info!("job {job_id}: paused and returned to queue");
                 jobs.unregister_active(&job_id).await;
             } else if msg == "cancelled" {
@@ -1439,8 +1676,7 @@ fn is_ip_blocked_retry(job: &JobRow) -> bool {
 }
 
 fn is_ip_block_error(error: &str) -> bool {
-    let error = error.to_ascii_lowercase();
-    error.contains("http 403") || error.contains("403 forbidden")
+    classify_failure(error) == FailureKind::IpBlocked
 }
 
 fn next_vpn_location(
@@ -1501,6 +1737,40 @@ pub async fn run_scheduler(
     let mut next_rotation_attempt = Instant::now();
     loop {
         tokio::time::sleep(poll).await;
+
+        let free_space = available_space(&config.temp_root)
+            .and_then(|temp| available_space(&config.download_root).map(|output| temp.min(output)));
+        match free_space {
+            Ok(available) => {
+                jobs.available_space.store(available, Ordering::Relaxed);
+                match disk_space_action(
+                    jobs.is_resource_paused(),
+                    available,
+                    config.scheduler.disk_pause_below_bytes,
+                    config.scheduler.disk_resume_above_bytes,
+                ) {
+                    DiskSpaceAction::Continue => {}
+                    DiskSpaceAction::Pause => {
+                        let paused = jobs.pause_for_disk(available).await;
+                        warn!(
+                            "scheduler: low disk space ({available} bytes), paused {paused} jobs"
+                        );
+                        continue;
+                    }
+                    DiskSpaceAction::StayPaused => continue,
+                    DiskSpaceAction::Resume => {
+                        let resumed = jobs.resume_after_disk(available).await;
+                        info!(
+                            "scheduler: disk space recovered ({available} bytes), resumed {resumed} jobs"
+                        );
+                    }
+                }
+            }
+            Err(error) => {
+                warn!("scheduler: disk space check failed: {error}");
+                continue;
+            }
+        }
 
         for jid in jobs.requeue_stalled_running_jobs(120).await {
             warn!("scheduler: stalled job {jid} returned to queue");
@@ -1589,6 +1859,58 @@ pub async fn recover_jobs(jobs: Arc<JobManager>, _config: &AppConfig) {
     }
 }
 
+/// Move staged outputs from the legacy hidden final directory into the configured root.
+/// This runs before recovery/scheduling, so no download worker can hold an old path open.
+pub async fn migrate_staged_files(download_root: &Path) -> Result<usize, String> {
+    let legacy_dir = download_root.join(".video-downloader");
+    let mut entries = match tokio::fs::read_dir(&legacy_dir).await {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(error) => return Err(format!("read legacy staged directory: {error}")),
+    };
+    let mut moved = 0;
+    while let Some(entry) = entries
+        .next_entry()
+        .await
+        .map_err(|error| format!("read legacy staged entry: {error}"))?
+    {
+        let source = entry.path();
+        let file_type = entry
+            .file_type()
+            .await
+            .map_err(|error| format!("inspect legacy staged entry: {error}"))?;
+        let name = entry.file_name();
+        let is_staged = name.to_string_lossy().ends_with(".staged");
+        if !file_type.is_file() || !is_staged {
+            continue;
+        }
+
+        let destination = download_root.join(&name);
+        if tokio::fs::try_exists(&destination)
+            .await
+            .map_err(|error| format!("check staged destination: {error}"))?
+        {
+            warn!(
+                "staged migration skipped because destination exists: {}",
+                destination.display()
+            );
+            continue;
+        }
+
+        tokio::fs::rename(&source, &destination)
+            .await
+            .map_err(|error| format!("move staged output {}: {error}", source.display()))?;
+        moved += 1;
+        info!(
+            "migrated staged output: {} -> {}",
+            source.display(),
+            destination.display()
+        );
+    }
+
+    Ok(moved)
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -1596,8 +1918,10 @@ mod tests {
     use std::sync::atomic::AtomicBool;
 
     use super::{
-        JobManager, VpnLocation, config_for_location, is_hls_url, is_ip_block_error,
-        next_vpn_location, parse_status_info, parse_vpn_locations,
+        DiskSpaceAction, FailureKind, JobManager, VpnLocation, classify_failure,
+        config_for_location, disk_space_action, is_hls_url, is_ip_block_error,
+        migrate_staged_files, next_vpn_location, parse_status_info, parse_vpn_locations,
+        retry_delay,
     };
     use crate::config::VpnConfig;
 
@@ -1693,6 +2017,92 @@ mod tests {
         ));
         assert!(!is_ip_block_error("download failed: HTTP 404 Not Found"));
         assert!(!is_ip_block_error("download failed: connection reset"));
+    }
+
+    #[test]
+    fn classifies_failures_by_recovery_policy() {
+        assert_eq!(classify_failure("cancelled"), FailureKind::Cancelled);
+        assert_eq!(
+            classify_failure("write segment: No space left on device (os error 28)"),
+            FailureKind::DiskFull
+        );
+        assert_eq!(
+            classify_failure("download: HTTP 403 Forbidden"),
+            FailureKind::IpBlocked
+        );
+        assert_eq!(
+            classify_failure("download: HTTP 404 Not Found"),
+            FailureKind::Permanent
+        );
+        assert_eq!(
+            classify_failure("download: HTTP 429 Too Many Requests"),
+            FailureKind::Transient
+        );
+        assert_eq!(
+            classify_failure("download: HTTP 503 Service Unavailable"),
+            FailureKind::Transient
+        );
+        assert_eq!(
+            classify_failure("encrypted HLS is not supported"),
+            FailureKind::Permanent
+        );
+    }
+
+    #[test]
+    fn retry_delay_is_exponential_bounded_and_deterministic() {
+        assert_eq!(retry_delay(30, 0, "job-a"), retry_delay(30, 0, "job-a"));
+        let first = retry_delay(30, 0, "job-a");
+        let second = retry_delay(30, 1, "job-a");
+        let capped = retry_delay(30, 20, "job-a");
+        assert!((30..38).contains(&first));
+        assert!((60..75).contains(&second));
+        assert!((1_920..2_400).contains(&capped));
+    }
+
+    #[test]
+    fn disk_space_policy_uses_hysteresis() {
+        const GIB: u64 = 1024 * 1024 * 1024;
+        assert_eq!(
+            disk_space_action(false, 4 * GIB, 5 * GIB, 10 * GIB),
+            DiskSpaceAction::Pause
+        );
+        assert_eq!(
+            disk_space_action(false, 7 * GIB, 5 * GIB, 10 * GIB),
+            DiskSpaceAction::Continue
+        );
+        assert_eq!(
+            disk_space_action(true, 7 * GIB, 5 * GIB, 10 * GIB),
+            DiskSpaceAction::StayPaused
+        );
+        assert_eq!(
+            disk_space_action(true, 10 * GIB, 5 * GIB, 10 * GIB),
+            DiskSpaceAction::Resume
+        );
+    }
+
+    #[tokio::test]
+    async fn migrates_only_staged_files_from_legacy_root() {
+        let root =
+            std::env::temp_dir().join(format!("stash-staged-migration-{}", uuid::Uuid::new_v4()));
+        let legacy = root.join(".video-downloader");
+        tokio::fs::create_dir_all(&legacy).await.unwrap();
+        tokio::fs::write(legacy.join(".job.video.mp4.staged"), b"staged")
+            .await
+            .unwrap();
+        tokio::fs::write(legacy.join("keep.txt"), b"keep")
+            .await
+            .unwrap();
+
+        assert_eq!(migrate_staged_files(&root).await.unwrap(), 1);
+        assert_eq!(
+            tokio::fs::read(root.join(".job.video.mp4.staged"))
+                .await
+                .unwrap(),
+            b"staged"
+        );
+        assert!(legacy.join("keep.txt").exists());
+
+        let _ = tokio::fs::remove_dir_all(root).await;
     }
 
     #[test]

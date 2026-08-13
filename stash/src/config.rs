@@ -31,6 +31,8 @@ pub struct SchedulerConfig {
     pub resume_on_start: bool,
     pub progress_flush_interval_ms: u64,
     pub max_concurrent_jobs: usize,
+    pub disk_pause_below_bytes: u64,
+    pub disk_resume_above_bytes: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -93,6 +95,8 @@ struct RawScheduler {
     resume_on_start: Option<bool>,
     progress_flush_interval_ms: Option<u64>,
     max_concurrent_jobs: Option<usize>,
+    disk_pause_below_bytes: Option<u64>,
+    disk_resume_above_bytes: Option<u64>,
 }
 
 #[derive(serde::Deserialize)]
@@ -135,6 +139,70 @@ fn expand_home(path: &str) -> PathBuf {
         return home;
     }
     PathBuf::from(path)
+}
+
+pub fn final_download_path(config: &AppConfig, filename: &str) -> PathBuf {
+    config.download_root.join(filename)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn final_download_path_uses_configured_root_directly() {
+        let config = AppConfig {
+            bind: String::new(),
+            sqlite_path: PathBuf::new(),
+            allowed_roots: Vec::new(),
+            max_results: 1,
+            download_root: PathBuf::from("/mnt/shared"),
+            temp_root: PathBuf::from("/mnt/shared/.stash"),
+            download: DownloadConfig {
+                default_concurrency: 1,
+                max_concurrency: 1,
+                chunk_size_bytes: 1,
+                user_agent: String::new(),
+            },
+            vpn: VpnConfig {
+                command: PathBuf::new(),
+                socks_url: String::new(),
+                auto_connect: false,
+                connect_command: Vec::new(),
+                connect_timeout_secs: 1,
+                verify_before_each_job: false,
+                required_location: String::new(),
+                required_mode: String::new(),
+                auto_rotate_on_ip_block: false,
+                excluded_locations: Vec::new(),
+            },
+            scheduler: SchedulerConfig {
+                poll_interval_secs: 1,
+                resume_on_start: true,
+                progress_flush_interval_ms: 1,
+                max_concurrent_jobs: 1,
+                disk_pause_below_bytes: 1,
+                disk_resume_above_bytes: 2,
+            },
+            retry: RetryConfig {
+                max_retries: 1,
+                retry_interval_secs: 1,
+            },
+            browser_hls: BrowserHlsConfig {
+                worker_cdp_url: String::new(),
+                poll_interval_secs: 1,
+                stale_check_interval_secs: 1,
+                stale_timeout_secs: 1,
+                max_restart_attempts: 1,
+                restart_interval_secs: 1,
+            },
+        };
+
+        assert_eq!(
+            final_download_path(&config, "video.mp4"),
+            PathBuf::from("/mnt/shared/video.mp4")
+        );
+    }
 }
 
 fn default_config_path() -> PathBuf {
@@ -183,6 +251,8 @@ pub fn load_config(path: Option<&str>) -> io::Result<AppConfig> {
         resume_on_start: None,
         progress_flush_interval_ms: None,
         max_concurrent_jobs: None,
+        disk_pause_below_bytes: None,
+        disk_resume_above_bytes: None,
     });
     let retry = raw.retry.unwrap_or(RawRetry {
         max_retries: None,
@@ -229,6 +299,12 @@ pub fn load_config(path: Option<&str>) -> io::Result<AppConfig> {
             resume_on_start: scheduler.resume_on_start.unwrap_or(true),
             progress_flush_interval_ms: scheduler.progress_flush_interval_ms.unwrap_or(1000),
             max_concurrent_jobs: scheduler.max_concurrent_jobs.unwrap_or(3).max(1),
+            disk_pause_below_bytes: scheduler
+                .disk_pause_below_bytes
+                .unwrap_or(5 * 1024 * 1024 * 1024),
+            disk_resume_above_bytes: scheduler
+                .disk_resume_above_bytes
+                .unwrap_or(10 * 1024 * 1024 * 1024),
         },
         retry: RetryConfig {
             max_retries: retry.max_retries.unwrap_or(5),

@@ -184,6 +184,10 @@ async fn health(state: aw::Data<AppState>) -> HttpResponse {
         "vpn_connected": vpn_ok,
         "vpn_location": vpn_loc,
         "database_ok": db_ok,
+        "downloads_paused": state.jobs.is_resource_paused(),
+        "available_space_bytes": state.jobs.available_space(),
+        "disk_pause_below_bytes": state.config.scheduler.disk_pause_below_bytes,
+        "disk_resume_above_bytes": state.config.scheduler.disk_resume_above_bytes,
     }))
 }
 
@@ -581,18 +585,20 @@ async fn complete_browser_hls_job(
     // ── Finalizing: mux container ──
     state.jobs.set_job_phase(&job_id, "mux").await;
 
-    let final_dir = state.config.download_root.join(".video-downloader");
+    let final_dir = state.config.download_root.clone();
     tokio::fs::create_dir_all(&final_dir)
         .await
         .map_err(|e| bad_request(&format!("create final dir: {e}")))?;
-    let final_path = final_dir.join(sanitize_browser_filename(&job.filename));
+    let final_path =
+        config::final_download_path(&state.config, &sanitize_browser_filename(&job.filename));
     let staged_path = final_dir.join(format!(
         ".{}.{}",
         job_id,
         sanitize_browser_filename(&job.filename)
     ));
     let mux_started = std::time::SystemTime::now();
-    let status = Command::new("ffmpeg")
+    let mut command = Command::new("ffmpeg");
+    command
         .arg("-y")
         .arg("-nostdin")
         .arg("-loglevel")
@@ -606,12 +612,13 @@ async fn complete_browser_hls_job(
         .arg("-c")
         .arg("copy")
         .arg(&staged_path)
-        .status()
-        .await
-        .map_err(|e| bad_request(&format!("spawn ffmpeg: {e}")))?;
-
-    if !status.success() {
-        let msg = format!("browser HLS remux failed: {status}");
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null());
+    if let Err(error) =
+        downloads::run_ffmpeg_mux(&mut command, &staged_path, &job_id, &state.jobs, None).await
+    {
+        let msg = format!("browser HLS remux failed: {error}");
         state.jobs.fail_or_retry(&job_id, &msg, 1, 0).await;
         return Err(bad_request(&msg));
     }
@@ -644,7 +651,8 @@ async fn complete_browser_hls_job(
     state
         .jobs
         .complete_job(&job_id, &final_path.display().to_string(), size)
-        .await;
+        .await
+        .map_err(|error| bad_request(&error))?;
     state.jobs.unregister_active(&job_id).await;
     info!(
         "browser HLS job completed: id={job_id}, file={}, bytes={}, segments={}, prepare_wall={prepare_elapsed:.2?}, mux_wall={mux_elapsed:.2?}, commit_wall={commit_elapsed:.2?}, finalize_wall={finalize_elapsed:.2?}, saved_full_file_passes=2",
@@ -766,6 +774,10 @@ async fn set_browser_hls_settings(
 async fn get_scheduler_settings(state: aw::Data<AppState>) -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "max_concurrent_jobs": state.max_concurrent_jobs.load(Ordering::Relaxed),
+        "downloads_paused": state.jobs.is_resource_paused(),
+        "available_space_bytes": state.jobs.available_space(),
+        "disk_pause_below_bytes": state.config.scheduler.disk_pause_below_bytes,
+        "disk_resume_above_bytes": state.config.scheduler.disk_resume_above_bytes,
     }))
 }
 
@@ -952,6 +964,12 @@ async fn main() -> std::io::Result<()> {
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
     let job_manager = Arc::new(JobManager::new(job_db));
     let vpn_config = Arc::new(RwLock::new(cfg.vpn.clone()));
+
+    match downloads::migrate_staged_files(&cfg.download_root).await {
+        Ok(moved) if moved > 0 => info!("migrated {moved} legacy staged output(s)"),
+        Ok(_) => {}
+        Err(error) => warn!("legacy staged output migration failed: {error}"),
+    }
 
     if cfg.scheduler.resume_on_start {
         downloads::recover_jobs(job_manager.clone(), &cfg).await;

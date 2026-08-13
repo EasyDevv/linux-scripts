@@ -13,6 +13,13 @@ pub fn completed_file_size_is_valid(size: u64) -> bool {
     size >= MIN_COMPLETED_FILE_BYTES
 }
 
+pub fn is_hls_url(url: &str) -> bool {
+    let path = url.split('?').next().unwrap_or(url).to_ascii_lowercase();
+    path.ends_with(".m3u8")
+        || path.ends_with(".m3u")
+        || (path.contains(".urlset/") && path.ends_with(".txt"))
+}
+
 // ── Existing types ──────────────────────────────────────────
 
 #[derive(Serialize)]
@@ -84,7 +91,7 @@ impl JobRow {
     }
 
     pub fn is_hls(&self) -> bool {
-        self.is_browser_hls() || self.src_url.to_ascii_lowercase().contains(".m3u8")
+        self.is_browser_hls() || is_hls_url(&self.src_url)
     }
 
     pub fn to_response(&self) -> JobResponse {
@@ -742,6 +749,14 @@ pub fn count_active_jobs(db: &Connection) -> rusqlite::Result<usize> {
     )
 }
 
+pub fn has_resource_wait_jobs(db: &Connection) -> rusqlite::Result<bool> {
+    db.query_row(
+        "SELECT EXISTS(SELECT 1 FROM download_jobs WHERE status = 'resource_wait')",
+        [],
+        |row| row.get(0),
+    )
+}
+
 pub fn requeue_excess_running_jobs(
     db: &Connection,
     max_concurrent_jobs: usize,
@@ -789,8 +804,7 @@ pub fn requeue_stalled_running_jobs(
     for id in &ids {
         db.execute(
             "UPDATE download_jobs
-             SET status = 'retry_wait', cancel_requested = 0,
-                 retry_count = retry_count + 1, next_retry_at = ?2 + 30,
+             SET status = 'retry_wait', cancel_requested = 0, next_retry_at = ?2 + 30,
                  last_error = 'stalled download waiting to retry', updated_at = ?2
              WHERE id = ?1 AND status = 'running'",
             params![id, now as i64],
@@ -851,7 +865,7 @@ pub fn recover_pending_jobs(db: &Connection, now: u64) -> rusqlite::Result<Vec<J
         "UPDATE download_jobs
          SET status = 'queued', last_error = 'recovered from unclean shutdown',
               updated_at = ?1
-         WHERE status = 'running' AND headers_json NOT LIKE '%browser-hls%'",
+         WHERE status IN ('running', 'finalizing', 'assembling', 'remuxing') AND headers_json NOT LIKE '%browser-hls%'",
         params![now],
     )?;
     // Return all non-terminal jobs
@@ -882,10 +896,12 @@ pub fn stale_browser_hls_cleanup(
            AND retry_count >= ?3",
         params![now as i64, cutoff, max_attempts],
     )?;
-    // Increment retry_count for stale jobs that still have attempts left
+    // Return interrupted browser finalization to a state the browser worker can resume.
     let affected = db.execute(
         "UPDATE download_jobs
-         SET retry_count = retry_count + 1,
+          SET status = 'running',
+              phase = 'download',
+              retry_count = retry_count + 1,
              last_error = 'stale: no progress for > ' || ?2 || ' seconds',
              updated_at = ?1
           WHERE status IN ('running', 'finalizing', 'assembling', 'remuxing')
@@ -1081,6 +1097,39 @@ pub fn schedule_retry(
     Ok(job.status == "retry_wait")
 }
 
+pub fn fail_job(db: &Connection, id: &str, error_msg: &str, now: u64) -> rusqlite::Result<bool> {
+    let rows = db.execute(
+        "UPDATE download_jobs
+         SET status = 'failed', last_error = ?2, next_retry_at = 0,
+             completed_at = ?3, updated_at = ?3
+         WHERE id = ?1 AND status NOT IN ('completed', 'cancelled')",
+        params![id, error_msg, now as i64],
+    )?;
+    Ok(rows > 0)
+}
+
+pub fn pause_jobs_for_resource(
+    db: &Connection,
+    error_msg: &str,
+    now: u64,
+) -> rusqlite::Result<usize> {
+    db.execute(
+        "UPDATE download_jobs
+         SET status = 'resource_wait', last_error = ?1, updated_at = ?2
+         WHERE status IN ('queued', 'running', 'finalizing', 'assembling', 'remuxing')",
+        params![error_msg, now as i64],
+    )
+}
+
+pub fn resume_resource_wait_jobs(db: &Connection, now: u64) -> rusqlite::Result<usize> {
+    db.execute(
+        "UPDATE download_jobs
+         SET status = 'queued', last_error = '', next_retry_at = 0, updated_at = ?1
+         WHERE status = 'resource_wait' AND cancel_requested = 0",
+        params![now as i64],
+    )
+}
+
 pub fn delete_job(db: &Connection, id: &str) -> rusqlite::Result<bool> {
     let filename: String = db
         .query_row(
@@ -1154,12 +1203,20 @@ pub fn delete_jobs(db: &Connection, ids: &[String]) -> rusqlite::Result<usize> {
 }
 
 pub fn cancel_job(db: &Connection, id: &str, now: u64) -> rusqlite::Result<bool> {
-    let rows = db.execute(
+    let mut rows = db.execute(
         "UPDATE download_jobs
          SET cancel_requested = 1, status = 'cancelled', phase = '', completed_at = ?2, updated_at = ?2
          WHERE id = ?1 AND status NOT IN ('completed', 'failed', 'cancelled')",
         params![id, now],
     )?;
+    if rows == 0 {
+        rows = db.execute(
+            "UPDATE download_jobs
+             SET cancel_requested = 1, status = 'cancelled', completed_at = ?2, updated_at = ?2
+             WHERE id = ?1 AND status = 'resource_wait'",
+            params![id, now],
+        )?;
+    }
     if rows > 0 {
         db.execute(
             "DELETE FROM download_job_parts WHERE job_id = ?1",
@@ -1171,7 +1228,7 @@ pub fn cancel_job(db: &Connection, id: &str, now: u64) -> rusqlite::Result<bool>
 
 pub fn retry_job(db: &Connection, id: &str, now: u64) -> rusqlite::Result<bool> {
     let resume = get_job(db, id)?.and_then(|job| {
-        if job.src_url.to_ascii_lowercase().contains(".m3u8") {
+        if job.is_hls() && !job.is_browser_hls() {
             downloaded_hls_progress(&job.temp_dir)
                 .map(|(completed, bytes)| (completed, bytes, job.total_segments))
         } else {
@@ -1619,6 +1676,61 @@ mod tests {
     }
 
     #[test]
+    fn recovery_requeues_interrupted_direct_hls_finalization() {
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "direct-hls",
+            "page",
+            "https://example.test/video.m3u8",
+            "video.mp4",
+            "[]",
+            "/tmp/direct-hls",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        set_job_phase(&db, "direct-hls", "mux", 2).unwrap();
+
+        let recovered = recover_pending_jobs(&db, 3).unwrap();
+        let job = get_job(&db, "direct-hls").unwrap().unwrap();
+        assert_eq!(job.status, "queued");
+        assert!(recovered.iter().any(|job| job.id == "direct-hls"));
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn stale_browser_finalization_returns_to_running() {
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "browser-hls",
+            "page",
+            "source",
+            "video.mp4",
+            r#"{"transport":"browser-hls"}"#,
+            "/tmp/browser-hls",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        set_job_phase(&db, "browser-hls", "mux", 2).unwrap();
+
+        assert_eq!(stale_browser_hls_cleanup(&db, 100, 10, 3).unwrap(), 1);
+        let job = get_job(&db, "browser-hls").unwrap().unwrap();
+        assert_eq!(job.status, "running");
+        assert_eq!(job.phase, "download");
+        assert_eq!(job.retry_count, 1);
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
     fn invalid_small_completion_can_be_retried() {
         let (db, db_path) = test_db();
         create_job(
@@ -1943,12 +2055,100 @@ mod tests {
         );
         let job = get_job(&db, "stalled").unwrap().unwrap();
         assert_eq!(job.status, "retry_wait");
-        assert_eq!(job.retry_count, 1);
+        assert_eq!(job.retry_count, 0);
         assert_eq!(job.next_retry_at, 130);
         assert_eq!(count_active_jobs(&db).unwrap(), 0);
 
         drop(db);
         let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn resource_pause_preserves_retry_budget_and_resumes_jobs() {
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "disk",
+            "page",
+            "source",
+            "video.mp4",
+            "[]",
+            "",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        db.execute(
+            "UPDATE download_jobs SET status = 'running', retry_count = 2 WHERE id = 'disk'",
+            [],
+        )
+        .unwrap();
+
+        assert_eq!(pause_jobs_for_resource(&db, "disk full", 10).unwrap(), 1);
+        let paused = get_job(&db, "disk").unwrap().unwrap();
+        assert_eq!(paused.status, "resource_wait");
+        assert_eq!(paused.retry_count, 2);
+        assert_eq!(paused.last_error, "disk full");
+
+        assert_eq!(resume_resource_wait_jobs(&db, 20).unwrap(), 1);
+        let resumed = get_job(&db, "disk").unwrap().unwrap();
+        assert_eq!(resumed.status, "queued");
+        assert_eq!(resumed.retry_count, 2);
+        assert!(resumed.last_error.is_empty());
+
+        drop(db);
+        let _ = std::fs::remove_file(&db_path);
+    }
+
+    #[test]
+    fn job_manager_can_restore_resource_pause_from_database() {
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "disk",
+            "page",
+            "source",
+            "video.mp4",
+            "[]",
+            "",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        pause_jobs_for_resource(&db, "disk full", 2).unwrap();
+
+        assert!(has_resource_wait_jobs(&db).unwrap());
+
+        drop(db);
+        let _ = std::fs::remove_file(&db_path);
+    }
+
+    #[test]
+    fn resource_wait_job_can_be_cancelled() {
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "disk",
+            "page",
+            "source",
+            "video.mp4",
+            "[]",
+            "",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        pause_jobs_for_resource(&db, "disk full", 2).unwrap();
+
+        assert!(cancel_job(&db, "disk", 3).unwrap());
+        let job = get_job(&db, "disk").unwrap().unwrap();
+        assert_eq!(job.status, "cancelled");
+
+        drop(db);
+        let _ = std::fs::remove_file(&db_path);
     }
 
     #[test]
@@ -1987,6 +2187,7 @@ mod tests {
         assert_eq!(job.downloaded_bytes, 24);
         assert_eq!(job.uploaded_segments, 2);
         assert_eq!(job.total_segments, 5);
+        assert_eq!(job.to_response().uploaded_segments, Some(2));
 
         drop(db);
         let _ = std::fs::remove_dir_all(&temp_dir);
