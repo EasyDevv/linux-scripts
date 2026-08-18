@@ -30,6 +30,14 @@
       <span class="version-badge">v0.1</span>
     </div>
     <div class="header-right">
+      <label class="download-limit" title="Queue downloads by source URL domain">
+        <span>Queue</span>
+        <select id="concurrency-mode" aria-label="Download queue mode">
+          <option value="src_domain">src URL domain</option>
+          <option value="url_domain">URL domain</option>
+          <option value="global">global</option>
+        </select>
+      </label>
       <label class="download-limit" title="Maximum simultaneous downloads">
         <span>Downloads</span>
         <select id="download-limit" aria-label="Maximum simultaneous downloads">

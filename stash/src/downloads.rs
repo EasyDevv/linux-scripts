@@ -3,7 +3,7 @@ use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize, Ordering};
 use std::time::{Duration, Instant, SystemTime};
 
 use futures_util::StreamExt;
@@ -344,10 +344,19 @@ impl JobManager {
         store::count_active_jobs(&db).unwrap_or(0)
     }
 
-    pub async fn requeue_excess_running_jobs(&self, max_concurrent_jobs: usize) -> Vec<String> {
+    pub async fn list_running_jobs(&self) -> Vec<store::JobRow> {
+        let db = self.db.lock().await;
+        store::list_running_jobs(&db).unwrap_or_default()
+    }
+
+    pub async fn requeue_excess_running_jobs(
+        &self,
+        max_concurrent_jobs: usize,
+        mode: store::ConcurrencyMode,
+    ) -> Vec<String> {
         let ids = {
             let db = self.db.lock().await;
-            store::requeue_excess_running_jobs(&db, max_concurrent_jobs, unix_now())
+            store::requeue_excess_running_jobs(&db, max_concurrent_jobs, unix_now(), mode)
                 .unwrap_or_default()
         };
         let active = self.active.lock().await;
@@ -649,6 +658,7 @@ impl JobManager {
 #[derive(Debug)]
 pub enum VpnError {
     NotInstalled,
+    NotLoggedIn,
     WrongMode { expected: String, actual: String },
     Disconnected,
     WrongLocation { expected: String, actual: String },
@@ -660,6 +670,7 @@ impl std::fmt::Display for VpnError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             VpnError::NotInstalled => write!(f, "adguardvpn-cli not found"),
+            VpnError::NotLoggedIn => write!(f, "adguardvpn-cli logged out"),
             VpnError::WrongMode { expected, actual } => {
                 write!(f, "mode is '{actual}', expected '{expected}'")
             }
@@ -684,9 +695,24 @@ fn strip_ansi(s: &str) -> String {
     s.replace("\x1b[1m", "").replace("\x1b[0m", "")
 }
 
+fn vpn_error_from_output(stdout: &[u8], stderr: &[u8]) -> Option<VpnError> {
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(stdout),
+        String::from_utf8_lossy(stderr)
+    );
+    let text = strip_ansi(&combined).to_ascii_lowercase();
+    if text.contains("you are not logged in") {
+        Some(VpnError::NotLoggedIn)
+    } else {
+        None
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct StatusInfo {
     pub connected: bool,
+    pub logged_out: bool,
     pub location: String,
 }
 
@@ -694,6 +720,9 @@ fn parse_status_info(stdout: &str) -> StatusInfo {
     let mut info = StatusInfo::default();
     for line in stdout.lines() {
         let t = strip_ansi(line.trim());
+        if t.to_ascii_lowercase().contains("you are not logged in") {
+            info.logged_out = true;
+        }
         if t.starts_with("Connected to ") || t.starts_with("connected to ") {
             info.connected = true;
             let s = t
@@ -776,12 +805,19 @@ pub async fn check_status(config: &VpnConfig) -> Result<StatusInfo, VpnError> {
         .output()
         .await
         .map_err(|_| VpnError::NotInstalled)?;
+    let parsed = parse_status_info(&String::from_utf8_lossy(&output.stdout));
+    if parsed.logged_out {
+        return Err(VpnError::NotLoggedIn);
+    }
     if !output.status.success() {
+        if let Some(error) = vpn_error_from_output(&output.stdout, &output.stderr) {
+            return Err(error);
+        }
         return Err(VpnError::CommandFailed(
             String::from_utf8_lossy(&output.stderr).to_string(),
         ));
     }
-    Ok(parse_status_info(&String::from_utf8_lossy(&output.stdout)))
+    Ok(parsed)
 }
 
 pub async fn list_locations(config: &VpnConfig) -> Result<Vec<VpnLocation>, VpnError> {
@@ -790,6 +826,9 @@ pub async fn list_locations(config: &VpnConfig) -> Result<Vec<VpnLocation>, VpnE
         .await
         .map_err(|_| VpnError::NotInstalled)?;
     if !output.status.success() {
+        if let Some(error) = vpn_error_from_output(&output.stdout, &output.stderr) {
+            return Err(error);
+        }
         return Err(VpnError::CommandFailed(format!(
             "list locations: {}",
             String::from_utf8_lossy(&output.stderr)
@@ -806,6 +845,9 @@ async fn check_mode(config: &VpnConfig) -> Result<(), VpnError> {
         .await
         .map_err(|_| VpnError::NotInstalled)?;
     if !output.status.success() {
+        if let Some(error) = vpn_error_from_output(&output.stdout, &output.stderr) {
+            return Err(error);
+        }
         return Err(VpnError::CommandFailed(format!(
             "config show: {}",
             String::from_utf8_lossy(&output.stderr)
@@ -836,6 +878,9 @@ async fn connect_vpn(config: &VpnConfig) -> Result<(), VpnError> {
     .map_err(|_| VpnError::ConnectFailed("timeout".into()))?
     .map_err(|_| VpnError::NotInstalled)?;
     if !output.status.success() {
+        if let Some(error) = vpn_error_from_output(&output.stdout, &output.stderr) {
+            return Err(error);
+        }
         return Err(VpnError::ConnectFailed(format!("exit {}", output.status)));
     }
     info!(
@@ -935,12 +980,17 @@ pub async fn ensure_vpn_connected(config: &VpnConfig) -> Result<(), VpnError> {
                 });
             }
         }
+        Ok(status) if status.logged_out => {
+            info!("VPN logged out");
+            return Err(VpnError::NotLoggedIn);
+        }
         Ok(_) => {
             info!("VPN disconnected");
             if !config.auto_connect {
                 return Err(VpnError::Disconnected);
             }
         }
+        Err(VpnError::NotLoggedIn) => return Err(VpnError::NotLoggedIn),
         Err(error) => {
             warn!("VPN status unavailable: {error}. reconnecting...");
             if !config.auto_connect {
@@ -1883,7 +1933,8 @@ pub async fn run_scheduler(
     jobs: Arc<JobManager>,
     config: AppConfig,
     vpn: Arc<RwLock<VpnConfig>>,
-    max_concurrent_jobs: Arc<std::sync::atomic::AtomicUsize>,
+    max_concurrent_jobs: Arc<AtomicUsize>,
+    concurrency_mode: Arc<AtomicU8>,
 ) {
     let poll = Duration::from_secs(config.scheduler.poll_interval_secs);
     let mut next_rotation_attempt = Instant::now();
@@ -1928,18 +1979,47 @@ pub async fn run_scheduler(
             warn!("scheduler: stalled job {jid} returned to queue");
         }
 
-        let active = jobs.count_active_jobs().await;
-        let available = max_concurrent_jobs
-            .load(std::sync::atomic::Ordering::Relaxed)
-            .saturating_sub(active);
-        if available == 0 {
-            continue;
+        let mode = store::ConcurrencyMode::from_u8(concurrency_mode.load(Ordering::Relaxed));
+        let running = jobs.list_running_jobs().await;
+        let mut due = jobs.list_due_jobs(unix_now(), running.len() + 32).await;
+        if mode == store::ConcurrencyMode::Global {
+            let available = max_concurrent_jobs
+                .load(Ordering::Relaxed)
+                .saturating_sub(running.len());
+            if available == 0 {
+                continue;
+            }
+            due.truncate(available);
+        } else {
+            let limit = max_concurrent_jobs.load(Ordering::Relaxed);
+            let mut active_by_domain: std::collections::HashMap<String, usize> =
+                std::collections::HashMap::new();
+            for job in &running {
+                *active_by_domain
+                    .entry(
+                        mode.group_key(&job.url, &job.src_url)
+                            .expect("domain mode has a group key"),
+                    )
+                    .or_insert(0) += 1;
+            }
+            due.retain(|job| {
+                let domain = mode.group_key(&job.url, &job.src_url).expect("domain mode has a group key");
+                let count = active_by_domain.entry(domain).or_insert(0);
+                if *count >= limit {
+                    false
+                } else {
+                    *count += 1;
+                    true
+                }
+            });
+            if due.is_empty() {
+                continue;
+            }
         }
 
-        let mut due = jobs.list_due_jobs(store::unix_now(), 100).await;
         let has_blocked_retry = due.iter().any(is_ip_blocked_retry);
         if has_blocked_retry && config.vpn.auto_rotate_on_ip_block {
-            if active > 0 {
+            if !running.is_empty() {
                 due.retain(|job| !is_ip_blocked_retry(job));
             } else if Instant::now() >= next_rotation_attempt {
                 match rotate_vpn_for_blocked_retry(&jobs, &vpn).await {
@@ -1958,7 +2038,7 @@ pub async fn run_scheduler(
             }
         }
 
-        for job_row in due.into_iter().take(available) {
+        for job_row in due {
             let jid = job_row.id.clone();
             if jobs.is_active(&jid).await {
                 info!("scheduler: job {jid} still has an active worker, skipping");
@@ -2109,7 +2189,17 @@ mod tests {
             parse_status_info("Connected to NEW YORK in SOCKS mode, listening on 127.0.0.1:1080");
 
         assert!(status.connected);
+        assert!(!status.logged_out);
         assert_eq!(status.location, "new york");
+    }
+
+    #[test]
+    fn parses_logged_out_status() {
+        let status = parse_status_info("You are not logged in\nYou can log in by running `adguardvpn-cli login`");
+
+        assert!(!status.connected);
+        assert!(status.logged_out);
+        assert_eq!(status.location, "");
     }
 
     #[test]

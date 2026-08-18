@@ -118,7 +118,15 @@ fn status_badge_class(status: &str) -> &'static str {
     }
 }
 
-fn status_label(status: &str) -> &'static str {
+fn is_vpn_issue(error: &str) -> bool {
+    let error = error.to_ascii_lowercase();
+    error.contains("vpn") || error.contains("adguardvpn")
+}
+
+fn status_label(status: &str, last_error: &str) -> &'static str {
+    if is_vpn_issue(last_error) && matches!(status, "failed" | "retry_wait") {
+        return "VPN Error";
+    }
     match status {
         "running" => "Downloading",
         "finalizing" | "assembling" | "remuxing" => "Finalizing",
@@ -249,10 +257,18 @@ pub async fn dev_version(state: aw::Data<AppState>) -> HttpResponse {
 
 pub async fn vpn_badge(state: aw::Data<AppState>) -> HttpResponse {
     let config = state.vpn.read().await.clone();
-    let (connected, location) = match crate::downloads::check_status(&config).await {
-        Ok(s) => (s.connected, s.location),
-        Err(_) => (false, String::new()),
+    let (connected, location, logged_out) = match crate::downloads::check_status(&config).await {
+        Ok(status) => (status.connected, status.location, status.logged_out),
+        Err(crate::downloads::VpnError::NotLoggedIn) => (false, String::new(), true),
+        Err(_) => (false, String::new(), false),
     };
+    if logged_out {
+        return HttpResponse::Ok()
+            .content_type("text/html; charset=utf-8")
+            .body(
+                r#"<select class="vpn-badge vpn-location-select error" name="location" aria-label="VPN location" title="VPN logged out" disabled><option selected>VPN logged out</option></select>"#,
+            );
+    }
     let selected_location = if connected && !location.is_empty() {
         location
     } else {
@@ -267,7 +283,7 @@ pub async fn vpn_badge(state: aw::Data<AppState>) -> HttpResponse {
         let selected = vpn_location.name.eq_ignore_ascii_case(&selected_location);
         has_selected_location |= selected;
         options.push_str(&format!(
-            r#"<option value="{value}"{selected}>VPN {label}</option>"#,
+            r#"<option value="{value}"{selected}>{label}</option>"#,
             value = escape_html(&vpn_location.name),
             selected = if selected { " selected" } else { "" },
             label = escape_html(&vpn_location.label),
@@ -275,7 +291,7 @@ pub async fn vpn_badge(state: aw::Data<AppState>) -> HttpResponse {
     }
     if !has_selected_location {
         options.push_str(&format!(
-            r#"<option value="{value}" selected>VPN {value}</option>"#,
+            r#"<option value="{value}" selected>{value}</option>"#,
             value = escape_html(&selected_location),
         ));
     }
@@ -507,7 +523,7 @@ pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
             speed_attrs = speed_attrs,
             name = escape_html(&job.filename),
             badge = status_badge_class(&job.status),
-            label = status_label(&job.status),
+            label = status_label(&job.status, &job.last_error),
             restart = restart_info,
             pct = pct_text,
             segment = segment_text,
@@ -858,6 +874,16 @@ mod tests {
         let body = Bytes::from_static(b"paths=%2Fmnt%2Fshared%2Fa.mp4");
         let values = parse_form_values(&body, "paths").unwrap();
         assert_eq!(values, vec!["/mnt/shared/a.mp4"]);
+    }
+
+    #[test]
+    fn vpn_issue_status_uses_vpn_error_label() {
+        assert_eq!(
+            super::status_label("failed", "VPN not ready: adguardvpn-cli logged out"),
+            "VPN Error"
+        );
+        assert_eq!(super::status_label("failed", "media URL not found"), "Failed");
+        assert_eq!(super::status_label("queued", "VPN not ready: disconnected"), "Queued");
     }
 
     #[test]

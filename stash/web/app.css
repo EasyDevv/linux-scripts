@@ -177,6 +177,9 @@ header h1 {
 	font: inherit;
 	cursor: pointer;
 }
+#concurrency-mode {
+	max-width: 150px;
+}
 .download-limit select:disabled {
 	cursor: wait;
 	opacity: 0.65;
@@ -200,6 +203,10 @@ header h1 {
 	color: var(--success-text);
 }
 .vpn-badge.disconnected {
+	background: var(--danger-bg);
+	color: var(--danger-text);
+}
+.vpn-badge.error {
 	background: var(--danger-bg);
 	color: var(--danger-text);
 }

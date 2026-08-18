@@ -435,6 +435,7 @@ pub fn invalidate_small_completed_jobs(db: &Connection, now: u64) -> rusqlite::R
 const VPN_LOCATION_SETTING: &str = "vpn_location";
 const BROWSER_HLS_LEVEL_SETTING: &str = "browser_hls_level";
 const MAX_CONCURRENT_JOBS_SETTING: &str = "max_concurrent_jobs";
+const CONCURRENCY_MODE_SETTING: &str = "concurrency_mode";
 
 pub fn load_vpn_location(db: &Connection) -> rusqlite::Result<Option<String>> {
     db.query_row(
@@ -494,6 +495,97 @@ pub fn save_max_concurrent_jobs(db: &Connection, value: usize) -> rusqlite::Resu
         "INSERT INTO app_settings (name, value) VALUES (?1, ?2)
          ON CONFLICT(name) DO UPDATE SET value = excluded.value",
         params![MAX_CONCURRENT_JOBS_SETTING, value.clamp(3, 10).to_string()],
+    )?;
+    Ok(())
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ConcurrencyMode {
+    SrcDomain,
+    UrlDomain,
+    Global,
+}
+
+impl ConcurrencyMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::SrcDomain => "src_domain",
+            Self::UrlDomain => "url_domain",
+            Self::Global => "global",
+        }
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value.trim() {
+            "src_domain" => Some(Self::SrcDomain),
+            "url_domain" => Some(Self::UrlDomain),
+            "global" => Some(Self::Global),
+            _ => None,
+        }
+    }
+
+    pub fn from_u8(value: u8) -> Self {
+        match value {
+            1 => Self::Global,
+            2 => Self::UrlDomain,
+            _ => Self::SrcDomain,
+        }
+    }
+
+    pub fn as_u8(self) -> u8 {
+        match self {
+            Self::SrcDomain => 0,
+            Self::Global => 1,
+            Self::UrlDomain => 2,
+        }
+    }
+
+    pub fn group_key(self, url: &str, src_url: &str) -> Option<String> {
+        match self {
+            Self::Global => None,
+            Self::SrcDomain => Some(src_url_domain(src_url)),
+            Self::UrlDomain => Some(src_url_domain(url)),
+        }
+    }
+}
+
+pub fn src_url_domain(src_url: &str) -> String {
+    let trimmed = src_url.trim();
+    let rest = trimmed
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(trimmed);
+    let host = rest
+        .split(['/', '?', '#', ':'])
+        .next()
+        .unwrap_or(rest)
+        .trim()
+        .trim_matches('.')
+        .to_ascii_lowercase();
+    if host.is_empty() {
+        trimmed.to_ascii_lowercase()
+    } else {
+        host
+    }
+}
+
+pub fn load_concurrency_mode(db: &Connection) -> rusqlite::Result<Option<ConcurrencyMode>> {
+    let value: Option<String> = db
+        .query_row(
+            "SELECT value FROM app_settings WHERE name = ?1",
+            params![CONCURRENCY_MODE_SETTING],
+            |row| row.get(0),
+        )
+        .optional()?;
+    Ok(value.and_then(|value| ConcurrencyMode::parse(&value)))
+}
+
+pub fn save_concurrency_mode(db: &Connection, mode: ConcurrencyMode) -> rusqlite::Result<()> {
+    db.execute(
+        "INSERT INTO app_settings (name, value) VALUES (?1, ?2)
+         ON CONFLICT(name) DO UPDATE SET value = excluded.value",
+        params![CONCURRENCY_MODE_SETTING, mode.as_str()],
     )?;
     Ok(())
 }
@@ -749,6 +841,24 @@ pub fn count_active_jobs(db: &Connection) -> rusqlite::Result<usize> {
     )
 }
 
+pub fn list_running_jobs(db: &Connection) -> rusqlite::Result<Vec<JobRow>> {
+    let mut stmt = db.prepare(
+        "SELECT id, url, src_url, filename, headers_json, status,
+                total_bytes, downloaded_bytes,
+                supports_ranges, etag, last_modified,
+                retry_count, max_retries, retry_interval_secs,
+                next_retry_at, last_error,
+                cancel_requested, file_path, temp_dir,
+                created_at, started_at, completed_at, updated_at,
+                uploaded_segments, total_segments, phase
+         FROM download_jobs
+         WHERE status = 'running'
+         ORDER BY started_at ASC, created_at ASC",
+    )?;
+    let rows = stmt.query_map([], row_to_job)?;
+    rows.collect::<Result<Vec<_>, _>>()
+}
+
 pub fn has_resource_wait_jobs(db: &Connection) -> rusqlite::Result<bool> {
     db.query_row(
         "SELECT EXISTS(SELECT 1 FROM download_jobs WHERE status = 'resource_wait')",
@@ -761,21 +871,38 @@ pub fn requeue_excess_running_jobs(
     db: &Connection,
     max_concurrent_jobs: usize,
     now: u64,
+    mode: ConcurrencyMode,
 ) -> rusqlite::Result<Vec<String>> {
-    let excess = count_active_jobs(db)?.saturating_sub(max_concurrent_jobs);
-    if excess == 0 {
-        return Ok(Vec::new());
-    }
-    let mut stmt = db.prepare(
-        "SELECT id FROM download_jobs
-         WHERE status = 'running'
-         ORDER BY started_at DESC, created_at DESC
-         LIMIT ?1",
-    )?;
-    let ids = stmt
-        .query_map(params![excess as i64], |row| row.get::<_, String>(0))?
-        .collect::<Result<Vec<_>, _>>()?;
-    drop(stmt);
+    let running = list_running_jobs(db)?;
+    let ids = match mode {
+        ConcurrencyMode::Global => {
+            let excess = running.len().saturating_sub(max_concurrent_jobs);
+            if excess == 0 {
+                Vec::new()
+            } else {
+                let mut ids = running.into_iter().map(|job| job.id).collect::<Vec<_>>();
+                ids.reverse();
+                ids.truncate(excess);
+                ids
+            }
+        }
+        ConcurrencyMode::SrcDomain | ConcurrencyMode::UrlDomain => {
+            let mut ids = Vec::new();
+            let mut seen: std::collections::HashMap<String, usize> =
+                std::collections::HashMap::new();
+            for job in running {
+                let domain = mode
+                    .group_key(&job.url, &job.src_url)
+                    .expect("domain mode has a group key");
+                let count = seen.entry(domain).or_insert(0);
+                *count += 1;
+                if *count > max_concurrent_jobs {
+                    ids.push(job.id);
+                }
+            }
+            ids
+        }
+    };
     for id in &ids {
         db.execute(
             "UPDATE download_jobs
@@ -1966,7 +2093,44 @@ mod tests {
     }
 
     #[test]
-    fn finalizing_jobs_do_not_use_download_slots() {
+    fn persists_concurrency_mode() {
+        let (db, db_path) = test_db();
+        assert_eq!(load_concurrency_mode(&db).unwrap(), None);
+
+        save_concurrency_mode(&db, ConcurrencyMode::Global).unwrap();
+        assert_eq!(
+            load_concurrency_mode(&db).unwrap(),
+            Some(ConcurrencyMode::Global)
+        );
+
+        save_concurrency_mode(&db, ConcurrencyMode::SrcDomain).unwrap();
+        assert_eq!(
+            load_concurrency_mode(&db).unwrap(),
+            Some(ConcurrencyMode::SrcDomain)
+        );
+
+        save_concurrency_mode(&db, ConcurrencyMode::UrlDomain).unwrap();
+        assert_eq!(
+            load_concurrency_mode(&db).unwrap(),
+            Some(ConcurrencyMode::UrlDomain)
+        );
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn parses_src_url_domain() {
+        assert_eq!(
+            src_url_domain("https://cdn.example.com:443/a.m3u8?x=1"),
+            "cdn.example.com"
+        );
+        assert_eq!(src_url_domain("recordplay.biz/e/abc"), "recordplay.biz");
+        assert_eq!(src_url_domain(""), "");
+    }
+
+    #[test]
+        fn finalizing_jobs_do_not_use_download_slots() {
         let (db, db_path) = test_db();
         for (id, status) in [
             ("running", "running"),
@@ -2002,7 +2166,7 @@ mod tests {
             )
             .unwrap();
         }
-        let ids = requeue_excess_running_jobs(&db, 3, 20).unwrap();
+        let ids = requeue_excess_running_jobs(&db, 3, 20, ConcurrencyMode::Global).unwrap();
 
         assert_eq!(ids.len(), 7);
         assert_eq!(ids.first().map(String::as_str), Some("job-10"));
@@ -2022,6 +2186,118 @@ mod tests {
             assert_eq!(job.status, "queued");
             assert_eq!(job.downloaded_bytes, index);
         }
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn requeues_newest_running_jobs_per_src_domain() {
+        let (db, db_path) = test_db();
+        for index in 1..=4 {
+            let id = format!("a-{index}");
+            create_job(
+                &db,
+                &id,
+                "url",
+                "https://a.example/video.mp4",
+                "a.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                1,
+            )
+            .unwrap();
+            db.execute(
+                "UPDATE download_jobs SET status = 'running', started_at = ?2 WHERE id = ?1",
+                params![id, index],
+            )
+            .unwrap();
+        }
+        for index in 1..=2 {
+            let id = format!("b-{index}");
+            create_job(
+                &db,
+                &id,
+                "url",
+                "https://b.example/video.mp4",
+                "b.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                1,
+            )
+            .unwrap();
+            db.execute(
+                "UPDATE download_jobs SET status = 'running', started_at = ?2 WHERE id = ?1",
+                params![id, index + 10],
+            )
+            .unwrap();
+        }
+        let ids = requeue_excess_running_jobs(&db, 3, 50, ConcurrencyMode::SrcDomain).unwrap();
+        assert_eq!(ids, vec!["a-4".to_string()]);
+        assert_eq!(count_active_jobs(&db).unwrap(), 5);
+        assert_eq!(get_job(&db, "a-4").unwrap().unwrap().status, "queued");
+        assert_eq!(get_job(&db, "a-1").unwrap().unwrap().status, "running");
+        assert_eq!(get_job(&db, "b-2").unwrap().unwrap().status, "running");
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn requeues_newest_running_jobs_per_url_domain() {
+        let (db, db_path) = test_db();
+        for index in 1..=4 {
+            let id = format!("a-{index}");
+            create_job(
+                &db,
+                &id,
+                "https://a.example/video.mp4",
+                "https://page.example/a",
+                "a.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                1,
+            )
+            .unwrap();
+            db.execute(
+                "UPDATE download_jobs SET status = 'running', started_at = ?2 WHERE id = ?1",
+                params![id, index],
+            )
+            .unwrap();
+        }
+        for index in 1..=2 {
+            let id = format!("b-{index}");
+            create_job(
+                &db,
+                &id,
+                "https://b.example/video.mp4",
+                "https://page.example/b",
+                "b.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                1,
+            )
+            .unwrap();
+            db.execute(
+                "UPDATE download_jobs SET status = 'running', started_at = ?2 WHERE id = ?1",
+                params![id, index + 10],
+            )
+            .unwrap();
+        }
+        let ids = requeue_excess_running_jobs(&db, 3, 50, ConcurrencyMode::UrlDomain).unwrap();
+        assert_eq!(ids, vec!["a-4".to_string()]);
+        assert_eq!(count_active_jobs(&db).unwrap(), 5);
+        assert_eq!(get_job(&db, "a-4").unwrap().unwrap().status, "queued");
+        assert_eq!(get_job(&db, "a-1").unwrap().unwrap().status, "running");
+        assert_eq!(get_job(&db, "b-2").unwrap().unwrap().status, "running");
 
         drop(db);
         let _ = std::fs::remove_file(db_path);

@@ -60,9 +60,15 @@
         "core": "opencode-go/deepseek-v4-flash",
         "lite": "opencode-go/deepseek-v4-flash"
       }
-    }
+    },
   },
   "model": {
+    "openrouter/deepseek/deepseek-v4-flash": [
+      "max",
+      "high",
+      "medium",
+      "low"
+    ],
     "opencode-go/deepseek-v4-flash": [
       "max",
       "high",

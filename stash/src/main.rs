@@ -31,6 +31,7 @@ struct AppState {
     web: web::WebAssets,
     browser_hls_level: AtomicU8,
     max_concurrent_jobs: Arc<AtomicUsize>,
+    concurrency_mode: Arc<AtomicU8>,
 }
 
 const DEFAULT_BROWSER_HLS_LEVEL: u8 = 1;
@@ -88,6 +89,7 @@ struct BrowserHlsSettingsReq {
 #[derive(Deserialize)]
 struct SchedulerSettingsReq {
     max_concurrent_jobs: usize,
+    concurrency_mode: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -774,6 +776,10 @@ async fn set_browser_hls_settings(
 async fn get_scheduler_settings(state: aw::Data<AppState>) -> HttpResponse {
     HttpResponse::Ok().json(serde_json::json!({
         "max_concurrent_jobs": state.max_concurrent_jobs.load(Ordering::Relaxed),
+        "concurrency_mode": store::ConcurrencyMode::from_u8(
+            state.concurrency_mode.load(Ordering::Relaxed),
+        )
+        .as_str(),
         "downloads_paused": state.jobs.is_resource_paused(),
         "available_space_bytes": state.jobs.available_space(),
         "disk_pause_below_bytes": state.config.scheduler.disk_pause_below_bytes,
@@ -789,8 +795,28 @@ async fn set_scheduler_settings(
         return HttpResponse::BadRequest()
             .json(serde_json::json!({ "error": "max_concurrent_jobs must be between 3 and 10" }));
     }
+    let mode = match body
+        .concurrency_mode
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(store::ConcurrencyMode::parse)
+    {
+        None => store::ConcurrencyMode::from_u8(state.concurrency_mode.load(Ordering::Relaxed)),
+        Some(Some(mode)) => mode,
+        Some(None) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "concurrency_mode must be src_domain, url_domain, or global"
+            }));
+        }
+    };
     if let Ok(db) = state.db.lock() {
         if let Err(error) = store::save_max_concurrent_jobs(&db, body.max_concurrent_jobs) {
+            warn!("scheduler settings persistence failed: {error}");
+            return HttpResponse::InternalServerError()
+                .json(serde_json::json!({ "error": "could not save scheduler settings" }));
+        }
+        if let Err(error) = store::save_concurrency_mode(&db, mode) {
             warn!("scheduler settings persistence failed: {error}");
             return HttpResponse::InternalServerError()
                 .json(serde_json::json!({ "error": "could not save scheduler settings" }));
@@ -802,20 +828,25 @@ async fn set_scheduler_settings(
     let previous = state
         .max_concurrent_jobs
         .swap(body.max_concurrent_jobs, Ordering::Relaxed);
-    let requeued = if body.max_concurrent_jobs < previous {
+    let previous_mode = store::ConcurrencyMode::from_u8(
+        state.concurrency_mode.swap(mode.as_u8(), Ordering::Relaxed),
+    );
+    let requeued = if body.max_concurrent_jobs < previous || mode != previous_mode {
         state
             .jobs
-            .requeue_excess_running_jobs(body.max_concurrent_jobs)
+            .requeue_excess_running_jobs(body.max_concurrent_jobs, mode)
             .await
     } else {
         Vec::new()
     };
     info!(
-        "max concurrent downloads changed: {}",
-        body.max_concurrent_jobs
+        "max concurrent downloads changed: {} ({})",
+        body.max_concurrent_jobs,
+        mode.as_str()
     );
     HttpResponse::Ok().json(serde_json::json!({
         "max_concurrent_jobs": body.max_concurrent_jobs,
+        "concurrency_mode": mode.as_str(),
         "requeued_jobs": requeued,
     }))
 }
@@ -948,6 +979,14 @@ async fn main() -> std::io::Result<()> {
             cfg.scheduler.max_concurrent_jobs.clamp(3, 10)
         }
     };
+    let concurrency_mode = match store::load_concurrency_mode(&db) {
+        Ok(Some(mode)) => mode,
+        Ok(None) => store::ConcurrencyMode::SrcDomain,
+        Err(error) => {
+            warn!("could not restore concurrency mode: {error}");
+            store::ConcurrencyMode::SrcDomain
+        }
+    };
     info!(
         "stash starting: bind={}, sqlite={}, root={}",
         cfg.bind,
@@ -979,9 +1018,11 @@ async fn main() -> std::io::Result<()> {
     let sched_jobs = job_manager.clone();
     let sched_vpn = vpn_config.clone();
     let scheduler_limit = Arc::new(AtomicUsize::new(max_concurrent_jobs));
+    let scheduler_mode = Arc::new(AtomicU8::new(concurrency_mode.as_u8()));
     let sched_limit = scheduler_limit.clone();
+    let sched_mode = scheduler_mode.clone();
     tokio::spawn(async move {
-        downloads::run_scheduler(sched_jobs, sched_cfg, sched_vpn, sched_limit).await;
+        downloads::run_scheduler(sched_jobs, sched_cfg, sched_vpn, sched_limit, sched_mode).await;
     });
 
     let vpn_cfg = vpn_config.clone();
@@ -1005,6 +1046,7 @@ async fn main() -> std::io::Result<()> {
         web: web_assets,
         browser_hls_level: AtomicU8::new(browser_hls_level),
         max_concurrent_jobs: scheduler_limit,
+        concurrency_mode: scheduler_mode,
     });
     let bind = cfg.bind.clone();
 

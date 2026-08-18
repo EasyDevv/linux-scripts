@@ -18,6 +18,16 @@
 			"description": "지정한 경로 아래의 빈 폴더를 재귀적으로 찾아 제거한다."
 		},
 		{
+			"name": "file-sync",
+			"mode": "symlink",
+			"category": "dev",
+			"target": "dev/file-sync.sh",
+			"ownedPaths": [
+				"dev/file-sync.sh"
+			],
+			"description": "홈과 git replica를 TOML include/exclude로 비교하고 commits|source|dest TUI에서 양방향 CRUD를 적용한다."
+		},
+		{
 			"name": "count-lines",
 			"mode": "symlink",
 			"category": "dev",

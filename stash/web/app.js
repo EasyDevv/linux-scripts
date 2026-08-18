@@ -48,30 +48,46 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	const downloadLimit = document.getElementById("download-limit");
-	if (downloadLimit) {
+	const concurrencyMode = document.getElementById("concurrency-mode");
+	function applySchedulerSettings(settings) {
+		if (!settings) return;
+		if (downloadLimit && settings.max_concurrent_jobs)
+			downloadLimit.value = String(settings.max_concurrent_jobs);
+		if (concurrencyMode && settings.concurrency_mode)
+			concurrencyMode.value = settings.concurrency_mode;
+	}
+	async function saveSchedulerSettings() {
+		const controls = [downloadLimit, concurrencyMode].filter(Boolean);
+		controls.forEach((control) => {
+			control.disabled = true;
+		});
+		try {
+			const response = await fetch("/stash/scheduler/settings", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					max_concurrent_jobs: Number(downloadLimit?.value || 3),
+					concurrency_mode: concurrencyMode?.value || "src_domain",
+				}),
+			});
+			if (!response.ok) throw new Error("could not update download limit");
+			applySchedulerSettings(await response.json());
+		} finally {
+			controls.forEach((control) => {
+				control.disabled = false;
+			});
+		}
+	}
+	if (downloadLimit || concurrencyMode) {
 		fetch("/stash/scheduler/settings")
 			.then((response) => (response.ok ? response.json() : null))
-			.then((settings) => {
-				if (settings)
-					downloadLimit.value = String(settings.max_concurrent_jobs);
-			})
+			.then(applySchedulerSettings)
 			.catch(() => {});
-		downloadLimit.addEventListener("change", async () => {
-			downloadLimit.disabled = true;
-			try {
-				const response = await fetch("/stash/scheduler/settings", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						max_concurrent_jobs: Number(downloadLimit.value),
-					}),
-				});
-				if (!response.ok) throw new Error("could not update download limit");
-				const settings = await response.json();
-				downloadLimit.value = String(settings.max_concurrent_jobs);
-			} finally {
-				downloadLimit.disabled = false;
-			}
+		downloadLimit?.addEventListener("change", () => {
+			void saveSchedulerSettings();
+		});
+		concurrencyMode?.addEventListener("change", () => {
+			void saveSchedulerSettings();
 		});
 	}
 
