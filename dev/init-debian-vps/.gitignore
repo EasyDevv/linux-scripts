@@ -1,1 +1,5 @@
 .log/
+
+# Local deployment profiles: commit only the redacted templates.
+profiles/*.json
+!profiles/*.example.json

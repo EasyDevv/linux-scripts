@@ -1,0 +1,355 @@
+#!/usr/bin/python3
+"""Classify high-signal journal events and forward selected alerts."""
+from __future__ import annotations
+
+from collections import Counter, deque
+import fnmatch
+import glob
+import json
+from pathlib import Path
+import re
+import shlex
+import subprocess
+import sys
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+ALERT = "/usr/local/sbin/vps-alert"
+HTTP_ADDR = ("127.0.0.1", 8766)
+SSH_CONFIG = Path("/etc/ssh/sshd_config")
+SSH_DENY_WINDOW = 300.0
+SSH_DENY_MIN_SOURCES = 5
+SSH_DENY_MIN_TOTAL = 20
+SSH_BURST_COOLDOWN = 600.0
+RECOVERY_WINDOW = 300.0
+RECOVERY_COOLDOWN = 300.0
+UNITS = [
+    "ssh.service",
+    "caddy.service",
+    "crowdsec.service",
+    "auditd.service",
+    "netbird.service",
+    "netbird-podman.service",
+    "falco-modern-bpf.service",
+    "nftables.service",
+]
+
+SSH_DENIAL_MARKERS = (
+    "not listed in AllowUsers",
+    "Failed password",
+    "Failed publickey",
+    "Invalid user",
+    "authentication failure",
+    "maximum authentication attempts exceeded",
+)
+SOURCE_RE = re.compile(r"\bfrom\s+([0-9A-Fa-f:.]+)")
+BY_SOURCE_RE = re.compile(r"\bby\s+(?:invalid user\s+)?\S+\s+([0-9A-Fa-f:.]+)\s+port\b")
+AUTH_USER_SOURCE_RE = re.compile(r"\bauthenticating user\s+\S+\s+([0-9A-Fa-f:.]+)\s+port\b")
+USER_PATTERNS = (
+    re.compile(r"\bfor\s+(?:invalid user\s+)?([^\s]+)\s+from\s+"),
+    re.compile(r"\buser\s+([^\s]+)\s+from\s+"),
+    re.compile(r"\bauthenticating user\s+([^\s]+)\s+"),
+)
+ACCEPTED_RE = re.compile(
+    r"Accepted\s+\S+\s+for\s+(?P<user>\S+)\s+from\s+(?P<source>[0-9A-Fa-f:.]+)"
+)
+
+
+def emit(
+    event: str,
+    severity: str,
+    body: str,
+    *,
+    outcome: str = "",
+    key: str = "",
+) -> None:
+    args = [ALERT, "--event", event, "--severity", severity]
+    if outcome:
+        args.extend(["--outcome", outcome])
+    if key:
+        args.extend(["--key", key])
+    args.extend(["--body", body[:600]])
+    try:
+        subprocess.Popen(
+            args,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        return
+
+
+def _config_files(path: Path, seen: set[Path] | None = None) -> list[Path]:
+    """Resolve the small subset of sshd Include syntax needed for AllowUsers."""
+    seen = set() if seen is None else seen
+    path = path.resolve()
+    if path in seen or not path.is_file():
+        return []
+    seen.add(path)
+    result = [path]
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return result
+    for raw in lines:
+        try:
+            fields = shlex.split(raw, comments=True)
+        except ValueError:
+            continue
+        if len(fields) < 2 or fields[0].lower() != "include":
+            continue
+        for pattern in fields[1:]:
+            if not pattern.startswith("/"):
+                pattern = str(path.parent / pattern)
+            for included in sorted(glob.glob(pattern)):
+                result.extend(_config_files(Path(included), seen))
+    return result
+
+
+def allowed_ssh_patterns(config_path: Path = SSH_CONFIG) -> list[str]:
+    patterns: list[str] = []
+    for path in _config_files(config_path):
+        try:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+        for raw in lines:
+            try:
+                fields = shlex.split(raw, comments=True)
+            except ValueError:
+                continue
+            if fields and fields[0].lower() == "allowusers":
+                patterns.extend(fields[1:])
+    return patterns
+
+
+def allowed_ssh_user(user: str, config_path: Path = SSH_CONFIG) -> bool:
+    patterns = allowed_ssh_patterns(config_path)
+    if not patterns:
+        return True
+    for pattern in patterns:
+        # AllowUsers accepts user or user@host patterns. The journal event has
+        # already supplied the authenticated user, so match its user portion.
+        user_pattern = pattern.rsplit("@", 1)[0]
+        if fnmatch.fnmatchcase(user, user_pattern):
+            return True
+    return False
+
+
+def ssh_source(message: str) -> str:
+    match = SOURCE_RE.search(message) or BY_SOURCE_RE.search(message) or AUTH_USER_SOURCE_RE.search(message)
+    return match.group(1).rstrip(".,") if match else ""
+
+
+def ssh_user(message: str) -> str:
+    for pattern in USER_PATTERNS:
+        match = pattern.search(message)
+        if match:
+            return match.group(1).rstrip(".,")
+    return "?"
+
+
+def is_ssh_denial(message: str) -> bool:
+    return any(marker in message for marker in SSH_DENIAL_MARKERS) or (
+        "[preauth]" in message and "Accepted " not in message
+    )
+
+
+def unit_role(unit: str) -> str | None:
+    value = unit.lower()
+    if value in {"sshd", "sshd.service", "ssh.service"} or value.endswith("/ssh.service"):
+        return "ssh"
+    if "netbird" in value:
+        return "netbird"
+    return None
+
+
+class AlertTracker:
+    """Keep short-lived aggregates in the journal watcher process."""
+
+    def __init__(self) -> None:
+        self.ssh_denials: deque[tuple[float, str, str]] = deque()
+        self.last_burst_at: float | None = None
+        self.unit_failures: dict[str, tuple[float, str, str]] = {}
+        self.last_recovery_at: float | None = None
+
+    def record_ssh_denial(self, source: str, user: str, now: float) -> str | None:
+        if not source:
+            return None
+        self.ssh_denials.append((now, source, user))
+        cutoff = now - SSH_DENY_WINDOW
+        while self.ssh_denials and self.ssh_denials[0][0] < cutoff:
+            self.ssh_denials.popleft()
+        sources = Counter(item[1] for item in self.ssh_denials)
+        users = Counter(item[2] for item in self.ssh_denials)
+        if len(sources) < SSH_DENY_MIN_SOURCES and len(self.ssh_denials) < SSH_DENY_MIN_TOTAL:
+            return None
+        if self.last_burst_at is not None and now - self.last_burst_at < SSH_BURST_COOLDOWN:
+            return None
+        self.last_burst_at = now
+        source_text = ", ".join(f"{ip}={count}" for ip, count in sources.most_common(5))
+        user_text = ", ".join(f"{name}={count}" for name, count in users.most_common(5))
+        return (
+            f"window={int(SSH_DENY_WINDOW)}s total={len(self.ssh_denials)} "
+            f"distinct_sources={len(sources)} users={user_text or '?'} "
+            f"sources={source_text or '?'}"
+        )
+
+    def record_unit_failure(self, role: str, unit: str, message: str, now: float) -> str | None:
+        self.unit_failures[role] = (now, unit, message[:260])
+        if "ssh" not in self.unit_failures or "netbird" not in self.unit_failures:
+            return None
+        timestamps = [self.unit_failures[name][0] for name in ("ssh", "netbird")]
+        if max(timestamps) - min(timestamps) > RECOVERY_WINDOW:
+            return None
+        if self.last_recovery_at is not None and now - self.last_recovery_at < RECOVERY_COOLDOWN:
+            return None
+        self.last_recovery_at = now
+        details = "; ".join(
+            f"{name}={self.unit_failures[name][1]}: {self.unit_failures[name][2]}"
+            for name in ("ssh", "netbird")
+        )
+        return f"window={int(RECOVERY_WINDOW)}s {details}"
+
+
+TRACKER = AlertTracker()
+
+
+class CrowdsecHandler(BaseHTTPRequestHandler):
+    def log_message(self, *_args: object) -> None:
+        return
+
+    def do_POST(self) -> None:
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        raw = self.rfile.read(max(0, length))
+        content = ""
+        try:
+            data = json.loads(raw.decode("utf-8") or "{}")
+            if isinstance(data, dict):
+                content = str(data.get("content") or "")
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            content = ""
+        if not content:
+            content = raw.decode("utf-8", errors="replace")
+        emit(
+            "crowdsec-decision",
+            "error",
+            content[:600],
+            outcome="ban-or-decision",
+            key="crowdsec-decision:" + content[:240],
+        )
+        self.send_response(204)
+        self.end_headers()
+
+
+def start_http() -> None:
+    httpd = ThreadingHTTPServer(HTTP_ADDR, CrowdsecHandler)
+    threading.Thread(target=httpd.serve_forever, daemon=True, name="crowdsec-http").start()
+
+
+def handle(
+    entry: dict,
+    *,
+    now: float | None = None,
+    tracker: AlertTracker | None = None,
+    emit_fn=emit,
+    config_path: Path = SSH_CONFIG,
+) -> None:
+    tracker = TRACKER if tracker is None else tracker
+    now = time.time() if now is None else now
+    unit = str(entry.get("_SYSTEMD_UNIT") or entry.get("SYSLOG_IDENTIFIER") or "journal")
+    message = str(entry.get("MESSAGE", "")).strip()
+    if not message:
+        return
+    try:
+        priority = int(entry.get("PRIORITY", "6"))
+    except (TypeError, ValueError):
+        priority = 6
+
+    accepted = ACCEPTED_RE.search(message)
+    if accepted:
+        user = accepted.group("user")
+        source = accepted.group("source")
+        if not allowed_ssh_user(user, config_path):
+            emit_fn(
+                "ssh-unauthorized-login",
+                "critical",
+                message[:600],
+                outcome="success",
+                key=f"ssh-unauthorized-login:{user}:{source}",
+            )
+        else:
+            emit_fn(
+                "ssh-login",
+                "info",
+                message[:600],
+                outcome="success",
+                key=f"ssh-login:{user}:{source}",
+            )
+        return
+
+    if is_ssh_denial(message):
+        summary = tracker.record_ssh_denial(ssh_source(message), ssh_user(message), now)
+        if summary:
+            emit_fn("ssh-deny-burst", "error", summary, key="ssh-deny-burst")
+        return
+
+    if priority <= 3:
+        role = unit_role(unit)
+        if role:
+            summary = tracker.record_unit_failure(role, unit, message, now)
+            if summary:
+                emit_fn(
+                    "recovery-path-failure",
+                    "critical",
+                    summary,
+                    key="recovery-path-failure",
+                )
+            return
+        emit_fn(
+            "unit-error",
+            "error",
+            message[:600],
+            key=f"unit-error:{unit}",
+        )
+
+
+def main() -> int:
+    start_http()
+    cmd = [
+        "journalctl",
+        "-o",
+        "json",
+        "-n",
+        "0",
+        "-f",
+        "--no-pager",
+    ]
+    for unit in UNITS:
+        cmd.extend(["-u", unit])
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    assert proc.stdout is not None
+    for raw in proc.stdout:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            handle(json.loads(raw))
+        except json.JSONDecodeError:
+            continue
+    return proc.wait()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

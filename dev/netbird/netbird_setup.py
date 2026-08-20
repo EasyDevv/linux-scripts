@@ -19,17 +19,19 @@ from pathlib import Path
 from typing import Any, Callable, TextIO
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-CONFIG_PATH = SCRIPT_DIR / ".env.netbird"
-KEYS_PATH = SCRIPT_DIR / ".env.netbird.setup-keys"
+DEV_DIR = SCRIPT_DIR.parent
+CONFIG_PATH = DEV_DIR / ".env.netbird"
+KEYS_NAME = ".env.netbird.setup.keys"
+KEYS_PATH = SCRIPT_DIR / KEYS_NAME
 MSI_CACHE = SCRIPT_DIR / ".data" / "netbird_installer_windows_amd64.msi"
 MSI_NAME = "netbird_installer_windows_amd64.msi"
 MSI_URL = "https://pkgs.netbird.io/windows/msi/x64"
-DEFAULT_MANAGEMENT_URL = "https://vps-a851fbbf.vps.ovh.us"
+DEFAULT_MANAGEMENT_URL = "https://management.example.invalid"
 DEFAULT_AUTO_GROUP = "employees"
 DEFAULT_EXPIRES_IN = 604800
 DEFAULT_USAGE_LIMIT = 1
 USB_PAYLOAD_DIR = "netbird-setup"
-USB_KEYS_NAME = ".env.netbird.setup.keys"
+USB_KEYS_NAME = KEYS_NAME
 WINDOWS_DIR = SCRIPT_DIR / "windows"
 WINDOWS_PS1_NAME = "install-netbird.ps1"
 WINDOWS_CMD_NAME = "install-netbird.cmd"
@@ -57,11 +59,12 @@ netbird-setup - issue NetBird setup keys and write a Windows USB installer
 
 Usage:
   netbird-setup issue [NAME] [--replace]
+  netbird-setup employees --roster PATH [--apply]
   netbird-setup usb [--dest PATH]
   netbird-setup list
   netbird-setup --help
 
-Keys are stored as NAME=value in .env.netbird.setup-keys (for example GREEN_HOME_PC=).
+Keys are stored as NAME=value in .env.netbird.setup.keys (for example EXAMPLE_ADMIN_PC=).
 issue mints a one-off employees key (usage_limit 1, 7 days).
 usb copies the key file and an interactive Windows installer onto a mounted USB.
 The Windows script reads .env.netbird.setup.keys, lets you pick a key, then runs netbird up.
@@ -154,6 +157,15 @@ def env_header(management_url: str, auto_group: str) -> str:
         f"# auto-group: {auto_group}\n"
         f"# type: one-off, usage_limit: {DEFAULT_USAGE_LIMIT}, "
         f"expires_in: {DEFAULT_EXPIRES_IN}\n"
+        "#\n"
+        "# PC:\n"
+        f"#   netbird up --management-url {management_url} --setup-key <KEY>\n"
+        "#\n"
+        "# Mobile (iOS/Android):\n"
+        "#   1. Change Server\n"
+        f"#   2. Management URL: {management_url}\n"
+        "#   3. Add this device with a setup key\n"
+        "#   4. paste <KEY> and connect\n"
     )
 
 
@@ -741,6 +753,72 @@ def resolve_usb_dest(
     return dest
 
 
+def roster_key_names(people: list[dict[str, Any]]) -> list[str]:
+    names: list[str] = []
+    for person in people:
+        if not isinstance(person, dict):
+            raise AppError("employee roster people must be objects")
+        for field in ("pc", "phone"):
+            raw = person.get(field)
+            if not isinstance(raw, str) or not raw.strip():
+                raise AppError(f"employee roster missing {field}")
+            names.append(normalize_key_name(raw))
+    if len(names) != len(set(names)):
+        raise AppError("employee roster has duplicate key names")
+    return names
+
+
+def load_employee_roster(path: Path) -> tuple[list[str], Path]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise AppError("employee roster must be an object")
+    people = raw.get("people")
+    if not isinstance(people, list) or not people:
+        raise AppError("employee roster needs people")
+    names = roster_key_names(people)
+    raw_keys = raw.get("keys_path")
+    if raw_keys:
+        keys_path = Path(str(raw_keys)).expanduser()
+        if not keys_path.is_absolute():
+            keys_path = SCRIPT_DIR / keys_path.name
+    else:
+        keys_path = KEYS_PATH
+    return names, keys_path
+
+
+def cmd_employees(
+    args: argparse.Namespace,
+    *,
+    config: Config | None = None,
+    create: Callable[[Config, str], str] = create_setup_key,
+    stdout: TextIO = sys.stdout,
+) -> int:
+    names, keys_path = load_employee_roster(Path(args.roster).expanduser())
+    loaded = config or load_config()
+    loaded = Config(
+        api_key=loaded.api_key,
+        management_url=loaded.management_url,
+        auto_group=str(args.auto_group or loaded.auto_group),
+        config_path=loaded.config_path,
+        keys_path=keys_path,
+    )
+    existing = load_env_file(keys_path)
+    missing = [name for name in names if not existing.get(name)]
+    if not missing:
+        stdout.write(f"PASS employee keys already stored ({len(names)})\n")
+        return 0
+    for name in missing:
+        stdout.write(f"PLAN mint employee key {name}\n")
+    if not args.apply:
+        return 0
+    for name in missing:
+        key = create(loaded, name)
+        save_setup_key(loaded, name, key)
+        stdout.write(f"CHANGE minted {name} (one-off, {loaded.auto_group}, 7d)\n")
+    stdout.write(f"PASS wrote {keys_path.name} without printing secrets\n")
+    return 0
+
+
 def cmd_issue(
     args: argparse.Namespace,
     *,
@@ -850,6 +928,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     listed = sub.add_parser("list", help="list stored key names")
     listed.set_defaults(func=cmd_list)
+
+    employees = sub.add_parser(
+        "employees",
+        help="mint waiting one-off employee keys (7d, usage 1)",
+    )
+    employees.add_argument("--roster", required=True, help="JSON roster path")
+    employees.add_argument("--auto-group", default="")
+    employees.add_argument("--apply", action="store_true")
+    employees.set_defaults(func=cmd_employees)
     return parser
 
 

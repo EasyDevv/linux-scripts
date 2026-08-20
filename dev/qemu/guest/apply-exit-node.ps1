@@ -1,7 +1,16 @@
 #Requires -Version 5.1
-# Apply the default Tailscale exit-node. Safe to run at boot, logon, or by hand.
+# Apply the configured Tailscale exit-node. Safe to run at boot, logon, or by hand.
 $ErrorActionPreference = 'Continue'
-$ExitNode = 'redmi-note-3'
+$ExitNodeConfig = Join-Path $PSScriptRoot 'exit-node.txt'
+if (-not (Test-Path -LiteralPath $ExitNodeConfig)) {
+    Write-Error "missing configured exit-node: $ExitNodeConfig"
+    exit 1
+}
+$ExitNode = (Get-Content -LiteralPath $ExitNodeConfig -TotalCount 1).Trim()
+if (-not $ExitNode) {
+    Write-Error "configured exit-node is empty: $ExitNodeConfig"
+    exit 1
+}
 $Tailscale = 'C:\Program Files\Tailscale\tailscale.exe'
 $Log = 'C:\Users\Docker\Scripts\exit-node.log'
 

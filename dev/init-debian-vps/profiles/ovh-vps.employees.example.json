@@ -1,0 +1,28 @@
+{
+  "auto_group": "employees",
+  "expires_in": 604800,
+  "usage_limit": 1,
+  "keys_path": ".env.netbird.setup.keys",
+  "people": [
+    {
+      "email": "admin@example.invalid",
+      "pc": "EXAMPLE_ADMIN_PC",
+      "phone": "EXAMPLE_ADMIN_PHONE"
+    },
+    {
+      "email": "user-01@example.invalid",
+      "pc": "EXAMPLE_USER_01_PC",
+      "phone": "EXAMPLE_USER_01_PHONE"
+    },
+    {
+      "email": "manager-01@example.invalid",
+      "pc": "EXAMPLE_MANAGER_01_PC",
+      "phone": "EXAMPLE_MANAGER_01_PHONE"
+    },
+    {
+      "email": "customer-01@example.invalid",
+      "pc": "EXAMPLE_CUSTOMER_01_PC",
+      "phone": "EXAMPLE_CUSTOMER_01_PHONE"
+    }
+  ]
+}

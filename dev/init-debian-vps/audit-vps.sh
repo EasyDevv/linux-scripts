@@ -3,8 +3,9 @@ set -Eeuo pipefail
 
 target=${1:?Usage: audit-vps.sh SSH_TARGET}
 script_dir=$(dirname "$(readlink -f "$0")")
+source "${script_dir}/ssh-options.sh"
 
-ssh -o BatchMode=yes "$target" 'sudo bash -s' <<'REMOTE'
+ssh "${SSH_CONTROL_OPTIONS[@]}" -o BatchMode=yes "$target" 'sudo bash -s' <<'REMOTE'
 set -u
 
 section() { printf '\n== %s ==\n' "$1"; }
@@ -51,9 +52,14 @@ else
 fi
 
 section Services
-for unit in ssh nftables fail2ban caddy netbird-podman; do
+for unit in ssh nftables caddy netbird-podman crowdsec crowdsec-firewall-bouncer auditd falco-modern-bpf vps-journal-watch; do
     check_service "$unit"
 done
+if systemctl is-active --quiet fail2ban; then
+    printf 'WARN fail2ban active; CrowdSec already covers SSH. Not part of this profile.\n'
+else
+    printf 'PASS fail2ban not active\n'
+fi
 systemctl --failed --no-pager
 
 section Updates

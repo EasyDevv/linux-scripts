@@ -1,0 +1,363 @@
+#!/usr/bin/python3
+"""Apply the VPS alert policy and send selected events to Discord."""
+from __future__ import annotations
+
+import argparse
+from datetime import datetime, timezone
+import fcntl
+import json
+import os
+import re
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+ENV_FILE = Path("/etc/vps-alert/.env.sender")
+LEGACY_ENVS = (
+    Path("/etc/vps-alert/sender.env"),
+    Path("/etc/vps-alert/discord.env"),
+)
+STATE_DIR = Path("/var/lib/vps-alert")
+STATE_FILE = STATE_DIR / "throttle.json"
+LOCK_FILE = STATE_DIR / "throttle.lock"
+HOST = os.uname().nodename
+MAX_LEN = 1800
+WINDOW_SEC = 600
+MAX_NONCRITICAL_PER_WINDOW = 20
+
+SEVERITY_COLORS = {
+    "debug": 0x95A5A6,
+    "info": 0x3498DB,
+    "notice": 0x2ECC71,
+    "warning": 0xF1C40F,
+    "error": 0xE67E22,
+    "critical": 0xE74C3C,
+    "alert": 0xC0392B,
+    "emergency": 0x8E0000,
+}
+EVENT_ICONS = {
+    "ssh-login": "✅",
+    "ssh-unauthorized-login": "🚨",
+    "crowdsec-decision": "🛡️",
+    "ssh-deny-burst": "🌊",
+    "authorized-keys-change": "🔑",
+    "sshd-config-change": "⚙️",
+    "firewall-change": "🧱",
+    "recovery-path-failure": "🆘",
+    "falco": "🕵️",
+    "unit-error": "⚠️",
+}
+EVENT_TITLES = {
+    "ssh-login": "SSH login succeeded",
+    "ssh-unauthorized-login": "Unauthorized SSH login",
+    "crowdsec-decision": "CrowdSec decision",
+    "ssh-deny-burst": "SSH denial burst",
+    "authorized-keys-change": "SSH authorized keys changed",
+    "sshd-config-change": "SSH configuration changed",
+    "firewall-change": "Firewall configuration changed",
+    "recovery-path-failure": "SSH + NetBird recovery path failed",
+    "falco": "Falco security event",
+    "unit-error": "System unit error",
+}
+
+SEVERITY_RANK = {
+    "debug": 0,
+    "info": 1,
+    "notice": 2,
+    "warning": 3,
+    "error": 4,
+    "critical": 5,
+    "alert": 6,
+    "emergency": 7,
+}
+
+# These events are useful even when their syslog/Falco severity is low.
+IMMEDIATE_EVENTS = {
+    "ssh-login",
+    "ssh-unauthorized-login",
+    "crowdsec-decision",
+    "authorized-keys-change",
+    "sshd-config-change",
+    "firewall-change",
+    "security-config-change",
+    "account-change",
+    "ssh-deny-burst",
+    "recovery-path-failure",
+}
+
+# The key is intentionally event-scoped. The callers pass a more specific key
+# when a path, source, or rule should be independently deduplicated.
+THROTTLE_SECONDS = {
+    "ssh-login": 0,
+    "ssh-unauthorized-login": 30,
+    "crowdsec-decision": 30,
+    "authorized-keys-change": 30,
+    "sshd-config-change": 30,
+    "firewall-change": 30,
+    "security-config-change": 30,
+    "account-change": 30,
+    "ssh-deny-burst": 600,
+    "recovery-path-failure": 300,
+    "unit-error": 120,
+    "falco": 120,
+}
+
+
+def parse_env(path: Path) -> dict[str, str]:
+    values: dict[str, str] = {}
+    if not path.is_file():
+        return values
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip("'").strip('"')
+    return values
+
+
+def load_config() -> dict[str, str]:
+    values = parse_env(ENV_FILE)
+    if not values:
+        for path in LEGACY_ENVS:
+            values = parse_env(path)
+            if values:
+                break
+    hook = values.get("DISCORD_WEBHOOK") or values.get("DISCORD_OVH_VPS_WEBHOOK") or ""
+    if hook.startswith("https://"):
+        values["DISCORD_WEBHOOK"] = hook
+    if not values.get("DISCORD_WEBHOOK"):
+        raise SystemExit("vps-alert: no Discord webhook")
+    return values
+
+
+def normalize_severity(value: str) -> str:
+    severity = value.strip().lower()
+    if severity not in SEVERITY_RANK:
+        choices = ", ".join(SEVERITY_RANK)
+        raise SystemExit(f"vps-alert: invalid severity {value!r}; use {choices}")
+    return severity
+
+
+def should_notify(event: str, severity: str) -> bool:
+    """Return whether an event crosses the Discord delivery policy."""
+    severity = normalize_severity(severity)
+    if event in IMMEDIATE_EVENTS:
+        return True
+    if event in {"ssh-deny", "ssh-preauth", "routine"}:
+        return False
+    if event in {"falco", "unit-error"}:
+        return SEVERITY_RANK[severity] >= SEVERITY_RANK["error"]
+    # Unknown events follow the conservative standard: ERROR and above only.
+    return SEVERITY_RANK[severity] >= SEVERITY_RANK["error"]
+
+
+def load_state() -> dict:
+    if not STATE_FILE.is_file():
+        return {"sent": [], "last": {}}
+    try:
+        value = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"sent": [], "last": {}}
+    if not isinstance(value, dict):
+        return {"sent": [], "last": {}}
+    sent = value.get("sent")
+    last = value.get("last")
+    if not isinstance(sent, list):
+        sent = []
+    if not isinstance(last, dict):
+        last = {}
+    return {"sent": sent, "last": last}
+
+
+def save_state(state: dict) -> None:
+    tmp = STATE_FILE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, separators=(",", ":")), encoding="utf-8")
+    tmp.replace(STATE_FILE)
+
+
+def _recent_timestamps(values: object, now: float) -> list[float]:
+    if not isinstance(values, list):
+        return []
+    result: list[float] = []
+    for value in values:
+        try:
+            timestamp = float(value)
+        except (TypeError, ValueError):
+            continue
+        if now - timestamp < WINDOW_SEC:
+            result.append(timestamp)
+    return result
+
+
+def allow(key: str, event: str, severity: str) -> bool:
+    """Deduplicate alerts without allowing a noisy stream to hide critical ones."""
+    severity = normalize_severity(severity)
+    now = time.time()
+    STATE_DIR.mkdir(mode=0o750, exist_ok=True)
+    with LOCK_FILE.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        state = load_state()
+        sent = _recent_timestamps(state.get("sent"), now)
+        last: dict[str, float] = {}
+        raw_last = state.get("last")
+        if isinstance(raw_last, dict):
+            for name, value in raw_last.items():
+                try:
+                    timestamp = float(value)
+                except (TypeError, ValueError):
+                    continue
+                if now - timestamp < WINDOW_SEC:
+                    last[str(name)] = timestamp
+
+        throttle = THROTTLE_SECONDS.get(event, 120)
+        previous = last.get(key)
+        if throttle and previous is not None and now - previous < throttle:
+            return False
+
+        is_critical = SEVERITY_RANK[severity] >= SEVERITY_RANK["error"]
+        if not is_critical and len(sent) >= MAX_NONCRITICAL_PER_WINDOW:
+            return False
+
+        last[key] = now
+        if not is_critical:
+            sent.append(now)
+        save_state({"sent": sent, "last": last})
+        return True
+
+
+def _field_value(value: str) -> str:
+    safe = value.strip().replace("`", "'") or "-"
+    return f"`{safe[:1020]}`"
+
+
+def build_discord_payload(
+    event: str,
+    severity: str,
+    outcome: str,
+    body: str,
+) -> dict:
+    """Build one readable Discord embed without exposing delivery secrets."""
+    severity = normalize_severity(severity)
+    title = EVENT_TITLES.get(event, event.replace("-", " ").title())
+    icon = EVENT_ICONS.get(event, "🔔")
+    details = (body.strip() or "No additional details.")[:MAX_LEN]
+    # Keep journal text visually grouped and prevent a log line from closing
+    # the surrounding Markdown code block.
+    details = details.replace("```", "'''\u200b")
+    fields = [
+        {"name": "Host", "value": _field_value(HOST), "inline": True},
+        {"name": "Event", "value": _field_value(event), "inline": True},
+        {"name": "Severity", "value": _field_value(severity.upper()), "inline": True},
+        {
+            "name": "Outcome",
+            "value": _field_value(outcome.upper() if outcome else "not specified"),
+            "inline": True,
+        },
+    ]
+    return {
+        "username": "ovh-vps",
+        "embeds": [
+            {
+                "title": f"{icon} {title}",
+                "description": f"```text\n{details}\n```",
+                "color": SEVERITY_COLORS[severity],
+                "fields": fields,
+                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                "footer": {"text": "vps-alert • standard severity + outcome"},
+            }
+        ],
+        "allowed_mentions": {"parse": []},
+    }
+
+
+def send_discord(cfg: dict[str, str], payload: dict) -> bool:
+    webhook = cfg.get("DISCORD_WEBHOOK") or ""
+    if not webhook.startswith("https://"):
+        return False
+    encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    req = urllib.request.Request(
+        webhook,
+        data=encoded,
+        method="POST",
+        headers={"Content-Type": "application/json", "User-Agent": "vps-alert"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status in (200, 204)
+    except urllib.error.HTTPError as exc:
+        print(f"vps-alert: discord http {exc.code}", file=sys.stderr)
+        return False
+    except urllib.error.URLError:
+        print("vps-alert: discord request failed", file=sys.stderr)
+        return False
+
+
+def default_key(event: str, body: str) -> str:
+    if event in {
+        "authorized-keys-change",
+        "sshd-config-change",
+        "firewall-change",
+        "security-config-change",
+        "account-change",
+    }:
+        match = re.search(r"(?:path|name)=([^\s]+)", body)
+        if match:
+            path = match.group(1).strip('"')
+            return f"{event}:{path[:160]}"
+    if event == "ssh-login":
+        match = re.search(r"for\s+(\S+)\s+from\s+(\S+)", body)
+        if match:
+            return f"{event}:{match.group(1)}:{match.group(2)}"
+    return f"{event}:{body[:240]}"
+
+
+def parse_args(argv: list[str]) -> tuple[str, str, str, str, str]:
+    parser = argparse.ArgumentParser(description="send a policy-filtered VPS alert")
+    parser.add_argument("--event")
+    parser.add_argument("--severity")
+    parser.add_argument("--outcome", default="")
+    parser.add_argument("--key", default="")
+    parser.add_argument("--body", default="")
+    parser.add_argument("legacy", nargs="*")
+    args = parser.parse_args(argv)
+
+    if args.event:
+        event = args.event.strip()
+        body = args.body or " ".join(args.legacy).strip()
+    elif args.legacy:
+        # Keep the old vps-alert <title> [body] form usable for operators.
+        event = args.legacy[0].strip()
+        body = args.body or " ".join(args.legacy[1:]).strip()
+    else:
+        parser.error("provide --event EVENT or a legacy title")
+    if not event:
+        parser.error("event cannot be empty")
+    severity = normalize_severity(args.severity or ("info" if event == "ssh-login" else "error"))
+    return event, severity, args.outcome.strip(), args.key.strip(), body
+
+
+def main(argv: list[str] | None = None) -> int:
+    event, severity, outcome, explicit_key, body = parse_args(
+        sys.argv[1:] if argv is None else argv
+    )
+    if not should_notify(event, severity):
+        return 0
+
+    body = body[:MAX_LEN]
+    key = explicit_key or default_key(event, body)
+    if not allow(key, event, severity):
+        return 0
+
+    cfg = load_config()
+    payload = build_discord_payload(event, severity, outcome, body)
+    if send_discord(cfg, payload):
+        return 0
+    print("vps-alert: Discord delivery failed", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

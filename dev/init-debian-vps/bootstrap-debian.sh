@@ -71,7 +71,8 @@ export DEBIAN_FRONTEND=noninteractive
 setup_log_action 'APT update, full-upgrade, and required package installation'
 apt-get update
 apt-get -y full-upgrade
-apt-get install -y caddy podman podman-compose podman-docker jq curl openssl ca-certificates nftables fail2ban unattended-upgrades needrestart iproute2
+apt-get install -y caddy podman podman-compose podman-docker jq curl openssl ca-certificates nftables unattended-upgrades needrestart iproute2
+# CrowdSec/Falco/auditd come from early-warning/.
 
 install -d -o root -g root -m 0755 /etc/ssh/sshd_config.d
 setup_log_before /etc/ssh/sshd_config.d/99-vps-hardening.conf
@@ -93,6 +94,7 @@ setup_log_after /etc/ssh/sshd_config.d/99-vps-hardening.conf
 sshd -t
 
 setup_log_before /etc/nftables.conf
+# Overlay is not a trusted LAN here. NetBird inserts wt0 passthrough and its own ACL.
 cat >/etc/nftables.conf <<'EOF'
 #!/usr/sbin/nft -f
 flush ruleset
@@ -105,8 +107,9 @@ table inet filter {
         ip protocol icmp accept
         ip6 nexthdr ipv6-icmp accept
         iifname "podman*" meta l4proto { tcp, udp } th dport 53 accept
-        tcp dport { 22, 80, 443 } ct state new accept
-        udp dport 3478 ct state new accept
+        meta nfproto ipv4 tcp dport 22 ct state new accept
+        tcp dport { 80, 443 } ct state new accept
+        meta nfproto ipv4 udp dport 3478 ct state new accept
     }
     chain forward {
         type filter hook forward priority filter; policy accept;
@@ -118,22 +121,6 @@ table inet filter {
 EOF
 setup_log_after /etc/nftables.conf
 nft -c -f /etc/nftables.conf
-
-setup_log_before /etc/fail2ban/jail.local
-cat >/etc/fail2ban/jail.local <<'EOF'
-[DEFAULT]
-backend = systemd
-banaction = nftables-multiport
-bantime = 1h
-findtime = 10m
-maxretry = 5
-
-[sshd]
-enabled = true
-port = ssh
-EOF
-setup_log_after /etc/fail2ban/jail.local
-fail2ban-client -t
 
 setup_log_before /etc/sysctl.d/99-vps-hardening.conf
 cat >/etc/sysctl.d/99-vps-hardening.conf <<'EOF'
@@ -171,7 +158,6 @@ setup_log_after /etc/systemd/resolved.conf.d/99-vps-hardening.conf
 
 systemctl reload ssh
 systemctl enable --now nftables
-systemctl restart fail2ban
 systemctl restart systemd-resolved
 systemctl enable apt-daily.timer apt-daily-upgrade.timer
 sysctl --system

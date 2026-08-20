@@ -65,6 +65,7 @@ if [[ $mode == --remove ]]; then
     done
     systemctl disable --now netbird-setup-guard.timer 2>/dev/null || true
     systemctl daemon-reload
+    systemctl reset-failed netbird-setup-guard.service netbird-setup-guard.timer 2>/dev/null || true
     if systemctl is-active --quiet caddy; then
         systemctl reload caddy
     fi

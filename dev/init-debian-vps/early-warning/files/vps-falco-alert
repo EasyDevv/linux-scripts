@@ -1,0 +1,72 @@
+#!/usr/bin/python3
+"""Forward Falco ERROR-and-above events to vps-alert."""
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+
+ALERT = "/usr/local/sbin/vps-alert"
+SEVERITY_RANK = {
+    "debug": 0,
+    "informational": 1,
+    "info": 1,
+    "notice": 2,
+    "warning": 3,
+    "error": 4,
+    "critical": 5,
+    "alert": 6,
+    "emergency": 7,
+}
+
+
+def normalize_priority(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+def should_alert(priority: str) -> bool:
+    return SEVERITY_RANK.get(normalize_priority(priority), -1) >= SEVERITY_RANK["error"]
+
+
+def main() -> int:
+    sys.stdin.reconfigure(errors="replace")
+    for raw in sys.stdin:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            event = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        priority = normalize_priority(event.get("priority"))
+        if not should_alert(priority):
+            continue
+        rule = str(event.get("rule", "falco"))[:80]
+        output = str(event.get("output", raw))[:500]
+        try:
+            subprocess.Popen(
+                [
+                    ALERT,
+                    "--event",
+                    "falco",
+                    "--severity",
+                    priority,
+                    "--outcome",
+                    "detected",
+                    "--key",
+                    f"falco:{rule}",
+                    "--body",
+                    output,
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError:
+            continue
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

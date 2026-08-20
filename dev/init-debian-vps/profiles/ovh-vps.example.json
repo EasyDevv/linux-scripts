@@ -1,0 +1,27 @@
+{
+  "name": "ovh-vps",
+  "target": "ovh-vps",
+  "admin_user": "debian",
+  "domain": "vps.example.invalid",
+  "ovh_service": "vps-example",
+  "ovh_cli_profile": "owner-offline",
+  "expected_public_ip": "203.0.113.10",
+  "image_id": "00000000-0000-0000-0000-000000000000",
+  "pubkey": "~/.ssh/example_vps.pub",
+  "host_selector": "ovh-vps",
+  "host_group": "app-servers",
+  "admin_group": "dev",
+  "admin_peer": "admin-peer",
+  "overlay_alias": "ovh-vps-nb",
+  "access_spec": "ovh-vps.netbird.json",
+  "image_target": "image-host",
+  "image_selector": "image-host",
+  "image_group": "image-servers",
+  "image_user": "image-user",
+  "employee_roster": "ovh-vps.employees.json",
+  "early_warning": true,
+  "reboot": true,
+  "sender_env_candidates": [
+    "~/.config/example/sender.env"
+  ]
+}

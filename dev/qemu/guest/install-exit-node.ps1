@@ -1,5 +1,5 @@
 #Requires -RunAsAdministrator
-# Persist the default exit-node across boot/logon. Do not put the 1-hour
+# Persist the configured exit-node across boot/logon. Do not put the 1-hour
 # helper on the desktop; that is request-only. Scripts arrive over SSH.
 $ErrorActionPreference = 'Stop'
 $Scripts = 'C:\Users\Docker\Scripts'
@@ -10,6 +10,7 @@ New-Item -ItemType Directory -Path $Scripts -Force | Out-Null
 
 $needed = @(
     'apply-exit-node.ps1'
+    'exit-node.txt'
     'disable-exit-node-1h.ps1'
     'tailscale-exit-node-off.bat'
 )

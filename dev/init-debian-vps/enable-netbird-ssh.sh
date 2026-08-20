@@ -21,9 +21,10 @@ elif [[ -n ${3:-} ]]; then
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${script_dir}/ssh-options.sh"
 
 # A connected daemon ignores a second `netbird up`. Down first, then up with flags.
-ssh -o BatchMode=yes -o ConnectTimeout=20 "$target" "sudo -n env DISABLE_SSH_AUTH=$disable_ssh_auth bash -s" <<'REMOTE'
+ssh "${SSH_CONTROL_OPTIONS[@]}" -o BatchMode=yes -o ConnectTimeout=20 "$target" "sudo -n env DISABLE_SSH_AUTH=$disable_ssh_auth bash -s" <<'REMOTE'
 set -Eeuo pipefail
 if ! command -v netbird >/dev/null; then
     printf 'netbird client is not installed.\n' >&2

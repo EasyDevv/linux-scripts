@@ -1,0 +1,130 @@
+#!/usr/bin/python3
+"""Write the wt0 Caddy site after NetBird is up. Do not block public HTTPS.
+
+Also allow overlay OAuth redirects. Dashboard origin is https://WT0, so
+IdP 400s unless https://WT0/nb-auth is in dashboardRedirectURIs.
+"""
+from __future__ import annotations
+
+import os
+import subprocess
+import time
+from pathlib import Path
+
+OVERLAY = Path("/etc/caddy/overlay.caddy")
+NETBIRD_CONFIG = Path("/opt/netbird/config.yaml")
+TEMPLATE = """
+http://__WT0__ {
+	bind __LISTEN_IP__
+	@overlay remote_ip 100.64.0.0/10 fd00::/8
+	handle @overlay {
+		redir https://__WT0__{uri} 308
+	}
+	respond 403
+}
+
+https://__WT0__ {
+	bind __LISTEN_IP__
+	tls internal
+	encode zstd gzip
+
+	@notOverlay not remote_ip 100.64.0.0/10 fd00::/8
+	respond @notOverlay 403
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	route {
+		crowdsec
+		@grpc header Content-Type application/grpc*
+		reverse_proxy @grpc h2c://127.0.0.1:8081
+		appsec
+		@backend path /relay* /ws-proxy* /api* /oauth2*
+		reverse_proxy @backend 127.0.0.1:8081
+		reverse_proxy /* 127.0.0.1:8080
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+		format json
+	}
+}
+"""
+
+
+def wt0_ip() -> str:
+    result = subprocess.run(
+        ["ip", "-4", "-o", "addr", "show", "dev", "wt0"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    for part in result.stdout.split():
+        if "/" in part and part.startswith("100."):
+            return part.split("/", 1)[0]
+    return ""
+
+
+def ensure_caddy(ip: str) -> None:
+    text = (
+        TEMPLATE.replace("__WT0__", ip)
+        .replace("__LISTEN_IP__", ip)
+        .lstrip()
+    )
+    if OVERLAY.exists() and OVERLAY.read_text(encoding="utf-8") == text:
+        return
+    OVERLAY.write_text(text, encoding="utf-8")
+    os.chmod(OVERLAY, 0o644)
+    subprocess.run(["systemctl", "reload", "caddy"], check=False)
+    print("vps-caddy-overlay: reloaded", ip, flush=True)
+
+
+def ensure_redirects(ip: str) -> None:
+    if not NETBIRD_CONFIG.is_file():
+        return
+    text = NETBIRD_CONFIG.read_text(encoding="utf-8")
+    extras = [
+        f'      - "https://{ip}/nb-auth"',
+        f'      - "https://{ip}/nb-silent-auth"',
+    ]
+    marker = "    dashboardRedirectURIs:"
+    end = text.find("    cliRedirectURIs:")
+    if marker not in text or end < 0:
+        print("vps-caddy-overlay: dashboardRedirectURIs missing", flush=True)
+        return
+    block = text[text.find(marker) : end]
+    missing = [line for line in extras if line not in block]
+    if not missing:
+        return
+    insert = "".join(line + "\n" for line in missing)
+    text = text[:end] + insert + text[end:]
+    NETBIRD_CONFIG.write_text(text, encoding="utf-8")
+    os.chmod(NETBIRD_CONFIG, 0o600)
+    subprocess.run(["systemctl", "restart", "netbird-podman"], check=False)
+    print("vps-caddy-overlay: oauth redirects", ip, flush=True)
+
+
+def main() -> int:
+    deadline = time.time() + 120
+    ip = ""
+    while time.time() < deadline:
+        ip = wt0_ip()
+        if ip:
+            break
+        time.sleep(2)
+    if not ip:
+        print("vps-caddy-overlay: wt0 not ready", flush=True)
+        return 0
+    ensure_caddy(ip)
+    ensure_redirects(ip)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

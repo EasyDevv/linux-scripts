@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Restore the default Tailscale exit-node on a Windows guest.
+"""Restore the configured Tailscale exit-node on a Windows guest.
 
-windows-02 (and the same-role guests) must egress through redmi-note-3.
-Turning Tailscale off for Shared, then back on, leaves ExitNodeID empty
-and public IPs fall back to the host ISP 211.245.140.95.
+The exit-node name and optional host ISP baseline are loaded from the local
+operator config (or WQ_EXIT_NODE/WQ_HOST_ISP_IP). No deployment identifiers
+belong in this repository.
 """
 from __future__ import annotations
 
@@ -48,9 +48,14 @@ def public_ip(alias: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("instance")
-    parser.add_argument("--exit-node", default=DEFAULT_EXIT_NODE)
+    parser.add_argument("--exit-node", default=DEFAULT_EXIT_NODE or None)
     parser.add_argument("--check", action="store_true", help="report only; do not change prefs")
     args = parser.parse_args()
+    if not args.exit_node:
+        raise SystemExit(
+            "missing exit node; set WQ_EXIT_NODE in "
+            f"{Path.home() / '.config/windows-qemu/operator.env'} or pass --exit-node"
+        )
     rec = require(args.instance)
     alias = rec["ssh_alias"]
 
@@ -67,7 +72,9 @@ def main() -> int:
     print(f"public_ip: {ip}")
 
     if args.check:
-        if not current or ip == HOST_ISP_IP:
+        if not current or not online:
+            return 1
+        if HOST_ISP_IP and ip == HOST_ISP_IP:
             return 1
         return 0
 
@@ -81,8 +88,8 @@ def main() -> int:
     print(applied.stdout.strip())
     ip = public_ip(alias)
     print(f"public_ip: {ip}")
-    if ip == HOST_ISP_IP:
-        print(f"still on host ISP {HOST_ISP_IP}; exit node did not take over egress", file=sys.stderr)
+    if HOST_ISP_IP and ip == HOST_ISP_IP:
+        print("public IP still matches the configured host ISP; exit node did not take over egress", file=sys.stderr)
         return 1
     return 0
 

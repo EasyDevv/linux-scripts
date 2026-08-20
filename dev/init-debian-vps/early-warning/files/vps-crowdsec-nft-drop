@@ -1,6 +1,16 @@
 #!/bin/sh
-# Bind CrowdSec origin sets to DROP. 0.0.36 creates sets but may omit verdicts.
+# Bind CrowdSec origin sets to DROP. Create empty timeout sets when the bouncer omitted them.
 set -eu
+
+ensure_set() {
+  family=$1
+  table=$2
+  setname=$3
+  addr_type=$4
+  nft list table "$family" "$table" >/dev/null 2>&1 || return 0
+  nft list set "$family" "$table" "$setname" >/dev/null 2>&1 && return 0
+  nft add set "$family" "$table" "$setname" "{ type $addr_type; flags timeout; }"
+}
 
 ensure_drops() {
   family=$1
@@ -9,7 +19,7 @@ ensure_drops() {
   match=$4
   nft list table "$family" "$table" >/dev/null 2>&1 || return 0
   nft list chain "$family" "$table" "$chain" >/dev/null 2>&1 || return 0
-  sets=$(nft list table "$family" "$table" | awk '/^[[:space:]]*set crowdsec-blacklists/{print $2}')
+  sets=$(nft list table "$family" "$table" | awk '/^[[:space:]]*set crowdsec/{print $2}')
   for setname in $sets; do
     if nft list chain "$family" "$table" "$chain" | grep -q "@${setname}"; then
       continue
@@ -25,5 +35,7 @@ for _ in 1 2 3 4 5 6 7 8; do
   sleep 1
 done
 
+ensure_set ip crowdsec crowdsec-blacklists ipv4_addr
+ensure_set ip6 crowdsec6 crowdsec6-blacklists ipv6_addr
 ensure_drops ip crowdsec crowdsec-chain-input ip
 ensure_drops ip6 crowdsec6 crowdsec6-chain-input ip6

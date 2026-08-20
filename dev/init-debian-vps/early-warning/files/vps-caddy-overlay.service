@@ -1,0 +1,12 @@
+[Unit]
+Description=Add Caddy overlay site after NetBird wt0 exists
+After=netbird.service caddy.service
+Wants=netbird.service caddy.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/vps-caddy-overlay
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

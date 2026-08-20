@@ -12,7 +12,7 @@ $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $MsiName = "netbird_installer_windows_amd64.msi"
 $WingetId = "NetBird.NetBird"
 $NetbirdExe = Join-Path $env:ProgramFiles "NetBird\netbird.exe"
-$DefaultManagementUrl = "https://vps-a851fbbf.vps.ovh.us"
+$DefaultManagementUrl = "https://management.example.invalid"
 $Reserved = @("NETBIRD_API_KEY", "NETBIRD_MANAGEMENT_URL", "NETBIRD_AUTO_GROUP")
 $KeyLinePattern = '^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)=(.*)$'
 $UsedKeyLinePattern = '^\s*#\s*(?:used\s+)?([A-Z][A-Z0-9_]*)=(.*)$'
@@ -175,7 +175,7 @@ function Select-SetupKeyName {
         $interactive = $false
     }
     if (-not $interactive) {
-        throw "Name is required when stdin is not a TTY; pass -Name GREEN_HOME_PC"
+        throw "Name is required when stdin is not a TTY; pass -Name EXAMPLE_ADMIN_PC"
     }
     if ($active.Count -eq 0) {
         throw "no unused setup keys"

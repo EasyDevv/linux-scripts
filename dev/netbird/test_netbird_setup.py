@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import json
 import os
 import sys
 import tempfile
@@ -54,6 +55,13 @@ LSBLK = {
         },
     ]
 }
+
+
+class PathTests(unittest.TestCase):
+    def test_keys_file_is_usb_name_in_netbird_dir(self) -> None:
+        self.assertEqual(nb.KEYS_NAME, ".env.netbird.setup.keys")
+        self.assertEqual(nb.KEYS_PATH, nb.SCRIPT_DIR / ".env.netbird.setup.keys")
+        self.assertEqual(nb.USB_KEYS_NAME, nb.KEYS_NAME)
 
 
 class NameTests(unittest.TestCase):
@@ -166,6 +174,14 @@ class CommandTests(unittest.TestCase):
             text = keys.read_text()
             self.assertIn("GREEN_USER_01=secret-for-GREEN_USER_01", text)
             self.assertIn("# auto-group: employees", text)
+            self.assertIn(
+                "#   netbird up --management-url "
+                f"{nb.DEFAULT_MANAGEMENT_URL} --setup-key <KEY>",
+                text,
+            )
+            self.assertIn("#   1. Change Server", text)
+            self.assertIn("#   3. Add this device with a setup key", text)
+            self.assertNotIn("secret-for-GREEN_USER_01", text.split("GREEN_USER_01=", 1)[0])
             self.assertNotIn("secret-for-GREEN_USER_01", stdout.getvalue())
             self.assertIn("issued GREEN_USER_01", stdout.getvalue())
 
@@ -322,6 +338,65 @@ class CreateKeyTests(unittest.TestCase):
         self.assertEqual(posted["usage_limit"], 1)
         self.assertEqual(posted["expires_in"], 604800)
         self.assertEqual(posted["auto_groups"], ["grp1"])
+
+
+class EmployeeRosterTests(unittest.TestCase):
+    def test_roster_has_eight_waiting_keys(self) -> None:
+        path = (
+            Path(__file__).resolve().parents[1]
+            / "init-debian-vps"
+            / "profiles"
+            / "ovh-vps.employees.example.json"
+        )
+        names, keys_path = nb.load_employee_roster(path)
+        self.assertEqual(len(names), 8)
+        self.assertIn("EXAMPLE_ADMIN_PC", names)
+        self.assertIn("EXAMPLE_MANAGER_01_PHONE", names)
+        self.assertEqual(keys_path, nb.KEYS_PATH)
+        self.assertEqual(keys_path.name, ".env.netbird.setup.keys")
+        raw = path.read_text()
+        self.assertIn("604800", raw)
+        self.assertNotIn("100.", raw)
+
+    def test_employees_mints_missing_only(self) -> None:
+        import argparse
+        import tempfile
+
+        created: list[str] = []
+
+        def create(config: nb.Config, name: str) -> str:
+            created.append(name)
+            return f"secret-{name}"
+
+        roster = {
+            "keys_path": "netbird-employees.env",
+            "people": [
+                {"email": "a@example.com", "pc": "GREEN_A_PC", "phone": "GREEN_A_PHONE"}
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            roster_path = Path(tmp) / "roster.json"
+            roster_path.write_text(json.dumps(roster))
+            # patch SCRIPT_DIR so keys land in tmp? load uses SCRIPT_DIR.
+            # Write existing env into SCRIPT_DIR would pollute. Use absolute keys_path.
+            keys_path = Path(tmp) / "netbird-employees.env"
+            roster["keys_path"] = str(keys_path)
+            roster_path.write_text(json.dumps(roster))
+            keys_path.write_text("GREEN_A_PC=already\n")
+            args = argparse.Namespace(roster=str(roster_path), auto_group="", apply=True)
+            config = nb.Config(
+                api_key="pat",
+                management_url=nb.DEFAULT_MANAGEMENT_URL,
+                auto_group="employees",
+                config_path=Path(tmp) / ".env.netbird",
+                keys_path=keys_path,
+            )
+            rc = nb.cmd_employees(args, config=config, create=create)
+            self.assertEqual(rc, 0)
+            self.assertEqual(created, ["GREEN_A_PHONE"])
+            stored = nb.load_env_file(keys_path)
+            self.assertEqual(stored["GREEN_A_PC"], "already")
+            self.assertEqual(stored["GREEN_A_PHONE"], "secret-GREEN_A_PHONE")
 
 
 if __name__ == "__main__":

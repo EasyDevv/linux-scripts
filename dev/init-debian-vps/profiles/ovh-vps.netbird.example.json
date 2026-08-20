@@ -1,0 +1,74 @@
+{
+  "groups": [
+    {
+      "name": "dev",
+      "peer_names": ["admin-peer"]
+    },
+    {
+      "name": "app-servers",
+      "peer_names": ["ovh-vps"]
+    },
+    {
+      "name": "employees",
+      "peer_names": []
+    },
+    {
+      "name": "image-servers",
+      "peer_names": ["image-host"],
+      "optional_peers": true
+    }
+  ],
+  "policies": [
+    {
+      "name": "dev-to-vps-ssh",
+      "description": "admin peers to host NetBird SSH",
+      "source_group": "dev",
+      "destination_group": "app-servers",
+      "protocol": "netbird-ssh",
+      "ssh_user": "debian",
+      "bidirectional": false,
+      "enabled": true
+    },
+    {
+      "name": "dev-to-vps-tcp22",
+      "description": "admin peers to host native sshd over overlay",
+      "source_group": "dev",
+      "destination_group": "app-servers",
+      "protocol": "tcp",
+      "ports": ["22"],
+      "bidirectional": false,
+      "enabled": true
+    },
+    {
+      "name": "dev-to-vps-dashboard",
+      "description": "admin peers to overlay dashboard HTTP/HTTPS",
+      "source_group": "dev",
+      "destination_group": "app-servers",
+      "protocol": "tcp",
+      "ports": ["80", "443"],
+      "bidirectional": false,
+      "enabled": true
+    },
+    {
+      "name": "employees-to-app",
+      "description": "employees may use the application port only",
+      "source_group": "employees",
+      "destination_group": "app-servers",
+      "protocol": "tcp",
+      "ports": ["3000"],
+      "bidirectional": false,
+      "enabled": true
+    },
+    {
+      "name": "app-to-image",
+      "description": "app servers may use the image origin only",
+      "source_group": "app-servers",
+      "destination_group": "image-servers",
+      "protocol": "tcp",
+      "ports": ["8787"],
+      "bidirectional": false,
+      "enabled": true
+    }
+  ],
+  "disable_policy_names": ["Default", "Default All -> All", "All -> All", "dev-all-access"]
+}

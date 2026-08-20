@@ -2,6 +2,7 @@
 """Resolve dockur/windows Quadlet instances without hardcoding 01/02."""
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -12,11 +13,28 @@ SETUP_DIR = SHARED_DIR / "scripts" / "windows-setup"
 SSH_DIR = Path.home() / ".ssh"
 IDENTITY = SSH_DIR / "windows"
 SSH_CONFIG = SSH_DIR / "config"
+OPERATOR_ENV_PATH = Path.home() / ".config" / "windows-qemu" / "operator.env"
 REQUIRED_ENV_KEYS = ("SSH_PORT", "WEB_PORT", "RDP_PORT", "VM_NET_IP")
-DEFAULT_EXIT_NODE = "redmi-note-3"
-HOST_ISP_IP = "211.245.140.95"
 GUEST_SCRIPTS = "C:/Users/Docker/Scripts"
 GUEST_SETUP = "C:/Users/Docker/Desktop/Shared/scripts/windows-setup"
+
+
+def load_operator_env(path: Path = OPERATOR_ENV_PATH) -> dict[str, str]:
+    if not path.is_file():
+        return {}
+    values: dict[str, str] = {}
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip("'\"")
+    return values
+
+
+_OPERATOR_ENV = load_operator_env()
+DEFAULT_EXIT_NODE = os.environ.get("WQ_EXIT_NODE") or _OPERATOR_ENV.get("WQ_EXIT_NODE", "")
+HOST_ISP_IP = os.environ.get("WQ_HOST_ISP_IP") or _OPERATOR_ENV.get("WQ_HOST_ISP_IP", "")
 
 
 def parse_env(path: Path) -> dict[str, str]:

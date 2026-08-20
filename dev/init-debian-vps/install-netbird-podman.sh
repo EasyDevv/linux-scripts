@@ -48,7 +48,7 @@ install -d -o root -g root -m 0750 "$install_dir"
 umask 077
 relay_secret=$(openssl rand -base64 32 | tr -d '=+/\n')
 datastore_key=$(openssl rand -base64 32 | tr -d '\n')
-cookie_key=$(openssl rand -base64 32 | tr -d '=+/\n')
+cookie_key=$(openssl rand -hex 16)
 
 setup_log_before "${install_dir}/config.yaml"
 cat >"${install_dir}/config.yaml" <<EOF
@@ -134,6 +134,7 @@ setup_log_after "${install_dir}/docker-compose.yml"
 setup_log_before /etc/caddy/Caddyfile
 cat >/etc/caddy/Caddyfile <<EOF
 {
+    email admin@${domain}
     servers {
         protocols h1 h2
     }
@@ -189,6 +190,10 @@ systemctl disable podman-restart.service 2>/dev/null || true
 systemctl enable netbird-podman.service caddy.service
 "$configure_guard" --apply "$domain" "$setup_source_ip"
 systemctl restart caddy.service
+# Debian Caddy can leave a 0-byte Let's Encrypt account key that blocks obtain.
+find /var/lib/caddy/.local/share/caddy/acme -type f -name '*.key' -size 0 -delete 2>/dev/null || true
+systemctl reload caddy.service || systemctl restart caddy.service
+
 
 curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 2 "https://${domain}/oauth2/.well-known/openid-configuration" >/dev/null
 printf 'NetBird started and OIDC discovery passed for https://%s\n' "$domain"

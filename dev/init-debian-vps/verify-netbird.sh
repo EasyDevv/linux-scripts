@@ -4,6 +4,7 @@ set -Eeuo pipefail
 target=${1:?Usage: verify-netbird.sh SSH_TARGET DOMAIN}
 domain=${2:?Usage: verify-netbird.sh SSH_TARGET DOMAIN}
 script_dir=$(dirname "$(readlink -f "$0")")
+source "${script_dir}/ssh-options.sh"
 failed=0
 
 pass() { printf 'PASS %s\n' "$1"; }
@@ -15,10 +16,20 @@ else
     fail 'OIDC discovery and issuer'
 fi
 
-if [[ $(curl --silent --output /dev/null --write-out '%{http_code}' "https://${domain}/setup") == 200 ]]; then
+setup_code=$(curl --silent --output /dev/null --write-out '%{http_code}' "https://${domain}/setup")
+if [[ $setup_code == 200 ]]; then
     pass 'Dashboard setup route'
 else
-    fail 'Dashboard setup route'
+    overlay_ip=$(ssh "${SSH_CONTROL_OPTIONS[@]}" -o BatchMode=yes "$target" "ip -4 -o addr show wt0 | awk '{print \$4}' | cut -d/ -f1" || true)
+    overlay_code=""
+    if [[ $overlay_ip == 100.* ]]; then
+        overlay_code=$(curl --silent --insecure --output /dev/null --write-out '%{http_code}' "https://${overlay_ip}/setup" || true)
+    fi
+    if [[ $setup_code == 404 && $overlay_code == 200 ]]; then
+        pass 'Dashboard setup route (overlay)'
+    else
+        fail 'Dashboard setup route'
+    fi
 fi
 
 grpc_headers=$(curl --silent --show-error --http2 --dump-header - --output /dev/null --request POST --header 'Content-Type: application/grpc' "https://${domain}/management.ManagementService/GetServerKey")
@@ -35,9 +46,9 @@ else
     fail 'STUN response'
 fi
 
-remote=$(ssh -o BatchMode=yes "$target" 'sudo bash -s' <<'REMOTE'
+remote=$(ssh "${SSH_CONTROL_OPTIONS[@]}" -o BatchMode=yes "$target" 'sudo bash -s' <<'REMOTE'
 set -Eeuo pipefail
-systemctl is-active --quiet caddy netbird-podman nftables fail2ban
+systemctl is-active --quiet caddy netbird-podman nftables
 podman ps --format '{{.Names}}' | while IFS= read -r name; do printf '%s\n' "$name"; done
 printf '%s\n' PORTS
 ss -lnt | while IFS= read -r line; do

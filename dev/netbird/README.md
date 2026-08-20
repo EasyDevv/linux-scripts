@@ -15,25 +15,27 @@
 
 ```sh
 cp ~/.local/share/scripts/dev/netbird/.env.netbird.example \
-   ~/.local/share/scripts/dev/netbird/.env.netbird
+   ~/.local/share/scripts/dev/.env.netbird
 ```
 
-`.env.netbird` 의 `NETBIRD_API_KEY` 를 채웁니다.  
-management URL과 `employees` 그룹 기본값은 그대로 두면 됩니다.
+`~/.local/share/scripts/dev/.env.netbird` 의 `NETBIRD_API_KEY` 와 실제
+`NETBIRD_MANAGEMENT_URL` 을 채웁니다. 예제의 `management.example.invalid` 는
+문서용 값이며 운영 주소로 바꿔야 합니다. `employees` 그룹 기본값은 그대로
+두면 됩니다.
 
 ```sh
-netbird-setup issue GREEN_HOME_PC
-netbird-setup issue GREEN_HOME_MOBILE
+netbird-setup issue EXAMPLE_ADMIN_PC
+netbird-setup issue EXAMPLE_ADMIN_PHONE
 netbird-setup list
 ```
 
-- 이름은 `GREEN_HOME_PC` 처럼 대문자·숫자·밑줄만 씁니다. `NETBIRD_SETUP_KEY_` 접두사는 붙이지 않습니다.
+- 이름은 `EXAMPLE_ADMIN_PC` 처럼 대문자·숫자·밑줄만 씁니다. `NETBIRD_SETUP_KEY_` 접두사는 붙이지 않습니다.
 - 발급되는 키는 one-off, 1회, 7일, `employees` 그룹입니다.
-- 저장 파일은 `.env.netbird.setup-keys` 입니다.
+- 저장 파일은 `dev/netbird/.env.netbird.setup.keys` 입니다.
 - 같은 이름이 있으면 확인 후 덮어씁니다. 비-TTY는 `--replace` 가 필요합니다.
 
 ```sh
-netbird-setup issue GREEN_HOME_PC --replace
+netbird-setup issue EXAMPLE_ADMIN_PC --replace
 ```
 
 ## 2. USB로 이전
@@ -57,7 +59,7 @@ USB의 `netbird-setup/` 폴더:
 | `netbird_installer_windows_amd64.msi` | 있으면 오프라인 설치. 없으면 winget |
 | `README.md` | 이 설명 |
 
-호스트의 `.env.netbird.setup-keys` 가 USB에서는 `.env.netbird.setup.keys` 로 복사됩니다.
+호스트와 USB 모두 `.env.netbird.setup.keys` 입니다. 값은 출력하지 않습니다.
 
 ## 3. Windows에서 USB 스크립트 실행
 
@@ -73,8 +75,8 @@ PowerShell에서 직접 실행:
 
 ```powershell
 .\install-netbird.ps1
-.\install-netbird.ps1 -Name GREEN_HOME_PC
-.\install-netbird.ps1 -DryRun -Name GREEN_HOME_PC
+.\install-netbird.ps1 -Name EXAMPLE_ADMIN_PC
+.\install-netbird.ps1 -DryRun -Name EXAMPLE_ADMIN_PC
 ```
 
 `-DryRun` 은 설치와 `netbird up` 을 하지 않고 실행할 명령만 보여 줍니다.  
@@ -85,7 +87,7 @@ SSH나 파이프처럼 키가 없는 환경에서는 `-Name` 이 필요합니다
 접속이 성공하면 USB의 `.env.netbird.setup.keys` 에서 그 키 줄을 주석 처리합니다.
 
 ```
-# GREEN_HOME_PC=...
+# EXAMPLE_ADMIN_PC=...
 ```
 
 다음에 스크립트를 다시 열면 해당 이름은 보이되 취소선이고 고를 수 없습니다.  

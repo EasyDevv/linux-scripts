@@ -1,0 +1,7 @@
+.env.netbird
+.env.netbird.setup.keys
+.env.netbird.setup-keys
+netbird-employees.env
+*.rescue
+.data/
+__pycache__/

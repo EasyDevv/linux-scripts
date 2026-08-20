@@ -19,6 +19,23 @@ Do not keep a second copy under the skill or Quadlet `.agents/`.
 systemd must call this directory's `wq`, not `~/.local/bin/wq`.
 Guest originals live in `guest/` and are copied only by `wq` commands.
 
+## Local operator settings
+
+The exit-node name and optional host ISP baseline are local values, not repository
+configuration. Copy the redacted template and fill it in before using the
+exit-node commands:
+
+```bash
+install -d -m 700 ~/.config/windows-qemu
+cp ~/.local/share/scripts/dev/qemu/operator.env.example \
+   ~/.config/windows-qemu/operator.env
+chmod 600 ~/.config/windows-qemu/operator.env
+$EDITOR ~/.config/windows-qemu/operator.env
+```
+
+The file contains `WQ_EXIT_NODE` and optional `WQ_HOST_ISP_IP`. Environment
+variables with the same names override the file for one invocation.
+
 ## Commands
 
 ```bash
