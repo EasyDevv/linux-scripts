@@ -479,30 +479,28 @@ pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
             job.created_at,
         );
 
-        let jt = "#jobs-list";
         let mut actions = String::new();
         if can_cancel {
             actions.push_str(&format!(
                 r#"<button class="btn-icon btn-danger btn-sm" title="Cancel + Clear"
-                        hx-post="/ui/jobs/{id}/cancel" hx-target="{jt}" hx-swap="innerHTML"
+                        hx-post="/ui/jobs/{}/cancel" hx-swap="none"
                         hx-confirm="Cancel and clear this job?"><i class="bi bi-x-circle"></i></button>"#,
-                id = job.id, jt = jt,
+                job.id,
             ));
         }
         if can_retry {
             actions.push_str(&format!(
                 r#"<button class="btn-icon btn-primary btn-sm" title="Retry"
-                        hx-post="/ui/jobs/{id}/retry" hx-target="{jt}" hx-swap="innerHTML"><i class="bi bi-arrow-clockwise"></i></button>"#,
-                id = job.id, jt = jt,
+                        hx-post="/ui/jobs/{}/retry" hx-swap="none"><i class="bi bi-arrow-clockwise"></i></button>"#,
+                job.id,
             ));
         }
         if is_terminal {
             actions.push_str(&format!(
                 r#"<button class="btn-icon btn-sm" title="Clear"
-                        hx-post="/ui/jobs/{id}/clear" hx-target="{jt}" hx-swap="innerHTML"
+                        hx-post="/ui/jobs/{}/clear" hx-swap="none"
                         hx-confirm="Clear this job?"><i class="bi bi-eraser"></i></button>"#,
-                id = job.id,
-                jt = jt,
+                job.id,
             ));
         }
 
@@ -511,13 +509,13 @@ pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
   <td class="col-select"><input type="checkbox" name="job_ids" value="{id}"></td>
   <td><div class="truncate">{name}</div></td>
   <td><span class="badge {badge}">{label}</span>{restart}</td>
-  <td class="info-text">{pct}</td>
-  <td class="info-text segment-cell"{segment_title}>{segment}</td>
-  <td class="info-text">{size}</td>
-  <td class="info-text speed-cell"></td>
+  <td class="info-text" data-cell="pct">{pct}</td>
+  <td class="info-text segment-cell" data-cell="segment"{segment_title}>{segment}</td>
+  <td class="info-text" data-cell="size">{size}</td>
+  <td class="info-text speed-cell" data-cell="speed"></td>
   <td><div class="info-text truncate"><a href="{url}" target="_blank" rel="noopener noreferrer">{url}</a></div></td>
   <td><div class="info-text truncate">{src_url}</div></td>
-  <td class="info-text">{updated}</td>
+  <td class="info-text" data-cell="updated">{updated}</td>
   <td class="actions-cell">{actions}</td>
 </tr>"#,
             id = job.id,
@@ -561,7 +559,6 @@ pub async fn files_partial(state: aw::Data<AppState>) -> HttpResponse {
             .body(r#"<tr><td colspan="9" class="empty">No downloaded files yet</td></tr>"#);
     }
 
-    let ft = "#files-section";
     let mut rows = String::new();
     for f in &files {
         let (badge, label) = if !f.exists {
@@ -596,25 +593,25 @@ pub async fn files_partial(state: aw::Data<AppState>) -> HttpResponse {
         let retry = can_retry.then(|| format!(
             r#"<button class="btn-icon btn-primary btn-sm" title="Retry {name}"
                     hx-post="/ui/files/retry" hx-vals='{{"path":"{ep}"}}'
-                    hx-target="{ft}" hx-swap="innerHTML"{confirm}><i class="bi bi-arrow-clockwise"></i></button>"#,
-            name = escape_html(&f.name), ep = escape_html(&f.path), ft = ft, confirm = retry_confirm,
+                    hx-swap="none"{confirm}><i class="bi bi-arrow-clockwise"></i></button>"#,
+            name = escape_html(&f.name), ep = escape_html(&f.path), confirm = retry_confirm,
         )).unwrap_or_default();
 
         rows.push_str(&format!(
-            r#"<tr data-sort-name="{sort_name}" data-sort-status="{sort_status}" data-sort-size="{sort_size}" data-sort-path="{sort_path}" data-sort-url="{sort_url}" data-sort-src-url="{sort_src_url}" data-sort-time="{sort_time}">
+            r#"<tr data-file-path="{ep}" data-sort-name="{sort_name}" data-sort-status="{sort_status}" data-sort-size="{sort_size}" data-sort-path="{sort_path}" data-sort-url="{sort_url}" data-sort-src-url="{sort_src_url}" data-sort-time="{sort_time}">
   <td class="col-select"><input type="checkbox" name="paths" value="{ep}"></td>
   <td><div class="truncate">{name}</div></td>
   <td><span class="badge {badge}">{label}</span></td>
-  <td class="info-text">{size}</td>
+  <td class="info-text" data-cell="size">{size}</td>
   <td><div class="info-text truncate">{path}</div></td>
   <td><div class="info-text truncate">{url_display}</div></td>
   <td><div class="info-text truncate">{src_url_display}</div></td>
-  <td class="info-text">{time}</td>
+  <td class="info-text" data-cell="time">{time}</td>
   <td class="actions-cell">
     {retry}
     <button class="btn-icon btn-danger btn-sm" title="Delete {name}"
             hx-post="/ui/files/delete" hx-vals='{{"path":"{ep}"}}'
-            hx-target="{ft}" hx-swap="innerHTML"
+            hx-swap="none"
             hx-confirm="Delete {name}?"><i class="bi bi-trash"></i></button>
   </td>
 </tr>"#,
@@ -626,8 +623,7 @@ pub async fn files_partial(state: aw::Data<AppState>) -> HttpResponse {
             url_display = url_display,
             src_url_display = src_url_display,
             ep = escape_html(&f.path),
-            ft = ft,
-            time = relative_time(f.downloaded_at),
+                        time = relative_time(f.downloaded_at),
             retry = retry,
             sort_name = escape_html(&f.name.to_lowercase()),
             sort_status = label.to_lowercase(),

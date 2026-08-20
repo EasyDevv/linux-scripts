@@ -39,6 +39,7 @@ POST /ui/files/retry
 ### JSON API
 
 ```
+GET  /stash/files?limit=<n>
 POST /stash/files/search          {"query":"mp4","under":"/mnt/shared","limit":20}
 POST /stash/files/check           {"path":"/mnt/shared/video.mp4"}
 POST /stash/downloads/mark        {"path":"/mnt/shared/video.mp4","url":"...","src_url":"...","note":"..."}

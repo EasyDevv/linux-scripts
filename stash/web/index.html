@@ -68,18 +68,18 @@
 
   <div id="jobs-pane" class="table-pane" data-list-id="jobs-list" data-checkbox-name="job_ids" data-select-all-id="select-all-jobs" data-default-sort="added" data-default-direction="desc">
     <div class="pane-header">
-      <span>Jobs&nbsp;<span id="jobs-count" hx-get="/ui/partials/jobs-count" hx-trigger="load, every 2s" hx-config='{"timeout":4000}' hx-swap="innerHTML"></span></span>
+      <span>Jobs&nbsp;<span id="jobs-count"></span></span>
       <div class="toolbar">
         <button class="btn-icon btn-primary" id="retry-failed-jobs"
                 hx-post="/ui/jobs/retry-failed"
-                hx-target="#jobs-list" hx-swap="innerHTML"
+                hx-swap="none"
                 title="Retry all failed jobs">
           <i class="bi bi-arrow-clockwise"></i>
         </button>
         <button class="btn-icon bulk-action" id="clear-selected-jobs"
                 hx-post="/ui/jobs/clear-selected"
                 hx-include="#jobs-list input[name='job_ids']"
-                hx-target="#jobs-list" hx-swap="innerHTML"
+                hx-swap="none"
                 title="Clear selected jobs" disabled>
           <i class="bi bi-eraser"></i>
         </button>
@@ -115,7 +115,7 @@
             <th class="col-actions" data-col-key="jobs-actions" data-priority="high">Actions</th>
           </tr>
         </thead>
-        <tbody id="jobs-list" hx-get="/ui/partials/jobs" hx-trigger="load, every 2s" hx-config='{"timeout":4000}' hx-swap="innerHTML">
+        <tbody id="jobs-list">
           <tr><td colspan="11" class="empty">Loading...</td></tr>
         </tbody>
       </table>
@@ -128,19 +128,19 @@
 
   <div id="files-pane" class="table-pane" data-list-id="files-section" data-checkbox-name="paths" data-select-all-id="select-all-files" data-default-sort="time" data-default-direction="desc">
     <div class="pane-header">
-      <span>Files&nbsp;<span id="files-count" hx-get="/ui/partials/files-count" hx-trigger="load, every 5s, refresh from:body" hx-swap="innerHTML"></span></span>
+      <span>Files&nbsp;<span id="files-count"></span></span>
       <div class="toolbar">
         <button class="btn-icon bulk-action" id="clear-selected-files"
                 hx-post="/ui/files/clear-selected"
                 hx-include="#files-section input[name='paths']"
-                hx-target="#files-section" hx-swap="innerHTML"
+                hx-swap="none"
                 title="Clear selected files from list" disabled>
           <i class="bi bi-eraser"></i>
         </button>
         <button class="btn-icon btn-danger bulk-action" id="delete-selected-files"
                 hx-post="/ui/files/delete-selected"
                 hx-include="#files-section input[name='paths']"
-                hx-target="#files-section" hx-swap="innerHTML"
+                hx-swap="none"
                 hx-confirm="Delete selected files from disk?"
                 title="Delete selected files" disabled>
           <i class="bi bi-trash"></i>
@@ -173,7 +173,7 @@
             <th class="col-actions" data-col-key="files-actions" data-priority="high">Actions</th>
           </tr>
         </thead>
-        <tbody id="files-section" hx-get="/ui/partials/files" hx-trigger="load, every 5s, refresh from:body" hx-swap="innerHTML">
+        <tbody id="files-section">
           <tr><td colspan="9" class="empty">Loading...</td></tr>
         </tbody>
       </table>

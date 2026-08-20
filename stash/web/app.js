@@ -252,6 +252,481 @@ document.addEventListener("DOMContentLoaded", () => {
 			'<tr><td colspan="11" class="empty empty-error">Jobs unavailable. Retrying...</td></tr>';
 	}
 
+	const TABLE_LIVE_JOBS_LIMIT = 50;
+	const TABLE_LIVE_FILES_LIMIT = 100;
+	const MIN_COMPLETED_FILE_BYTES = 1024 * 1024;
+
+	function fmtLiveSize(bytes) {
+		const units = ["B", "KB", "MB", "GB"];
+		let v = Number(bytes) || 0;
+		let i = 0;
+		while (v > 1024 && i + 1 < units.length) {
+			v /= 1024;
+			i++;
+		}
+		return i === 0 ? `${v.toFixed(0)}${units[i]}` : `${v.toFixed(1)}${units[i]}`;
+	}
+
+	function fmtLivePct(downloaded, total) {
+		if (!total) return "\u2014";
+		const pct = (downloaded / total) * 100;
+		if (pct >= 99.95) return "100%";
+		if (pct >= 10) return `${pct.toFixed(0)}%`;
+		return `${pct.toFixed(1)}%`;
+	}
+
+	function fmtLiveRelativeTime(ts) {
+		const stamp = Number(ts) || 0;
+		if (!stamp) return "\u2014";
+		const diff = Math.max(0, Math.floor(Date.now() / 1000) - stamp);
+		if (diff < 60) return `${diff}s ago`;
+		if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+		if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+		return `${Math.floor(diff / 86400)}d ago`;
+	}
+
+	function setLiveCellText(row, cell, text) {
+		const el = row.querySelector(`[data-cell="${cell}"]`);
+		if (el && el.textContent !== text) el.textContent = text;
+	}
+
+	function createTableLive(options) {
+		const {
+			listId,
+			countId,
+			jsonUrl,
+			partialUrl,
+			identityAttr,
+			itemId,
+			applyHot,
+			isBusy,
+			emptyHtml,
+			errorHtml,
+			hotMs = 500,
+			idleMs = 2000,
+			sortMs = 1000,
+			hotSortKeys = ["pct", "speed", "size"],
+		} = options;
+		let timer = 0;
+		let inflight = false;
+		let pending = false;
+		let stopped = false;
+		let lastSortAt = 0;
+
+		function listEl() {
+			return document.getElementById(listId);
+		}
+
+		function countEl() {
+			return document.getElementById(countId);
+		}
+
+		function tableState() {
+			return tablesByListId.get(listId);
+		}
+
+		function rowById(list, id) {
+			return list.querySelector(`[${identityAttr}="${CSS.escape(id)}"]`);
+		}
+
+		async function fetchItems() {
+			const response = await fetch(jsonUrl);
+			if (!response.ok) throw new Error(listId);
+			const data = await response.json();
+			return data.results || [];
+		}
+
+		async function fetchRowElements() {
+			const response = await fetch(partialUrl);
+			if (!response.ok) throw new Error(`${listId} partial`);
+			const html = await response.text();
+			const box = document.createElement("tbody");
+			box.innerHTML = html;
+			return [...box.querySelectorAll(`[${identityAttr}]`)];
+		}
+
+		async function reconcile() {
+			if (inflight) {
+				pending = true;
+				return;
+			}
+			const list = listEl();
+			if (!list) return;
+			inflight = true;
+			clearTimeout(timer);
+			let busy = false;
+			try {
+				const items = await fetchItems();
+				const count = countEl();
+				if (count) count.textContent = String(items.length);
+
+				if (items.length === 0) {
+					list.innerHTML = emptyHtml;
+					busy = false;
+					return;
+				}
+
+				const want = new Set(items.map(itemId));
+				const existing = [...list.querySelectorAll(`[${identityAttr}]`)];
+				let membershipChanged = false;
+				const table = tableState();
+
+				for (const row of existing) {
+					const id = row.getAttribute(identityAttr);
+					if (!want.has(id)) {
+						row.remove();
+						table?.selected.delete(id);
+						membershipChanged = true;
+					}
+				}
+
+				const missing = [...want].filter((id) => !rowById(list, id));
+				if (missing.length) {
+					const fresh = await fetchRowElements();
+					list
+						.querySelectorAll(`tr:not([${identityAttr}])`)
+						.forEach((row) => row.remove());
+					for (const row of fresh) {
+						const id = row.getAttribute(identityAttr);
+						if (!want.has(id) || rowById(list, id)) continue;
+						list.appendChild(row);
+						if (window.htmx) htmx.process(row);
+						membershipChanged = true;
+					}
+				}
+
+				for (const item of items) {
+					const row = rowById(list, itemId(item));
+					if (row) applyHot(row, item);
+				}
+
+				if (table) {
+					syncTableState(table);
+					const hotSort = hotSortKeys.includes(table.sortKey);
+					const now = Date.now();
+					if (membershipChanged || (hotSort && now - lastSortAt >= sortMs)) {
+						applyTableSort(table);
+						lastSortAt = now;
+					}
+				}
+
+				busy = typeof isBusy === "function" ? isBusy(items) : false;
+			} catch {
+				const list = listEl();
+				if (list && !list.querySelector(`[${identityAttr}]`)) {
+					list.innerHTML = errorHtml;
+				}
+				busy = false;
+			} finally {
+				inflight = false;
+				if (pending) {
+					pending = false;
+					void reconcile();
+				} else {
+					scheduleNext(busy);
+				}
+			}
+		}
+
+		function scheduleNext(busy) {
+			if (stopped) return;
+			clearTimeout(timer);
+			timer = setTimeout(() => {
+				void reconcile();
+			}, busy ? hotMs : idleMs);
+		}
+
+		return {
+			start() {
+				stopped = false;
+				void reconcile();
+			},
+			invalidate() {
+				if (stopped) return;
+				clearTimeout(timer);
+				void reconcile();
+			},
+			stop() {
+				stopped = true;
+				clearTimeout(timer);
+			},
+		};
+	}
+
+	function jobIsBrowserHls(job) {
+		return (job.headers_json || "").includes("browser-hls");
+	}
+
+	function jobIsHls(job) {
+		if (jobIsBrowserHls(job)) return true;
+		const src = job.src_url || "";
+		try {
+			const path = new URL(src).pathname.toLowerCase();
+			return (
+				path.endsWith(".m3u8") ||
+				path.endsWith(".m3u") ||
+				(path.includes(".urlset/") && path.endsWith(".txt"))
+			);
+		} catch {
+			const lower = src.toLowerCase();
+			return lower.includes(".m3u8") || lower.endsWith(".m3u");
+		}
+	}
+
+	function jobStatusLabel(status, error) {
+		const err = String(error || "").toLowerCase();
+		if (
+			(status === "failed" || status === "retry_wait") &&
+			(err.includes("vpn") || err.includes("adguardvpn"))
+		) {
+			return "VPN Error";
+		}
+		switch (status) {
+			case "running":
+				return "Downloading";
+			case "finalizing":
+			case "assembling":
+			case "remuxing":
+				return "Finalizing";
+			case "queued":
+				return "Queued";
+			case "retry_wait":
+				return "Retrying";
+			case "resource_wait":
+				return "Waiting for disk space";
+			case "completed":
+				return "Completed";
+			case "failed":
+				return "Failed";
+			case "cancelled":
+				return "Cancelled";
+			default:
+				return status || "";
+		}
+	}
+
+	function jobBadgeClass(status) {
+		switch (status) {
+			case "running":
+				return "badge-running";
+			case "finalizing":
+			case "assembling":
+			case "remuxing":
+				return "badge-finalizing";
+			case "queued":
+				return "badge-queued";
+			case "retry_wait":
+			case "resource_wait":
+				return "badge-retry_wait";
+			case "completed":
+				return "badge-completed";
+			case "failed":
+				return "badge-failed";
+			case "cancelled":
+				return "badge-cancelled";
+			default:
+				return "badge-queued";
+		}
+	}
+
+	function jobPctText(job) {
+		const status = job.status;
+		if (
+			status === "finalizing" ||
+			status === "assembling" ||
+			status === "remuxing"
+		) {
+			if (job.phase === "prepare") return "Preparing";
+			if (job.phase === "mux") return "Muxing";
+			return "Finalizing";
+		}
+		if (status === "running" && jobIsBrowserHls(job)) {
+			return fmtLivePct(job.uploaded_segments || 0, job.total_segments || 0);
+		}
+		return fmtLivePct(job.downloaded_bytes || 0, job.total_bytes || 0);
+	}
+
+	function jobPctSort(job) {
+		if (job.status === "running" && jobIsHls(job) && job.total_segments > 0) {
+			return (job.uploaded_segments || 0) / job.total_segments;
+		}
+		if (job.total_bytes > 0) return job.downloaded_bytes / job.total_bytes;
+		return 0;
+	}
+
+	function jobSegmentHtml(job) {
+		if (!jobIsHls(job)) return null;
+		const completed = job.uploaded_segments || 0;
+		const total = job.total_segments || 0;
+		if (total > 0) {
+			return `<span class="segment-completed">${completed}</span>/<span class="segment-total">${total}</span>`;
+		}
+		if (job.uploaded_segments != null) {
+			return `<span class="segment-completed">${completed}</span>/<span class="segment-total">?</span>`;
+		}
+		return "\u2014";
+	}
+
+	function syncJobActions(row, job) {
+		const canCancel = [
+			"running",
+			"queued",
+			"retry_wait",
+			"resource_wait",
+			"finalizing",
+			"assembling",
+			"remuxing",
+		].includes(job.status);
+		const terminal = ["completed", "failed", "cancelled"].includes(job.status);
+		const cell = row.querySelector(".actions-cell");
+		if (!cell) return;
+		const id = job.id;
+		let html = "";
+		if (canCancel) {
+			html += `<button class="btn-icon btn-danger btn-sm" title="Cancel + Clear" hx-post="/ui/jobs/${id}/cancel" hx-swap="none" hx-confirm="Cancel and clear this job?"><i class="bi bi-x-circle"></i></button>`;
+		}
+		if (terminal) {
+			html += `<button class="btn-icon btn-primary btn-sm" title="Retry" hx-post="/ui/jobs/${id}/retry" hx-swap="none"><i class="bi bi-arrow-clockwise"></i></button>`;
+			html += `<button class="btn-icon btn-sm" title="Clear" hx-post="/ui/jobs/${id}/clear" hx-swap="none" hx-confirm="Clear this job?"><i class="bi bi-eraser"></i></button>`;
+		}
+		if (cell.innerHTML !== html) {
+			cell.innerHTML = html;
+			if (window.htmx) htmx.process(cell);
+		}
+	}
+
+	function applyJobHot(row, job) {
+		const prevStatus = row.dataset.status;
+		row.dataset.status = job.status;
+		row.dataset.downloaded = String(job.downloaded_bytes || 0);
+		row.dataset.updated = String(
+			job.updated_at || Math.floor(Date.now() / 1000),
+		);
+		row.dataset.sortStatus = job.status;
+		row.dataset.sortPct = String(jobPctSort(job));
+		row.dataset.sortSegment = String(job.uploaded_segments || 0);
+		row.dataset.sortSize = String(job.downloaded_bytes || 0);
+		if (job.error && job.error !== "cancelled") {
+			row.title = job.error;
+		} else {
+			row.removeAttribute("title");
+		}
+
+		const badge = row.querySelector(":scope > td > span.badge");
+		if (badge) {
+			badge.className = `badge ${jobBadgeClass(job.status)}`;
+			const label = jobStatusLabel(job.status, job.error);
+			if (badge.textContent !== label) badge.textContent = label;
+		}
+
+		const restartNeeded = Number(job.retry_count) > 0;
+		let restart = row.querySelector(":scope > td > .badge-stale");
+		if (restartNeeded) {
+			if (!restart && badge) {
+				restart = document.createElement("span");
+				restart.className = "badge badge-stale";
+				badge.after(restart);
+			}
+			if (restart) {
+				restart.title = `Stale restart #${job.retry_count}`;
+				restart.textContent = `\u21bb${job.retry_count}`;
+			}
+		} else if (restart) {
+			restart.remove();
+		}
+
+		setLiveCellText(row, "pct", jobPctText(job));
+		const seg = row.querySelector('[data-cell="segment"]');
+		if (seg) {
+			const html = jobSegmentHtml(job);
+			if (html == null) {
+				if (seg.textContent !== "\u2014") seg.textContent = "\u2014";
+				seg.title = "Direct download; segments do not apply";
+			} else {
+				seg.removeAttribute("title");
+				if (seg.innerHTML !== html) seg.innerHTML = html;
+			}
+		}
+		setLiveCellText(row, "size", fmtLiveSize(job.downloaded_bytes || 0));
+		setLiveCellText(row, "updated", fmtLiveRelativeTime(job.updated_at || 0));
+
+		if (prevStatus !== job.status) syncJobActions(row, job);
+	}
+
+	function fileStatus(file) {
+		if (!file.exists) return { badge: "badge-failed", label: "Missing" };
+		if ((file.size || 0) < MIN_COMPLETED_FILE_BYTES) {
+			return { badge: "badge-failed", label: "Invalid" };
+		}
+		return { badge: "badge-completed", label: "Present" };
+	}
+
+	function applyFileHot(row, file) {
+		const status = fileStatus(file);
+		row.dataset.sortStatus = status.label.toLowerCase();
+		row.dataset.sortSize = String(file.size || 0);
+		row.dataset.sortTime = String(file.downloaded_at || 0);
+		const badge = row.querySelector(":scope > td > span.badge");
+		if (badge) {
+			badge.className = `badge ${status.badge}`;
+			if (badge.textContent !== status.label) badge.textContent = status.label;
+		}
+		setLiveCellText(row, "size", fmtLiveSize(file.size || 0));
+		setLiveCellText(row, "time", fmtLiveRelativeTime(file.downloaded_at || 0));
+	}
+
+	function jobIsBusy(items) {
+		return items.some((job) =>
+			[
+				"running",
+				"queued",
+				"retry_wait",
+				"resource_wait",
+				"finalizing",
+				"assembling",
+				"remuxing",
+			].includes(job.status),
+		);
+	}
+
+	const jobsLive = createTableLive({
+		listId: "jobs-list",
+		countId: "jobs-count",
+		jsonUrl: `/stash/jobs?limit=${TABLE_LIVE_JOBS_LIMIT}`,
+		partialUrl: "/ui/partials/jobs",
+		identityAttr: "data-job-id",
+		itemId: (job) => job.id,
+		applyHot: applyJobHot,
+		isBusy: jobIsBusy,
+		emptyHtml: '<tr><td colspan="11" class="empty">No jobs yet</td></tr>',
+		errorHtml:
+			'<tr><td colspan="11" class="empty empty-error">Jobs unavailable. Retrying...</td></tr>',
+		hotSortKeys: ["pct", "speed", "size"],
+	});
+
+	const filesLive = createTableLive({
+		listId: "files-section",
+		countId: "files-count",
+		jsonUrl: `/stash/files?limit=${TABLE_LIVE_FILES_LIMIT}`,
+		partialUrl: "/ui/partials/files",
+		identityAttr: "data-file-path",
+		itemId: (file) => file.path,
+		applyHot: applyFileHot,
+		isBusy: () => false,
+		emptyHtml:
+			'<tr><td colspan="9" class="empty">No downloaded files yet</td></tr>',
+		errorHtml:
+			'<tr><td colspan="9" class="empty empty-error">Files unavailable. Retrying...</td></tr>',
+		hotMs: 2000,
+		idleMs: 2000,
+		hotSortKeys: ["size", "time"],
+	});
+
+	function invalidateLiveTables() {
+		jobsLive.invalidate();
+		filesLive.invalidate();
+	}
+
 	const speedHistory = new Map();
 	const speedDisplayCache = new Map();
 
@@ -332,6 +807,32 @@ document.addEventListener("DOMContentLoaded", () => {
 		if (!table) return;
 		syncTableState(table);
 		applyTableSort(table);
+	});
+
+
+	document.addEventListener("htmx:after:request", (e) => {
+		const detail = e.detail || {};
+		const xhr = detail.xhr;
+		if (xhr && xhr.status >= 400) return;
+		if (detail.successful === false) return;
+		const method = (
+			detail.requestConfig?.verb ||
+			detail.xhr?.method ||
+			""
+		).toUpperCase();
+		if (method && method !== "POST") return;
+		const path =
+			detail.pathInfo?.requestPath ||
+			detail.requestConfig?.path ||
+			"";
+		const elt = detail.elt;
+		const liveRelated =
+			(typeof path === "string" &&
+				(path.includes("/ui/jobs") || path.includes("/ui/files"))) ||
+			(elt &&
+				elt.closest &&
+				(elt.closest("#jobs-pane") || elt.closest("#files-pane")));
+		if (liveRelated) invalidateLiveTables();
 	});
 
 	["htmx:error", "htmx:response:error"].forEach((eventName) => {
@@ -500,4 +1001,6 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 		syncTableState(table);
 	});
+	jobsLive.start();
+	filesLive.start();
 });

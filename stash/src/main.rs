@@ -125,6 +125,11 @@ struct ListJobsQuery {
 }
 
 #[derive(Deserialize)]
+struct ListFilesQuery {
+    limit: Option<usize>,
+}
+
+#[derive(Deserialize)]
 struct PageStatusQuery {
     url: String,
 }
@@ -680,6 +685,15 @@ async fn list_jobs(state: aw::Data<AppState>, query: aw::Query<ListJobsQuery>) -
     HttpResponse::Ok().json(serde_json::json!({ "results": responses }))
 }
 
+async fn list_files(state: aw::Data<AppState>, query: aw::Query<ListFilesQuery>) -> HttpResponse {
+    let limit = query.limit.unwrap_or(100);
+    let files = match state.db.lock() {
+        Ok(db) => store::list_downloaded(&db, None, limit).unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+    HttpResponse::Ok().json(serde_json::json!({ "results": files }))
+}
+
 async fn page_status(state: aw::Data<AppState>, query: aw::Query<PageStatusQuery>) -> HttpResponse {
     let url = query.url.trim();
     if url.is_empty() {
@@ -1109,6 +1123,7 @@ async fn main() -> std::io::Result<()> {
                 aw::post().to(web::delete_selected_files_partial),
             )
             .route("/ui/files/delete", aw::post().to(web::delete_file_partial))
+            .route("/stash/files", aw::get().to(list_files))
             .route("/stash/files/search", aw::post().to(search))
             .route("/stash/files/check", aw::post().to(check))
             .route("/stash/downloads/mark", aw::post().to(mark))

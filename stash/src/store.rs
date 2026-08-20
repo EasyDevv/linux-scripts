@@ -149,6 +149,7 @@ impl JobRow {
             uploaded_segments: uploaded,
             total_segments: total_seg,
             phase: self.phase.clone(),
+            updated_at: self.updated_at,
         }
     }
 }
@@ -207,6 +208,7 @@ pub struct JobResponse {
     pub uploaded_segments: Option<u32>,
     pub total_segments: u32,
     pub phase: String,
+    pub updated_at: u64,
 }
 
 #[derive(Clone, Debug, Serialize)]
