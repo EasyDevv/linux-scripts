@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+rm -f /etc/systemd/system/caddy.service.d/crowdsec-bin.conf
+systemctl daemon-reload
+if [ -f /etc/caddy/Caddyfile.bak-stock ]; then
+  cp /etc/caddy/Caddyfile.bak-stock /etc/caddy/Caddyfile
+fi
+systemctl restart caddy
+systemctl is-active caddy

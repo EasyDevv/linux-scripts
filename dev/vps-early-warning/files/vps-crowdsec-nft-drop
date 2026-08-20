@@ -1,0 +1,29 @@
+#!/bin/sh
+# Bind CrowdSec origin sets to DROP. 0.0.36 creates sets but may omit verdicts.
+set -eu
+
+ensure_drops() {
+  family=$1
+  table=$2
+  chain=$3
+  match=$4
+  nft list table "$family" "$table" >/dev/null 2>&1 || return 0
+  nft list chain "$family" "$table" "$chain" >/dev/null 2>&1 || return 0
+  sets=$(nft list table "$family" "$table" | awk '/^[[:space:]]*set crowdsec-blacklists/{print $2}')
+  for setname in $sets; do
+    if nft list chain "$family" "$table" "$chain" | grep -q "@${setname}"; then
+      continue
+    fi
+    nft add rule "$family" "$table" "$chain" "$match" saddr @"$setname" drop
+  done
+}
+
+for _ in 1 2 3 4 5 6 7 8; do
+  if nft list table ip crowdsec >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+
+ensure_drops ip crowdsec crowdsec-chain-input ip
+ensure_drops ip6 crowdsec6 crowdsec6-chain-input ip6

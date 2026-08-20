@@ -63,7 +63,7 @@ def target_root_for(project_root: Path, item: ManagedItem) -> Path:
 def display_name_for(item: ManagedItem) -> str:
     if item.kind == "rule":
         return item.relative_path.name.removesuffix(".md")
-    return item.relative_path.as_posix()
+    return item.relative_path.name
 
 
 def list_rule_items() -> list[ManagedItem]:
@@ -138,6 +138,39 @@ def visible_width(text: str) -> int:
     return sum(cell_width(char) for char in strip_ansi(text))
 
 
+
+def skill_group_key(item: ManagedItem) -> str | None:
+    if item.kind != "skill":
+        return None
+    parts = item.relative_path.parts
+    if len(parts) >= 2 and parts[0].startswith("_") and len(parts[0]) > 1:
+        return parts[0]
+    return None
+
+
+def skill_group_label(group_key: str) -> str:
+    return group_key[1:]
+
+
+def iter_skill_sections(items: list[ManagedItem]) -> list[tuple[str, list[ManagedItem]]]:
+    ungrouped: list[ManagedItem] = []
+    grouped: dict[str, list[ManagedItem]] = {}
+    for item in items:
+        if item.kind != "skill":
+            continue
+        key = skill_group_key(item)
+        if key is None:
+            ungrouped.append(item)
+        else:
+            grouped.setdefault(key, []).append(item)
+    sections: list[tuple[str, list[ManagedItem]]] = []
+    if ungrouped:
+        sections.append(("Skills", ungrouped))
+    for key in sorted(grouped):
+        sections.append((f"Skills / {skill_group_label(key)}", grouped[key]))
+    return sections
+
+
 def group_instruction_items(items: list[ManagedItem]) -> list[ManagedItem]:
     general_items = [
         item
@@ -149,7 +182,11 @@ def group_instruction_items(items: list[ManagedItem]) -> list[ManagedItem]:
         for item in items
         if item.kind == "rule" and exclusive_group_key(item) is not None
     ]
-    skill_items = [item for item in items if item.kind == "skill"]
+    skill_items = [
+        item
+        for _, section_items in iter_skill_sections(items)
+        for item in section_items
+    ]
     return [*general_items, *stack_items, *skill_items]
 
 
@@ -221,7 +258,7 @@ def build_display_entries(
                 if item.kind == "rule" and exclusive_group_key(item) is not None
             ],
         ),
-        ("Skills", [item for item in items if item.kind == "skill"]),
+        *iter_skill_sections(items),
     ]
 
     for section_label, section_items in grouped_sections:

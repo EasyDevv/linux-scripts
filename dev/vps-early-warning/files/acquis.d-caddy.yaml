@@ -1,0 +1,11 @@
+source: file
+filenames:
+  - /var/log/caddy/access.log
+labels:
+  type: caddy
+---
+source: journalctl
+journalctl_filter:
+  - _SYSTEMD_UNIT=ssh.service
+labels:
+  type: syslog

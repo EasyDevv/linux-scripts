@@ -1,0 +1,20 @@
+## ovh-vps early-warning. Writes/attr only. Do not set -e 2 here.
+-w /etc/passwd -p wa -k vps_ew
+-w /etc/shadow -p wa -k vps_ew
+-w /etc/group -p wa -k vps_ew
+-w /etc/gshadow -p wa -k vps_ew
+-w /etc/sudoers -p wa -k vps_ew
+-w /etc/sudoers.d -p wa -k vps_ew
+-w /etc/ssh/sshd_config -p wa -k vps_ew
+-w /etc/ssh/sshd_config.d -p wa -k vps_ew
+-w /etc/nftables.conf -p wa -k vps_ew
+-w /etc/nftables.d -p wa -k vps_ew
+-w /etc/caddy/Caddyfile -p wa -k vps_ew
+-w /home/debian/.ssh/authorized_keys -p wa -k vps_ew
+-w /etc/vps-alert/watch-test -p wa -k vps_ew
+-a always,exit -F arch=b64 -S execve -F path=/usr/sbin/useradd -k vps_ew
+-a always,exit -F arch=b64 -S execve -F path=/usr/sbin/usermod -k vps_ew
+-a always,exit -F arch=b64 -S execve -F path=/usr/sbin/userdel -k vps_ew
+-a always,exit -F arch=b32 -S execve -F path=/usr/sbin/useradd -k vps_ew
+-a always,exit -F arch=b32 -S execve -F path=/usr/sbin/usermod -k vps_ew
+-a always,exit -F arch=b32 -S execve -F path=/usr/sbin/userdel -k vps_ew

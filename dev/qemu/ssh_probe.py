@@ -11,14 +11,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import require
+from ssh_forward import tap_ipv4
 
 
 def tcp_banner(host: str, port: int, timeout: float = 3.0) -> dict:
-    info = {"host": host, "port": port, "ok": False, "banner": None, "error": None}
+    info = {"host": host, "port": port, "ok": False, "banner": None}
     try:
         with socket.create_connection((host, port), timeout=timeout) as sock:
             sock.settimeout(timeout)
-            data = sock.recv(64)
+            data = sock.recv(128)
         info["ok"] = True
         info["banner"] = data.decode("latin1", "replace").strip()
     except Exception as exc:  # noqa: BLE001 - probe surface
@@ -29,12 +30,12 @@ def tcp_banner(host: str, port: int, timeout: float = 3.0) -> dict:
 def guest_ssh(container: str, vm_ip: str) -> dict:
     result = subprocess.run(
         ["podman", "exec", container, "nc", "-w2", vm_ip, "22"],
-        input=b"",
+        input=b"\n",
         capture_output=True,
-        timeout=5,
+        timeout=8,
         check=False,
     )
-    banner = result.stdout.decode("latin1", "replace").strip()
+    banner = (result.stdout or b"").decode("latin1", "replace").strip()
     return {
         "ok": banner.startswith("SSH-"),
         "banner": banner or None,
@@ -61,7 +62,7 @@ def ssh_alias(alias: str) -> dict:
         check=False,
     )
     return {
-        "ok": result.returncode == 0 and "ssh_ok" in result.stdout,
+        "ok": result.returncode == 0,
         "returncode": result.returncode,
         "stdout": result.stdout.strip(),
         "stderr": result.stderr.strip(),
@@ -73,8 +74,9 @@ def main() -> int:
     parser.add_argument("instance")
     args = parser.parse_args()
     rec = require(args.instance)
+    tap = tap_ipv4(rec["container"])
     host = tcp_banner("127.0.0.1", int(rec["ssh_port"]))
-    guest = guest_ssh(rec["container"], rec["vm_net_ip"])
+    guest = guest_ssh(rec["container"], tap)
     alias = ssh_alias(rec["ssh_alias"])
     report = {
         "instance": rec["instance"],
@@ -82,6 +84,7 @@ def main() -> int:
         "alias": rec["ssh_alias"],
         "host_port": rec["ssh_port"],
         "vm_net_ip": rec["vm_net_ip"],
+        "tap_ip": tap,
         "host_listen": host,
         "guest_listen": guest,
         "ssh": alias,

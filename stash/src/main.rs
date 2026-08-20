@@ -475,6 +475,12 @@ async fn upload_browser_hls_segment(
         .get_job(&job_id)
         .await
         .ok_or_else(|| bad_request("job not found"))?;
+    if !matches!(
+        job.status.as_str(),
+        "running" | "finalizing" | "assembling" | "remuxing"
+    ) {
+        return Err(bad_request("job is not accepting segments"));
+    }
     let temp_dir = std::path::PathBuf::from(&job.temp_dir);
     if temp_dir.as_os_str().is_empty() {
         return Err(bad_request("job temp dir is empty"));

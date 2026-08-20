@@ -1,0 +1,16 @@
+[package]
+name = "db-sync"
+version = "0.1.0"
+edition = "2021"
+description = "Two-way SQLite sync with snapshots and conflict resolution"
+
+[dependencies]
+anyhow = "1"
+crossterm = "0.28"
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
+
+aes-gcm = "0.10"
+base64 = "0.22"
+
+[dev-dependencies]
+tempfile = "3"

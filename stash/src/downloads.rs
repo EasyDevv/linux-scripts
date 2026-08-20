@@ -3,7 +3,7 @@ use std::ffi::CString;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicU8, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, AtomicUsize, Ordering};
 use std::time::{Duration, Instant, SystemTime};
 
 use futures_util::StreamExt;
@@ -329,11 +329,6 @@ impl JobManager {
         store::list_jobs(&db, limit).unwrap_or_default()
     }
 
-    pub async fn list_failed_job_ids(&self) -> Vec<String> {
-        let db = self.db.lock().await;
-        store::list_failed_job_ids(&db).unwrap_or_default()
-    }
-
     pub async fn list_jobs_for_url(&self, url: &str, limit: usize) -> Vec<JobRow> {
         let db = self.db.lock().await;
         store::list_jobs_for_url(&db, url, limit).unwrap_or_default()
@@ -597,6 +592,16 @@ impl JobManager {
         let now = unix_now();
         let db = self.db.lock().await;
         store::retry_job(&db, id, now).unwrap_or(false)
+    }
+
+    pub async fn retry_failed_jobs(
+        &self,
+        limit: usize,
+        mode: store::ConcurrencyMode,
+    ) -> (usize, usize) {
+        let now = unix_now();
+        let db = self.db.lock().await;
+        store::retry_failed_jobs(&db, now, limit, mode).unwrap_or((0, 0))
     }
 
     pub async fn retry_file_job(&self, id: &str) -> bool {
@@ -1981,40 +1986,11 @@ pub async fn run_scheduler(
 
         let mode = store::ConcurrencyMode::from_u8(concurrency_mode.load(Ordering::Relaxed));
         let running = jobs.list_running_jobs().await;
-        let mut due = jobs.list_due_jobs(unix_now(), running.len() + 32).await;
-        if mode == store::ConcurrencyMode::Global {
-            let available = max_concurrent_jobs
-                .load(Ordering::Relaxed)
-                .saturating_sub(running.len());
-            if available == 0 {
-                continue;
-            }
-            due.truncate(available);
-        } else {
-            let limit = max_concurrent_jobs.load(Ordering::Relaxed);
-            let mut active_by_domain: std::collections::HashMap<String, usize> =
-                std::collections::HashMap::new();
-            for job in &running {
-                *active_by_domain
-                    .entry(
-                        mode.group_key(&job.url, &job.src_url)
-                            .expect("domain mode has a group key"),
-                    )
-                    .or_insert(0) += 1;
-            }
-            due.retain(|job| {
-                let domain = mode.group_key(&job.url, &job.src_url).expect("domain mode has a group key");
-                let count = active_by_domain.entry(domain).or_insert(0);
-                if *count >= limit {
-                    false
-                } else {
-                    *count += 1;
-                    true
-                }
-            });
-            if due.is_empty() {
-                continue;
-            }
+        let due = jobs.list_due_jobs(unix_now(), running.len() + 32).await;
+        let limit = max_concurrent_jobs.load(Ordering::Relaxed);
+        let mut due = store::select_due_jobs(due, &running, limit, mode);
+        if due.is_empty() {
+            continue;
         }
 
         let has_blocked_retry = due.iter().any(is_ip_blocked_retry);
@@ -2050,7 +2026,8 @@ pub async fn run_scheduler(
                 continue;
             }
             if job_row.is_browser_hls() {
-                info!("scheduler: browser-refreshed source ready for {jid}");
+                info!("scheduler: browser-hls claimed {jid}");
+                continue;
             }
             info!(
                 "scheduler: launching job {jid} (url={}, src_url={})",
@@ -2195,7 +2172,9 @@ mod tests {
 
     #[test]
     fn parses_logged_out_status() {
-        let status = parse_status_info("You are not logged in\nYou can log in by running `adguardvpn-cli login`");
+        let status = parse_status_info(
+            "You are not logged in\nYou can log in by running `adguardvpn-cli login`",
+        );
 
         assert!(!status.connected);
         assert!(status.logged_out);

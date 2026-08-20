@@ -1,3 +1,5 @@
+import { closePageAllowingDialogs, preparePageLeave } from "./dialogs.ts";
+
 export type Tab = {
 	id: string;
 	type: string;
@@ -181,6 +183,62 @@ export async function waitForLoad(cdp: CDP, timeout = 10000) {
 	});
 }
 
+
+function canAttachDebugger(url?: string) {
+	if (!url) return false;
+	try {
+		const parsed = new URL(url);
+		return (
+			parsed.hostname === "127.0.0.1" ||
+			parsed.hostname === "localhost" ||
+			parsed.hostname === "[::1]" ||
+			parsed.hostname === "::1"
+		);
+	} catch {
+		return false;
+	}
+}
+
+export async function closeTabAllowingDialogs(port: number, tab: Tab) {
+	if (canAttachDebugger(tab.webSocketDebuggerUrl)) {
+		try {
+			const session = await CDP.connect(tab.webSocketDebuggerUrl, 400);
+			try {
+				if (await closePageAllowingDialogs(session)) return;
+			} finally {
+				session.close();
+			}
+		} catch {
+			// Fall through to the HTTP close endpoint.
+		}
+	}
+	await closeTabById(port, tab.id);
+}
+
+export async function acceptPageDialogs(port: number) {
+	let tabs: Tab[] = [];
+	try {
+		tabs = (await (
+			await fetch(`http://127.0.0.1:${port}/json/list`)
+		).json()) as Tab[];
+	} catch {
+		return;
+	}
+
+	for (const tab of tabs) {
+		if (tab.type && tab.type !== "page") continue;
+		if (!tab.webSocketDebuggerUrl) continue;
+		try {
+			const session = await CDP.connect(tab.webSocketDebuggerUrl, 400);
+			try {
+				await preparePageLeave(session);
+			} finally {
+				session.close();
+			}
+		} catch {}
+	}
+}
+
 export async function closeTabById(port: number, tabId: string) {
 	try {
 		await fetch(`http://127.0.0.1:${port}/json/close/${tabId}`);
@@ -242,7 +300,7 @@ export async function resetTabs(
 	const pageTabs = tabs.filter((t) => t.type === "page");
 
 	for (const tab of pageTabs.slice(1)) {
-		await closeTabById(port, tab.id);
+		await closeTabAllowingDialogs(port, tab);
 	}
 
 	const targetUrl = url || "about:blank";
@@ -306,6 +364,7 @@ export async function resetTabs(
 					await cdp.send("Page.enable");
 					await cdp.send("Runtime.enable");
 					await cdp.send("Log.enable");
+					await preparePageLeave(cdp);
 
 					const navResult = await cdp.send<{ frameId?: string }>(
 						"Page.navigate",

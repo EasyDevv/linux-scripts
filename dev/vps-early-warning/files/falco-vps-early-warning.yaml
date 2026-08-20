@@ -1,0 +1,10 @@
+json_output: true
+priority: warning
+webserver:
+  enabled: true
+  listen_address: 127.0.0.1
+  listen_port: 8765
+program_output:
+  enabled: true
+  keep_alive: false
+  program: /usr/local/sbin/vps-falco-alert

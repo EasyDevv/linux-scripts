@@ -1,0 +1,2 @@
+- rule: Read sensitive file untrusted
+  enabled: false

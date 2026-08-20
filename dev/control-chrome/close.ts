@@ -5,11 +5,12 @@ import {
 	clearPortLock,
 	resolvePortState,
 } from "./browser-state.ts";
-import { CDP, getBrowserWsUrl } from "./cdp.ts";
+import { acceptPageDialogs, CDP, getBrowserWsUrl } from "./cdp.ts";
 import {
 	clearLaunchInfo,
 	processExists,
 	processMatchesLaunchInfo,
+	processUsesUserDataDir,
 	readLaunchInfo,
 	resolveProjectProfileDir,
 	terminateProcess,
@@ -133,6 +134,7 @@ async function closeBrowserPortGracefully(port: number, timeoutMs: number) {
 
 	const cdp = await CDP.connect(wsUrl);
 	try {
+		await acceptPageDialogs(port);
 		await cdp.send("Browser.close");
 	} finally {
 		cdp.close();
@@ -151,6 +153,7 @@ async function closeBrowserGracefully(
 
 	const cdp = await CDP.connect(wsUrl);
 	try {
+		await acceptPageDialogs(port);
 		await cdp.send("Browser.close");
 	} finally {
 		cdp.close();
@@ -253,13 +256,23 @@ export async function main(argv: string[]): Promise<void> {
 	}
 
 	if (processExists(launchInfo.pid)) {
-		const matches = await processMatchesLaunchInfo(launchInfo);
-		if (matches === false) {
-			await clearLaunchInfo(userDataDir);
-			await clearPortLock(options.port);
-			die(
-				`Recorded PID ${launchInfo.pid} no longer matches profile ${userDataDir}; cleared stale metadata.`,
+		if (options.pid !== undefined) {
+			const usesProfile = await processUsesUserDataDir(
+				launchInfo.pid,
+				userDataDir,
 			);
+			if (usesProfile === false) {
+				die(`PID ${launchInfo.pid} is not using profile ${userDataDir}`);
+			}
+		} else {
+			const matches = await processMatchesLaunchInfo(launchInfo);
+			if (matches === false) {
+				await clearLaunchInfo(userDataDir);
+				await clearPortLock(options.port);
+				die(
+					`Recorded PID ${launchInfo.pid} no longer matches profile ${userDataDir}; cleared stale metadata.`,
+				);
+			}
 		}
 	}
 

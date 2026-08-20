@@ -26,6 +26,8 @@ control-chrome close
 control-chrome close --port 39225
 ```
 
+`open` (existing tab) and `close` auto-accept native `beforeunload` / confirm dialogs so noVNC "leave site?" does not stall CDP.
+
 ### Status
 
 ```bash

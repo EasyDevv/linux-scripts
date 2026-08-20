@@ -4,6 +4,7 @@ import { basename, join } from "node:path";
 
 import {
 	chromeDebugPortForProfile,
+	chromeUserDataDirFromArgs,
 	resolveProjectProfileDir,
 } from "./chrome-instance.ts";
 
@@ -63,4 +64,17 @@ test("matches Chromium when it rewrites its process title into one argument", ()
 			join(projectRoot, ".user-data", "chrome-project"),
 		),
 	).toBe(9223);
+});
+
+test("extracts a profile path without a debug port", () => {
+	const projectRoot = "/tmp/project";
+	expect(
+		chromeUserDataDirFromArgs(
+			[
+				"/opt/brave-origin-bin/brave",
+				"--user-data-dir=.user-data/chrome-project",
+			],
+			projectRoot,
+		),
+	).toBe(join(projectRoot, ".user-data", "chrome-project"));
 });

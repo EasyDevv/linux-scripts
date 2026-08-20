@@ -138,7 +138,7 @@ pub async fn run_browser_hls_worker(jobs: Arc<JobManager>, cfg: AppConfig) {
 }
 
 fn is_active_browser_hls_job(job: &JobRow) -> bool {
-    matches!(job.status.as_str(), "running" | "queued" | "retry_wait")
+    matches!(job.status.as_str(), "running" | "retry_wait")
         && job.is_browser_hls()
         && job.retry_count < 3
 }

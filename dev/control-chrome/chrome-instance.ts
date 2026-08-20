@@ -111,22 +111,44 @@ async function readProcessCwd(pid: number): Promise<string | null> {
 	}
 }
 
+export function chromeUserDataDirFromArgs(
+	args: string[],
+	processCwd: string,
+): string | null {
+	const commandLine = args.join("\0");
+	const profileArg = commandLine.match(
+		/(?:^|[\s\0])--user-data-dir=([^\s\0]+)/,
+	)?.[1];
+	if (!profileArg) return null;
+	return resolve(processCwd, profileArg);
+}
+
+export async function processUsesUserDataDir(
+	pid: number,
+	userDataDir: string,
+): Promise<boolean | null> {
+	if (!Number.isInteger(pid) || pid <= 0) return false;
+	const args = await readProcessArgs(pid);
+	if (args == null) return null;
+	if (!args.length) return false;
+	const processCwd = await readProcessCwd(pid);
+	if (!processCwd) return null;
+	const profileDir = chromeUserDataDirFromArgs(args, processCwd);
+	if (!profileDir) return false;
+	return profileDir === resolve(userDataDir);
+}
+
 export function chromeDebugPortForProfile(
 	args: string[],
 	processCwd: string,
 	userDataDir: string,
 ): number | null {
-	const commandLine = args.join("\0");
-	const profileArg = commandLine.match(
-		/(?:^|[\s\0])--user-data-dir=([^\s\0]+)/,
-	)?.[1];
+	const profileDir = chromeUserDataDirFromArgs(args, processCwd);
 	const port = Number(
-		commandLine.match(/(?:^|[\s\0])--remote-debugging-port=(\d+)/)?.[1],
+		args.join("\0").match(/(?:^|[\s\0])--remote-debugging-port=(\d+)/)?.[1],
 	);
-	if (!profileArg || !Number.isInteger(port) || port <= 0 || port > 65535)
+	if (!profileDir || !Number.isInteger(port) || port <= 0 || port > 65535)
 		return null;
-
-	const profileDir = resolve(processCwd, profileArg);
 	return profileDir === resolve(userDataDir) ? port : null;
 }
 

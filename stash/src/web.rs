@@ -1,3 +1,5 @@
+use std::sync::atomic::Ordering;
+
 use actix_web::{HttpResponse, web as aw};
 use tracing::info;
 
@@ -695,16 +697,13 @@ pub async fn retry_selected_jobs_partial(
 }
 
 pub async fn retry_failed_jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
-    let ids = state.jobs.list_failed_job_ids().await;
-    let candidate_count = ids.len();
-    let mut retried = 0;
-    for id in ids {
-        if state.jobs.retry_job(&id).await {
-            activate_retried_job(&state, &id, "failed").await;
-            retried += 1;
-        }
-    }
-    info!("web retry failed: candidates={candidate_count}, retried={retried}");
+    let limit = state.max_concurrent_jobs.load(Ordering::Relaxed);
+    let mode = store::ConcurrencyMode::from_u8(state.concurrency_mode.load(Ordering::Relaxed));
+    let (retried, started) = state.jobs.retry_failed_jobs(limit, mode).await;
+    info!(
+        "web retry failed: retried={retried}, started={started}, limit={limit}, mode={}",
+        mode.as_str()
+    );
     jobs_partial(state).await
 }
 
@@ -882,8 +881,14 @@ mod tests {
             super::status_label("failed", "VPN not ready: adguardvpn-cli logged out"),
             "VPN Error"
         );
-        assert_eq!(super::status_label("failed", "media URL not found"), "Failed");
-        assert_eq!(super::status_label("queued", "VPN not ready: disconnected"), "Queued");
+        assert_eq!(
+            super::status_label("failed", "media URL not found"),
+            "Failed"
+        );
+        assert_eq!(
+            super::status_label("queued", "VPN not ready: disconnected"),
+            "Queued"
+        );
     }
 
     #[test]

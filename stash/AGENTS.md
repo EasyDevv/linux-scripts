@@ -129,7 +129,7 @@ cargo build --release
 
 - 시작 시, 다운로드 전, 실행 중 10초마다 `adguardvpn-cli status` 와 `config show` 로 VPN 위치/모드를 검사한다. 연결이 끊겼거나 상태를 읽을 수 없으면 마지막으로 성공한 UI 선택 위치(없으면 기본 Tokyo)에 자동 재연결한다. `You are not logged in`이면 재연결하지 않고 `adguardvpn-cli logged out`으로 실패한다.
 - static 작업이 `HTTP 403 Forbidden`으로 재시도 대기 상태가 되면 다른 활성 작업이 모두 끝난 뒤 VPN 위치를 자동 순환한다. `excluded_locations`는 순환 대상에서 제외하며 기본값은 `Seoul`이다.
-- UI에서 성공적으로 바꾼 VPN 위치, Browser-HLS 레벨, 동시 다운로드 수, 큐 모드(`src_domain` 기본 / `url_domain` / `global`)는 SQLite `app_settings`에 저장되며, 앱 재시작 후에도 복원된다. HLS 저장값이 없으면 1x를 사용한다. `src_domain`은 `src_url` 호스트별로, `url_domain`은 `url` 호스트별로 동시 다운로드 수를 제한하고, 다른 도메인은 대기 없이 시작한다. VPN 로그아웃은 상태 배지를 `VPN Error`로, 우측 상단 드롭다운을 `VPN logged out`으로 표시한다.
+- UI에서 성공적으로 바꾼 VPN 위치, Browser-HLS 레벨, 동시 다운로드 수, 큐 모드(`src_domain` 기본 / `url_domain` / `global`)는 SQLite `app_settings`에 저장되며, 앱 재시작 후에도 복원된다. HLS 저장값이 없으면 1x를 사용한다. `src_domain`은 `src_url` 호스트별로, `url_domain`은 `url` 호스트별로 동시 다운로드 수를 제한하고, 다른 도메인은 대기 없이 시작한다. Retry all failed jobs도 같은 제한을 적용해 한도에 든 작업만 시작하고 나머지는 `queued`로 둔다. VPN 로그아웃은 상태 배지를 `VPN Error`로, 우측 상단 드롭다운을 `VPN logged out`으로 표시한다.
 - Range 지원과 파일 크기를 probe 한 뒤, 큰 파일은 멀티 청크 다운로드를 시도한다.
 - 완료 파일은 `download_root/<sanitized filename>` 으로 복사되고 `downloaded_files` 에 자동 마크된다.
 - UI의 파일 삭제는 디스크 파일과 SQLite 기록을 함께 지운다. 파일 clear 는 SQLite 기록만 지운다.

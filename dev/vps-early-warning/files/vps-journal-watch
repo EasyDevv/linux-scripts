@@ -1,0 +1,90 @@
+#!/usr/bin/python3
+"""Follow high-signal journal units and forward to vps-alert."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+
+ALERT = "/usr/local/sbin/vps-alert"
+UNITS = [
+    "ssh.service",
+    "caddy.service",
+    "crowdsec.service",
+    "auditd.service",
+    "netbird.service",
+    "netbird-podman.service",
+    "fail2ban.service",
+    "nftables.service",
+]
+
+
+def emit(title: str, body: str) -> None:
+    try:
+        subprocess.Popen(
+            [ALERT, title, body],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        return
+
+
+def handle(entry: dict) -> None:
+    unit = entry.get("SYSLOG_IDENTIFIER") or entry.get("_SYSTEMD_UNIT") or "journal"
+    message = str(entry.get("MESSAGE", "")).strip()
+    if not message:
+        return
+    try:
+        priority = int(entry.get("PRIORITY", "6"))
+    except (TypeError, ValueError):
+        priority = 6
+
+    if "Accepted publickey" in message:
+        emit("ssh-login", message[:400])
+        return
+    if "not listed in AllowUsers" in message:
+        emit("ssh-deny", message[:400])
+        return
+    if unit == "fail2ban" and " Ban " in message:
+        emit("fail2ban", message[:400])
+        return
+    if priority <= 3:
+        emit(f"unit-err:{unit}", message[:400])
+
+
+def main() -> int:
+    cmd = [
+        "journalctl",
+        "-o",
+        "json",
+        "-n",
+        "0",
+        "-f",
+        "--no-pager",
+    ]
+    for unit in UNITS:
+        cmd.extend(["-u", unit])
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+    )
+    assert proc.stdout is not None
+    for raw in proc.stdout:
+        raw = raw.strip()
+        if not raw:
+            continue
+        try:
+            handle(json.loads(raw))
+        except json.JSONDecodeError:
+            continue
+    return proc.wait()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
