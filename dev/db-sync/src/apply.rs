@@ -11,8 +11,8 @@ use crate::color::{paint, DIM};
 use crate::crypto::{DataKey, Keyring};
 use crate::reencrypt::reencrypt_file;
 use crate::remote::{
-    backup_install_remote, chown_remote, incoming_path, remote_owner, replace_file_remote,
-    snapshot_remote, systemctl_user, RemoteExec,
+    incoming_path, install_incoming_remote, read_owner_and_maybe_stop, snapshot_remote,
+    systemctl_user, RemoteExec,
 };
 use crate::snapshot::integrity_or_err;
 
@@ -64,22 +64,14 @@ fn apply_remote(
     control_unit: bool,
 ) -> Result<()> {
     let incoming = incoming_path(dest);
-    let owner = remote_owner(exec, dest)
-        .ok()
-        .filter(|name| !name.is_empty());
     let machine = opts.remote_machine();
     let unit = opts.remote_unit.as_deref();
-
-    let stopped = if control_unit {
-        if let (Some(machine), Some(unit)) = (machine.as_deref(), unit) {
-            systemctl_user(exec, machine, "stop", unit)?;
-            true
-        } else {
-            false
-        }
+    let (stop_machine, stop_unit) = if control_unit {
+        (machine.as_deref(), unit)
     } else {
-        false
+        (None, None)
     };
+    let (owner, stopped) = read_owner_and_maybe_stop(exec, dest, stop_machine, stop_unit)?;
 
     let result = (|| -> Result<()> {
         if opts.snapshot {
@@ -93,22 +85,7 @@ fn apply_remote(
             );
         }
         exec.push_file(source, &incoming)?;
-        if let Some(owner) = &owner {
-            if opts.remote_sudo {
-                let _ = chown_remote(exec, &incoming, owner);
-            }
-        }
-        if stopped {
-            replace_file_remote(exec, &incoming, dest)?;
-            if let Some(owner) = &owner {
-                if opts.remote_sudo {
-                    let _ = chown_remote(exec, dest, owner);
-                }
-            }
-        } else {
-            backup_install_remote(exec, &incoming, dest)?;
-            let _ = exec.remove_file(&incoming);
-        }
+        install_incoming_remote(exec, &incoming, dest, owner.as_deref(), stopped)?;
         Ok(())
     })();
 

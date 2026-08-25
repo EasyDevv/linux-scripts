@@ -1,0 +1,303 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0c;
+  --card: #161618;
+  --ink: #f4f4f1;
+  --muted: #9a9a94;
+  --line: rgba(244, 244, 241, 0.12);
+  --hover: rgba(244, 244, 241, 0.06);
+  --active: rgba(244, 244, 241, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  color: var(--ink);
+  font: 14px/1.4 Inter, "Noto Sans KR", sans-serif;
+  background: var(--bg);
+  padding: 0.7rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.shell {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+}
+
+.nav-head {
+  padding: 1rem 0.9rem 0.65rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.nav-head h1 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: -0.03em;
+}
+
+.nav-head p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.nav-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.55rem 0.45rem 0.75rem;
+}
+
+.project,
+.route {
+  margin: 0;
+}
+
+.project > summary,
+.route > summary {
+  cursor: pointer;
+  list-style: none;
+  border-radius: 0.4rem;
+}
+
+.project > summary::-webkit-details-marker,
+.route > summary::-webkit-details-marker {
+  display: none;
+}
+
+.project > summary {
+  padding: 0.35rem 0.4rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.route > summary {
+  padding: 0.22rem 0.4rem 0.22rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.project > summary:hover,
+.route > summary:hover {
+  background: var(--hover);
+}
+
+.project ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project a {
+  display: block;
+  padding: 0.24rem 0.4rem 0.24rem 1.35rem;
+  border-radius: 0.4rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.project a:hover { background: var(--hover); color: var(--ink); }
+
+.project a[aria-current="page"] {
+  background: var(--active);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.vacant {
+  margin: 0.15rem 0 0.45rem;
+  padding: 0 0.4rem 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.add-project {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.65rem 0.55rem 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.add-project input,
+.add-project button {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.32rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.add-project button { cursor: pointer; }
+.add-project button:hover { background: var(--hover); }
+
+.stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pane {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pane > * { grid-area: 1 / 1; }
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.toolbar[hidden] { display: none; }
+
+.toolbar .file {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.scheme-switch {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.scheme-switch button {
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.scheme-switch button + button {
+  border-left: 1px solid var(--line);
+}
+
+.scheme-switch button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.scheme-switch button[aria-pressed="true"] {
+  background: var(--active);
+  color: var(--ink);
+}
+
+.scheme-switch button[data-default] {
+  box-shadow: inset 0 -2px 0 currentColor;
+}
+
+.scheme-switch svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.actions select {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--card);
+  color: var(--ink);
+}
+
+.actions button {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.actions button:hover { background: var(--hover); }
+
+.actions .danger:hover {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--card);
+}
+
+.empty { background: var(--card); }
+
+.status {
+  margin: 0;
+  padding: 0.45rem 0.75rem;
+  border-top: 1px solid var(--line);
+  color: #fca5a5;
+  font-size: 0.78rem;
+}
+
+.status[hidden] { display: none; }
+
+@media (max-width: 40rem) {
+  .shell { grid-template-columns: 11.5rem minmax(0, 1fr); }
+}

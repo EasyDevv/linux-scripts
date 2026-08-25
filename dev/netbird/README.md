@@ -2,6 +2,14 @@
 
 직원 PC·모바일을 NetBird에 붙이는 순서입니다.
 
+## 레이아웃
+
+- `netbird-setup.py` — setup key 발급과 USB 설치본
+- `host-reconcile.py` — 이미 있는 호스트를 그룹·SSH 정책에 맞추기 (`init-vps`가 호출)
+- `windows/` — USB에 담기는 `.cmd`/`.ps1` (Windows라 셸 유지)
+- `tests/` — unittest
+
+
 1. 관리자 PC에서 setup key 발급
 2. USB에 설치 스크립트와 키 파일을 담기
 3. Windows에서 USB 스크립트 실행

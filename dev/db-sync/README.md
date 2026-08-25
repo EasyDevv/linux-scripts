@@ -28,6 +28,8 @@ Non-TTY runs require `--prefer` or `--item-prefer`.
 `--remote-unit NAME` stops/starts that systemd user unit around the remote replace.  
 `--remote-machine` defaults to `USER@` when the remote path is under `/home/USER`.
 
+Remote SSH reuses an OpenSSH ControlMaster for 120s, using the same control socket as init-server (`SSH_CONTROL_DIR`, else `$XDG_RUNTIME_DIR/easydev-ssh-control`). Pull and push stay dedicated streams; short remote steps share one login.
+
 The remote host needs `python3` with stdlib `sqlite3`. The `sqlite3` CLI is not required.
 
 Sensitive columns use `enc:v1:<key-id>:...`. Do not copy a local-only key to production.

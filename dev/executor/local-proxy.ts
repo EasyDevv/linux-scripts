@@ -11,11 +11,62 @@ export function localUrl(name: string): string {
 	return `http://${name}.localhost`;
 }
 
+function isHtmlNavigation(request: Request): boolean {
+	return (
+		request.method === "GET" &&
+		(request.headers.get("sec-fetch-mode") === "navigate" ||
+			request.headers.get("accept")?.includes("text/html") === true)
+	);
+}
+
+export function upstreamUnavailableResponse(request: Request): Response {
+	const headers = {
+		"cache-control": "no-store, max-age=0",
+		"retry-after": "1",
+	};
+	if (isHtmlNavigation(request)) {
+		return new Response(
+			'<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="1"><title>Restarting…</title><p>Development server restarting…</p>',
+			{
+				status: 502,
+				headers: { ...headers, "content-type": "text/html; charset=utf-8" },
+			},
+		);
+	}
+
+	return new Response("Upstream unavailable", {
+		status: 502,
+		headers: { ...headers, "content-type": "text/plain; charset=utf-8" },
+	});
+}
+
+function drain(response: Response): void {
+	void response.arrayBuffer().catch(() => undefined);
+}
+
+function forward(response: Response): Response {
+	const responseHeaders = new Headers(response.headers);
+	responseHeaders.delete("content-encoding");
+	responseHeaders.delete("content-length");
+	return new Response(response.body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers: responseHeaders,
+	});
+}
+
 export class LocalProxy {
 	private routes = new Map<string, string>();
+	private navigationFailureStartedAt = new Map<string, number>();
+	private navigationSucceeded = new Set<string>();
 	private server: ReturnType<typeof Bun.serve>;
 
-	constructor(port = 80) {
+	constructor(
+		port = 80,
+		private navigationTimeoutMs = 5_000,
+		private onNavigationTimeout?: (name: string) => void,
+		private startBudgetMs = 120_000,
+	) {
 		this.server = Bun.serve<ProxySocketData>({
 			hostname: "127.0.0.1",
 			port,
@@ -51,7 +102,10 @@ export class LocalProxy {
 				},
 				close: (socket, code, reason) => {
 					if (socket.data.upstream?.readyState === WebSocket.OPEN) {
-						socket.data.upstream.close(code, reason);
+						const upstreamCode = [1005, 1006, 1015].includes(code)
+							? 1000
+							: code;
+						socket.data.upstream.close(upstreamCode, reason);
 					}
 				},
 			},
@@ -60,7 +114,11 @@ export class LocalProxy {
 	}
 
 	get port(): number {
-		return this.server.port;
+		const port = this.server.port;
+		if (port === undefined) {
+			throw new Error("Local proxy is not listening");
+		}
+		return port;
 	}
 
 	update(config: NormalizedConfig): void {
@@ -76,13 +134,47 @@ export class LocalProxy {
 		this.server.stop(true);
 	}
 
-	private route(request: Request): { port: string; url: URL } | null {
+	private route(
+		request: Request,
+	): { name: string; port: string; url: URL } | null {
 		const url = new URL(request.url);
 		const hostname = url.hostname.toLowerCase();
 		if (!hostname.endsWith(".localhost")) return null;
 		const name = hostname.slice(0, -".localhost".length);
 		const port = this.routes.get(name);
-		return port ? { port, url } : null;
+		return port ? { name, port, url } : null;
+	}
+
+	private recordNavigationResult(
+		name: string,
+		succeeded: boolean,
+		timedOut = false,
+	): void {
+		if (succeeded) {
+			this.navigationSucceeded.add(name);
+			this.navigationFailureStartedAt.delete(name);
+			return;
+		}
+
+		const now = performance.now();
+		const startedAt = this.navigationFailureStartedAt.get(name) ?? now;
+		if (!this.navigationFailureStartedAt.has(name)) {
+			this.navigationFailureStartedAt.set(name, startedAt);
+		}
+
+		const elapsed = now - startedAt;
+		const ready = this.navigationSucceeded.has(name);
+		const restartAfter = ready
+			? this.navigationTimeoutMs
+			: timedOut
+				? this.startBudgetMs
+				: this.navigationTimeoutMs;
+
+		if (elapsed < restartAfter) return;
+
+		this.navigationSucceeded.delete(name);
+		this.navigationFailureStartedAt.set(name, now);
+		this.onNavigationTimeout?.(name);
 	}
 
 	private async handleRequest(
@@ -136,28 +228,48 @@ export class LocalProxy {
 		headers.set("x-forwarded-proto", "http");
 		headers.delete("accept-encoding");
 
-		try {
-			const response = await fetch(target, {
-				method: request.method,
-				headers,
-				body:
-					request.method === "GET" || request.method === "HEAD"
-						? undefined
-						: request.body,
-				redirect: "manual",
-			});
-			const responseHeaders = new Headers(response.headers);
-			responseHeaders.delete("content-encoding");
-			responseHeaders.delete("content-length");
-			return new Response(response.body, {
-				status: response.status,
-				statusText: response.statusText,
-				headers: responseHeaders,
-			});
-		} catch (error) {
-			return new Response(`Upstream unavailable: ${String(error)}`, {
-				status: 502,
-			});
+		const navigation = isHtmlNavigation(request);
+		const upstream = fetch(target, {
+			method: request.method,
+			headers,
+			body:
+				request.method === "GET" || request.method === "HEAD"
+					? undefined
+					: request.body,
+			redirect: "manual",
+		});
+
+		if (!navigation) {
+			try {
+				return forward(await upstream);
+			} catch {
+				return upstreamUnavailableResponse(request);
+			}
 		}
+
+		const timedOut = Symbol("timedOut");
+		const winner = await Promise.race([
+			upstream.then(
+				(response) => response,
+				(error: unknown) => error,
+			),
+			new Promise<typeof timedOut>((resolve) => {
+				setTimeout(() => resolve(timedOut), this.navigationTimeoutMs);
+			}),
+		]);
+
+		if (winner === timedOut) {
+			void upstream.then(drain, () => undefined);
+			this.recordNavigationResult(route.name, false, true);
+			return upstreamUnavailableResponse(request);
+		}
+
+		if (winner instanceof Response) {
+			this.recordNavigationResult(route.name, true);
+			return forward(winner);
+		}
+
+		this.recordNavigationResult(route.name, false, false);
+		return upstreamUnavailableResponse(request);
 	}
 }

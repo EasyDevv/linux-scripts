@@ -101,10 +101,11 @@ export async function runSupervisor(): Promise<void> {
 		Object.entries(process.env).map(([key, value]) => [key, value ?? ""]),
 	);
 	const pm = new ProcessManager(env);
-	const proxy = new LocalProxy();
-	await pm.clearState();
-
 	const managed = new Map<string, ManagedEntry>();
+	const proxy = new LocalProxy(80, 5_000, (name) => {
+		void managed.get(name)?.process.restart();
+	});
+	await pm.clearState();
 	const lastIssue = { value: "" };
 	let stopping = false;
 	let wakeNow = false;
@@ -116,17 +117,20 @@ export async function runSupervisor(): Promise<void> {
 		wakeResolver = null;
 	};
 
-	const stopAll = async () => {
-		if (stopping) {
-			return;
+	let stopPromise: Promise<void> | null = null;
+	const stopAll = (): Promise<void> => {
+		if (stopPromise) {
+			return stopPromise;
 		}
 
 		stopping = true;
 		wake();
-		for (const entry of [...managed.values()]) {
-			await entry.process.stop();
-		}
-		managed.clear();
+		stopPromise = Promise.allSettled(
+			[...managed.values()].map((entry) => entry.process.stop()),
+		).then(() => {
+			managed.clear();
+		});
+		return stopPromise;
 	};
 
 	process.on("SIGHUP", wake);

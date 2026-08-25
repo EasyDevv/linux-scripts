@@ -1,0 +1,8 @@
+{
+  "name": "draft",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun scripts/serve-drafts.ts --port 4177 --host 127.0.0.1"
+  }
+}

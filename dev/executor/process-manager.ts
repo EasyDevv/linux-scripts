@@ -162,6 +162,7 @@ export interface ManagedProcess {
 	readonly name: string;
 	readonly pid: number;
 	readonly running: boolean;
+	restart(): Promise<void>;
 	stop(): Promise<void>;
 }
 
@@ -176,6 +177,7 @@ export class ProcessManager {
 		const tag = `executor/${instance.name}`;
 		const stopController = new AbortController();
 		let currentProc: Bun.Subprocess | null = null;
+		let restartPromise: Promise<void> | null = null;
 		let running = true;
 
 		const loop = (async () => {
@@ -240,6 +242,27 @@ export class ProcessManager {
 			},
 			get running() {
 				return running;
+			},
+			restart: async () => {
+				if (restartPromise) {
+					return restartPromise;
+				}
+
+				restartPromise = (async () => {
+					const proc = currentProc;
+					if (!proc || stopController.signal.aborted) {
+						return;
+					}
+					await journalLog(
+						tag,
+						"[executor] restarting unresponsive managed instance\n",
+					);
+					await terminateProcessTree(proc.pid);
+					await proc.exited;
+				})().finally(() => {
+					restartPromise = null;
+				});
+				return restartPromise;
 			},
 			stop: async () => {
 				stopController.abort();

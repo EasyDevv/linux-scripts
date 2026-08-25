@@ -1,0 +1,5 @@
+[
+  { "slug": "linear", "label": "Linear", "scheme": "dark" },
+  { "slug": "notion", "label": "Notion", "scheme": "light" },
+  { "slug": "airbnb", "label": "Airbnb", "scheme": "light" }
+]

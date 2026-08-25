@@ -1,0 +1,43 @@
+header.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.top-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.style-switch select {
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  color: inherit;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  padding: 4px 8px;
+  max-width: 10rem;
+  color-scheme: inherit;
+}
+
+.style-switch option {
+  color: CanvasText;
+  background-color: Canvas;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

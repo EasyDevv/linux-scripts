@@ -1,0 +1,9 @@
+{
+  "projects": [
+    {
+      "id": "property-portal",
+      "name": "property-portal",
+      "root": "~/dev/product/property-portal"
+    }
+  ]
+}

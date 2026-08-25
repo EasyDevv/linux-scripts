@@ -1,5 +1,7 @@
+use std::env;
 use std::fs;
 use std::io::Write;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
@@ -86,12 +88,7 @@ rm -f -- "$tmp"
             std::process::id(),
             crate::util::unix_millis()
         );
-        let mut cmd = Command::new("ssh");
-        cmd.arg("-o")
-            .arg("BatchMode=yes")
-            .arg("-o")
-            .arg("ConnectTimeout=15")
-            .arg(&self.host);
+        let mut cmd = ssh_to(&self.host, 15)?;
         if self.sudo {
             cmd.arg("sudo").arg("-n");
         }
@@ -139,12 +136,7 @@ chmod 600 -- {dest}
     }
 
     fn spawn_bash(&self, script: &str) -> Result<std::process::Output> {
-        let mut cmd = Command::new("ssh");
-        cmd.arg("-o")
-            .arg("BatchMode=yes")
-            .arg("-o")
-            .arg("ConnectTimeout=20")
-            .arg(&self.host);
+        let mut cmd = ssh_to(&self.host, 20)?;
         if self.sudo {
             cmd.arg("sudo").arg("-n").arg("bash").arg("-s");
         } else {
@@ -161,6 +153,62 @@ chmod 600 -- {dest}
             .write_all(script.as_bytes())?;
         child.wait_with_output().context("wait ssh")
     }
+}
+
+pub(crate) fn ssh_control_dir_from_env(
+    ssh_control_dir: Option<&str>,
+    xdg_runtime_dir: Option<&str>,
+    home: Option<&str>,
+) -> PathBuf {
+    if let Some(path) = ssh_control_dir.filter(|value| !value.is_empty()) {
+        return PathBuf::from(path);
+    }
+    if let Some(runtime) = xdg_runtime_dir.filter(|value| !value.is_empty()) {
+        return PathBuf::from(runtime).join("easydev-ssh-control");
+    }
+    PathBuf::from(home.unwrap_or("/")).join(".cache/easydev-ssh-control")
+}
+
+fn ssh_control_dir() -> PathBuf {
+    let ssh_control = env::var("SSH_CONTROL_DIR").ok();
+    let xdg = env::var("XDG_RUNTIME_DIR").ok();
+    let home = env::var("HOME").ok();
+    ssh_control_dir_from_env(ssh_control.as_deref(), xdg.as_deref(), home.as_deref())
+}
+
+fn ensure_ssh_control_dir() -> Result<PathBuf> {
+    let dir = ssh_control_dir();
+    fs::create_dir_all(&dir).with_context(|| format!("create {}", dir.display()))?;
+    fs::set_permissions(&dir, fs::Permissions::from_mode(0o700))
+        .with_context(|| format!("chmod {}", dir.display()))?;
+    Ok(dir)
+}
+
+pub(crate) fn ssh_client_options_with_dir(dir: &Path, connect_timeout: u32) -> Vec<String> {
+    vec![
+        "-o".into(),
+        "BatchMode=yes".into(),
+        "-o".into(),
+        format!("ConnectTimeout={connect_timeout}"),
+        "-o".into(),
+        "ControlMaster=auto".into(),
+        "-o".into(),
+        "ControlPersist=120".into(),
+        "-o".into(),
+        format!("ControlPath={}/%C", dir.display()),
+    ]
+}
+
+fn ssh_client_options(connect_timeout: u32) -> Result<Vec<String>> {
+    let dir = ensure_ssh_control_dir()?;
+    Ok(ssh_client_options_with_dir(&dir, connect_timeout))
+}
+
+fn ssh_to(host: &str, connect_timeout: u32) -> Result<Command> {
+    let mut cmd = Command::new("ssh");
+    cmd.args(ssh_client_options(connect_timeout)?);
+    cmd.arg(host);
+    Ok(cmd)
 }
 
 pub fn snapshot_remote(exec: &RemoteExec, db_path: &Path, retention: usize) -> Result<PathBuf> {
@@ -242,12 +290,57 @@ printf '%s\n' "$final"
     Ok(PathBuf::from(remote_path))
 }
 
-pub fn backup_install_remote(exec: &RemoteExec, incoming: &Path, dest: &Path) -> Result<()> {
-    let quoted_src = shlex_quote(&incoming.to_string_lossy());
+pub fn read_owner_and_maybe_stop(
+    exec: &RemoteExec,
+    dest: &Path,
+    machine: Option<&str>,
+    unit: Option<&str>,
+) -> Result<(Option<String>, bool)> {
     let quoted_dest = shlex_quote(&dest.to_string_lossy());
+    let stop = match (machine, unit) {
+        (Some(machine), Some(unit)) => format!(
+            "systemctl --machine={} --user stop {}\n",
+            shlex_quote(machine),
+            shlex_quote(unit)
+        ),
+        _ => String::new(),
+    };
+    let stopped = !stop.is_empty();
     let script = format!(
         r#"
 set -euo pipefail
+owner=$(stat -c %U -- {quoted_dest} 2>/dev/null || true)
+{stop}printf '%s\n' "$owner"
+"#
+    );
+    let owner = exec.run_script(&script)?.trim().to_string();
+    Ok(((!owner.is_empty()).then_some(owner), stopped))
+}
+
+pub fn install_incoming_remote(
+    exec: &RemoteExec,
+    incoming: &Path,
+    dest: &Path,
+    owner: Option<&str>,
+    replace: bool,
+) -> Result<()> {
+    let quoted_src = shlex_quote(&incoming.to_string_lossy());
+    let quoted_dest = shlex_quote(&dest.to_string_lossy());
+    let chown_incoming = maybe_chown_line(exec.sudo, owner, &quoted_src);
+    let chown_dest = maybe_chown_line(exec.sudo, owner, &quoted_dest);
+    let body = if replace {
+        format!(
+            r#"
+src={quoted_src}
+dest={quoted_dest}
+rm -f -- "$dest-wal" "$dest-shm"
+mv -f -- "$src" "$dest"
+chmod 600 -- "$dest"
+"#
+        )
+    } else {
+        format!(
+            r#"
 python3 - {quoted_src} {quoted_dest} <<'PY'
 import sqlite3, sys
 src, dest = sys.argv[1], sys.argv[2]
@@ -258,41 +351,22 @@ dest_conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 dest_conn.close()
 source.close()
 PY
+rm -f -- {quoted_src}
 "#
-    );
-    exec.run_script(&script)?;
-    Ok(())
-}
-
-pub fn replace_file_remote(exec: &RemoteExec, incoming: &Path, dest: &Path) -> Result<()> {
-    let quoted_src = shlex_quote(&incoming.to_string_lossy());
-    let quoted_dest = shlex_quote(&dest.to_string_lossy());
+        )
+    };
     let script = format!(
-        r#"
-set -euo pipefail
-src={quoted_src}
-dest={quoted_dest}
-rm -f -- "$dest-wal" "$dest-shm"
-mv -f -- "$src" "$dest"
-chmod 600 -- "$dest"
-"#
+        "set -euo pipefail\n{chown_incoming}{body}{chown_dest}"
     );
     exec.run_script(&script)?;
     Ok(())
 }
 
-pub fn chown_remote(exec: &RemoteExec, path: &Path, owner: &str) -> Result<()> {
-    let script = format!(
-        "chown {owner}:{owner} -- {}",
-        shlex_quote(&path.to_string_lossy())
-    );
-    exec.run_script(&script)?;
-    Ok(())
-}
-
-pub fn remote_owner(exec: &RemoteExec, path: &Path) -> Result<String> {
-    let script = format!("stat -c %U -- {}", shlex_quote(&path.to_string_lossy()));
-    Ok(exec.run_script(&script)?.trim().to_string())
+fn maybe_chown_line(sudo: bool, owner: Option<&str>, quoted_path: &str) -> String {
+    match owner {
+        Some(owner) if sudo => format!("chown {owner}:{owner} -- {quoted_path} || true\n"),
+        _ => String::new(),
+    }
 }
 
 pub fn systemctl_user(exec: &RemoteExec, machine: &str, action: &str, unit: &str) -> Result<()> {
@@ -338,6 +412,44 @@ mod tests {
         assert_eq!(
             incoming_path(Path::new("/data/app.db")),
             PathBuf::from("/data/.db-sync-incoming.db")
+        );
+    }
+
+    #[test]
+    fn control_dir_prefers_ssh_control_dir() {
+        assert_eq!(
+            ssh_control_dir_from_env(Some("/tmp/ctrl"), Some("/run/user/1000"), Some("/home/dev")),
+            PathBuf::from("/tmp/ctrl")
+        );
+    }
+
+    #[test]
+    fn control_dir_uses_xdg_runtime() {
+        assert_eq!(
+            ssh_control_dir_from_env(None, Some("/run/user/1000"), Some("/home/dev")),
+            PathBuf::from("/run/user/1000/easydev-ssh-control")
+        );
+    }
+
+    #[test]
+    fn control_dir_falls_back_to_home_cache() {
+        assert_eq!(
+            ssh_control_dir_from_env(None, None, Some("/home/dev")),
+            PathBuf::from("/home/dev/.cache/easydev-ssh-control")
+        );
+    }
+
+    #[test]
+    fn ssh_options_enable_control_master() {
+        let opts = ssh_client_options_with_dir(
+            Path::new("/run/user/1000/easydev-ssh-control"),
+            15,
+        );
+        assert!(opts.windows(2).any(|pair| pair == ["-o", "ControlMaster=auto"]));
+        assert!(opts.windows(2).any(|pair| pair == ["-o", "ControlPersist=120"]));
+        assert_eq!(
+            opts.last().map(String::as_str),
+            Some("ControlPath=/run/user/1000/easydev-ssh-control/%C")
         );
     }
 }
