@@ -22,6 +22,7 @@ enum FailureKind {
     Cancelled,
     DiskFull,
     IpBlocked,
+    ExpiredSource,
     Transient,
     Permanent,
 }
@@ -54,6 +55,10 @@ fn disk_space_action(
 }
 
 fn classify_failure(message: &str) -> FailureKind {
+    classify_failure_for(message, None)
+}
+
+fn classify_failure_for(message: &str, src_url: Option<&str>) -> FailureKind {
     let lower = message.to_ascii_lowercase();
     if lower == "cancelled" {
         FailureKind::Cancelled
@@ -62,8 +67,12 @@ fn classify_failure(message: &str) -> FailureKind {
         || lower.contains("os error 28")
     {
         FailureKind::DiskFull
-    } else if lower.contains("http 403") || lower.contains("403 forbidden") {
-        FailureKind::IpBlocked
+    } else if store::error_is_forbidden(message) {
+        if src_url.is_some_and(store::is_signed_or_packed_source_url) {
+            FailureKind::ExpiredSource
+        } else {
+            FailureKind::IpBlocked
+        }
     } else if ["http 400", "http 401", "http 404", "http 405", "http 410"]
         .iter()
         .any(|status| lower.contains(status))
@@ -324,9 +333,14 @@ impl JobManager {
         store::get_job(&db, id).ok().flatten()
     }
 
-    pub async fn list_jobs(&self, limit: usize) -> Vec<JobRow> {
+    pub async fn list_jobs(&self, limit: Option<usize>) -> Vec<JobRow> {
         let db = self.db.lock().await;
         store::list_jobs(&db, limit).unwrap_or_default()
+    }
+
+    pub async fn count_jobs(&self) -> usize {
+        let db = self.db.lock().await;
+        store::count_jobs(&db).unwrap_or(0)
     }
 
     pub async fn list_jobs_for_url(&self, url: &str, limit: usize) -> Vec<JobRow> {
@@ -339,9 +353,9 @@ impl JobManager {
         store::count_active_jobs(&db).unwrap_or(0)
     }
 
-    pub async fn list_running_jobs(&self) -> Vec<store::JobRow> {
+    pub async fn list_slot_jobs(&self) -> Vec<store::JobRow> {
         let db = self.db.lock().await;
-        store::list_running_jobs(&db).unwrap_or_default()
+        store::list_slot_jobs(&db).unwrap_or_default()
     }
 
     pub async fn requeue_excess_running_jobs(
@@ -379,9 +393,9 @@ impl JobManager {
         ids
     }
 
-    pub async fn list_due_jobs(&self, now: u64, max_count: usize) -> Vec<JobRow> {
+    pub async fn list_due_jobs(&self, now: u64) -> Vec<JobRow> {
         let db = self.db.lock().await;
-        store::list_due_jobs(&db, now, max_count).unwrap_or_default()
+        store::list_due_jobs(&db, now).unwrap_or_default()
     }
 
     pub async fn save_vpn_location(&self, location: &str) {
@@ -524,8 +538,12 @@ impl JobManager {
         }
         let now = unix_now();
         let db = self.db.lock().await;
-        match classify_failure(error_msg) {
-            FailureKind::Permanent => {
+        let src_url = store::get_job(&db, id)
+            .ok()
+            .flatten()
+            .map(|job| job.src_url);
+        match classify_failure_for(error_msg, src_url.as_deref()) {
+            FailureKind::Permanent | FailureKind::ExpiredSource => {
                 let _ = store::fail_job(&db, id, error_msg, now);
                 false
             }
@@ -621,6 +639,11 @@ impl JobManager {
         }
         let db = self.db.lock().await;
         store::delete_jobs(&db, ids).unwrap_or(0)
+    }
+
+    pub async fn clear_completed_jobs(&self) -> usize {
+        let db = self.db.lock().await;
+        store::delete_completed_jobs(&db).unwrap_or(0)
     }
 
     pub async fn set_job_phase(&self, id: &str, phase: &str) -> bool {
@@ -1098,6 +1121,14 @@ fn is_hls_url(url: &str) -> bool {
     store::is_hls_url(url)
 }
 
+const STREAMING_MUX_MAX_SEGMENTS: usize = 128;
+
+fn should_stream_hls_mux(resolved: &crate::hls::ResolvedPlaylist) -> bool {
+    resolved.map_uri.is_none()
+        && !resolved.segments.is_empty()
+        && resolved.segments.len() <= STREAMING_MUX_MAX_SEGMENTS
+}
+
 // ── Probe ───────────────────────────────────────────────────
 
 struct RangeCheck {
@@ -1491,7 +1522,7 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
             let resolved =
                 hls::fetch_and_resolve(&job.src_url, &client, cancel.clone(), &hls_headers).await?;
 
-            let mut streaming_mux = if resolved.map_uri.is_none() {
+            let mut streaming_mux = if should_stream_hls_mux(&resolved) {
                 let pipe_dir = temp_dir.join("mux-pipes");
                 let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
                 tokio::fs::create_dir_all(&pipe_dir)
@@ -1879,7 +1910,7 @@ fn is_ip_blocked_retry(job: &JobRow) -> bool {
     if job.status != "retry_wait" || job.is_browser_hls() {
         return false;
     }
-    is_ip_block_error(&job.last_error)
+    classify_failure_for(&job.last_error, Some(&job.src_url)) == FailureKind::IpBlocked
 }
 
 fn is_ip_block_error(error: &str) -> bool {
@@ -1985,17 +2016,28 @@ pub async fn run_scheduler(
         }
 
         let mode = store::ConcurrencyMode::from_u8(concurrency_mode.load(Ordering::Relaxed));
-        let running = jobs.list_running_jobs().await;
-        let due = jobs.list_due_jobs(unix_now(), running.len() + 32).await;
         let limit = max_concurrent_jobs.load(Ordering::Relaxed);
-        let mut due = store::select_due_jobs(due, &running, limit, mode);
+        for jid in jobs.requeue_excess_running_jobs(limit, mode).await {
+            warn!("scheduler: excess job {jid} returned to queue");
+        }
+        let occupying = jobs.list_slot_jobs().await;
+        let due = jobs.list_due_jobs(unix_now()).await;
+        let has_running = occupying.iter().any(|job| job.status == "running");
+        let due = if config.vpn.auto_rotate_on_ip_block && has_running {
+            due.into_iter()
+                .filter(|job| !is_ip_blocked_retry(job))
+                .collect::<Vec<_>>()
+        } else {
+            due
+        };
+        let mut due = store::select_due_jobs(due, &occupying, limit, mode);
         if due.is_empty() {
             continue;
         }
 
         let has_blocked_retry = due.iter().any(is_ip_blocked_retry);
         if has_blocked_retry && config.vpn.auto_rotate_on_ip_block {
-            if !running.is_empty() {
+            if has_running {
                 due.retain(|job| !is_ip_blocked_retry(job));
             } else if Instant::now() >= next_rotation_attempt {
                 match rotate_vpn_for_blocked_retry(&jobs, &vpn).await {
@@ -2128,9 +2170,9 @@ mod tests {
 
     use super::{
         DiskSpaceAction, FailureKind, JobManager, VpnLocation, classify_failure,
-        config_for_location, disk_space_action, is_hls_url, is_ip_block_error,
-        migrate_staged_files, next_vpn_location, parse_status_info, parse_vpn_locations,
-        retry_delay,
+        classify_failure_for, config_for_location, disk_space_action, is_hls_url,
+        is_ip_block_error, migrate_staged_files, next_vpn_location, parse_status_info,
+        parse_vpn_locations, retry_delay, should_stream_hls_mux,
     };
     use crate::config::VpnConfig;
 
@@ -2252,6 +2294,27 @@ mod tests {
             FailureKind::IpBlocked
         );
         assert_eq!(
+            classify_failure_for(
+                "download failed: fetch text: HTTP 403 Forbidden",
+                Some("https://playrecord.biz/stream/abc/def/1787950206/1/index.m3u8"),
+            ),
+            FailureKind::ExpiredSource
+        );
+        assert_eq!(
+            classify_failure_for(
+                "download failed: fetch text: HTTP 403 Forbidden",
+                Some("https://cdn.example/hls3/video.urlset/master.txt"),
+            ),
+            FailureKind::IpBlocked
+        );
+        assert_eq!(
+            classify_failure_for(
+                "download failed: fetch text: HTTP 403 Forbidden",
+                Some("https://cdn.example/master.m3u8?s=1&e=2&asn=60068"),
+            ),
+            FailureKind::ExpiredSource
+        );
+        assert_eq!(
             classify_failure("download: HTTP 404 Not Found"),
             FailureKind::Permanent
         );
@@ -2332,7 +2395,41 @@ mod tests {
         assert!(is_hls_url(
             "https://cdn.example/id_,l,n,h,.urlset/master.txt"
         ));
+        assert!(is_hls_url(
+            "https://cdn.example/id_,l,n,h,.urlset/master.txt#/.m3u8"
+        ));
+        assert!(is_hls_url("https://cdn.example/hls/master.txt"));
         assert!(!is_hls_url("https://cdn.example/error.txt"));
+    }
+
+    #[test]
+    fn streams_short_ts_playlists_and_file_muxes_long_vod() {
+        let short = crate::hls::ResolvedPlaylist {
+            segments: vec![crate::hls::HlsSegment {
+                uri: "https://cdn.example/seg.ts".into(),
+            }],
+            has_encryption: false,
+            map_uri: None,
+        };
+        let long = crate::hls::ResolvedPlaylist {
+            segments: (0..200)
+                .map(|index| crate::hls::HlsSegment {
+                    uri: format!("https://cdn.example/video{index}.jpeg"),
+                })
+                .collect(),
+            has_encryption: false,
+            map_uri: None,
+        };
+        let mapped = crate::hls::ResolvedPlaylist {
+            segments: vec![crate::hls::HlsSegment {
+                uri: "https://cdn.example/seg.m4s".into(),
+            }],
+            has_encryption: false,
+            map_uri: Some("https://cdn.example/init.mp4".into()),
+        };
+        assert!(should_stream_hls_mux(&short));
+        assert!(!should_stream_hls_mux(&long));
+        assert!(!should_stream_hls_mux(&mapped));
     }
 }
 

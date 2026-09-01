@@ -252,7 +252,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			'<tr><td colspan="11" class="empty empty-error">Jobs unavailable. Retrying...</td></tr>';
 	}
 
-	const TABLE_LIVE_JOBS_LIMIT = 50;
 	const TABLE_LIVE_FILES_LIMIT = 100;
 	const MIN_COMPLETED_FILE_BYTES = 1024 * 1024;
 
@@ -473,14 +472,46 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
-	function jobStatusLabel(status, error) {
-		const err = String(error || "").toLowerCase();
-		if (
-			(status === "failed" || status === "retry_wait") &&
-			(err.includes("vpn") || err.includes("adguardvpn"))
-		) {
-			return "VPN Error";
+	function isSignedOrPackedSource(url) {
+		try {
+			const parsed = new URL(url);
+			if (/\/stream\//i.test(parsed.pathname) && /\/\d{9,}(?:\/|$)/.test(parsed.pathname))
+				return true;
+			const params = parsed.searchParams;
+			return (params.has("s") && params.has("e")) || params.has("asn");
+		} catch {
+			const value = String(url || "");
+			return (
+				/\/stream\/[^/]+\/[^/]+\/\d{9,}\//.test(value) ||
+				(/[?&]s=/i.test(value) && /[?&]e=/i.test(value)) ||
+				/[?&]asn=/i.test(value)
+			);
 		}
+	}
+
+	function jobOverlayLabel(job) {
+		const status = job.status;
+		if (status !== "failed" && status !== "retry_wait") return "";
+		const err = String(job.error || "").toLowerCase();
+		if (err.includes("vpn") || err.includes("adguardvpn")) return "VPN Error";
+		if (
+			(err.includes("http 403") || err.includes("403 forbidden")) &&
+			isSignedOrPackedSource(job.src_url || "")
+		) {
+			return "Expired";
+		}
+		if (err.includes("http 403") || err.includes("403 forbidden")) return "Blocked";
+		if (err.includes("http 404") || err.includes("http 410")) return "Gone";
+		return "";
+	}
+
+	function jobSkipsSameSourceRetry(job) {
+		return jobOverlayLabel(job) === "Expired" || jobOverlayLabel(job) === "Gone";
+	}
+
+	function jobStatusLabel(status, error, srcUrl) {
+		const overlay = jobOverlayLabel({ status, error, src_url: srcUrl || "" });
+		if (overlay) return overlay;
 		switch (status) {
 			case "running":
 				return "Downloading";
@@ -505,7 +536,10 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
-	function jobBadgeClass(status) {
+	function jobBadgeClass(status, job) {
+		const overlay = job ? jobOverlayLabel(job) : "";
+		if (overlay === "Expired" || overlay === "Blocked") return "badge-retry_wait";
+		if (overlay === "Gone") return "badge-failed";
 		switch (status) {
 			case "running":
 				return "badge-running";
@@ -586,7 +620,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			html += `<button class="btn-icon btn-danger btn-sm" title="Cancel + Clear" hx-post="/ui/jobs/${id}/cancel" hx-swap="none" hx-confirm="Cancel and clear this job?"><i class="bi bi-x-circle"></i></button>`;
 		}
 		if (terminal) {
-			html += `<button class="btn-icon btn-primary btn-sm" title="Retry" hx-post="/ui/jobs/${id}/retry" hx-swap="none"><i class="bi bi-arrow-clockwise"></i></button>`;
+			if (!jobSkipsSameSourceRetry(job)) {
+				html += `<button class="btn-icon btn-primary btn-sm" title="Retry" hx-post="/ui/jobs/${id}/retry" hx-swap="none"><i class="bi bi-arrow-clockwise"></i></button>`;
+			}
 			html += `<button class="btn-icon btn-sm" title="Clear" hx-post="/ui/jobs/${id}/clear" hx-swap="none" hx-confirm="Clear this job?"><i class="bi bi-eraser"></i></button>`;
 		}
 		if (cell.innerHTML !== html) {
@@ -606,7 +642,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		row.dataset.sortPct = String(jobPctSort(job));
 		row.dataset.sortSegment = String(job.uploaded_segments || 0);
 		row.dataset.sortSize = String(job.downloaded_bytes || 0);
-		if (job.error && job.error !== "cancelled") {
+		if (jobOverlayLabel(job) === "Expired") {
+			row.title = "Media URL expired. Open the page and download again.";
+		} else if (job.error && job.error !== "cancelled") {
 			row.title = job.error;
 		} else {
 			row.removeAttribute("title");
@@ -614,8 +652,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		const badge = row.querySelector(":scope > td > span.badge");
 		if (badge) {
-			badge.className = `badge ${jobBadgeClass(job.status)}`;
-			const label = jobStatusLabel(job.status, job.error);
+			badge.className = `badge ${jobBadgeClass(job.status, job)}`;
+			const label = jobStatusLabel(job.status, job.error, job.src_url);
 			if (badge.textContent !== label) badge.textContent = label;
 		}
 
@@ -692,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const jobsLive = createTableLive({
 		listId: "jobs-list",
 		countId: "jobs-count",
-		jsonUrl: `/stash/jobs?limit=${TABLE_LIVE_JOBS_LIMIT}`,
+		jsonUrl: "/stash/jobs",
 		partialUrl: "/ui/partials/jobs",
 		identityAttr: "data-job-id",
 		itemId: (job) => job.id,

@@ -60,3 +60,6 @@ dev/*/.serena/project.local.yml
 !.worktree/config.json
 
 *.kate-swp
+
+# draft builder layout-src hash
+dev/design/.cache/

@@ -4,6 +4,11 @@
       "id": "property-portal",
       "name": "property-portal",
       "root": "~/dev/product/property-portal"
+    },
+    {
+      "id": "property-research",
+      "name": "property-research",
+      "root": "~/dev/product/property-research"
     }
   ]
 }

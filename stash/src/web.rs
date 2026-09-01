@@ -106,17 +106,21 @@ fn fmt_pct(dl: u64, total: u64) -> String {
     }
 }
 
-fn status_badge_class(status: &str) -> &'static str {
-    match status {
-        "running" => "badge-running",
-        "finalizing" | "assembling" | "remuxing" => "badge-finalizing",
-        "queued" => "badge-queued",
-        "retry_wait" => "badge-retry_wait",
-        "resource_wait" => "badge-retry_wait",
-        "completed" => "badge-completed",
-        "failed" => "badge-failed",
-        "cancelled" => "badge-cancelled",
-        _ => "",
+fn status_badge_class(status: &str, last_error: &str, src_url: &str) -> &'static str {
+    match overlay_label(status, last_error, src_url) {
+        Some("Expired" | "Blocked") => "badge-retry_wait",
+        Some("Gone") => "badge-failed",
+        _ => match status {
+            "running" => "badge-running",
+            "finalizing" | "assembling" | "remuxing" => "badge-finalizing",
+            "queued" => "badge-queued",
+            "retry_wait" => "badge-retry_wait",
+            "resource_wait" => "badge-retry_wait",
+            "completed" => "badge-completed",
+            "failed" => "badge-failed",
+            "cancelled" => "badge-cancelled",
+            _ => "",
+        },
     }
 }
 
@@ -125,9 +129,35 @@ fn is_vpn_issue(error: &str) -> bool {
     error.contains("vpn") || error.contains("adguardvpn")
 }
 
+fn overlay_label(status: &str, last_error: &str, src_url: &str) -> Option<&'static str> {
+    if !matches!(status, "failed" | "retry_wait") {
+        return None;
+    }
+    if is_vpn_issue(last_error) {
+        return Some("VPN Error");
+    }
+    if crate::store::error_is_forbidden(last_error)
+        && crate::store::is_signed_or_packed_source_url(src_url)
+    {
+        return Some("Expired");
+    }
+    if crate::store::error_is_forbidden(last_error) {
+        return Some("Blocked");
+    }
+    if crate::store::error_is_gone(last_error) {
+        return Some("Gone");
+    }
+    None
+}
+
+#[cfg(test)]
 fn status_label(status: &str, last_error: &str) -> &'static str {
-    if is_vpn_issue(last_error) && matches!(status, "failed" | "retry_wait") {
-        return "VPN Error";
+    status_label_for(status, last_error, "")
+}
+
+fn status_label_for(status: &str, last_error: &str, src_url: &str) -> &'static str {
+    if let Some(label) = overlay_label(status, last_error, src_url) {
+        return label;
     }
     match status {
         "running" => "Downloading",
@@ -361,7 +391,7 @@ pub async fn set_vpn_location(
 }
 
 pub async fn jobs_count_partial(state: aw::Data<AppState>) -> HttpResponse {
-    let count = state.jobs.list_jobs(50).await.len();
+    let count = state.jobs.count_jobs().await;
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(count.to_string())
@@ -385,7 +415,7 @@ pub async fn files_count_partial(state: aw::Data<AppState>) -> HttpResponse {
 }
 
 pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
-    let jobs = state.jobs.list_jobs(50).await;
+    let jobs = state.jobs.list_jobs(None).await;
 
     if jobs.is_empty() {
         return HttpResponse::Ok()
@@ -419,7 +449,8 @@ pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
                 | "assembling"
                 | "remuxing"
         );
-        let can_retry = matches!(job.status.as_str(), "completed" | "failed" | "cancelled");
+        let can_retry = matches!(job.status.as_str(), "completed" | "failed" | "cancelled")
+            && !job.skips_same_source_retry();
         let is_terminal = matches!(job.status.as_str(), "completed" | "failed" | "cancelled");
 
         let size_info = fmt_size(job.downloaded_bytes);
@@ -449,7 +480,11 @@ pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
             String::new()
         };
 
-        let error_attr = if job.last_error.is_empty() || job.last_error == "cancelled" {
+        let error_attr = if overlay_label(&job.status, &job.last_error, &job.src_url)
+            == Some("Expired")
+        {
+            " title=\"Media URL expired. Open the page and download again.\"".into()
+        } else if job.last_error.is_empty() || job.last_error == "cancelled" {
             String::new()
         } else {
             format!(" title=\"{}\"", escape_html(&job.last_error))
@@ -522,8 +557,8 @@ pub async fn jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
             error_attr = error_attr,
             speed_attrs = speed_attrs,
             name = escape_html(&job.filename),
-            badge = status_badge_class(&job.status),
-            label = status_label(&job.status, &job.last_error),
+            badge = status_badge_class(&job.status, &job.last_error, &job.src_url),
+            label = status_label_for(&job.status, &job.last_error, &job.src_url),
             restart = restart_info,
             pct = pct_text,
             segment = segment_text,
@@ -787,6 +822,12 @@ pub async fn clear_selected_jobs_partial(
     jobs_partial(state).await
 }
 
+pub async fn clear_completed_jobs_partial(state: aw::Data<AppState>) -> HttpResponse {
+    let cleared = state.jobs.clear_completed_jobs().await;
+    info!("web clear completed jobs: {cleared}");
+    jobs_partial(state).await
+}
+
 pub async fn clear_selected_files_partial(
     state: aw::Data<AppState>,
     body: aw::Bytes,
@@ -884,6 +925,30 @@ mod tests {
         assert_eq!(
             super::status_label("queued", "VPN not ready: disconnected"),
             "Queued"
+        );
+        assert_eq!(
+            super::status_label_for(
+                "failed",
+                "download failed: fetch text: HTTP 403 Forbidden",
+                "https://playrecord.biz/stream/abc/def/1787950206/1/index.m3u8",
+            ),
+            "Expired"
+        );
+        assert_eq!(
+            super::status_label_for(
+                "failed",
+                "download failed: fetch text: HTTP 403 Forbidden",
+                "https://cdn.example/hls3/video.urlset/master.txt",
+            ),
+            "Blocked"
+        );
+        assert_eq!(
+            super::status_label_for(
+                "failed",
+                "download failed: download: HTTP 404 Not Found",
+                "https://cdn.example/video.m3u8",
+            ),
+            "Gone"
         );
     }
 

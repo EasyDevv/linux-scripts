@@ -35,9 +35,9 @@ templates/
   <slug>/SOURCE.md
 ```
 
-Draft pages stay HTML in each project: `{projectRoot}/.drafts/{route}/*.html`. Dummy records are `{projectRoot}/.drafts/{route}/data/`. Theme source is `templates/{slug}/layout.css`. `compile-layout-css.ts` runs Tailwind and the result is inlined into HTML that has `data-layout-css`.
+Draft pages stay HTML in each project: `{projectRoot}/.draft/{route}/*.html`. Dummy records are `{projectRoot}/.draft/{route}/data/`. Theme source is `templates/{slug}/layout.css`. `compile-layout-css.ts` runs Tailwind and the result is inlined into HTML that has `data-layout-css`. Compiled sheets are cached under `{designDir}/.cache/sheets/` and overlaid by the draft server. The injector does not rewrite sibling HTML when only another draft's utilities changed (`--force` rewrites every file).
 
-Do not generate `{projectRoot}/.drafts/preview.html`. The manager lives in this app.
+Do not generate `{projectRoot}/.draft/preview.html`. The manager lives in this app.
 
 ## Preview manager
 
@@ -48,7 +48,7 @@ bun "{designDir}/scripts/serve-drafts.ts" --port 4177 --host 127.0.0.1
 ```
 
 - **Shell** — `{designDir}/css/draft-index.css` + `{designDir}/js/draft-index.js`. Dark chrome, project → route collapsibles, one iframe.
-- **Registry** — `{designDir}/projects.json`. The sidebar **add project** control registers a root and creates `{root}/.drafts/` when missing.
+- **Registry** — `{designDir}/projects.json`. The sidebar **add project** control registers a root and creates `{root}/.draft/` when missing.
 - **Listing** — `list-drafts.ts` scans each registered `{route}/*.html`, skips `preview.html`, `index.html`, and `*/archive/`.
 - **Files** — `/p/{projectId}/{route}/{file}.html`.
 - **Theme** — each draft already has compiled `layout.css` sheets plus `switch-style.js`. The toolbar sets `?style=` on the iframe.
@@ -81,6 +81,7 @@ Rebuild after adding or changing drafts (does not write `preview.html`):
 ```bash
 bun "{designDir}/scripts/build-draft-index.ts" --root "{projectRoot}"
 bun "{designDir}/scripts/build-draft-index.ts" --all
+bun "{designDir}/scripts/build-draft-index.ts" --root "{projectRoot}" --force
 ```
 
 ## Templates

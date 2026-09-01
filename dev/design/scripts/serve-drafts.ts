@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { archiveDraft, deleteDraft } from "./drafts-mutate.ts";
+import { overlayDraftSheets } from "./inject-draft-chrome.ts";
 import { listDrafts } from "./list-drafts.ts";
 import {
 	addProject,
@@ -61,7 +62,7 @@ async function catalog() {
 				});
 			}
 		} catch {
-			// unreadable .drafts stays empty
+			// unreadable .draft stays empty
 		}
 	}
 	return { projects, styles, drafts };
@@ -203,6 +204,12 @@ const server = Bun.serve({
 			if (!file) return new Response("Not found", { status: 404 });
 			const bunFile = Bun.file(file);
 			if (!(await bunFile.exists())) return new Response("Not found", { status: 404 });
+			if (file.endsWith(".html")) {
+				const html = await overlayDraftSheets(await bunFile.text());
+				return new Response(html, {
+					headers: { "content-type": "text/html; charset=utf-8" },
+				});
+			}
 			return new Response(bunFile);
 		}
 

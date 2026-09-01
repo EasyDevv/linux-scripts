@@ -32,6 +32,7 @@ POST /ui/jobs/{id}/retry
 POST /ui/jobs/retry-failed
 POST /ui/jobs/{id}/clear
 POST /ui/jobs/clear-selected
+POST /ui/jobs/clear-completed
 POST /ui/files/clear-selected
 POST /ui/files/delete-selected
 POST /ui/files/delete
@@ -46,6 +47,7 @@ POST /stash/files/search          {"query":"mp4","under":"/mnt/shared","limit":2
 POST /stash/files/check           {"path":"/mnt/shared/video.mp4"}
 POST /stash/downloads/mark        {"path":"/mnt/shared/video.mp4","url":"...","src_url":"...","note":"..."}
 POST /stash/jobs/static           {"url":"https://route/...","src_url":"https://actual-source/...","filename":"video.mp4","referer":"...","origin":"...","headers":[{"name":"Referer","value":"..."}]}
+GET  /stash/jobs
 GET  /stash/jobs?limit=50
 GET  /stash/page-status?url=...
 GET  /stash/jobs/{id}
@@ -62,7 +64,7 @@ GET  /stash/test/userscript.user.js
 - `/stash/files/search`: `results[] = { path, name, size, modified_at, downloaded }`
 - `/stash/files/check`: `{ path, exists, is_file, size, modified_at, downloaded }`
 - `/stash/downloads/mark`: `{ path, downloaded, downloaded_at }`
-- `/stash/jobs`: `{ results: JobResponse[] }`
+- `/stash/jobs`: `{ results: JobResponse[] }` (`limit` 생략 시 전체)
 - `/stash/page-status`: `{ jobs: JobResponse[], files: DownloadedFileRow[] }` matched by source page URL
 - `/stash/jobs/{id}`: `{ id, url, src_url, filename, status, total_bytes, downloaded_bytes, error?, file_path?, created_at, completed_at? }`
 

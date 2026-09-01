@@ -14,10 +14,62 @@ pub fn completed_file_size_is_valid(size: u64) -> bool {
 }
 
 pub fn is_hls_url(url: &str) -> bool {
-    let path = url.split('?').next().unwrap_or(url).to_ascii_lowercase();
+    let path = url
+        .split(['?', '#'])
+        .next()
+        .unwrap_or(url)
+        .to_ascii_lowercase();
     path.ends_with(".m3u8")
         || path.ends_with(".m3u")
         || (path.contains(".urlset/") && path.ends_with(".txt"))
+        || path.ends_with("/master.txt")
+}
+
+pub fn is_signed_or_packed_source_url(url: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(url) else {
+        return packed_source_fallback(url);
+    };
+    let path = parsed.path();
+    if path.to_ascii_lowercase().contains("/stream/")
+        && path.split('/').any(|segment| {
+            segment.len() >= 9 && segment.bytes().all(|byte| byte.is_ascii_digit())
+        })
+    {
+        return true;
+    }
+    let mut has_s = false;
+    let mut has_e = false;
+    let mut has_asn = false;
+    for (key, _) in parsed.query_pairs() {
+        match key.as_ref() {
+            "s" => has_s = true,
+            "e" => has_e = true,
+            "asn" => has_asn = true,
+            _ => {}
+        }
+    }
+    (has_s && has_e) || has_asn
+}
+
+fn packed_source_fallback(url: &str) -> bool {
+    let lower = url.to_ascii_lowercase();
+    lower.contains("/stream/")
+        && url.split('/').any(|segment| {
+            let segment = segment.split(['?', '#']).next().unwrap_or(segment);
+            segment.len() >= 9 && segment.bytes().all(|byte| byte.is_ascii_digit())
+        })
+        || (lower.contains("s=") && lower.contains("e="))
+        || lower.contains("asn=")
+}
+
+pub fn error_is_forbidden(error: &str) -> bool {
+    let lower = error.to_ascii_lowercase();
+    lower.contains("http 403") || lower.contains("403 forbidden")
+}
+
+pub fn error_is_gone(error: &str) -> bool {
+    let lower = error.to_ascii_lowercase();
+    lower.contains("http 404") || lower.contains("http 410")
 }
 
 // ── Existing types ──────────────────────────────────────────
@@ -92,6 +144,12 @@ impl JobRow {
 
     pub fn is_hls(&self) -> bool {
         self.is_browser_hls() || is_hls_url(&self.src_url)
+    }
+
+    pub fn skips_same_source_retry(&self) -> bool {
+        error_is_gone(&self.last_error)
+            || (error_is_forbidden(&self.last_error)
+                && is_signed_or_packed_source_url(&self.src_url))
     }
 
     pub fn to_response(&self) -> JobResponse {
@@ -573,19 +631,32 @@ pub fn src_url_domain(src_url: &str) -> String {
 
 pub fn select_due_jobs(
     due: Vec<JobRow>,
-    running: &[JobRow],
+    occupying: &[JobRow],
     limit: usize,
     mode: ConcurrencyMode,
 ) -> Vec<JobRow> {
+    let occupying_ids: std::collections::HashSet<&str> =
+        occupying.iter().map(|job| job.id.as_str()).collect();
     match mode {
         ConcurrencyMode::Global => {
-            let available = limit.saturating_sub(running.len());
-            due.into_iter().take(available).collect()
+            let mut used = occupying.len();
+            due.into_iter()
+                .filter(|job| {
+                    if occupying_ids.contains(job.id.as_str()) {
+                        true
+                    } else if used < limit {
+                        used += 1;
+                        true
+                    } else {
+                        false
+                    }
+                })
+                .collect()
         }
         ConcurrencyMode::SrcDomain | ConcurrencyMode::UrlDomain => {
             let mut active_by_domain: std::collections::HashMap<String, usize> =
                 std::collections::HashMap::new();
-            for job in running {
+            for job in occupying {
                 *active_by_domain
                     .entry(
                         mode.group_key(&job.url, &job.src_url)
@@ -595,6 +666,9 @@ pub fn select_due_jobs(
             }
             due.into_iter()
                 .filter(|job| {
+                    if occupying_ids.contains(job.id.as_str()) {
+                        return true;
+                    }
                     let domain = mode
                         .group_key(&job.url, &job.src_url)
                         .expect("domain mode has a group key");
@@ -800,7 +874,7 @@ pub fn get_job(db: &Connection, id: &str) -> rusqlite::Result<Option<JobRow>> {
     Ok(rows.next().transpose()?)
 }
 
-pub fn list_jobs(db: &Connection, limit: usize) -> rusqlite::Result<Vec<JobRow>> {
+pub fn list_jobs(db: &Connection, limit: Option<usize>) -> rusqlite::Result<Vec<JobRow>> {
     let mut stmt = db.prepare(
         "SELECT id, url, src_url, filename, headers_json, status,
                 total_bytes, downloaded_bytes,
@@ -814,8 +888,13 @@ pub fn list_jobs(db: &Connection, limit: usize) -> rusqlite::Result<Vec<JobRow>>
          ORDER BY created_at DESC
          LIMIT ?1",
     )?;
-    let rows = stmt.query_map(params![limit as i64], row_to_job)?;
+    let cap = limit.map(|n| n as i64).unwrap_or(i64::MAX);
+    let rows = stmt.query_map(params![cap], row_to_job)?;
     rows.collect::<Result<Vec<_>, _>>()
+}
+
+pub fn count_jobs(db: &Connection) -> rusqlite::Result<usize> {
+    db.query_row("SELECT COUNT(*) FROM download_jobs", [], |row| row.get(0))
 }
 
 pub fn list_failed_job_ids(db: &Connection) -> rusqlite::Result<Vec<String>> {
@@ -876,7 +955,7 @@ pub fn list_jobs_for_url(
 pub fn count_active_jobs(db: &Connection) -> rusqlite::Result<usize> {
     db.query_row(
         "SELECT COUNT(*) FROM download_jobs
-         WHERE status = 'running'",
+         WHERE status IN ('running', 'retry_wait')",
         [],
         |row| row.get(0),
     )
@@ -900,6 +979,27 @@ pub fn list_running_jobs(db: &Connection) -> rusqlite::Result<Vec<JobRow>> {
     rows.collect::<Result<Vec<_>, _>>()
 }
 
+pub fn list_slot_jobs(db: &Connection) -> rusqlite::Result<Vec<JobRow>> {
+    let mut stmt = db.prepare(
+        "SELECT id, url, src_url, filename, headers_json, status,
+                total_bytes, downloaded_bytes,
+                supports_ranges, etag, last_modified,
+                retry_count, max_retries, retry_interval_secs,
+                next_retry_at, last_error,
+                cancel_requested, file_path, temp_dir,
+                created_at, started_at, completed_at, updated_at,
+                uploaded_segments, total_segments, phase
+         FROM download_jobs
+         WHERE status = 'running'
+            OR (status = 'retry_wait'
+                AND lower(last_error) NOT LIKE '%http 403%'
+                AND lower(last_error) NOT LIKE '%403 forbidden%')
+         ORDER BY started_at ASC, created_at ASC",
+    )?;
+    let rows = stmt.query_map([], row_to_job)?;
+    rows.collect::<Result<Vec<_>, _>>()
+}
+
 pub fn has_resource_wait_jobs(db: &Connection) -> rusqlite::Result<bool> {
     db.query_row(
         "SELECT EXISTS(SELECT 1 FROM download_jobs WHERE status = 'resource_wait')",
@@ -914,7 +1014,7 @@ pub fn requeue_excess_running_jobs(
     now: u64,
     mode: ConcurrencyMode,
 ) -> rusqlite::Result<Vec<String>> {
-    let running = list_running_jobs(db)?;
+    let running = list_slot_jobs(db)?;
     let ids = match mode {
         ConcurrencyMode::Global => {
             let excess = running.len().saturating_sub(max_concurrent_jobs);
@@ -949,7 +1049,7 @@ pub fn requeue_excess_running_jobs(
             "UPDATE download_jobs
              SET status = 'queued', cancel_requested = 0,
                  next_retry_at = 0, last_error = '', updated_at = ?2
-             WHERE id = ?1 AND status = 'running'",
+             WHERE id = ?1 AND status IN ('running', 'retry_wait')",
             params![id, now as i64],
         )?;
     }
@@ -963,25 +1063,30 @@ pub fn requeue_stalled_running_jobs(
 ) -> rusqlite::Result<Vec<String>> {
     let mut stmt = db.prepare(
         "SELECT id FROM download_jobs
-         WHERE status = 'running' AND updated_at < ?1",
+         WHERE status = 'running' AND updated_at < ?1
+           AND headers_json NOT LIKE '%browser-hls%'",
     )?;
     let ids = stmt
         .query_map(params![stale_before as i64], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;
     drop(stmt);
     for id in &ids {
-        db.execute(
-            "UPDATE download_jobs
-             SET status = 'retry_wait', cancel_requested = 0, next_retry_at = ?2 + 30,
-                 last_error = 'stalled download waiting to retry', updated_at = ?2
-             WHERE id = ?1 AND status = 'running'",
-            params![id, now as i64],
+        let Some(job) = get_job(db, id)? else {
+            continue;
+        };
+        schedule_retry(
+            db,
+            id,
+            "stalled download waiting to retry",
+            now,
+            job.max_retries,
+            job.retry_interval_secs.max(1),
         )?;
     }
     Ok(ids)
 }
 
-pub fn list_due_jobs(db: &Connection, now: u64, max_count: usize) -> rusqlite::Result<Vec<JobRow>> {
+pub fn list_due_jobs(db: &Connection, now: u64) -> rusqlite::Result<Vec<JobRow>> {
     let mut stmt = db.prepare(
         "SELECT id, url, src_url, filename, headers_json, status,
                 total_bytes, downloaded_bytes,
@@ -994,10 +1099,9 @@ pub fn list_due_jobs(db: &Connection, now: u64, max_count: usize) -> rusqlite::R
          FROM download_jobs
           WHERE ((status = 'queued' AND cancel_requested = 0)
              OR (status = 'retry_wait' AND next_retry_at <= ?1 AND cancel_requested = 0))
-         ORDER BY created_at ASC
-         LIMIT ?2",
+         ORDER BY created_at ASC",
     )?;
-    let rows = stmt.query_map(params![now, max_count as i64], row_to_job)?;
+    let rows = stmt.query_map(params![now], row_to_job)?;
     rows.collect::<Result<Vec<_>, _>>()
 }
 
@@ -1037,7 +1141,7 @@ pub fn recover_pending_jobs(db: &Connection, now: u64) -> rusqlite::Result<Vec<J
         params![now],
     )?;
     // Return all non-terminal jobs
-    list_due_jobs(db, now, 100)
+    list_due_jobs(db, now)
 }
 
 /// Periodically clean up browser-hls jobs that haven't made progress.
@@ -1370,6 +1474,17 @@ pub fn delete_jobs(db: &Connection, ids: &[String]) -> rusqlite::Result<usize> {
     Ok(count)
 }
 
+pub fn delete_completed_jobs(db: &Connection) -> rusqlite::Result<usize> {
+    db.execute(
+        "DELETE FROM download_job_parts
+         WHERE job_id IN (
+           SELECT id FROM download_jobs WHERE status = 'completed'
+         )",
+        [],
+    )?;
+    db.execute("DELETE FROM download_jobs WHERE status = 'completed'", [])
+}
+
 pub fn cancel_job(db: &Connection, id: &str, now: u64) -> rusqlite::Result<bool> {
     let mut rows = db.execute(
         "UPDATE download_jobs
@@ -1438,13 +1553,16 @@ pub fn retry_failed_jobs(
     let ids = list_failed_job_ids(db)?;
     let mut retried = 0;
     for id in ids {
+        if get_job(db, &id)?.is_some_and(|job| job.skips_same_source_retry()) {
+            continue;
+        }
         if retry_job(db, &id, now)? {
             retried += 1;
         }
     }
-    let running = list_running_jobs(db)?;
-    let due = list_due_jobs(db, now, running.len().saturating_add(retried).max(32))?;
-    let selected = select_due_jobs(due, &running, limit, mode);
+    let occupying = list_slot_jobs(db)?;
+    let due = list_due_jobs(db, now)?;
+    let selected = select_due_jobs(due, &occupying, limit, mode);
     let mut started = 0;
     for job in selected {
         if job.is_browser_hls() && set_job_running(db, &job.id, now)? {
@@ -1968,9 +2086,38 @@ mod tests {
         )
         .unwrap();
 
-        let jobs = list_jobs(&db, 10).unwrap();
+        let jobs = list_jobs(&db, Some(10)).unwrap();
         assert_eq!(jobs[0].id, "new");
         assert_eq!(jobs[1].id, "old");
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn list_jobs_without_limit_returns_all_rows() {
+        let (db, db_path) = test_db();
+        for i in 0..51 {
+            create_job(
+                &db,
+                &format!("job-{i}"),
+                "page",
+                "source",
+                &format!("f{i}.mp4"),
+                "[]",
+                "",
+                5,
+                30,
+                i as u64,
+            )
+            .unwrap();
+        }
+
+        let capped = list_jobs(&db, Some(50)).unwrap();
+        assert_eq!(capped.len(), 50);
+        let all = list_jobs(&db, None).unwrap();
+        assert_eq!(all.len(), 51);
+        assert_eq!(count_jobs(&db).unwrap(), 51);
 
         drop(db);
         let _ = std::fs::remove_file(db_path);
@@ -2040,6 +2187,43 @@ mod tests {
             list_failed_job_ids(&db).unwrap(),
             vec!["new".to_string(), "old".to_string()]
         );
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn deletes_completed_jobs_only() {
+        let (db, db_path) = test_db();
+        for (id, filename, status) in [
+            ("done", "done.mp4", "completed"),
+            ("done-2", "done-2.mp4", "completed"),
+            ("failed", "failed.mp4", "failed"),
+            ("queued", "queued.mp4", "queued"),
+            ("running", "running.mp4", "running"),
+        ] {
+            create_job(&db, id, "page", "source", filename, "[]", "", 5, 30, 1).unwrap();
+            db.execute(
+                "UPDATE download_jobs SET status = ?2 WHERE id = ?1",
+                params![id, status],
+            )
+            .unwrap();
+        }
+        db.execute(
+            "INSERT INTO download_job_parts
+             (job_id, part_index, start_byte, end_byte, part_path, status, updated_at)
+             VALUES ('done', 0, 0, 9, '/tmp/part', 'completed', 1)",
+            [],
+        )
+        .unwrap();
+
+        assert_eq!(delete_completed_jobs(&db).unwrap(), 2);
+        assert!(get_job(&db, "done").unwrap().is_none());
+        assert!(get_job(&db, "done-2").unwrap().is_none());
+        assert!(get_job_parts(&db, "done").unwrap().is_empty());
+        for id in ["failed", "queued", "running"] {
+            assert!(get_job(&db, id).unwrap().is_some(), "{id} should remain");
+        }
 
         drop(db);
         let _ = std::fs::remove_file(db_path);
@@ -2503,6 +2687,70 @@ mod tests {
     }
 
     #[test]
+    fn packed_signed_urls_skip_same_source_retry() {
+        assert!(is_signed_or_packed_source_url(
+            "https://playrecord.biz/stream/abc/def/1787950206/1/index.m3u8"
+        ));
+        assert!(is_signed_or_packed_source_url(
+            "https://cdn.example/master.m3u8?s=1&e=2&asn=60068"
+        ));
+        assert!(!is_signed_or_packed_source_url(
+            "https://cdn.example/hls3/video.urlset/master.txt"
+        ));
+
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "packed",
+            "https://pornavhd.com/watch",
+            "https://playrecord.biz/stream/abc/def/1787950206/1/index.m3u8",
+            "packed.mp4",
+            "[]",
+            "",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        db.execute(
+            "UPDATE download_jobs
+             SET status = 'failed',
+                 last_error = 'download failed: fetch text: HTTP 403 Forbidden'
+             WHERE id = 'packed'",
+            [],
+        )
+        .unwrap();
+        create_job(
+            &db,
+            "ok",
+            "https://page.example/watch",
+            "https://cdn.example/video.m3u8",
+            "ok.mp4",
+            "[]",
+            "",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        db.execute(
+            "UPDATE download_jobs SET status = 'failed' WHERE id = 'ok'",
+            [],
+        )
+        .unwrap();
+
+        let packed = get_job(&db, "packed").unwrap().unwrap();
+        assert!(packed.skips_same_source_retry());
+        let (retried, _) = retry_failed_jobs(&db, 20, 3, ConcurrencyMode::UrlDomain).unwrap();
+        assert_eq!(retried, 1);
+        assert_eq!(get_job(&db, "packed").unwrap().unwrap().status, "failed");
+        assert_eq!(get_job(&db, "ok").unwrap().unwrap().status, "queued");
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
     fn stalled_running_jobs_wait_before_retrying() {
         let (db, db_path) = test_db();
         create_job(
@@ -2530,9 +2778,284 @@ mod tests {
         );
         let job = get_job(&db, "stalled").unwrap().unwrap();
         assert_eq!(job.status, "retry_wait");
-        assert_eq!(job.retry_count, 0);
+        assert_eq!(job.retry_count, 1);
         assert_eq!(job.next_retry_at, 130);
+        assert_eq!(count_active_jobs(&db).unwrap(), 1);
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn stalled_jobs_fail_after_retry_budget() {
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "stalled",
+            "url",
+            "source",
+            "video.mp4",
+            "[]",
+            "",
+            1,
+            30,
+            1,
+        )
+        .unwrap();
+        db.execute(
+            "UPDATE download_jobs SET status = 'running', updated_at = 10 WHERE id = 'stalled'",
+            [],
+        )
+        .unwrap();
+
+        assert_eq!(
+            requeue_stalled_running_jobs(&db, 20, 100).unwrap(),
+            vec!["stalled"]
+        );
+        let job = get_job(&db, "stalled").unwrap().unwrap();
+        assert_eq!(job.status, "failed");
+        assert_eq!(job.retry_count, 1);
         assert_eq!(count_active_jobs(&db).unwrap(), 0);
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn stalled_browser_hls_jobs_stay_running() {
+        let (db, db_path) = test_db();
+        create_job(
+            &db,
+            "hls",
+            "url",
+            "source",
+            "video.mp4",
+            r#"{"transport":"browser-hls"}"#,
+            "",
+            5,
+            30,
+            1,
+        )
+        .unwrap();
+        db.execute(
+            "UPDATE download_jobs SET status = 'running', updated_at = 10 WHERE id = 'hls'",
+            [],
+        )
+        .unwrap();
+
+        assert!(requeue_stalled_running_jobs(&db, 20, 100).unwrap().is_empty());
+        let job = get_job(&db, "hls").unwrap().unwrap();
+        assert_eq!(job.status, "running");
+        assert_eq!(job.retry_count, 0);
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn retry_wait_jobs_use_download_slots() {
+        let (db, db_path) = test_db();
+        for index in 1..=5 {
+            let id = format!("job-{index}");
+            create_job(
+                &db,
+                &id,
+                "https://a.example/video.mp4",
+                "https://cdn.example/a",
+                "a.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                index as u64,
+            )
+            .unwrap();
+            db.execute(
+                "UPDATE download_jobs
+                 SET status = 'retry_wait', started_at = ?2, next_retry_at = 10
+                 WHERE id = ?1",
+                params![id, index],
+            )
+            .unwrap();
+        }
+        create_job(
+            &db,
+            "queued",
+            "https://a.example/other.mp4",
+            "https://cdn.example/a",
+            "b.mp4",
+            "[]",
+            "",
+            5,
+            30,
+            6,
+        )
+        .unwrap();
+
+        assert_eq!(count_active_jobs(&db).unwrap(), 5);
+        let ids = requeue_excess_running_jobs(&db, 3, 50, ConcurrencyMode::UrlDomain).unwrap();
+        assert_eq!(ids, vec!["job-4".to_string(), "job-5".to_string()]);
+        assert_eq!(count_active_jobs(&db).unwrap(), 3);
+        assert!(list_running_jobs(&db).unwrap().is_empty());
+        assert_eq!(get_job(&db, "job-1").unwrap().unwrap().status, "retry_wait");
+        assert_eq!(get_job(&db, "queued").unwrap().unwrap().status, "queued");
+
+        let occupying = list_slot_jobs(&db).unwrap();
+        let due = list_due_jobs(&db, 50).unwrap();
+        let selected = select_due_jobs(due, &occupying, 3, ConcurrencyMode::UrlDomain);
+        let selected_ids = selected.iter().map(|job| job.id.as_str()).collect::<Vec<_>>();
+        assert_eq!(selected_ids, vec!["job-1", "job-2", "job-3"]);
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn ip_blocked_retry_wait_does_not_use_download_slots() {
+        let (db, db_path) = test_db();
+        for index in 1..=3 {
+            let id = format!("blocked-{index}");
+            create_job(
+                &db,
+                &id,
+                "https://a.example/video.mp4",
+                "https://cdn.example/a",
+                "a.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                index as u64,
+            )
+            .unwrap();
+            db.execute(
+                "UPDATE download_jobs
+                 SET status = 'retry_wait', started_at = ?2, next_retry_at = 10,
+                     last_error = 'download failed: fetch text: HTTP 403 Forbidden'
+                 WHERE id = ?1",
+                params![id, index],
+            )
+            .unwrap();
+        }
+        create_job(
+            &db,
+            "queued",
+            "https://a.example/other.mp4",
+            "https://cdn.example/a",
+            "b.mp4",
+            r#"{"transport":"browser-hls"}"#,
+            "",
+            5,
+            30,
+            4,
+        )
+        .unwrap();
+
+        assert!(list_slot_jobs(&db).unwrap().is_empty());
+        assert!(
+            requeue_excess_running_jobs(&db, 3, 50, ConcurrencyMode::UrlDomain)
+                .unwrap()
+                .is_empty()
+        );
+        let due = list_due_jobs(&db, 50)
+            .unwrap()
+            .into_iter()
+            .filter(|job| {
+                let error = job.last_error.to_ascii_lowercase();
+                !error.contains("http 403") && !error.contains("403 forbidden")
+            })
+            .collect::<Vec<_>>();
+        let selected = select_due_jobs(due, &[], 3, ConcurrencyMode::UrlDomain);
+        assert_eq!(
+            selected.iter().map(|job| job.id.as_str()).collect::<Vec<_>>(),
+            vec!["queued"]
+        );
+
+        drop(db);
+        let _ = std::fs::remove_file(db_path);
+    }
+
+    #[test]
+    fn url_domain_limit_is_per_domain_not_global() {
+        let (db, db_path) = test_db();
+        for index in 1..=3 {
+            let id = format!("a-occupy-{index}");
+            create_job(
+                &db,
+                &id,
+                "https://a.example/video.mp4",
+                "https://page.example/a",
+                "a.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                index as u64,
+            )
+            .unwrap();
+            db.execute(
+                "UPDATE download_jobs
+                 SET status = 'retry_wait', started_at = ?2, next_retry_at = 10
+                 WHERE id = ?1",
+                params![id, index],
+            )
+            .unwrap();
+        }
+        for index in 1..=40 {
+            let id = format!("a-queued-{index}");
+            create_job(
+                &db,
+                &id,
+                "https://a.example/other.mp4",
+                "https://page.example/a",
+                "a-more.mp4",
+                "[]",
+                "",
+                5,
+                30,
+                100 + index as u64,
+            )
+            .unwrap();
+        }
+        for host in ["b", "c"] {
+            for index in 1..=3 {
+                let id = format!("{host}-{index}");
+                create_job(
+                    &db,
+                    &id,
+                    &format!("https://{host}.example/video.mp4"),
+                    "https://page.example/x",
+                    &format!("{host}.mp4"),
+                    "[]",
+                    "",
+                    5,
+                    30,
+                    200 + index as u64,
+                )
+                .unwrap();
+            }
+        }
+
+        assert_eq!(
+            requeue_excess_running_jobs(&db, 3, 50, ConcurrencyMode::UrlDomain)
+                .unwrap()
+                .len(),
+            0
+        );
+        let occupying = list_slot_jobs(&db).unwrap();
+        let selected = select_due_jobs(
+            list_due_jobs(&db, 50).unwrap(),
+            &occupying,
+            3,
+            ConcurrencyMode::UrlDomain,
+        );
+        let mut selected_ids = selected.iter().map(|job| job.id.as_str()).collect::<Vec<_>>();
+        selected_ids.sort();
+        assert_eq!(
+            selected_ids,
+            vec!["a-occupy-1", "a-occupy-2", "a-occupy-3", "b-1", "b-2", "b-3", "c-1", "c-2", "c-3"]
+        );
+        assert_eq!(count_active_jobs(&db).unwrap(), 3);
 
         drop(db);
         let _ = std::fs::remove_file(db_path);

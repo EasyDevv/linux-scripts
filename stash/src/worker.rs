@@ -47,7 +47,7 @@ pub async fn run_browser_hls_worker(jobs: Arc<JobManager>, cfg: AppConfig) {
         }
 
         let desired_urls: Vec<String> = jobs
-            .list_jobs(50)
+            .list_jobs(None)
             .await
             .into_iter()
             .filter(is_active_browser_hls_job)

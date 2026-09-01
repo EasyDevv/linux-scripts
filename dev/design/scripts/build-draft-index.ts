@@ -11,19 +11,20 @@ const valueFor = (flag: string) => {
 	return index >= 0 ? args[index + 1] : undefined;
 };
 
-async function rebuild(projectRoot: string, label = projectRoot) {
-	const draftsRoot = resolve(projectRoot, ".drafts");
+async function rebuild(projectRoot: string, label = projectRoot, force = false) {
+	const draftsRoot = resolve(projectRoot, ".draft");
 	await mkdir(draftsRoot, { recursive: true });
 	await renderDraftData(draftsRoot);
-	const injected = await injectDraftChromeInto(draftsRoot);
+	const injected = await injectDraftChromeInto(draftsRoot, { force });
 	const drafts = await listDrafts(draftsRoot);
 	process.stdout.write(
-		`${label}: ${drafts.length} drafts, chrome ${injected}\n`,
+		`${label}: ${drafts.length} drafts, chrome ${injected.written} written, ${injected.skipped} unchanged\n`,
 	);
 	return drafts.length;
 }
 
 const all = args.includes("--all");
+const force = args.includes("--force");
 const rootFlag = valueFor("--root");
 
 if (all) {
@@ -33,7 +34,7 @@ if (all) {
 		process.exitCode = 1;
 	} else {
 		for (const project of projects) {
-			await rebuild(expandHome(project.root), project.id);
+			await rebuild(expandHome(project.root), project.id, force);
 		}
 	}
 } else {
@@ -43,6 +44,6 @@ if (all) {
 		process.stderr.write(`${registered.error}\n`);
 		process.exitCode = 1;
 	} else {
-		await rebuild(root, registered.project.id);
+		await rebuild(root, registered.project.id, force);
 	}
 }

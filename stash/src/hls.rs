@@ -7,7 +7,8 @@ use futures_util::StreamExt;
 use tokio::io::AsyncWriteExt;
 
 const HTTP_IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
-const SEGMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(90);
+const SEGMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(180);
+const SEGMENT_ATTEMPTS: u32 = 3;
 
 #[derive(Debug, Clone)]
 pub struct HlsSegment {
@@ -341,15 +342,49 @@ async fn download_data(
     Ok((buf, size))
 }
 
+fn is_permanent_segment_error(error: &str) -> bool {
+    let lower = error.to_ascii_lowercase();
+    ["http 400", "http 401", "http 404", "http 405", "http 410"]
+        .iter()
+        .any(|status| lower.contains(status))
+}
+
 async fn download_data_with_timeout(
     client: &reqwest::Client,
     url: &str,
     cancel: Arc<AtomicBool>,
     headers: &[(String, String)],
 ) -> Result<(Vec<u8>, u64), String> {
-    tokio::time::timeout(SEGMENT_TIMEOUT, download_data(client, url, cancel, headers))
+    let mut last_error = String::new();
+    for attempt in 1..=SEGMENT_ATTEMPTS {
+        if cancel.load(Ordering::Relaxed) {
+            return Err("cancelled".into());
+        }
+        match tokio::time::timeout(
+            SEGMENT_TIMEOUT,
+            download_data(client, url, cancel.clone(), headers),
+        )
         .await
-        .map_err(|_| "download: segment exceeded 90 seconds".to_string())?
+        {
+            Ok(Ok(result)) => return Ok(result),
+            Ok(Err(error)) => {
+                last_error = error;
+                if last_error == "cancelled" || is_permanent_segment_error(&last_error) {
+                    return Err(last_error);
+                }
+            }
+            Err(_) => {
+                last_error = format!(
+                    "download: segment exceeded {} seconds",
+                    SEGMENT_TIMEOUT.as_secs()
+                );
+            }
+        }
+        if attempt < SEGMENT_ATTEMPTS {
+            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        }
+    }
+    Err(last_error)
 }
 
 fn unwrap_png_transport(mut data: Vec<u8>) -> Vec<u8> {

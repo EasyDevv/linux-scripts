@@ -67,7 +67,7 @@ export function projectRootOf(project: DraftProject) {
 }
 
 export function draftsRootOf(project: DraftProject) {
-	return resolve(projectRootOf(project), ".drafts");
+	return resolve(projectRootOf(project), ".draft");
 }
 
 export async function findProject(id: string) {

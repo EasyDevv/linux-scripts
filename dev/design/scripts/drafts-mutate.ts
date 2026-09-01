@@ -5,7 +5,7 @@ export type DraftOpResult =
 	| { ok: false; error: string; status: number };
 
 export function draftsRootOf(projectRoot: string) {
-	return resolve(projectRoot, ".drafts");
+	return resolve(projectRoot, ".draft");
 }
 
 export function safeDraftPath(projectRoot: string, file: unknown) {

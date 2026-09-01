@@ -332,7 +332,8 @@ export async function renderDraftData(draftsRoot: string) {
 		const abs = resolve(draftsRoot, rel);
 		const dataPath = resolve(draftsRoot, dirname(rel), "data/listings.json");
 		if (!(await Bun.file(dataPath).exists())) continue;
-		let html = await Bun.file(abs).text();
+		const prev = await Bun.file(abs).text();
+		let html = prev;
 		const layout = layoutFor(basename(rel), html);
 		if (!layout) continue;
 		const data = (await Bun.file(dataPath).json()) as Listings;
@@ -352,6 +353,7 @@ export async function renderDraftData(draftsRoot: string) {
 				`<main>\n    $1\n    ${block}\n  </main>`,
 			);
 		}
+		if (html === prev) continue;
 		await Bun.write(abs, html);
 		count += 1;
 	}
@@ -364,6 +366,6 @@ if (import.meta.main) {
 			? Bun.argv[Bun.argv.indexOf("--root") + 1]
 			: ".",
 	);
-	const count = await renderDraftData(resolve(root, ".drafts"));
+	const count = await renderDraftData(resolve(root, ".draft"));
 	process.stdout.write(`rendered data into ${count} drafts\n`);
 }

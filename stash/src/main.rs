@@ -679,8 +679,7 @@ async fn complete_browser_hls_job(
 }
 
 async fn list_jobs(state: aw::Data<AppState>, query: aw::Query<ListJobsQuery>) -> HttpResponse {
-    let limit = query.limit.unwrap_or(50);
-    let jobs = state.jobs.list_jobs(limit).await;
+    let jobs = state.jobs.list_jobs(query.limit).await;
     let responses: Vec<store::JobResponse> = jobs.iter().map(|j| j.to_response()).collect();
     HttpResponse::Ok().json(serde_json::json!({ "results": responses }))
 }
@@ -1113,6 +1112,10 @@ async fn main() -> std::io::Result<()> {
             .route(
                 "/ui/jobs/clear-selected",
                 aw::post().to(web::clear_selected_jobs_partial),
+            )
+            .route(
+                "/ui/jobs/clear-completed",
+                aw::post().to(web::clear_completed_jobs_partial),
             )
             .route(
                 "/ui/files/clear-selected",
