@@ -16,3 +16,28 @@ export interface NormalizedConfig {
 	getPort(name: string): string;
 	instanceMatchingCwd(): string | null;
 }
+
+export type ManagedProcessState =
+	| "stopped"
+	| "starting"
+	| "running"
+	| "stopping"
+	| "backoff"
+	| "blocked";
+
+export interface ManagedProcessExit {
+	exitCode: number | null;
+	signalCode: string | null;
+	at: number;
+}
+
+export interface ManagedProcessSnapshot {
+	name: string;
+	state: ManagedProcessState;
+	pid: number;
+	startedAt: number | null;
+	restartAttempts: number;
+	nextRetryAt: number | null;
+	lastExit: ManagedProcessExit | null;
+	lastError: string | null;
+}

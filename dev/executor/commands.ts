@@ -5,12 +5,18 @@ import {
 	writeRestartToken,
 } from "./config";
 import { showRecentLogs } from "./journal";
-import { changeAndWait, stopAndVerify } from "./readiness";
+import {
+	changeAndWait,
+	readRuntimeState,
+	stopAndVerify,
+	type RuntimeSnapshotView,
+	type RuntimeStateView,
+} from "./readiness";
 import { isViteCommand, viteReadyPattern } from "./vite-adapter";
 import { configFile, serviceName } from "./paths";
 import { ProcessManager } from "./process-manager";
 import { runSupervisor } from "./supervisor";
-import type { NormalizedConfig } from "./types";
+import type { ManagedProcessState, NormalizedConfig } from "./types";
 import { fail, pad, printCommand, runInherit } from "./utils";
 import { localUrl } from "./local-proxy";
 
@@ -82,13 +88,25 @@ async function resolvedInstanceName(
 	return name;
 }
 
+function runtimeExitText(snapshot: RuntimeSnapshotView): string | null {
+	if (!snapshot.lastExit) return null;
+	if (snapshot.lastExit.signalCode) {
+		return `signal ${snapshot.lastExit.signalCode}`;
+	}
+	return `exit ${snapshot.lastExit.exitCode ?? "unknown"}`;
+}
+
 async function runtimeStatus(
 	config: NormalizedConfig,
 	name: string,
-): Promise<"active" | "inactive" | "stopped"> {
+	runtime: RuntimeStateView | null,
+): Promise<ManagedProcessState | "active" | "inactive" | "stopped"> {
 	if (!config.isEnabled(name)) {
 		return "stopped";
 	}
+
+	const snapshot = runtime?.instances[name];
+	if (snapshot) return snapshot.state;
 
 	const cmd = config.getInstance(name).cmd;
 	return (await pm.isActive(name, cmd)) ? "active" : "inactive";
@@ -162,12 +180,13 @@ async function commandLog(args: string[], recentOnly: boolean): Promise<never> {
 
 async function commandStatus(nameArg?: string): Promise<void> {
 	const config = await currentConfig();
+	const runtime = await readRuntimeState();
 
 	if (!nameArg) {
 		console.log(`${pad("INSTANCE", 16)} ${pad("URL", 38)}  STATUS`);
 		for (const [name] of config.instances) {
 			const port = (await getPortForDisplay(config, name)) || "-";
-			const status = await runtimeStatus(config, name);
+			const status = await runtimeStatus(config, name, runtime);
 			const url = port === "-" ? "-" : localUrl(name);
 			console.log(`${pad(name, 16)} ${pad(url, 38)}  ${status}`);
 		}
@@ -176,11 +195,24 @@ async function commandStatus(nameArg?: string): Promise<void> {
 
 	const name = await resolvedInstanceName(config, nameArg);
 	const instance = config.getInstance(name);
+	const snapshot = runtime?.instances[name];
 	await printPortSuffix(config, name);
 	console.log(`  dir: ${instance.dir || "-"}`);
 	console.log(`  cmd: ${instance.cmd || "-"}`);
 	console.log(`  enabled: ${String(config.isEnabled(name))}`);
-	console.log(`  runtime: ${await runtimeStatus(config, name)}`);
+	console.log(`  runtime: ${await runtimeStatus(config, name, runtime)}`);
+	if (snapshot) {
+		console.log(`  pid: ${snapshot.pid || "-"}`);
+		console.log(`  restart attempts: ${snapshot.restartAttempts}`);
+		if (snapshot.nextRetryAt !== null) {
+			console.log(
+				`  next retry: ${new Date(snapshot.nextRetryAt).toISOString()}`,
+			);
+		}
+		const exit = runtimeExitText(snapshot);
+		if (exit) console.log(`  last exit: ${exit}`);
+		if (snapshot.lastError) console.log(`  last error: ${snapshot.lastError}`);
+	}
 
 	console.log("  logs:");
 	showRecentLogs(name);
@@ -207,9 +239,6 @@ async function commandStart(nameArg?: string): Promise<void> {
 	const instance = cfg2.getInstance(name);
 	const port = cfg2.getPort(name);
 	const command = instance.cmd;
-	if (port) {
-		pm.killProcessOnPort(port);
-	}
 	const readyPattern =
 		port && isViteCommand(command) ? viteReadyPattern() : undefined;
 	await printPortSuffix(cfg2, name);

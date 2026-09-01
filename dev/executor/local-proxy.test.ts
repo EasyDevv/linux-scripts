@@ -7,13 +7,13 @@ function serverPort(server: { readonly port?: number }): number {
 	return server.port;
 }
 
-function configFor(port: number): NormalizedConfig {
+function configFor(port: number, name = "sample"): NormalizedConfig {
 	return {
 		instances: new Map([
 			[
-				"sample",
+				name,
 				{
-					name: "sample",
+					name,
 					dir: "/tmp",
 					cmd: `server --port ${port}`,
 					enabled: true,
@@ -31,6 +31,24 @@ function configFor(port: number): NormalizedConfig {
 		getPort: () => String(port),
 		instanceMatchingCwd: () => null,
 	};
+}
+
+async function waitFor(
+	condition: () => boolean,
+	timeoutMs = 500,
+): Promise<void> {
+	const deadline = performance.now() + timeoutMs;
+	while (performance.now() < deadline) {
+		if (condition()) return;
+		await Bun.sleep(5);
+	}
+	if (!condition()) throw new Error("Timed out waiting for proxy state");
+}
+
+function waitForClose(socket: WebSocket): Promise<CloseEvent> {
+	return new Promise((resolve) => {
+		socket.addEventListener("close", resolve, { once: true });
+	});
 }
 
 test("localUrl uses the executor instance name", () => {
@@ -72,7 +90,7 @@ test("proxy bounds a stalled HTML navigation without restarting first boot", asy
 		expect(timedOutInstances).toEqual([]);
 		expect(await response.text()).toContain('http-equiv="refresh"');
 	} finally {
-		proxy.stop();
+		await proxy.stop();
 		upstream.stop(true);
 	}
 });
@@ -99,7 +117,7 @@ test("proxy restarts a stalled navigation after the start budget", async () => {
 		await navigate();
 		expect(timedOutInstances).toEqual(["sample"]);
 	} finally {
-		proxy.stop();
+		await proxy.stop();
 		upstream.stop(true);
 	}
 });
@@ -128,7 +146,7 @@ test("proxy restarts after a previously healthy instance stalls", async () => {
 		await fetch(url, { headers });
 		expect(timedOutInstances).toEqual(["sample"]);
 	} finally {
-		proxy.stop();
+		await proxy.stop();
 		upstream.stop(true);
 	}
 });
@@ -162,7 +180,7 @@ test("slow first HTML keeps running and does not restart", async () => {
 		expect(timedOutInstances).toEqual([]);
 		expect(served).toBeGreaterThanOrEqual(1);
 	} finally {
-		proxy.stop();
+		await proxy.stop();
 		upstream.stop(true);
 	}
 });
@@ -186,7 +204,7 @@ test("proxy restarts after sustained refused HTML navigations", async () => {
 		await navigate();
 		expect(failedInstances).toEqual(["sample"]);
 	} finally {
-		proxy.stop();
+		await proxy.stop();
 	}
 });
 
@@ -238,7 +256,327 @@ test("proxy forwards HTTP and WebSocket traffic", async () => {
 		});
 		expect(echoed).toBe("ready");
 	} finally {
-		proxy.stop();
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("navigation timeout aborts upstream and releases pending work", async () => {
+	let upstreamAborted = false;
+	const upstream = Bun.serve({
+		port: 0,
+		fetch(request) {
+			request.signal.addEventListener(
+				"abort",
+				() => {
+					upstreamAborted = true;
+				},
+				{ once: true },
+			);
+			return new Promise<Response>(() => {});
+		},
+	});
+	const proxy = new LocalProxy(0, 25, undefined, 10_000, {
+		stopGracePeriodMs: 50,
+	});
+	proxy.update(configFor(serverPort(upstream)));
+
+	try {
+		const request = fetch(`http://sample.localhost:${proxy.port}/stalled`, {
+			headers: { accept: "text/html" },
+		});
+		await waitFor(() => proxy.snapshot.pendingRequests > 0);
+		expect(proxy.snapshot.pendingRequests).toBeGreaterThan(0);
+		expect((await request).status).toBe(502);
+		await waitFor(() => upstreamAborted);
+		await waitFor(() => proxy.snapshot.pendingRequests === 0);
+	} finally {
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("client disconnect aborts a non-navigation upstream fetch", async () => {
+	let upstreamAborted = false;
+	const upstream = Bun.serve({
+		port: 0,
+		fetch(request) {
+			request.signal.addEventListener(
+				"abort",
+				() => {
+					upstreamAborted = true;
+				},
+				{ once: true },
+			);
+			return new Promise<Response>(() => {});
+		},
+	});
+	const proxy = new LocalProxy(0, 5_000, undefined, 10_000, {
+		stopGracePeriodMs: 50,
+	});
+	proxy.update(configFor(serverPort(upstream)));
+	const controller = new AbortController();
+	const request = fetch(`http://sample.localhost:${proxy.port}/pending`, {
+		signal: controller.signal,
+	});
+
+	try {
+		await waitFor(() => proxy.snapshot.pendingRequests > 0);
+		controller.abort();
+		await request.catch(() => undefined);
+		await waitFor(() => upstreamAborted);
+		await waitFor(() => proxy.snapshot.pendingRequests === 0);
+	} finally {
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("client disconnect cancels a streamed upstream body", async () => {
+	let upstreamAborted = false;
+	const upstream = Bun.serve({
+		port: 0,
+		fetch(request) {
+			request.signal.addEventListener(
+				"abort",
+				() => {
+					upstreamAborted = true;
+				},
+				{ once: true },
+			);
+			return new Response(
+				new ReadableStream<Uint8Array>({
+					start(controller) {
+						controller.enqueue(new Uint8Array([1]));
+					},
+				}),
+				{ headers: { "content-type": "text/plain" } },
+			);
+		},
+	});
+	const proxy = new LocalProxy(0, 5_000, undefined, 10_000, {
+		stopGracePeriodMs: 50,
+	});
+	proxy.update(configFor(serverPort(upstream)));
+	const controller = new AbortController();
+
+	try {
+		const response = await fetch(`http://sample.localhost:${proxy.port}/stream`, {
+			signal: controller.signal,
+		});
+		const reader = response.body!.getReader();
+		expect((await reader.read()).value).toEqual(new Uint8Array([1]));
+		controller.abort();
+		await reader.cancel().catch(() => undefined);
+		await waitFor(() => upstreamAborted);
+		await waitFor(() => proxy.snapshot.pendingRequests === 0);
+	} finally {
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("proxy streams responses and removes hop-by-hop headers", async () => {
+	let receivedHeaders = new Headers();
+	const upstream = Bun.serve({
+		port: 0,
+		fetch(request) {
+			receivedHeaders = new Headers(request.headers);
+			return new Response(
+				new ReadableStream<Uint8Array>({
+					start(controller) {
+						controller.enqueue(new TextEncoder().encode("first-"));
+						setTimeout(() => {
+							controller.enqueue(new TextEncoder().encode("second"));
+							controller.close();
+						}, 25);
+					},
+				}),
+				{
+					headers: {
+						connection: "keep-alive, x-response-hop",
+						"x-response-hop": "remove",
+						"keep-alive": "timeout=5",
+						te: "trailers",
+						"x-response-visible": "keep",
+						location: "/next",
+						"set-cookie": "session=ok; Path=/",
+					},
+				},
+			);
+		},
+	});
+	const proxy = new LocalProxy(0, 20);
+	proxy.update(configFor(serverPort(upstream)));
+
+	try {
+		const response = await fetch(
+			`http://sample.localhost:${proxy.port}/stream`,
+			{
+				headers: {
+					accept: "text/html",
+					connection: "keep-alive, x-request-hop",
+					"x-request-hop": "remove",
+					"keep-alive": "timeout=5",
+					te: "trailers",
+					upgrade: "h2c",
+					"x-request-visible": "keep",
+				},
+			},
+		);
+		await Bun.sleep(35);
+		const reader = response.body!.getReader();
+		const first = await reader.read();
+		expect(new TextDecoder().decode(first.value)).toBe("first-");
+		const second = await reader.read();
+		expect(new TextDecoder().decode(second.value)).toBe("second");
+		expect((await reader.read()).done).toBe(true);
+		const forwardedHeaders = receivedHeaders;
+		expect(forwardedHeaders.get("x-request-hop")).toBeNull();
+		expect(forwardedHeaders.get("keep-alive")).toBeNull();
+		expect(forwardedHeaders.get("te")).toBeNull();
+		expect(forwardedHeaders.get("x-request-visible")).toBe("keep");
+		expect(forwardedHeaders.get("host")).toBe(`127.0.0.1:${serverPort(upstream)}`);
+		expect(forwardedHeaders.get("x-forwarded-host")).toBe(
+			`sample.localhost:${proxy.port}`,
+		);
+		expect(response.headers.get("x-response-hop")).toBeNull();
+		expect(response.headers.get("keep-alive")).toBeNull();
+		expect(response.headers.get("te")).toBeNull();
+		expect(response.headers.get("x-response-visible")).toBe("keep");
+		expect(response.headers.get("location")).toBe("/next");
+		expect(response.headers.get("set-cookie")).toBe("session=ok; Path=/");
+		await waitFor(() => proxy.snapshot.pendingRequests === 0);
+	} finally {
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("proxy escapes instance names in the root index", async () => {
+	const name = `bad\"><script>alert(1)</script>&'`;
+	const proxy = new LocalProxy(0);
+	proxy.update(configFor(31_337, name));
+
+	try {
+		const html = await (await fetch(`http://127.0.0.1:${proxy.port}/`)).text();
+		expect(html).toContain("&lt;script&gt;");
+		expect(html).toContain("&quot;");
+		expect(html).toContain("&#39;");
+		expect(html).toContain("&amp;");
+		expect(html).not.toContain("<script>");
+	} finally {
+		await proxy.stop();
+	}
+});
+
+test("proxy gracefully stops before forcing a stalled request", async () => {
+	const upstream = Bun.serve({
+		port: 0,
+		fetch() {
+			return new Promise<Response>(() => {});
+		},
+	});
+	const proxy = new LocalProxy(0, 5_000, undefined, 10_000, {
+		stopGracePeriodMs: 25,
+	});
+	proxy.update(configFor(serverPort(upstream)));
+	const request = fetch(`http://sample.localhost:${proxy.port}/pending`).catch(
+		() => undefined,
+	);
+
+	try {
+		await waitFor(() => proxy.snapshot.pendingRequests > 0);
+		const startedAt = performance.now();
+		await proxy.stop();
+		expect(performance.now() - startedAt).toBeLessThan(500);
+		await request;
+		await waitFor(() => proxy.snapshot.pendingRequests === 0);
+	} finally {
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("websocket pre-open queue is bounded", async () => {
+	const upstream = Bun.serve({
+		port: 0,
+		fetch() {
+			return new Promise<Response>(() => {});
+		},
+	});
+	const proxy = new LocalProxy(0, 5_000, undefined, 10_000, {
+		websocketQueueBytes: 4,
+		websocketQueueMessages: 2,
+		websocketConnectTimeoutMs: 250,
+	});
+	proxy.update(configFor(serverPort(upstream)));
+	const socket = new WebSocket(
+		`ws://sample.localhost:${proxy.port}/hmr`,
+	);
+	const closed = waitForClose(socket);
+	const opened = new Promise<void>((resolve, reject) => {
+		socket.addEventListener("open", () => resolve(), { once: true });
+		socket.addEventListener(
+			"error",
+			() => reject(new Error("WebSocket proxy failed before open")),
+			{ once: true },
+		);
+	});
+
+	try {
+		await opened;
+		await waitFor(() => proxy.snapshot.pendingWebSockets === 1);
+		socket.send("aa");
+		socket.send("bb");
+		try {
+			socket.send("c");
+		} catch {
+			// The proxy may close before the client-side send returns.
+		}
+		const event = await closed;
+		expect(event.code).toBe(1013);
+		await waitFor(() => proxy.snapshot.pendingWebSockets === 0);
+	} finally {
+		if (socket.readyState === WebSocket.OPEN) socket.close();
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("websocket upstream connect timeout cleans up both sockets", async () => {
+	const upstream = Bun.serve({
+		port: 0,
+		fetch() {
+			return new Promise<Response>(() => {});
+		},
+	});
+	const proxy = new LocalProxy(0, 5_000, undefined, 10_000, {
+		websocketConnectTimeoutMs: 25,
+	});
+	proxy.update(configFor(serverPort(upstream)));
+	const socket = new WebSocket(
+		`ws://sample.localhost:${proxy.port}/hmr`,
+	);
+	const closed = waitForClose(socket);
+	const opened = new Promise<void>((resolve, reject) => {
+		socket.addEventListener("open", () => resolve(), { once: true });
+		socket.addEventListener(
+			"error",
+			() => reject(new Error("WebSocket proxy failed before open")),
+			{ once: true },
+		);
+	});
+
+	try {
+		await opened;
+		await waitFor(() => proxy.snapshot.pendingWebSockets === 1);
+		const event = await closed;
+		expect(event.code).toBe(1013);
+		await waitFor(() => proxy.snapshot.pendingWebSockets === 0);
+	} finally {
+		if (socket.readyState === WebSocket.OPEN) socket.close();
+		await proxy.stop();
 		upstream.stop(true);
 	}
 });

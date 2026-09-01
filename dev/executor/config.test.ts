@@ -150,6 +150,28 @@ test("isEnabled works with disabled instances", async () => {
 	expect(config!.isEnabled("disabled_control")).toBe(false);
 });
 
+test("enabling an instance removes it from $control.disabled", async () => {
+	const { readConfig, writeConfig } = await import("./config");
+
+	writeFileSync(
+		configPath(),
+		JSON.stringify({
+			foo: { dir: "/tmp/foo", cmd: "echo foo" },
+			bar: { dir: "/tmp/bar", cmd: "echo bar" },
+			$control: { disabled: ["foo", "bar"] },
+		}),
+	);
+
+	await writeConfig((m) => m.setEnabled("foo", true));
+
+	const config = await readConfig();
+	expect(config!.isEnabled("foo")).toBe(true);
+	expect(config!.isEnabled("bar")).toBe(false);
+	expect(JSON.parse(readFileSync(configPath(), "utf8"))["$control"].disabled).toEqual([
+		"bar",
+	]);
+});
+
 test("getInstance throws on missing name", async () => {
 	const { readConfig } = await import("./config");
 
@@ -257,4 +279,77 @@ test("$control.disabled with non-array throws", async () => {
 	);
 
 	await expect(readConfig()).rejects.toThrow("must contain only strings");
+});
+
+test("concurrent config writes preserve both mutations", async () => {
+	const { readConfig, writeConfig } = await import("./config");
+
+	writeFileSync(
+		configPath(),
+		JSON.stringify({
+			foo: { dir: "/tmp/foo", cmd: "echo foo" },
+			bar: { dir: "/tmp/bar", cmd: "echo bar" },
+		}),
+	);
+
+	await Promise.all([
+		writeConfig((m) => m.setEnabled("foo", false)),
+		writeConfig((m) => m.setEnabled("bar", false)),
+	]);
+
+	const config = await readConfig();
+	expect(config!.isEnabled("foo")).toBe(false);
+	expect(config!.isEnabled("bar")).toBe(false);
+	expect(() => JSON.parse(readFileSync(configPath(), "utf8"))).not.toThrow();
+});
+
+test("a live old config lock is not reclaimed", async () => {
+	const { writeConfig } = await import("./config");
+	const lockPath = `${configPath()}.lock`;
+
+	writeFileSync(
+		configPath(),
+		JSON.stringify({ foo: { dir: "/tmp/foo", cmd: "echo foo" } }),
+	);
+	writeFileSync(
+		lockPath,
+		JSON.stringify({
+			pid: process.pid,
+			createdAt: Date.now() - 60_000,
+		}),
+	);
+
+	try {
+		await expect(
+			writeConfig((m) => m.setEnabled("foo", false)),
+		).rejects.toThrow("Timed out waiting for config lock");
+	} finally {
+		rmSync(lockPath, { force: true });
+	}
+});
+
+test("releasing a lock never removes a successor lock", async () => {
+	const { writeConfig } = await import("./config");
+	const lockPath = `${configPath()}.lock`;
+	const successor = {
+		pid: process.pid,
+		createdAt: Date.now(),
+		token: "successor-owner",
+	};
+
+	writeFileSync(
+		configPath(),
+		JSON.stringify({ foo: { dir: "/tmp/foo", cmd: "echo foo" } }),
+	);
+
+	try {
+		await writeConfig((m) => {
+			m.setEnabled("foo", false);
+			rmSync(lockPath);
+			writeFileSync(lockPath, JSON.stringify(successor));
+		});
+		expect(JSON.parse(readFileSync(lockPath, "utf8"))).toEqual(successor);
+	} finally {
+		rmSync(lockPath, { force: true });
+	}
 });

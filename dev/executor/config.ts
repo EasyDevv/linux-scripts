@@ -1,5 +1,17 @@
 import { basename } from "node:path";
-import { mkdirSync, realpathSync, renameSync } from "node:fs";
+import {
+	closeSync,
+	fsyncSync,
+	linkSync,
+	mkdirSync,
+	openSync,
+	readFileSync,
+	realpathSync,
+	statSync,
+	renameSync,
+	unlinkSync,
+	writeSync,
+} from "node:fs";
 import {
 	configDir,
 	configFile,
@@ -13,6 +25,189 @@ import { fail, extractPort } from "./utils";
 
 type JsonObject = Record<string, unknown>;
 type RawInstance = JsonObject;
+
+const lockTimeoutMs = 2_000;
+const lockStaleMs = 30_000;
+const lockRetryMs = 25;
+
+type LockRecord = {
+	pid: number;
+	createdAt: number;
+	token: string | null;
+};
+
+function isProcessAlive(pid: number): boolean {
+	try {
+		process.kill(pid, 0);
+		return true;
+	} catch (error) {
+		// EPERM means the process exists but is not signalable by this user;
+		// treating it as dead could let a writer steal a live lock.
+		return (error as NodeJS.ErrnoException).code === "EPERM";
+	}
+}
+
+function lockFileFor(path: string): string {
+	return `${path}.lock`;
+}
+
+function readLockRecord(path: string): LockRecord | null {
+	try {
+		const raw = JSON.parse(readFileSync(path, "utf8")) as {
+			pid?: unknown;
+			createdAt?: unknown;
+			token?: unknown;
+		};
+		if (
+			typeof raw.pid !== "number" ||
+			!Number.isInteger(raw.pid) ||
+			raw.pid <= 0 ||
+			typeof raw.createdAt !== "number" ||
+			!Number.isFinite(raw.createdAt)
+		) {
+			return null;
+		}
+		return {
+			pid: raw.pid,
+			createdAt: raw.createdAt,
+			token:
+				typeof raw.token === "string" && raw.token.length > 0
+					? raw.token
+					: null,
+		};
+	} catch {
+		return null;
+	}
+}
+
+function lockAgeMs(path: string): number {
+	try {
+		return Math.max(0, Date.now() - statSync(path).mtimeMs);
+	} catch {
+		return 0;
+	}
+}
+
+function staleLock(path: string): boolean {
+	const record = readLockRecord(path);
+	if (record) {
+		// A live owner may legitimately hold the lock longer than the stale
+		// threshold while it is writing a large or slow-to-read file.
+		return !isProcessAlive(record.pid);
+	}
+
+	// The lock is created with a fully-written temporary record and a hard
+	// link, so malformed content is only considered stale after it has had
+	// time to be an abandoned file rather than a writer in the creation step.
+	return lockAgeMs(path) > lockStaleMs;
+}
+
+function releaseLock(lockPath: string, token: string): void {
+	const record = readLockRecord(lockPath);
+	if (
+		!record ||
+		record.pid !== process.pid ||
+		record.token !== token
+	) {
+		return;
+	}
+
+	try {
+		unlinkSync(lockPath);
+	} catch {
+		// The stale-lock cleanup may have removed it already.
+	}
+}
+
+async function acquireLock(path: string): Promise<() => void> {
+	const lockPath = lockFileFor(path);
+	const deadline = Date.now() + lockTimeoutMs;
+
+	while (Date.now() < deadline) {
+		const token = Bun.randomUUIDv7();
+		const tmpPath = `${lockPath}.${process.pid}.${token}.tmp`;
+		let fd: number | null = null;
+		try {
+			fd = openSync(tmpPath, "wx", 0o600);
+			writeSync(
+				fd,
+				Buffer.from(
+					JSON.stringify({ pid: process.pid, createdAt: Date.now(), token }),
+				),
+			);
+			fsyncSync(fd);
+			closeSync(fd);
+			fd = null;
+
+			try {
+				// Linking a complete temporary file makes the lock record visible
+				// atomically; contenders never see a half-written owner record.
+				linkSync(tmpPath, lockPath);
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+					throw error;
+				}
+				if (staleLock(lockPath)) {
+					try {
+						unlinkSync(lockPath);
+					} catch {
+						// Another writer may have won the stale-lock race.
+					}
+					continue;
+				}
+				await Bun.sleep(lockRetryMs);
+				continue;
+			}
+
+			return () => releaseLock(lockPath, token);
+		} finally {
+			if (fd !== null) {
+				closeSync(fd);
+			}
+			try {
+				unlinkSync(tmpPath);
+			} catch {
+				// The hard link remains the owned lock name.
+			}
+		}
+	}
+
+	fail(`Timed out waiting for config lock: ${path}`);
+}
+
+async function withFileLock<T>(
+	path: string,
+	operation: () => Promise<T>,
+): Promise<T> {
+	const release = await acquireLock(path);
+	try {
+		return await operation();
+	} finally {
+		release();
+	}
+}
+
+async function atomicWrite(path: string, content: string): Promise<void> {
+	const tmpPath = `${path}.${process.pid}.${Date.now()}.${Math.random()
+		.toString(36)
+		.slice(2)}.tmp`;
+	try {
+		await Bun.write(tmpPath, content);
+		const fd = openSync(tmpPath, "r");
+		try {
+			fsyncSync(fd);
+		} finally {
+			closeSync(fd);
+		}
+		renameSync(tmpPath, path);
+	} finally {
+		try {
+			unlinkSync(tmpPath);
+		} catch {
+			// The rename already removed the temporary name.
+		}
+	}
+}
 
 function isObject(value: unknown): value is JsonObject {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -104,9 +299,15 @@ function normalizeInstance(
 export async function ensureConfigFile(): Promise<void> {
 	mkdirSync(configDir, { recursive: true });
 
-	if (!(await Bun.file(configFile).exists())) {
-		await Bun.write(configFile, "{}\n");
+	if (await Bun.file(configFile).exists()) {
+		return;
 	}
+
+	await withFileLock(configFile, async () => {
+		if (!(await Bun.file(configFile).exists())) {
+			await atomicWrite(configFile, "{}\n");
+		}
+	});
 }
 
 async function readRawConfig(required = true): Promise<JsonObject | null> {
@@ -252,6 +453,24 @@ export class ConfigMutator {
 			fail(`Unknown executor item: ${name}`);
 		}
 		instance.enabled = enabled;
+
+		if (!enabled) return;
+
+		const control = controlObject(this.raw);
+		if (control.disabled === undefined) return;
+		if (
+			!Array.isArray(control.disabled) ||
+			!control.disabled.every((item) => typeof item === "string")
+		) {
+			fail(`${controlKey}.disabled must contain only strings`);
+		}
+
+		this.raw[controlKey] = {
+			...control,
+			disabled: (control.disabled as string[]).filter(
+				(item) => item !== name,
+			),
+		};
 	}
 
 	setRestartToken(name: string, token: string): void {
@@ -271,15 +490,15 @@ export async function writeRestartToken(
 	token: string,
 ): Promise<void> {
 	mkdirSync(stateDir, { recursive: true });
-	const raw = await readRuntimeControl();
-	const restart = isObject(raw.restart)
-		? { ...(raw.restart as JsonObject) }
-		: {};
-	restart[name] = token;
-	raw.restart = restart;
-	const tmpFile = `${controlFile}.${process.pid}.${Date.now()}`;
-	await Bun.write(tmpFile, `${JSON.stringify(raw, null, 2)}\n`);
-	renameSync(tmpFile, controlFile);
+	await withFileLock(controlFile, async () => {
+		const raw = await readRuntimeControl();
+		const restart = isObject(raw.restart)
+			? { ...(raw.restart as JsonObject) }
+			: {};
+		restart[name] = token;
+		raw.restart = restart;
+		await atomicWrite(controlFile, `${JSON.stringify(raw, null, 2)}\n`);
+	});
 }
 
 function getRawInstanceInternal(
@@ -298,9 +517,9 @@ export async function writeConfig(
 	mutator: (m: ConfigMutator) => void,
 ): Promise<void> {
 	await ensureConfigFile();
-	const raw = (await readRawConfig()) as JsonObject;
-	mutator(new ConfigMutator(raw));
-	const tmpFile = `${configFile}.${process.pid}.${Date.now()}`;
-	await Bun.write(tmpFile, `${JSON.stringify(raw, null, 2)}\n`);
-	renameSync(tmpFile, configFile);
+	await withFileLock(configFile, async () => {
+		const raw = (await readRawConfig()) as JsonObject;
+		mutator(new ConfigMutator(raw));
+		await atomicWrite(configFile, `${JSON.stringify(raw, null, 2)}\n`);
+	});
 }

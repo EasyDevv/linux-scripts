@@ -15,8 +15,12 @@ export const configDir = dirname(configFile);
 export const configName = basename(configFile);
 export const stateDir = join(xdgRuntimeDir, "executor");
 export const controlFile = join(stateDir, "control.json");
+export const runtimeStateFile = join(stateDir, "runtime.json");
 export const serviceName = "executor.service";
+/** Kept for callers that used the old polling constant. */
 export const pollIntervalMs = 2_000;
+export const safetyPollIntervalMs = 30_000;
+export const configWatchDebounceMs = 75;
 
 export function expandHome(value: string): string {
 	if (value === "~") {
