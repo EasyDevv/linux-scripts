@@ -88,7 +88,41 @@ test("proxy bounds a stalled HTML navigation without restarting first boot", asy
 		expect(response.status).toBe(502);
 		expect(performance.now() - startedAt).toBeLessThan(500);
 		expect(timedOutInstances).toEqual([]);
-		expect(await response.text()).toContain('http-equiv="refresh"');
+		const body = await response.text();
+		expect(body).toContain("Development server starting");
+		expect(body).toContain('http-equiv="refresh"');
+	} finally {
+		await proxy.stop();
+		upstream.stop(true);
+	}
+});
+
+test("first-boot wait page does not abort the in-flight compile", async () => {
+	let upstreamAborted = false;
+	const upstream = Bun.serve({
+		port: 0,
+		fetch(request) {
+			request.signal.addEventListener(
+				"abort",
+				() => {
+					upstreamAborted = true;
+				},
+				{ once: true },
+			);
+			return new Promise<Response>(() => {});
+		},
+	});
+	const proxy = new LocalProxy(0, 25, undefined, 10_000);
+	proxy.update(configFor(serverPort(upstream)));
+
+	try {
+		const response = await fetch(
+			`http://sample.localhost:${proxy.port}/stalled`,
+			{ headers: { accept: "text/html" } },
+		);
+		expect(response.status).toBe(502);
+		await Bun.sleep(40);
+		expect(upstreamAborted).toBe(false);
 	} finally {
 		await proxy.stop();
 		upstream.stop(true);
@@ -262,10 +296,12 @@ test("proxy forwards HTTP and WebSocket traffic", async () => {
 });
 
 test("navigation timeout aborts upstream and releases pending work", async () => {
+	let stall = false;
 	let upstreamAborted = false;
 	const upstream = Bun.serve({
 		port: 0,
 		fetch(request) {
+			if (!stall) return new Response("ok");
 			request.signal.addEventListener(
 				"abort",
 				() => {
@@ -282,9 +318,11 @@ test("navigation timeout aborts upstream and releases pending work", async () =>
 	proxy.update(configFor(serverPort(upstream)));
 
 	try {
-		const request = fetch(`http://sample.localhost:${proxy.port}/stalled`, {
-			headers: { accept: "text/html" },
-		});
+		const headers = { accept: "text/html" };
+		const url = `http://sample.localhost:${proxy.port}/stalled`;
+		expect(await (await fetch(url, { headers })).text()).toBe("ok");
+		stall = true;
+		const request = fetch(url, { headers });
 		await waitFor(() => proxy.snapshot.pendingRequests > 0);
 		expect(proxy.snapshot.pendingRequests).toBeGreaterThan(0);
 		expect((await request).status).toBe(502);

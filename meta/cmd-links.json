@@ -289,9 +289,13 @@
     {
       "name": "port",
       "mode": "symlink",
-      "category": "ports",
-      "target": "ports/port.sh",
-      "description": "\ud3ec\ud2b8 \uc885\ub8cc\uc640 \uc0ac\uc6a9 \uac00\ub2a5\ud55c \ud3ec\ud2b8 \ud0d0\uc0c9\uc744 \ud1b5\ud569 CLI\ub85c \uc2e4\ud589\ud55c\ub2e4."
+      "category": "dev",
+      "target": "dev/port/port.sh",
+      "description": "TCP \ub9ac\uc2a4\ub108\ub97c \ubd84\ub958\ud558\uace0 \ud3ec\ud2b8 \uc885\ub8cc\u00b7\ud0d0\uc0c9\u00b7\uc794\uc5ec \uac1c\ubc1c \uc11c\ubc84 \uc815\ub9ac\ub97c \uc2e4\ud589\ud55c\ub2e4.",
+      "ownedPaths": [
+        "dev/port/port.sh",
+        "dev/port/port.test.sh"
+      ]
     },
     {
       "name": "qdrant",

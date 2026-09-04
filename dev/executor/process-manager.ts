@@ -312,14 +312,53 @@ function userProcesses(psPath = "/bin/ps"): UserProcess[] {
 		.filter((entry) => Number.isSafeInteger(entry.pid) && entry.pid > 0);
 }
 
+function usesProcfs(psPath: string): boolean {
+	return psPath === "/bin/ps" || psPath === "/usr/bin/ps";
+}
+
+function childPidsFromProc(parentPid: number): number[] | null {
+	try {
+		const text = readFileSync(
+			`/proc/${parentPid}/task/${parentPid}/children`,
+			"utf8",
+		);
+		return text
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean)
+			.map(Number)
+			.filter((pid) => Number.isSafeInteger(pid) && pid > 0);
+	} catch {
+		return null;
+	}
+}
+
+function sessionIdFromProc(pid: number): number | null {
+	try {
+		const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
+		const closeParen = stat.lastIndexOf(")");
+		if (closeParen === -1) return null;
+		const fields = stat.slice(closeParen + 1).trim().split(/\s+/);
+		const sid = Number(fields[3]);
+		return Number.isSafeInteger(sid) ? sid : null;
+	} catch {
+		return null;
+	}
+}
+
 function childPids(parentPid: number, psPath = "/bin/ps"): number[] {
 	if (!processExists(parentPid)) return [];
+
+	if (usesProcfs(psPath)) {
+		const fromProc = childPidsFromProc(parentPid);
+		if (fromProc) return fromProc;
+	}
 
 	const result = runText(
 		[psPath, "-o", "pid=", "--ppid", String(parentPid)],
 		controlRunOptions,
 	);
-	requireControlSuccess("ps", result);
+	requireControlSuccess("ps", result, true);
 	return parsePidOutput(result.stdout, "ps");
 }
 
@@ -362,6 +401,63 @@ function collectDescendantPids(
 	return collected.pids;
 }
 
+function sessionLeaders(pids: number[], psPath = "/bin/ps"): number[] {
+	const livePids = pids.filter((pid) => processExists(pid));
+	if (livePids.length === 0) return [];
+
+	const leaders = new Set<number>();
+	const record = (pid: number, sid: number): void => {
+		if (
+			Number.isSafeInteger(pid) &&
+			Number.isSafeInteger(sid) &&
+			sid > 1 &&
+			pid === sid &&
+			pids.includes(pid)
+		) {
+			leaders.add(sid);
+		}
+	};
+
+	if (usesProcfs(psPath)) {
+		let missing = false;
+		for (const pid of livePids) {
+			const sid = sessionIdFromProc(pid);
+			if (sid == null) {
+				missing = true;
+				break;
+			}
+			record(pid, sid);
+		}
+		if (!missing) return [...leaders];
+		leaders.clear();
+	}
+
+	const result = runText(
+		[psPath, "-o", "pid=,sid=", "-p", livePids.join(",")],
+		controlRunOptions,
+	);
+	requireControlSuccess("ps", result);
+
+	for (const line of result.stdout.split(/\r?\n/)) {
+		const value = line.trim();
+		if (!value) continue;
+		const match = value.match(/^(\d+)\s+(\d+)$/);
+		if (!match) throw new Error("ps helper returned invalid session output");
+		record(Number(match[1]), Number(match[2]));
+	}
+	return [...leaders];
+}
+
+function pidsInSession(sid: number, psPath = "/bin/ps"): number[] {
+	if (sid <= 1) return [];
+	const result = runText(
+		[psPath, "-o", "pid=", "--sid", String(sid)],
+		controlRunOptions,
+	);
+	requireControlSuccess("ps", result, true);
+	return parsePidOutput(result.stdout, "ps");
+}
+
 function processGroupIds(pids: number[], psPath = "/bin/ps"): number[] {
 	const livePids = pids.filter((pid) => processExists(pid));
 	if (livePids.length === 0) return [];
@@ -394,8 +490,13 @@ async function terminateProcessTree(
 	rootPid: number,
 	graceMs = defaultTerminationGraceMs,
 	psPath = "/bin/ps",
+	seedPids: Iterable<number> = [],
+	seedSids: Iterable<number> = [],
 ): Promise<void> {
-	const knownPids = new Set<number>([rootPid]);
+	const knownPids = new Set<number>([rootPid, ...seedPids]);
+	const sessions = new Set<number>(
+		[...seedSids].filter((sid) => Number.isSafeInteger(sid) && sid > 1),
+	);
 	const processGroups = new Set<number>();
 	let inspectionFailed = false;
 
@@ -403,6 +504,15 @@ async function terminateProcessTree(
 		const collected = collectDescendantPidsWithStatus(rootPid, psPath);
 		for (const pid of collected.pids) knownPids.add(pid);
 		if (collected.error) inspectionFailed = true;
+
+		try {
+			for (const sid of sessionLeaders([...knownPids], psPath)) sessions.add(sid);
+			for (const sid of [...sessions]) {
+				for (const pid of pidsInSession(sid, psPath)) knownPids.add(pid);
+			}
+		} catch {
+			inspectionFailed = true;
+		}
 
 		try {
 			for (const pgid of processGroupIds([...knownPids], psPath)) {
@@ -561,7 +671,7 @@ export class ProcessManager {
 
 	private portProcessIds(port: string): number[] {
 		const result = runText(
-			[this.lsofPath, "-ti", `:${port}`],
+			[this.lsofPath, "-nP", `-tiTCP:${port}`, "-sTCP:LISTEN"],
 			controlRunOptions,
 		);
 		requireControlSuccess("lsof", result, true);
@@ -715,6 +825,8 @@ export class ProcessManager {
 		let restartWaiter: (() => void) | null = null;
 		let stopRequested = false;
 		let terminationPromise: Promise<void> | null = null;
+		let trackedPids = new Set<number>();
+		let trackedSids = new Set<number>();
 		let failureAttempts = 0;
 		let snapshot: ManagedProcessSnapshot = {
 			name: instance.name,
@@ -802,6 +914,8 @@ export class ProcessManager {
 				proc.pid,
 				this.terminationGraceMs,
 				this.psPath,
+				trackedPids,
+				trackedSids,
 			).finally(() => {
 				terminationPromise = null;
 			});
@@ -833,6 +947,10 @@ export class ProcessManager {
 
 					const preflightIssue = await this.preflight(instance);
 					if (preflightIssue) {
+						if (preflightIssue.includes("already in use by an external process")) {
+							if (!(await registerFailure(preflightIssue))) break;
+							continue;
+						}
 						setError(preflightIssue);
 						setState("blocked");
 						break;
@@ -856,11 +974,30 @@ export class ProcessManager {
 					}
 
 					currentProc = proc;
+					trackedPids = new Set<number>([proc.pid]);
+					trackedSids = new Set<number>();
+					const rememberTree = (): void => {
+						try {
+							for (const pid of collectDescendantPids(
+								proc.pid,
+								this.psPath,
+							)) {
+								trackedPids.add(pid);
+							}
+							for (const sid of sessionLeaders(
+								[...trackedPids],
+								this.psPath,
+							)) {
+								trackedSids.add(sid);
+							}
+						} catch {
+							// Keep the last observed tree if inspection fails mid-run.
+						}
+					};
+					rememberTree();
 					snapshot.pid = proc.pid;
 					snapshot.startedAt = Date.now();
 					snapshot.lastError = null;
-					setState("running");
-					if (restartWaiter && !restartRequested) settleRestartWaiter();
 					try {
 						await writeInstancePidFile(instance.name, proc.pid);
 						await writeInstanceIdentity(instance.name, proc.pid, instance.cmd);
@@ -869,13 +1006,37 @@ export class ProcessManager {
 						// handle remains authoritative until the next clean spawn.
 						setError(`runtime state write failed: ${shortError(error)}`);
 					}
+					setState("running");
+					if (restartWaiter && !restartRequested) settleRestartWaiter();
 
 					let exitCode: number | null = null;
 					let waitError: unknown = null;
+					const stopTracking = { value: false };
+					const tracking = (async () => {
+						while (!stopTracking.value) {
+							rememberTree();
+							await sleepMs(100);
+						}
+					})();
 					try {
 						exitCode = await proc.exited;
 					} catch (error) {
 						waitError = error;
+					} finally {
+						stopTracking.value = true;
+						await tracking;
+					}
+					rememberTree();
+					try {
+						await terminateProcessTree(
+							proc.pid,
+							this.terminationGraceMs,
+							this.psPath,
+							trackedPids,
+							trackedSids,
+						);
+					} catch (error) {
+						setError(`process termination failed: ${shortError(error)}`);
 					}
 					const startedAt = snapshot.startedAt ?? Date.now();
 					const runtimeMs = Date.now() - startedAt;
@@ -1138,7 +1299,7 @@ export class ProcessManager {
 
 	/**
 	 * Retained for CLI compatibility. External port occupants are intentionally
-	 * never killed; the supervisor reports the conflict and blocks the instance.
+	 * never killed; the supervisor reports the conflict and retries later.
 	 */
 	killProcessOnPort(port: string): void {
 		try {

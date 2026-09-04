@@ -12,7 +12,7 @@
 #   dev-all.sh -h|--help                   도움말
 set -uo pipefail
 
-PORT_CMD="${PORT_BIN:-${RESOLVE_PORT_BIN:-$(command -v port 2>/dev/null || echo "$HOME/.local/share/scripts/ports/port.sh")}}"
+PORT_CMD="${PORT_BIN:-${RESOLVE_PORT_BIN:-$(command -v port 2>/dev/null || echo "$HOME/.local/share/scripts/dev/port/port.sh")}}"
 DEV_SEARCH_DIRS="${DEV_SEARCH_DIRS:-$HOME/dev}"
 PORT_CACHE_DIR="${XDG_RUNTIME_DIR:-/tmp}/dev-all-ports"
 

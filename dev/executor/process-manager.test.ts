@@ -188,7 +188,7 @@ if (scenario === "missing-cwd") {
     await Bun.write(join(stateDir, name + ".identity.json"), "not-json\\n");
   }
   const handle = manager().start(makeInstance(cmd));
-  await waitFor(() => handle.state === "blocked");
+  await waitFor(() => handle.state === "backoff");
   const response = await fetch("http://127.0.0.1:" + port);
   result = { state: handle.state, alive: (await response.text()) === "alive" };
   await handle.stop();
@@ -222,11 +222,19 @@ if (scenario === "missing-cwd") {
 } else if (scenario === "port") {
   const upstream = Bun.serve({ port: 0, fetch: () => new Response("alive") });
   const handle = manager().start(makeInstance("sleep 5 --port " + upstream.port));
-  await waitFor(() => handle.state === "blocked");
+  await waitFor(() => handle.state === "backoff");
   const response = await fetch("http://127.0.0.1:" + upstream.port);
   result = { state: handle.state, alive: (await response.text()) === "alive" };
   await handle.stop();
   await upstream.stop(true);
+} else if (scenario === "established-not-listen") {
+  const helper = await makeHelper(
+    'for arg in "$@"; do case "$arg" in *LISTEN*) exit 1 ;; esac; done; echo 1; exit 0',
+  );
+  const handle = manager({ lsofPath: helper }).start(makeInstance("sleep 5 --port 43126"));
+  await waitFor(() => handle.state === "running" || handle.state === "blocked");
+  result = { state: handle.state, lastError: handle.snapshot.lastError };
+  await handle.stop();
 }
 cleanup();
 console.log(JSON.stringify(result));
@@ -317,14 +325,14 @@ test("restart and stop remove stubborn descendants after the root exits", async 
 test("a stale pid file never authorizes killing an external port occupant", async () => {
 	const result = await runWorker("stale-pid");
 
-	expect(result.state).toBe("blocked");
+	expect(result.state).toBe("backoff");
 	expect(result.alive).toBe(true);
 });
 
 test("a corrupt identity sidecar is treated as unowned", async () => {
 	const result = await runWorker("corrupt-pid");
 
-	expect(result.state).toBe("blocked");
+	expect(result.state).toBe("backoff");
 	expect(result.alive).toBe(true);
 });
 
@@ -359,6 +367,13 @@ test("ps helper failure does not leave stop waiting forever", async () => {
 test("port cleanup refuses to kill an external process", async () => {
 	const result = await runWorker("port");
 
-	expect(result.state).toBe("blocked");
+	expect(result.state).toBe("backoff");
 	expect(result.alive).toBe(true);
 });
+
+test("established sockets on a port do not count as occupancy", async () => {
+	const result = await runWorker("established-not-listen");
+
+	expect(result.state).toBe("running");
+});
+

@@ -264,14 +264,22 @@ function isHtmlNavigation(request: Request): boolean {
 	);
 }
 
-export function upstreamUnavailableResponse(request: Request): Response {
+export function upstreamUnavailableResponse(
+	request: Request,
+	phase: "starting" | "restarting" = "restarting",
+): Response {
 	const headers = {
 		"cache-control": "no-store, max-age=0",
 		"retry-after": "1",
 	};
 	if (isHtmlNavigation(request)) {
+		const title = phase === "starting" ? "Starting…" : "Restarting…";
+		const message =
+			phase === "starting"
+				? "Development server starting…"
+				: "Development server restarting…";
 		return new Response(
-			'<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="1"><title>Restarting…</title><p>Development server restarting…</p>',
+			`<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="1"><title>${title}</title><p>${message}</p>`,
 			{
 				status: 502,
 				headers: { ...headers, "content-type": "text/html; charset=utf-8" },
@@ -860,16 +868,20 @@ export class LocalProxy {
 				(response) => ({ kind: "response" as const, response }),
 				(error) => ({ kind: "error" as const, error }),
 			);
+			const firstBoot = !this.navigationSucceeded.has(route.name);
 			const timeout = new Promise<typeof timeoutMarker>((resolve) => {
 				navigationTimer = setTimeout(() => {
-					if (!controller.signal.aborted) controller.abort();
+					// First boot compiles can outlive the wait page. Aborting them
+					// restarts the compile on every refresh and never becomes ready.
+					if (!firstBoot && !controller.signal.aborted) controller.abort();
 					resolve(timeoutMarker);
 				}, this.navigationTimeoutMs);
 			});
 			const winner = await Promise.race([settled, timeout]);
+			const waitPhase = firstBoot ? "starting" : "restarting";
 			if (winner === timeoutMarker) {
 				this.recordNavigationResult(route.name, false, true);
-				return upstreamUnavailableResponse(request);
+				return upstreamUnavailableResponse(request, waitPhase);
 			}
 			if (winner.kind === "response") {
 				this.recordNavigationResult(route.name, true);
@@ -880,10 +892,17 @@ export class LocalProxy {
 			}
 
 			this.recordNavigationResult(route.name, false, false);
-			return upstreamUnavailableResponse(request);
+			return upstreamUnavailableResponse(request, waitPhase);
 		} catch {
-			this.recordNavigationResult(route.name, false, false);
-			return upstreamUnavailableResponse(request);
+			this.recordNavigationResult(
+				route.name,
+				false,
+				false,
+			);
+			return upstreamUnavailableResponse(
+				request,
+				this.navigationSucceeded.has(route.name) ? "restarting" : "starting",
+			);
 		} finally {
 			if (!responseBodyOwnsCleanup) cleanup();
 		}
