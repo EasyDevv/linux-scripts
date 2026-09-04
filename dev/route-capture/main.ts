@@ -23,7 +23,7 @@ import {
   resolveProjectProfileDir,
 } from "../control-chrome/chrome-instance.ts";
 import { minimizeWindow } from "../control-chrome/minimize.ts";
-import { readConfig as readExecutorConfig } from "../executor/config.ts";
+
 
 const HELP = `route-capture - archive discovered SvelteKit routes with control-chrome
 
@@ -494,20 +494,14 @@ async function detectProjectBaseUrl(options: Options): Promise<string> {
     return options.baseUrl;
 
   try {
-    const executorConfig = await readExecutorConfig(false);
-    if (executorConfig) {
-      for (const [name, instance] of executorConfig.instances) {
-        if (
-          !executorConfig.isEnabled(name) ||
-          resolve(instance.dir) !== options.projectRoot
-        )
-          continue;
-
-        const port = Number(executorConfig.getPort(name));
-        if (!Number.isInteger(port)) continue;
-        const url = normalizeBaseUrl(`http://localhost:${port}`);
-        if (await waitForHtml(url, 10_000)) return url;
+    for (const instance of await readExecutorInstances()) {
+      if (!instance.enabled || resolve(instance.dir) !== options.projectRoot) {
+        continue;
       }
+      const port = Number(extractPort(instance.cmd));
+      if (!Number.isInteger(port) || port <= 0) continue;
+      const url = normalizeBaseUrl(`http://localhost:${port}`);
+      if (await waitForHtml(url, 10_000)) return url;
     }
   } catch {}
 

@@ -95,20 +95,25 @@
       "category": "dev",
       "target": "dev/executor/executor.sh",
       "ownedPaths": [
-        "dev/dev-stack.ts",
         "dev/executor/executor.sh",
-        "dev/executor/paths.ts",
-        "dev/executor/types.ts",
-        "dev/executor/utils.ts",
-        "dev/executor/config.ts",
-        "dev/executor/journal.ts",
-        "dev/executor/commands.ts",
-        "dev/executor/runtime.ts",
-        "dev/executor/supervisor.ts",
-        "dev/executor/main.ts"
+        "dev/executor/Cargo.toml",
+        "dev/executor/Cargo.lock",
+        "dev/executor/src/cli.rs",
+        "dev/executor/src/config.rs",
+        "dev/executor/src/journal.rs",
+        "dev/executor/src/lib.rs",
+        "dev/executor/src/main.rs",
+        "dev/executor/src/paths.rs",
+        "dev/executor/src/pm.rs",
+        "dev/executor/src/proxy.rs",
+        "dev/executor/src/readiness.rs",
+        "dev/executor/src/runner.rs",
+        "dev/executor/src/state.rs",
+        "dev/executor/src/supervisor.rs",
+        "dev/executor/src/vite.rs"
       ],
-      "reason": "Uses sibling TypeScript modules under dev/executor/.",
-      "description": "systemd user executor supervisor\uc640 \uc778\uc2a4\ud134\uc2a4 \uad00\ub9ac CLI\ub97c Bun \uae30\ubc18\uc73c\ub85c \uc2e4\ud589\ud55c\ub2e4."
+      "reason": "Runs the Rust crate under dev/executor/.",
+      "description": "systemd user executor supervisor\uc640 \uc778\uc2a4\ud134\uc2a4 \uad00\ub9ac CLI\ub97c Rust \ubc14\uc774\ub108\ub9ac\ub85c \uc2e4\ud589\ud55c\ub2e4."
     },
     {
       "name": "gh-repo",
