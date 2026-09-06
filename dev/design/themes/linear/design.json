@@ -66,6 +66,7 @@
 			{ "id": "columnHeader", "font": "--text-body-sm", "weight": 450, "color": "--muted-foreground", "transform": "none", "where": "Name, Health, Status" },
 			{ "id": "issueIdentifier", "font": "--text-body-base", "weight": 450, "color": "--muted-foreground", "where": "EAS-1" },
 			{ "id": "issueTitle", "font": "--text-heading-sm", "weight": 500, "color": "--foreground", "where": "list primary identity" },
+			{ "id": "listMeta", "font": "--text-body-sm", "weight": 450, "color": "--muted-foreground", "where": "Sep 6, size · date, capacity, list alerts" },
 			{ "id": "groupHeader", "font": "--text-heading-sm", "weight": 500, "color": "--ink-soft", "where": "Todo" },
 			{ "id": "propertyChip", "font": "--text-heading-sm", "weight": 500, "color": "--ink-soft", "where": "Backlog, No priority" },
 			{ "id": "memberName", "font": "--text-heading-sm", "weight": 500, "color": "--ink-soft" },

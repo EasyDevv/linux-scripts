@@ -213,7 +213,10 @@
 	--text-body-base--line-height: 16px;
 	--text-body-sm: 12px;
 	--text-body-sm--line-height: 15.2px;
+	--text-body-sm--font-weight: 450;
 	--text-label-sm: 12px;
+	--text-label-sm--line-height: 16px;
+	--text-label-sm--font-weight: 500;
 	--radius-pill: var(--radius-pill);
 }
 
