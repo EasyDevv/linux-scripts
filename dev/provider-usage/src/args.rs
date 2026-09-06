@@ -49,23 +49,21 @@ pub fn dispatch(args: &[String]) -> Result<()> {
             if options.json {
                 println!("{}", serde_json::to_string_pretty(&cache)?);
             } else if cache.providers.is_empty() {
-                println!("no snapshots in {}", options.cache.as_deref().unwrap_or(DEFAULT_CACHE_PATH));
+                println!(
+                    "no snapshots in {}",
+                    options.cache.as_deref().unwrap_or(DEFAULT_CACHE_PATH)
+                );
             } else {
                 for (key, snapshot) in &cache.providers {
                     let extra = snapshot.reason.clone().unwrap_or_default();
-                    println!(
-                        "{} {} {}",
-                        key,
-                        format_state(snapshot.state),
-                        extra
-                    );
+                    println!("{} {} {}", key, format_state(snapshot.state), extra);
                 }
             }
         }
         Command::Refresh { target } => {
             let target = target.unwrap_or_default();
             let providers = if target.is_empty() {
-                vec!["commandcode".to_string(), "opencode-go".to_string()]
+                vec!["openai".to_string(), "commandcode".to_string(), "opencode-go".to_string(), "grok".to_string()]
             } else {
                 vec![target]
             };
@@ -141,7 +139,11 @@ fn parse(args: &[String]) -> Result<Options> {
                 let Some(value) = args.get(i) else {
                     bail!("--until needs an epoch second");
                 };
-                until = Some(value.parse::<i64>().map_err(|_| anyhow::anyhow!("invalid --until"))?);
+                until = Some(
+                    value
+                        .parse::<i64>()
+                        .map_err(|_| anyhow::anyhow!("invalid --until"))?,
+                );
             }
             other if other.starts_with('-') => bail!("unknown flag {other}"),
             other => positional.push(other.to_string()),

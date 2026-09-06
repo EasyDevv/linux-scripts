@@ -11,12 +11,22 @@ use serde::{Deserialize, Serialize};
 pub const CACHE_VERSION: u32 = 1;
 pub const DEFAULT_CACHE_PATH: &str = "/tmp/provider-usage/state.json";
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProviderState {
     Available,
     Exhausted,
+    #[default]
     Unknown,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UsageWindow {
+    pub name: String,
+    pub used_percent: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reset_at: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -31,6 +41,10 @@ pub struct ProviderSnapshot {
     pub fresh_until: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remaining_credits: Option<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub windows: Vec<UsageWindow>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renews_at: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -126,8 +140,8 @@ fn read_unlocked(path: &Path) -> Result<CacheFile> {
     if buf.trim().is_empty() {
         return Ok(CacheFile::empty());
     }
-    let parsed: CacheFile = serde_json::from_str(&buf)
-        .with_context(|| format!("parsing {}", path.display()))?;
+    let parsed: CacheFile =
+        serde_json::from_str(&buf).with_context(|| format!("parsing {}", path.display()))?;
     if parsed.version != CACHE_VERSION {
         return Ok(CacheFile::empty());
     }
@@ -197,6 +211,8 @@ mod tests {
                 reset_at: None,
                 fresh_until: 20,
                 remaining_credits: Some(0),
+                windows: Vec::new(),
+                renews_at: None,
             },
         );
         store.save(&cache).unwrap();

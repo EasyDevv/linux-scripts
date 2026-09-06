@@ -59,7 +59,11 @@ mod tests {
             now + 60
         );
         assert_eq!(
-            fresh_until(now, ProviderState::Exhausted, Some(now + NEGATIVE_CAP_SECS + 50)),
+            fresh_until(
+                now,
+                ProviderState::Exhausted,
+                Some(now + NEGATIVE_CAP_SECS + 50)
+            ),
             now + NEGATIVE_CAP_SECS
         );
         assert_eq!(

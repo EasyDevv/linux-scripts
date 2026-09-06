@@ -71,8 +71,13 @@ pub fn parse_workspace_ids(text: &str) -> Vec<String> {
             let after = rest.trim_start();
             if let Some(after_colon) = after.strip_prefix(':') {
                 let quoted = after_colon.trim_start();
-                if let Some(body) = quoted.strip_prefix('"').or_else(|| quoted.strip_prefix('\'')) {
-                    let end = body.find(|ch| ch == '"' || ch == '\'').unwrap_or(body.len());
+                if let Some(body) = quoted
+                    .strip_prefix('"')
+                    .or_else(|| quoted.strip_prefix('\''))
+                {
+                    let end = body
+                        .find(|ch| ch == '"' || ch == '\'')
+                        .unwrap_or(body.len());
                     let id = &body[..end];
                     if (id.starts_with("wrk_") || id.starts_with("wk_"))
                         && id.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
@@ -121,6 +126,20 @@ pub fn parse_subscription_from_page_text(text: &str) -> Option<SubscriptionUsage
     Some(SubscriptionUsage { windows })
 }
 
+fn cache_windows(windows: &[UsageWindow], now: i64) -> Vec<crate::cache::UsageWindow> {
+    windows
+        .iter()
+        .map(|window| crate::cache::UsageWindow {
+            name: match window.name.as_str() {
+                "rolling" => "5h".into(),
+                other => other.to_string(),
+            },
+            used_percent: window.used_percent,
+            reset_at: window.reset_in_sec.map(|secs| now.saturating_add(secs)),
+        })
+        .collect()
+}
+
 pub fn is_windows_exhausted(windows: &[UsageWindow]) -> bool {
     windows.iter().any(|window| window.used_percent >= 100.0)
 }
@@ -150,7 +169,8 @@ fn extract_top_level_number(obj_text: &str, field_name: &str) -> Option<f64> {
                         end = 1;
                     }
                     while end < number.len()
-                        && (number.as_bytes()[end].is_ascii_digit() || number.as_bytes()[end] == b'.')
+                        && (number.as_bytes()[end].is_ascii_digit()
+                            || number.as_bytes()[end] == b'.')
                     {
                         end += 1;
                     }
@@ -201,7 +221,12 @@ fn extract_usage_block(text: &str, key: &str) -> Option<String> {
     None
 }
 
-pub fn probe(http: &dyn Http, cookie: &str, workspace_id: Option<&str>, now: i64) -> Result<ProbeOutcome> {
+pub fn probe(
+    http: &dyn Http,
+    cookie: &str,
+    workspace_id: Option<&str>,
+    now: i64,
+) -> Result<ProbeOutcome> {
     let cache_key = crate::auth::cache_key("opencode-go", Some(cookie));
     let normalized = normalize_cookie_input(cookie);
     if normalized.is_empty() {
@@ -220,7 +245,10 @@ pub fn probe(http: &dyn Http, cookie: &str, workspace_id: Option<&str>, now: i64
         ("Cookie", cookie_header.as_str()),
         ("Origin", OPENCODE_BASE_URL),
         ("Referer", OPENCODE_BASE_URL),
-        ("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),
+        (
+            "Accept",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        ),
     ];
 
     let ids = if let Some(override_id) = workspace_id.map(str::trim).filter(|id| !id.is_empty()) {
@@ -239,11 +267,17 @@ pub fn probe(http: &dyn Http, cookie: &str, workspace_id: Option<&str>, now: i64
                 ("Referer", OPENCODE_BASE_URL),
                 ("X-Server-Id", WORKSPACES_SERVER_ID),
                 ("X-Server-Instance", instance.as_str()),
-                ("Accept", "text/javascript, application/json;q=0.9, */*;q=0.8"),
+                (
+                    "Accept",
+                    "text/javascript, application/json;q=0.9, */*;q=0.8",
+                ),
             ],
         )?;
         if response.status >= 400 {
-            return Ok(unknown(cache_key, Some(format!("http:{}", response.status))));
+            return Ok(unknown(
+                cache_key,
+                Some(format!("http:{}", response.status)),
+            ));
         }
         parse_workspace_ids(&response.body)
     };
@@ -261,6 +295,7 @@ pub fn probe(http: &dyn Http, cookie: &str, workspace_id: Option<&str>, now: i64
             continue;
         }
         if let Some(parsed) = parse_subscription_from_page_text(&response.body) {
+            let renews_at = monthly_renews(&parsed.windows, now);
             if is_windows_exhausted(&parsed.windows) {
                 let window = parsed
                     .windows
@@ -274,6 +309,8 @@ pub fn probe(http: &dyn Http, cookie: &str, workspace_id: Option<&str>, now: i64
                     reason: Some(format!("window:{}", window.name)),
                     reset_at,
                     remaining_credits: None,
+                    windows: cache_windows(&parsed.windows, now),
+                    renews_at,
                 });
             }
             return Ok(ProbeOutcome {
@@ -282,10 +319,20 @@ pub fn probe(http: &dyn Http, cookie: &str, workspace_id: Option<&str>, now: i64
                 reason: None,
                 reset_at: None,
                 remaining_credits: None,
+                windows: cache_windows(&parsed.windows, now),
+                renews_at,
             });
         }
     }
     Ok(unknown(cache_key, Some("error".into())))
+}
+
+fn monthly_renews(windows: &[UsageWindow], now: i64) -> Option<i64> {
+    windows
+        .iter()
+        .find(|window| window.name == "monthly")
+        .and_then(|window| window.reset_in_sec)
+        .map(|secs| now.saturating_add(secs))
 }
 
 fn is_workspace_id(value: &str) -> bool {
@@ -302,6 +349,8 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         reason,
         reset_at: None,
         remaining_credits: None,
+        windows: Vec::new(),
+        renews_at: None,
     }
 }
 
@@ -326,7 +375,10 @@ $R[20]={rollingUsage:$R[21]={status:"ok",resetInSec:7200,usagePercent:100},weekl
     #[test]
     fn normalize_cookie_input_wraps_bare_iron_seals() {
         assert_eq!(normalize_cookie_input("Fe26.2**abc"), "auth=Fe26.2**abc");
-        assert_eq!(normalize_cookie_input("auth=Fe26.2**abc"), "auth=Fe26.2**abc");
+        assert_eq!(
+            normalize_cookie_input("auth=Fe26.2**abc"),
+            "auth=Fe26.2**abc"
+        );
         assert_eq!(normalize_cookie_input(""), "");
     }
 
@@ -354,6 +406,7 @@ $R[20]={rollingUsage:$R[21]={status:"ok",resetInSec:7200,usagePercent:100},weekl
         };
         let outcome = probe(&http, "auth=token", Some("wrk_TESTWORKSPACEID123"), 1_000).unwrap();
         assert_eq!(outcome.state, ProviderState::Available);
+        assert_eq!(outcome.renews_at, Some(1_000 + 1_296_000));
     }
 
     #[test]

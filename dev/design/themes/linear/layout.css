@@ -89,6 +89,9 @@
 	--sidebar-hide-below: 1100px;
 	--content-narrow: 39rem;
 	--hairline-width: 0.8px;
+	--dialog-cap: 480px;
+	--dialog-invite-cap: 562px;
+	--well-row-inset: 16px;
 	--panel-shadow: 0 0.5px 1px 1px rgb(0 0 0 / 0.3);
 	--ink-soft: rgb(35, 37, 42);
 	--ink-subtle: rgb(107, 111, 118);

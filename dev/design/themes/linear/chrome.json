@@ -56,7 +56,7 @@
 			"id": "settings-members",
 			"url": "https://linear.app/easydevs/settings/members",
 			"family": "settings-list",
-			"taught": ["settingsPageTitle", "settingsPrimary", "columnHeader", "statusChip"]
+			"taught": ["settingsPageTitle", "settingsPrimary", "columnHeader", "statusChip", "dialog"]
 		},
 		{
 			"id": "settings-security",
@@ -86,7 +86,7 @@
 			"id": "settings-usage",
 			"url": "https://linear.app/easydevs/settings/usage",
 			"family": "settings-form",
-			"taught": ["settingsSection", "settingsMutedFill"]
+			"taught": ["settingsSection", "settingsMutedFill", "dialog"]
 		},
 		{
 			"id": "settings-import-export",
@@ -264,6 +264,16 @@
 			"radius": "--radius-pill",
 			"font": "--text-heading-sm",
 			"color": "--muted-foreground"
+		},
+		"dialog": {
+			"cap": "--dialog-cap",
+			"inviteCap": "--dialog-invite-cap",
+			"close": "--control-height-nav"
+		},
+		"wellRowHairline": {
+			"height": "--hairline-width",
+			"insetX": "--well-row-inset",
+			"fill": "--foreground"
 		}
 	}
 }

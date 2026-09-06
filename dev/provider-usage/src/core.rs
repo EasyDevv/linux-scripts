@@ -2,13 +2,17 @@ use anyhow::Result;
 use serde::Serialize;
 
 use crate::auth::{self, cache_key};
-use crate::cache::{CacheFile, FileStore, ProviderSnapshot, ProviderState, Store, DEFAULT_CACHE_PATH};
+use crate::cache::{
+    CacheFile, FileStore, ProviderSnapshot, ProviderState, Store, DEFAULT_CACHE_PATH,
+};
 use crate::commandcode;
+use crate::grok;
 use crate::http::{Http, ReqwestHttp};
+use crate::openai;
 use crate::opencode_go;
 use crate::policy::{self, Remaining};
 
-pub const REMAINING_TIMEOUT_MS: u64 = 5_000;
+pub const REMAINING_TIMEOUT_MS: u64 = 8_000;
 
 #[derive(Clone, Debug)]
 pub struct ProbeOutcome {
@@ -17,6 +21,22 @@ pub struct ProbeOutcome {
     pub reason: Option<String>,
     pub reset_at: Option<i64>,
     pub remaining_credits: Option<i64>,
+    pub windows: Vec<crate::cache::UsageWindow>,
+    pub renews_at: Option<i64>,
+}
+
+impl ProbeOutcome {
+    pub fn unknown(cache_key: String, reason: Option<String>) -> Self {
+        Self {
+            cache_key,
+            state: ProviderState::Unknown,
+            reason,
+            reset_at: None,
+            remaining_credits: None,
+            windows: Vec::new(),
+            renews_at: None,
+        }
+    }
 }
 
 pub trait Clock {
@@ -62,7 +82,12 @@ pub struct RemainingAnswer {
 }
 
 impl RemainingAnswer {
-    fn from_snapshot(model: &str, provider: &str, snapshot: &ProviderSnapshot, cached: bool) -> Self {
+    fn from_snapshot(
+        model: &str,
+        provider: &str,
+        snapshot: &ProviderSnapshot,
+        cached: bool,
+    ) -> Self {
         Self {
             model: model.to_string(),
             provider: provider.to_string(),
@@ -87,12 +112,16 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
             let cache = self.store.load()?;
             if let Some(snapshot) = cache.providers.get(&key) {
                 if policy::is_fresh(now, snapshot.fresh_until) {
-                    return Ok(RemainingAnswer::from_snapshot(model, &provider, snapshot, true));
+                    return Ok(RemainingAnswer::from_snapshot(
+                        model, &provider, snapshot, true,
+                    ));
                 }
             }
         }
         let snapshot = self.probe_provider(&provider, now)?;
-        Ok(RemainingAnswer::from_snapshot(model, &provider, &snapshot, false))
+        Ok(RemainingAnswer::from_snapshot(
+            model, &provider, &snapshot, false,
+        ))
     }
 
     pub fn refresh(&self, provider_or_model: &str) -> Result<RemainingAnswer> {
@@ -120,9 +149,13 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
             reset_at,
             fresh_until: policy::fresh_until(now, ProviderState::Exhausted, reset_at),
             remaining_credits: None,
+            windows: Vec::new(),
+            renews_at: None,
         };
         self.upsert(key, snapshot.clone())?;
-        Ok(RemainingAnswer::from_snapshot(model, &provider, &snapshot, false))
+        Ok(RemainingAnswer::from_snapshot(
+            model, &provider, &snapshot, false,
+        ))
     }
 
     pub fn status(&self) -> Result<CacheFile> {
@@ -130,7 +163,12 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
     }
 
     fn probe_provider(&self, provider: &str, now: i64) -> Result<ProviderSnapshot> {
-        let outcome = self.probes.probe(provider, now);
+        let mut outcome = self.probes.probe(provider, now);
+        let mut cache = self.store.load()?;
+        if provider == "grok" {
+            let prev = cache.providers.get(&outcome.cache_key).cloned();
+            grok::apply_inferred_weekly_reset(&mut outcome, prev.as_ref(), now);
+        }
         let snapshot = ProviderSnapshot {
             checked_at: now,
             state: outcome.state,
@@ -138,8 +176,11 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
             reset_at: outcome.reset_at,
             fresh_until: policy::fresh_until(now, outcome.state, outcome.reset_at),
             remaining_credits: outcome.remaining_credits,
+            windows: outcome.windows,
+            renews_at: outcome.renews_at,
         };
-        self.upsert(outcome.cache_key, snapshot.clone())?;
+        cache.providers.insert(outcome.cache_key, snapshot.clone());
+        self.store.save(&cache)?;
         Ok(snapshot)
     }
 
@@ -186,16 +227,24 @@ pub struct LiveProbes<H> {
     pub opencode_cookie: Option<String>,
     pub opencode_workspace: Option<String>,
     pub commandcode_base: String,
+    pub openai: Option<auth::OpenaiSession>,
+    pub grok: Option<auth::GrokSession>,
+    pub grok_management_key: Option<String>,
+    pub grok_team_id: Option<String>,
 }
 
 impl LiveProbes<ReqwestHttp> {
     pub fn from_env() -> Result<Self> {
         Ok(Self {
             http: ReqwestHttp::with_timeout_ms(REMAINING_TIMEOUT_MS)?,
-            commandcode_key: auth::commandcode_api_key(&auth::env_lookup),
+            commandcode_key: auth::commandcode_api_key(&auth::env_lookup, None),
             opencode_cookie: auth::opencode_cookie(&auth::env_lookup, None),
             opencode_workspace: auth::opencode_workspace_id(&auth::env_lookup, None),
             commandcode_base: DEFAULT_COMMANDCODE_BASE.to_string(),
+            openai: auth::openai_session(&auth::env_lookup),
+            grok: auth::grok_session(&auth::env_lookup),
+            grok_management_key: auth::grok_management_key(&auth::env_lookup, None),
+            grok_team_id: auth::grok_team_id(&auth::env_lookup),
         })
     }
 }
@@ -207,6 +256,16 @@ impl<H: Http> Probes for LiveProbes<H> {
         match provider {
             "commandcode" => cache_key(provider, self.commandcode_key.as_deref()),
             "opencode-go" => cache_key(provider, self.opencode_cookie.as_deref()),
+            "openai" => cache_key(
+                provider,
+                self.openai.as_ref().map(|s| s.access_token.as_str()),
+            ),
+            "grok" => cache_key(
+                provider,
+                self.grok_management_key
+                    .as_deref()
+                    .or_else(|| self.grok.as_ref().map(|s| s.access_token.as_str())),
+            ),
             other => cache_key(other, None),
         }
     }
@@ -214,29 +273,58 @@ impl<H: Http> Probes for LiveProbes<H> {
     fn probe(&self, provider: &str, now: i64) -> ProbeOutcome {
         match provider {
             "commandcode" => match self.commandcode_key.as_deref() {
-                Some(key) => commandcode::probe(&self.http, key, &self.commandcode_base).unwrap_or_else(|_| {
-                    ProbeOutcome {
+                Some(key) => commandcode::probe(&self.http, key, &self.commandcode_base)
+                    .unwrap_or_else(|_| ProbeOutcome {
                         cache_key: self.cache_key(provider),
                         state: ProviderState::Unknown,
                         reason: Some("network".into()),
                         reset_at: None,
                         remaining_credits: None,
-                    }
-                }),
+                        windows: Vec::new(),
+                        renews_at: None,
+                    }),
                 None => ProbeOutcome {
                     cache_key: self.cache_key(provider),
                     state: ProviderState::Unknown,
                     reason: Some("config".into()),
                     reset_at: None,
                     remaining_credits: None,
+                    windows: Vec::new(),
+                    renews_at: None,
                 },
             },
             "opencode-go" => match self.opencode_cookie.as_deref() {
-                Some(cookie) => opencode_go::probe(
+                Some(cookie) => {
+                    opencode_go::probe(&self.http, cookie, self.opencode_workspace.as_deref(), now)
+                        .unwrap_or_else(|_| ProbeOutcome {
+                            cache_key: self.cache_key(provider),
+                            state: ProviderState::Unknown,
+                            reason: Some("network".into()),
+                            reset_at: None,
+                            remaining_credits: None,
+                            windows: Vec::new(),
+                            renews_at: None,
+                        })
+                }
+                None => ProbeOutcome {
+                    cache_key: self.cache_key(provider),
+                    state: ProviderState::Unknown,
+                    reason: Some("config".into()),
+                    reset_at: None,
+                    remaining_credits: None,
+                    windows: Vec::new(),
+                    renews_at: None,
+                },
+            },
+            "openai" => match &self.openai {
+                Some(session) => openai::probe(
                     &self.http,
-                    cookie,
-                    self.opencode_workspace.as_deref(),
-                    now,
+                    &openai::Session {
+                        access_token: session.access_token.clone(),
+                        refresh_token: session.refresh_token.clone(),
+                        account_id: session.account_id.clone(),
+                        auth_path: Some(session.auth_path.clone()),
+                    },
                 )
                 .unwrap_or_else(|_| ProbeOutcome {
                     cache_key: self.cache_key(provider),
@@ -244,6 +332,8 @@ impl<H: Http> Probes for LiveProbes<H> {
                     reason: Some("network".into()),
                     reset_at: None,
                     remaining_credits: None,
+                    windows: Vec::new(),
+                    renews_at: None,
                 }),
                 None => ProbeOutcome {
                     cache_key: self.cache_key(provider),
@@ -251,14 +341,59 @@ impl<H: Http> Probes for LiveProbes<H> {
                     reason: Some("config".into()),
                     reset_at: None,
                     remaining_credits: None,
+                    windows: Vec::new(),
+                    renews_at: None,
                 },
             },
+            "grok" => {
+                if let Some(key) = self.grok_management_key.as_deref() {
+                    grok::probe_management(&self.http, key, self.grok_team_id.as_deref())
+                        .unwrap_or_else(|_| ProbeOutcome {
+                            cache_key: self.cache_key(provider),
+                            state: ProviderState::Unknown,
+                            reason: Some("network".into()),
+                            reset_at: None,
+                            remaining_credits: None,
+                            windows: Vec::new(),
+                            renews_at: None,
+                        })
+                } else if let Some(session) = &self.grok {
+                    grok::probe(
+                        &self.http,
+                        &grok::Session {
+                            access_token: session.access_token.clone(),
+                            user_id: session.user_id.clone(),
+                        },
+                    )
+                    .unwrap_or_else(|_| ProbeOutcome {
+                        cache_key: self.cache_key(provider),
+                        state: ProviderState::Unknown,
+                        reason: Some("network".into()),
+                        reset_at: None,
+                        remaining_credits: None,
+                        windows: Vec::new(),
+                        renews_at: None,
+                    })
+                } else {
+                    ProbeOutcome {
+                        cache_key: self.cache_key(provider),
+                        state: ProviderState::Unknown,
+                        reason: Some("config".into()),
+                        reset_at: None,
+                        remaining_credits: None,
+                        windows: Vec::new(),
+                        renews_at: None,
+                    }
+                }
+            }
             _ => ProbeOutcome {
                 cache_key: self.cache_key(provider),
                 state: ProviderState::Unknown,
                 reason: Some("unsupported".into()),
                 reset_at: None,
                 remaining_credits: None,
+                windows: Vec::new(),
+                renews_at: None,
             },
         }
     }
@@ -306,6 +441,8 @@ mod tests {
                     reason: Some("missing".into()),
                     reset_at: None,
                     remaining_credits: None,
+                    windows: Vec::new(),
+                    renews_at: None,
                 })
         }
     }
@@ -333,6 +470,8 @@ mod tests {
             reason: Some("credits".into()),
             reset_at: Some(5_000),
             remaining_credits: Some(0),
+            windows: Vec::new(),
+            renews_at: None,
         };
         let core = core(1_000, outcome);
         let first = core
@@ -357,6 +496,8 @@ mod tests {
             reason: Some("credits".into()),
             reset_at: None,
             remaining_credits: Some(0),
+            windows: Vec::new(),
+            renews_at: None,
         };
         let core = core(1_000, outcome);
         core.remaining("commandcode/x", false).unwrap();
@@ -373,6 +514,8 @@ mod tests {
             reason: None,
             reset_at: None,
             remaining_credits: Some(9),
+            windows: Vec::new(),
+            renews_at: None,
         };
         let core = core(1_000, outcome);
         core.remaining("commandcode/x", false).unwrap();
@@ -392,10 +535,64 @@ mod tests {
             reason: Some("credits".into()),
             reset_at: None,
             remaining_credits: Some(0),
+            windows: Vec::new(),
+            renews_at: None,
         };
         let core = core(1_000, outcome);
         core.remaining("commandcode/x", false).unwrap();
         core.remaining("commandcode/x", true).unwrap();
         assert_eq!(core.probes.probes.get(), 2);
+    }
+
+    struct GrokProbes {
+        key: String,
+        remaining: Cell<i64>,
+        probes: Cell<u32>,
+    }
+
+    impl Probes for GrokProbes {
+        fn cache_key(&self, _provider: &str) -> String {
+            self.key.clone()
+        }
+
+        fn probe(&self, _provider: &str, _now: i64) -> ProbeOutcome {
+            self.probes.set(self.probes.get() + 1);
+            let remaining = self.remaining.get();
+            ProbeOutcome {
+                cache_key: self.key.clone(),
+                state: ProviderState::Available,
+                reason: None,
+                reset_at: None,
+                remaining_credits: Some(remaining),
+                windows: vec![crate::cache::UsageWindow {
+                    name: "weekly".into(),
+                    used_percent: 0.0,
+                    reset_at: None,
+                }],
+                renews_at: None,
+            }
+        }
+    }
+
+    #[test]
+    fn grok_locks_weekly_reset_after_grant_fill() {
+        let core = UsageCore {
+            clock: FakeClock(Cell::new(1_000)),
+            store: MemoryStore::default(),
+            probes: GrokProbes {
+                key: "grok:abc".into(),
+                remaining: Cell::new(4_000),
+                probes: Cell::new(0),
+            },
+        };
+        let first = core.remaining("grok/x", true).unwrap();
+        assert_eq!(first.reset_at, None);
+        core.probes.remaining.set(15_000);
+        core.clock.0.set(1_060);
+        let second = core.remaining("grok/x", true).unwrap();
+        assert_eq!(second.reset_at, Some(1_060 + 7 * 86_400));
+        let status = core.status().unwrap();
+        let snap = status.providers.get("grok:abc").unwrap();
+        assert_eq!(snap.windows[0].reset_at, Some(1_060 + 7 * 86_400));
     }
 }

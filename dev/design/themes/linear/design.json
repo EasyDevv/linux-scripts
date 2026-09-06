@@ -99,7 +99,21 @@
 			"radius": "--radius-sm",
 			"notIllustrated": true
 		},
-		"search": "icon or quiet inline field, never a hero search"
+		"search": "icon or quiet inline field, never a hero search",
+		"dialog": {
+			"width": "min(--dialog-cap, 100% - 2rem)",
+			"cap": "--dialog-cap",
+			"inviteCap": "--dialog-invite-cap",
+			"sideInsetUntilCap": true,
+			"title": { "font": "--text-heading-sm", "weight": 450 },
+			"close": { "size": "--control-height-nav", "shape": "circle" },
+			"noHeaderFooterRule": true
+		},
+		"actions": {
+			"commit": { "kind": "filled text pill", "radius": "--radius-pill", "fill": "--primary" },
+			"namedSecondary": { "kind": "ghost/outline text pill", "radius": "--radius-pill" },
+			"toolChrome": { "kind": "circular outline icon", "size": "icon-sm" }
+		}
 	},
 	"lists": {
 		"kind": "quiet grid, not card stack",
@@ -115,6 +129,13 @@
 		"columnHeader": { "font": "--text-body-sm", "color": "--muted-foreground" },
 		"noZebra": true,
 		"noRowCards": true,
+		"wellRowHairline": {
+			"height": "--hairline-width",
+			"insetX": "--well-row-inset",
+			"fill": "--foreground",
+			"fillAlpha": 0.1,
+			"notWellBorder": true
+		},
 		"status": "dot or one-word chip",
 		"inspector": "right column inside main, same surface, not a modal"
 	},
@@ -225,6 +246,8 @@
 		"settings forms: --content-narrow, --secondary wells, gap-12 between groups",
 		"section lede only; input sits on the well with --input hairline; select fill --accent",
 		"dense options are chips in one row, not a switch list",
-		"one accent as state; hairline --hairline-width plus --panel-shadow"
+		"one accent as state; hairline --hairline-width plus --panel-shadow",
+		"dialog width is min(--dialog-cap, 100% - 2rem); no header/footer rule",
+		"well rows use --hairline-width inset --well-row-inset at --foreground 0.1, not --border"
 	]
 }
