@@ -1,0 +1,269 @@
+{
+	"slug": "linear",
+	"measuredAt": "2026-09-06",
+	"viewport": { "width": 1440, "height": 900, "scheme": "dark" },
+	"live": "https://linear.app/easydevs/projects/all",
+	"pages": [
+		{
+			"id": "projects-all",
+			"url": "https://linear.app/easydevs/projects/all",
+			"taught": ["shell", "sidebarNavItem", "ghostAction", "columnHeader", "pillTab"]
+		},
+		{
+			"id": "project-overview",
+			"url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
+			"taught": ["panelHeaderTitle", "heroIdentity", "subtitle", "propertyChip", "emptyUpdate"]
+		},
+		{
+			"id": "custom-view",
+			"url": "https://linear.app/easydevs/view/testview-74f235637401",
+			"taught": ["issueRow", "groupHeader", "pillTab"]
+		},
+		{
+			"id": "members",
+			"url": "https://linear.app/easydevs/members",
+			"taught": ["columnHeader", "statusChip"]
+		},
+		{
+			"id": "team-overview",
+			"url": "https://linear.app/easydevs/team/EAS/overview",
+			"taught": ["heroIdentity", "sectionHeading", "panelHeaderTitle"]
+		},
+		{
+			"id": "team-issues",
+			"url": "https://linear.app/easydevs/team/EAS/all",
+			"taught": ["issueRow", "groupHeader", "pillTab"]
+		},
+		{
+			"id": "settings-integrations",
+			"url": "https://linear.app/easydevs/settings/integrations",
+			"family": "settings-form",
+			"taught": ["settingsPageTitle", "settingsLede", "contentNarrow"]
+		},
+		{
+			"id": "settings-workspace",
+			"url": "https://linear.app/easydevs/settings/workspace",
+			"family": "settings-form",
+			"taught": ["settingsPageTitle", "formRow", "settingsSection", "destructiveGhost"]
+		},
+		{
+			"id": "settings-teams",
+			"url": "https://linear.app/easydevs/settings/teams",
+			"family": "settings-list",
+			"taught": ["settingsPageTitle", "settingsPrimary", "columnHeader"]
+		},
+		{
+			"id": "settings-members",
+			"url": "https://linear.app/easydevs/settings/members",
+			"family": "settings-list",
+			"taught": ["settingsPageTitle", "settingsPrimary", "columnHeader", "statusChip"]
+		},
+		{
+			"id": "settings-security",
+			"url": "https://linear.app/easydevs/settings/security",
+			"family": "settings-form",
+			"taught": ["settingsSection", "settingsGhost", "switch"]
+		},
+		{
+			"id": "settings-api",
+			"url": "https://linear.app/easydevs/settings/api",
+			"family": "settings-form",
+			"taught": ["settingsSection", "settingsGhost"]
+		},
+		{
+			"id": "settings-applications",
+			"url": "https://linear.app/easydevs/settings/applications",
+			"family": "settings-form",
+			"taught": ["settingsPageTitle", "settingsLede"]
+		},
+		{
+			"id": "settings-billing",
+			"url": "https://linear.app/easydevs/settings/billing",
+			"family": "settings-form",
+			"taught": ["settingsPrimary", "settingsGhost", "settingsSection"]
+		},
+		{
+			"id": "settings-usage",
+			"url": "https://linear.app/easydevs/settings/usage",
+			"family": "settings-form",
+			"taught": ["settingsSection", "settingsMutedFill"]
+		},
+		{
+			"id": "settings-import-export",
+			"url": "https://linear.app/easydevs/settings/import-export",
+			"family": "settings-form",
+			"taught": ["settingsSection", "settingsGhost"]
+		},
+		{
+			"id": "settings-team-eas",
+			"url": "https://linear.app/easydevs/settings/teams/EAS",
+			"family": "settings-form",
+			"taught": ["settingsPageTitle", "panelHeaderTitle", "settingsSection"]
+		},
+		{
+			"id": "settings-team-general",
+			"url": "https://linear.app/easydevs/settings/teams/EAS/general",
+			"family": "settings-form",
+			"taught": ["formWell", "formRow", "selectControl", "settingsSection", "settingsLede"]
+		},
+		{
+			"id": "settings-team-workflow",
+			"url": "https://linear.app/easydevs/settings/teams/EAS/workflow",
+			"family": "settings-form",
+			"taught": ["formWell", "settingsSection", "settingsLede"]
+		},
+		{
+			"id": "settings-new-team",
+			"url": "https://linear.app/easydevs/settings/new-team",
+			"family": "settings-form",
+			"taught": ["settingsPageTitle", "formRow", "panelHeaderTitle"]
+		}
+	],
+	"tokens": {
+		"canvas": "--background",
+		"panel": "--card",
+		"well": "--secondary",
+		"navActive": "--sidebar-accent",
+		"hairline": "--border",
+		"ink": "--foreground",
+		"inkSecondary": "--ink-soft",
+		"inkTertiary": "--muted-foreground",
+		"inkMuted": "--ink-subtle"
+	},
+	"shell": {
+		"sidebar": { "x": 0, "y": 0, "w": "--sidebar-width", "h": 900, "bg": "--background" },
+		"main": {
+			"inset": "--panel-inset",
+			"gutterToSidebar": "--panel-inset",
+			"bg": "--card",
+			"radius": "--radius",
+			"border": "--border",
+			"shadow": "--panel-shadow"
+		},
+		"collapse": {
+			"mode": "slide-start",
+			"duration": "--sidebar-collapse-duration",
+			"ease": "--sidebar-collapse-ease",
+			"hideBelow": "--sidebar-hide-below"
+		}
+	},
+	"roles": {
+		"sidebarNavItem": {
+			"height": "--control-height-nav",
+			"radius": "--radius-sm",
+			"insetX": 12,
+			"label": { "font": "--text-heading-sm", "idle": "--muted-foreground", "active": "--foreground" },
+			"activeBg": "--sidebar-accent",
+			"icon": 14
+		},
+		"panelHeaderTitle": {
+			"font": "--text-heading-sm",
+			"color": "--ink-soft"
+		},
+		"ghostAction": {
+			"font": "--text-label-sm",
+			"color": "--ink-subtle",
+			"hitHeight": "--control-height-nav"
+		},
+		"columnHeader": {
+			"font": "--text-body-sm",
+			"color": "--muted-foreground"
+		},
+		"issueRow": {
+			"pitch": 36,
+			"identifier": {
+				"font": "--text-body-base",
+				"color": "--muted-foreground"
+			},
+			"title": { "font": "--text-heading-sm", "color": "--foreground" }
+		},
+		"groupHeader": {
+			"height": 36,
+			"radius": "--radius-sm",
+			"label": { "font": "--text-heading-sm", "color": "--ink-soft" },
+			"fill": "--sidebar-accent"
+		},
+		"pillTab": {
+			"font": "--text-label-sm",
+			"selected": "--foreground",
+			"radius": "--radius-pill"
+		},
+		"heroIdentity": {
+			"font": "--text-title",
+			"color": "--foreground"
+		},
+		"propertyChip": {
+			"font": "--text-heading-sm",
+			"color": "--ink-soft",
+			"height": "--control-height-nav"
+		},
+		"settingsPageTitle": {
+			"font": "--text-title",
+			"weight": 500,
+			"color": "--foreground",
+			"y": 72.8
+		},
+		"settingsLede": {
+			"font": "--text-body-base",
+			"color": "--muted-foreground"
+		},
+		"settingsSection": {
+			"font": "--text-heading",
+			"color": "--foreground"
+		},
+		"contentNarrow": {
+			"width": "--content-narrow"
+		},
+		"formWell": {
+			"bg": "--secondary",
+			"radius": "--radius-md",
+			"pad": 16,
+			"titleToWell": 32,
+			"betweenGroups": 48
+		},
+		"formRow": {
+			"label": { "font": "--text-heading-sm", "color": "--foreground" },
+			"control": {
+				"height": "--control-height",
+				"radius": "--radius-sm",
+				"border": "--input",
+				"width": 200
+			}
+		},
+		"selectControl": {
+			"height": 30,
+			"radius": "--radius-sm",
+			"bg": "--accent",
+			"color": "--accent-foreground",
+			"font": "--text-heading-sm"
+		},
+		"settingsPrimary": {
+			"height": "--control-height",
+			"radius": "--radius-pill",
+			"bg": "--primary",
+			"color": "--primary-foreground"
+		},
+		"settingsGhost": {
+			"height": "--control-height",
+			"radius": "--radius-pill",
+			"color": "--ink-soft"
+		},
+		"settingsMutedFill": {
+			"height": "--control-height",
+			"radius": "--radius-pill",
+			"bg": "--accent",
+			"color": "--ink-soft"
+		},
+		"destructiveGhost": {
+			"height": "--control-height",
+			"radius": "--radius-pill",
+			"color": "--destructive"
+		},
+		"backToApp": {
+			"height": "--control-height-nav",
+			"radius": "--radius-pill",
+			"font": "--text-heading-sm",
+			"color": "--muted-foreground"
+		}
+	}
+}
