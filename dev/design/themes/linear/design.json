@@ -1,11 +1,24 @@
 {
 	"slug": "linear",
 	"measuredAt": "2026-09-06",
-	"viewport": { "width": 1440, "height": 900, "scheme": "dark" },
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"scheme": "dark"
+	},
 	"thesis": "Canvas plus a floating main panel. layout.css owns values; this file says which token applies and what not to copy.",
 	"applyOnto": "existing draft skeleton",
-	"doNotCopy": ["wordmark", "illustrations", "page IA"],
-	"families": ["product", "settings-list", "settings-form"],
+	"doNotCopy": [
+		"wordmark",
+		"illustrations",
+		"page IA",
+		"col-resize seam hairline"
+	],
+	"families": [
+		"product",
+		"settings-list",
+		"settings-form"
+	],
 	"shell": {
 		"model": "canvas-plus-floating-main",
 		"canvas": "--background",
@@ -40,7 +53,10 @@
 		},
 		"main": {
 			"fill": "--card",
-			"origin": ["--sidebar-width", "--panel-inset"],
+			"origin": [
+				"--sidebar-width",
+				"--panel-inset"
+			],
 			"inset": "--panel-inset",
 			"radius": "--radius",
 			"border": "--border",
@@ -50,7 +66,24 @@
 			"primitive": "Sidebar.Inset"
 		},
 		"inspectors": "quiet rectangles inside main, not a second floating app",
-		"notLinear": ["sidebar border-r", "flush rectangular content pane", "sidebar-07 inset header", "collapsible=icon"]
+		"notLinear": [
+			"sidebar border-r",
+			"col-resize seam hairline",
+			"flush rectangular content pane",
+			"sidebar-07 inset header",
+			"collapsible=icon",
+			"footer inside Sidebar.Inset"
+		],
+		"footer": {
+			"fill": "--background",
+			"onCanvas": true,
+			"insideMain": false,
+			"height": "--shell-footer-height",
+			"reservesMainBottom": "--shell-footer-height",
+			"hairline": false,
+			"font": "--text-body-sm",
+			"color": "--muted-foreground"
+		}
 	},
 	"type": {
 		"font": "--font-sans",
@@ -58,23 +91,126 @@
 		"notMarketingScale": true,
 		"notTitleOnTopBar": true,
 		"roles": [
-			{ "id": "sidebarLabelIdle", "font": "--text-heading-sm", "weight": 500, "color": "--muted-foreground", "where": "Inbox, My issues, nested team links" },
-			{ "id": "sidebarLabelActive", "font": "--text-heading-sm", "weight": 500, "color": "--foreground", "fill": "--sidebar-accent", "where": "same size as idle" },
-			{ "id": "panelHeaderTitle", "font": "--text-heading-sm", "weight": 500, "color": "--ink-soft", "where": "h2 next to favorite star, not a page title" },
-			{ "id": "pillTab", "font": "--text-label-sm", "weight": 500, "selected": "--foreground", "idle": "--muted-foreground", "where": "Overview / All projects / All issues" },
-			{ "id": "ghostAction", "font": "--text-label-sm", "weight": 500, "color": "--ink-subtle", "where": "product + New project, Invite members" },
-			{ "id": "columnHeader", "font": "--text-body-sm", "weight": 450, "color": "--muted-foreground", "transform": "none", "where": "Name, Health, Status" },
-			{ "id": "issueIdentifier", "font": "--text-body-base", "weight": 450, "color": "--muted-foreground", "where": "EAS-1" },
-			{ "id": "issueTitle", "font": "--text-heading-sm", "weight": 500, "color": "--foreground", "where": "list primary identity" },
-			{ "id": "listMeta", "font": "--text-body-sm", "weight": 450, "color": "--muted-foreground", "where": "Sep 6, size · date, capacity, list alerts" },
-			{ "id": "groupHeader", "font": "--text-heading-sm", "weight": 500, "color": "--ink-soft", "where": "Todo" },
-			{ "id": "propertyChip", "font": "--text-heading-sm", "weight": 500, "color": "--ink-soft", "where": "Backlog, No priority" },
-			{ "id": "memberName", "font": "--text-heading-sm", "weight": 500, "color": "--ink-soft" },
-			{ "id": "sectionHeading", "font": "--text-heading", "color": "--foreground", "where": "settings groups" },
-			{ "id": "heroIdentity", "font": "--text-title", "weight": 600, "color": "--foreground", "where": "project/team name under panel header" },
-			{ "id": "settingsPageTitle", "font": "--text-title", "weight": 500, "color": "--foreground", "where": "settings h1 in the content column" },
-			{ "id": "productLede", "font": "--text-heading", "weight": 450, "color": "--ink-soft", "where": "project tagline under heroIdentity" },
-			{ "id": "settingsLede", "font": "--text-body-base", "weight": 450, "color": "--muted-foreground", "where": "one line under settings page title" }
+			{
+				"id": "sidebarLabelIdle",
+				"font": "--text-heading-sm",
+				"weight": 500,
+				"color": "--muted-foreground",
+				"where": "Inbox, My issues, nested team links"
+			},
+			{
+				"id": "sidebarLabelActive",
+				"font": "--text-heading-sm",
+				"weight": 500,
+				"color": "--foreground",
+				"fill": "--sidebar-accent",
+				"where": "same size as idle"
+			},
+			{
+				"id": "panelHeaderTitle",
+				"font": "--text-heading-sm",
+				"weight": 500,
+				"color": "--ink-soft",
+				"where": "h2 next to favorite star, not a page title"
+			},
+			{
+				"id": "pillTab",
+				"font": "--text-label-sm",
+				"weight": 500,
+				"selected": "--foreground",
+				"idle": "--muted-foreground",
+				"where": "Overview / All projects / All issues"
+			},
+			{
+				"id": "ghostAction",
+				"font": "--text-label-sm",
+				"weight": 500,
+				"color": "--ink-subtle",
+				"where": "product + New project, Invite members"
+			},
+			{
+				"id": "columnHeader",
+				"font": "--text-body-sm",
+				"weight": 450,
+				"color": "--muted-foreground",
+				"transform": "none",
+				"where": "Name, Health, Status"
+			},
+			{
+				"id": "issueIdentifier",
+				"font": "--text-body-base",
+				"weight": 450,
+				"color": "--muted-foreground",
+				"where": "EAS-1"
+			},
+			{
+				"id": "issueTitle",
+				"font": "--text-heading-sm",
+				"weight": 500,
+				"color": "--foreground",
+				"where": "list primary identity"
+			},
+			{
+				"id": "listMeta",
+				"font": "--text-body-sm",
+				"weight": 450,
+				"color": "--muted-foreground",
+				"where": "Sep 6, size · date, capacity, list alerts"
+			},
+			{
+				"id": "groupHeader",
+				"font": "--text-heading-sm",
+				"weight": 500,
+				"color": "--ink-soft",
+				"where": "Todo"
+			},
+			{
+				"id": "propertyChip",
+				"font": "--text-heading-sm",
+				"weight": 500,
+				"color": "--ink-soft",
+				"where": "Backlog, No priority"
+			},
+			{
+				"id": "memberName",
+				"font": "--text-heading-sm",
+				"weight": 500,
+				"color": "--ink-soft"
+			},
+			{
+				"id": "sectionHeading",
+				"font": "--text-heading",
+				"color": "--foreground",
+				"where": "settings groups"
+			},
+			{
+				"id": "heroIdentity",
+				"font": "--text-title",
+				"weight": 600,
+				"color": "--foreground",
+				"where": "project/team name under panel header"
+			},
+			{
+				"id": "settingsPageTitle",
+				"font": "--text-title",
+				"weight": 500,
+				"color": "--foreground",
+				"where": "settings h1 in the content column"
+			},
+			{
+				"id": "productLede",
+				"font": "--text-heading",
+				"weight": 450,
+				"color": "--ink-soft",
+				"where": "project tagline under heroIdentity"
+			},
+			{
+				"id": "settingsLede",
+				"font": "--text-body-base",
+				"weight": 450,
+				"color": "--muted-foreground",
+				"where": "one line under settings page title"
+			}
 		]
 	},
 	"controls": {
@@ -90,8 +226,14 @@
 			"height": "--control-height-nav",
 			"unselected": "ghost"
 		},
-		"productCta": { "kind": "ghost", "font": "--text-label-sm" },
-		"emphasis": { "fill": "--primary", "where": "settings Invite, Create team, Upgrade now" },
+		"productCta": {
+			"kind": "ghost",
+			"font": "--text-label-sm"
+		},
+		"emphasis": {
+			"fill": "--primary",
+			"where": "settings Invite, Create team, Upgrade now"
+		},
 		"emptyAction": {
 			"height": "--control-height",
 			"font": "--text-heading-sm",
@@ -105,28 +247,66 @@
 			"cap": "--dialog-cap",
 			"inviteCap": "--dialog-invite-cap",
 			"sideInsetUntilCap": true,
-			"title": { "font": "--text-heading-sm", "weight": 450 },
-			"close": { "size": "--control-height-nav", "shape": "circle" },
+			"title": {
+				"font": "--text-heading-sm",
+				"weight": 450
+			},
+			"close": {
+				"size": "--control-height-nav",
+				"shape": "circle"
+			},
 			"noHeaderFooterRule": true
 		},
 		"actions": {
-			"commit": { "kind": "filled text pill", "radius": "--radius-pill", "fill": "--primary" },
-			"namedSecondary": { "kind": "ghost/outline text pill", "radius": "--radius-pill" },
-			"toolChrome": { "kind": "circular outline icon", "size": "icon-sm" }
+			"commit": {
+				"kind": "filled text pill",
+				"radius": "--radius-pill",
+				"fill": "--primary"
+			},
+			"namedSecondary": {
+				"kind": "ghost/outline text pill",
+				"radius": "--radius-pill"
+			},
+			"toolChrome": {
+				"kind": "circular outline icon",
+				"size": "icon-sm"
+			}
 		}
 	},
 	"lists": {
 		"kind": "quiet grid, not card stack",
 		"issuePitch": 36,
 		"projectPitch": 56,
-		"left": ["handle?", "identifier muted", "status dot", "title"],
-		"right": ["assignee avatar", "short date"],
+		"left": [
+			"handle?",
+			"identifier muted",
+			"status dot",
+			"title"
+		],
+		"right": [
+			"assignee avatar",
+			"short date"
+		],
 		"groupBar": {
 			"height": "--control-height-nav",
 			"radius": "--radius-sm",
 			"fill": "--sidebar-accent"
 		},
-		"columnHeader": { "font": "--text-body-sm", "color": "--muted-foreground" },
+		"rowHover": {
+			"fill": "--accent",
+			"radius": "--radius-sm",
+			"insetX": "--list-row-hover-inset",
+			"insetY": 0
+		},
+		"groupEnvelope": {
+			"gapStart": "--list-group-gap",
+			"gapEnd": "--list-group-gap",
+			"interRowGap": 0
+		},
+		"columnHeader": {
+			"font": "--text-body-sm",
+			"color": "--muted-foreground"
+		},
 		"noZebra": true,
 		"noRowCards": true,
 		"wellRowHairline": {
@@ -143,9 +323,39 @@
 		"shared": true,
 		"height": "--control-height-nav",
 		"row": "flex h-11 shrink-0",
-		"fold": { "primitive": "Sidebar.Trigger", "size": "icon-sm", "color": "--muted-foreground" },
-		"title": { "font": "--text-heading-sm", "color": "--ink-soft", "from": "nav item" },
+		"fold": {
+			"primitive": "Sidebar.Trigger",
+			"size": "icon-sm",
+			"color": "--muted-foreground"
+		},
+		"title": {
+			"font": "--text-heading-sm",
+			"color": "--ink-soft",
+			"from": "nav item"
+		},
 		"extras": "{#snippet header()} only"
+	},
+	"skeleton": {
+		"keepChrome": true,
+		"slotsOnly": true,
+		"keepLastNumbers": true,
+		"fill": "--muted",
+		"radius": "--radius-md",
+		"motion": "pulse",
+		"primitive": "Skeleton",
+		"heightFrom": "replaced text role",
+		"widthFrom": "typical string of that slot",
+		"when": [
+			"empty slot",
+			"explicit refresh"
+		],
+		"not": [
+			"full-page overlay",
+			"shimmer gradient",
+			"spinner on numbers",
+			"skeleton of chrome",
+			"replace cached numbers on visit or revalidate"
+		]
 	},
 	"settings": {
 		"keepsShell": true,
@@ -179,42 +389,131 @@
 			}
 		},
 		"listFamily": {
-			"pages": ["settings/teams", "settings/members"],
-			"title": { "font": "--text-title", "weight": 500, "align": "start of main" },
+			"pages": [
+				"settings/teams",
+				"settings/members"
+			],
+			"title": {
+				"font": "--text-title",
+				"weight": 500,
+				"align": "start of main"
+			},
 			"toolbarHeight": "--control-height",
 			"mutedFill": "--accent",
-			"primary": { "fill": "--primary", "radius": "--radius-pill" },
+			"primary": {
+				"fill": "--primary",
+				"radius": "--radius-pill"
+			},
 			"tables": "same as product lists"
 		},
 		"formFamily": {
-			"pages": ["settings/workspace", "settings/security", "settings/api", "settings/applications", "settings/billing", "settings/usage", "settings/import-export", "settings/integrations", "settings/teams/EAS/general", "settings/teams/EAS/workflow", "settings/new-team"],
+			"pages": [
+				"settings/workspace",
+				"settings/security",
+				"settings/api",
+				"settings/applications",
+				"settings/billing",
+				"settings/usage",
+				"settings/import-export",
+				"settings/integrations",
+				"settings/teams/EAS/general",
+				"settings/teams/EAS/workflow",
+				"settings/new-team"
+			],
 			"column": "--content-narrow",
-			"title": { "font": "--text-title", "weight": 500 },
-			"lede": { "font": "--text-body-base", "weight": 450, "color": "--muted-foreground", "where": "one line under a section heading, never per field" },
-			"section": { "font": "--text-heading", "color": "--foreground" },
-			"well": { "fill": "--secondary", "radius": "--radius-md" },
+			"title": {
+				"font": "--text-title",
+				"weight": 500
+			},
+			"lede": {
+				"font": "--text-body-base",
+				"weight": 450,
+				"color": "--muted-foreground",
+				"where": "one line under a section heading, never per field"
+			},
+			"section": {
+				"font": "--text-heading",
+				"color": "--foreground"
+			},
+			"well": {
+				"fill": "--secondary",
+				"radius": "--radius-md"
+			},
 			"titleToFirstWell": "gap-8",
 			"betweenGroups": "gap-12",
 			"formRow": {
-				"label": { "font": "--text-heading-sm", "color": "--foreground" },
+				"label": {
+					"font": "--text-heading-sm",
+					"color": "--foreground"
+				},
 				"orientation": "horizontal until well @container 28rem, then stack",
-				"input": { "height": "--control-height", "radius": "--radius-sm", "border": "--input", "onWell": true },
-				"select": { "height": "--control-height", "radius": "--radius-sm", "fill": "--accent", "color": "--accent-foreground", "weight": 500 }
+				"input": {
+					"height": "--control-height",
+					"radius": "--radius-sm",
+					"border": "--input",
+					"onWell": true,
+					"fill": "--secondary",
+					"font": "--text-heading-sm",
+					"pad": "6px 12px"
+				},
+				"select": {
+					"height": "--select-trigger-height",
+					"radius": "--radius-sm",
+					"fill": "--accent",
+					"color": "--accent-foreground",
+					"weight": 400,
+					"font": "--text-heading-sm",
+					"pad": "1px 28px 1px 10px",
+					"chevron": "9x5",
+					"menu": {
+						"fill": "--select-menu",
+						"border": "--select-menu-border",
+						"itemHighlight": "--select-item-highlight",
+						"highlightInsetInline": 4,
+						"highlightRadius": "--radius-sm",
+						"itemHeight": "--control-height",
+						"checkAfterLabel": true,
+						"alignSelectedToTrigger": true
+					},
+					"hasDefaultValue": true,
+					"placeholderNever": true
+				}
 			},
 			"denseOptions": "chips in one row, not a switch per item",
-			"groupLabel": { "font": "--text-heading-sm", "color": "--ink-soft" }
+			"groupLabel": {
+				"font": "--text-heading-sm",
+				"color": "--ink-soft"
+			}
 		},
 		"nestedTeam": {
-			"panelHeader": { "font": "--text-heading-sm" },
-			"pageTitle": { "font": "--text-title", "weight": 500 }
+			"panelHeader": {
+				"font": "--text-heading-sm"
+			},
+			"pageTitle": {
+				"font": "--text-title",
+				"weight": 500
+			}
 		},
-		"ghost": { "height": "--control-height", "radius": "--radius-pill" },
-		"mutedFill": { "height": "--control-height", "radius": "--radius-pill", "fill": "--accent" },
-		"destructive": { "kind": "ghost/text", "color": "--destructive", "notFilled": true },
-		"switchOn": { "fill": "--primary" }
+		"ghost": {
+			"height": "--control-height",
+			"radius": "--radius-pill"
+		},
+		"mutedFill": {
+			"height": "--control-height",
+			"radius": "--radius-pill",
+			"fill": "--accent"
+		},
+		"destructive": {
+			"kind": "ghost/text",
+			"color": "--destructive",
+			"notFilled": true
+		},
+		"switchOn": {
+			"fill": "--primary"
+		}
 	},
 	"color": {
-		"model": "grayscale plus one local accent",
+		"model": "grayscale plus restrained semantic state color",
 		"canvas": "--background",
 		"sidebar": "--sidebar",
 		"panel": "--card",
@@ -222,10 +521,31 @@
 		"popover": "--popover",
 		"navActive": "--sidebar-accent",
 		"hover": "--accent",
-		"ink": ["--foreground", "--ink-soft", "--muted-foreground", "--ink-subtle"],
+		"ink": [
+			"--foreground",
+			"--ink-soft",
+			"--muted-foreground",
+			"--ink-subtle"
+		],
 		"emphasis": "--primary",
 		"emphasisNotNavFill": true,
-		"colorMeans": ["state", "identity"],
+		"statePalette": {
+			"info": "--status-info",
+			"highlight": "--status-highlight",
+			"danger": "--status-danger",
+			"neutral": "--status-neutral"
+		},
+		"actionStates": {
+			"leftToRight": "--status-info",
+			"rightToLeft": "--status-highlight",
+			"delete": "--status-danger",
+			"skip": "--status-neutral",
+			"tintAlpha": 0.15
+		},
+		"colorMeans": [
+			"state",
+			"identity"
+		],
 		"sameTokensInLight": true
 	},
 	"skipUnlessDraftHas": [
@@ -243,11 +563,13 @@
 		"nav rows use --control-height-nav, --radius-sm, --sidebar-accent when active",
 		"product header actions are ghost --text-label-sm; settings may use one --primary pill at --control-height",
 		"lists: muted identifier, primary title, status dot, no card-per-row",
+		"list hover is --accent at --radius-sm inset --list-row-hover-inset; group envelope is --list-group-gap above the first row and below the last, 0 between rows",
 		"settings forms: --content-narrow, --secondary wells, gap-12 between groups",
-		"section lede only; input sits on the well with --input hairline; select fill --accent",
+		"section lede only; input --control-height 6px 12px on well; select always has a default (never placeholder); trigger --select-trigger-height --accent weight 400; menu --select-menu highlight --select-item-highlight; check after label; selected row stays on trigger",
 		"dense options are chips in one row, not a switch list",
-		"one accent as state; hairline --hairline-width plus --panel-shadow",
+		"reserve semantic color for state or identity; action states use --status-info, --status-highlight, --status-danger, and --status-neutral at 0.15 tint",
 		"dialog width is min(--dialog-cap, 100% - 2rem); no header/footer rule",
-		"well rows use --hairline-width inset --well-row-inset at --foreground 0.1, not --border"
+		"well rows use --hairline-width inset --well-row-inset at --foreground 0.1, not --border",
+		"refresh: keep last numbers; pulse --muted --radius-md bars only on empty slots or explicit Refresh"
 	]
 }

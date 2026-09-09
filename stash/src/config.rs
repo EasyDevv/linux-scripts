@@ -23,6 +23,18 @@ pub struct DownloadConfig {
     #[allow(dead_code)]
     pub chunk_size_bytes: u64,
     pub user_agent: String,
+    pub media_proxy_file: Option<PathBuf>,
+    pub media_proxy_referer_hosts: Vec<String>,
+}
+
+impl DownloadConfig {
+    pub fn media_proxy_for(&self, referer: &str) -> Option<&std::path::Path> {
+        let parsed = url::Url::parse(referer).ok()?;
+        let host = parsed.host_str()?;
+        self.media_proxy_referer_hosts.iter()
+            .any(|allowed| allowed.eq_ignore_ascii_case(host))
+            .then(|| self.media_proxy_file.as_deref()).flatten()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -87,6 +99,8 @@ struct RawDownload {
     max_concurrency: Option<usize>,
     chunk_size_bytes: Option<u64>,
     user_agent: Option<String>,
+    media_proxy_file: Option<String>,
+    media_proxy_referer_hosts: Option<Vec<String>>,
 }
 
 #[derive(serde::Deserialize)]
@@ -163,6 +177,8 @@ mod tests {
                 max_concurrency: 1,
                 chunk_size_bytes: 1,
                 user_agent: String::new(),
+                media_proxy_file: None,
+                media_proxy_referer_hosts: Vec::new(),
             },
             vpn: VpnConfig {
                 command: PathBuf::new(),
@@ -245,6 +261,8 @@ pub fn load_config(path: Option<&str>) -> io::Result<AppConfig> {
         max_concurrency: None,
         chunk_size_bytes: None,
         user_agent: None,
+        media_proxy_file: None,
+        media_proxy_referer_hosts: None,
     });
     let scheduler = raw.scheduler.unwrap_or(RawScheduler {
         poll_interval_secs: None,
@@ -290,6 +308,8 @@ pub fn load_config(path: Option<&str>) -> io::Result<AppConfig> {
             default_concurrency: download.default_concurrency.unwrap_or(3),
             max_concurrency: download.max_concurrency.unwrap_or(3),
             chunk_size_bytes: download.chunk_size_bytes.unwrap_or(8_388_608),
+            media_proxy_file: download.media_proxy_file.map(PathBuf::from),
+            media_proxy_referer_hosts: download.media_proxy_referer_hosts.unwrap_or_default(),
             user_agent: download
                 .user_agent
                 .unwrap_or_else(|| "stash/0.1".to_string()),
@@ -342,4 +362,21 @@ pub fn load_config(path: Option<&str>) -> io::Result<AppConfig> {
                 .unwrap_or_else(|| vec!["Seoul".to_string()]),
         },
     })
+}
+
+#[cfg(test)]
+mod media_proxy_scope_tests {
+    use super::*;
+    #[test]
+    fn media_proxy_requires_exact_allowlisted_referer_host() {
+        let download = DownloadConfig { default_concurrency: 1, max_concurrency: 4,
+            chunk_size_bytes: 1024, user_agent: "test".into(),
+            media_proxy_file: Some(PathBuf::from("/private/proxy.json")),
+            media_proxy_referer_hosts: vec!["recordplay.biz".into()] };
+        assert!(download.media_proxy_for("https://recordplay.biz/e/video").is_some());
+        assert!(download.media_proxy_for("https://missav01.com/video").is_none());
+        assert!(download.media_proxy_for("https://recordplay.biz.evil.test/video").is_none());
+        assert!(download.media_proxy_for("https://evil.test/?host=recordplay.biz").is_none());
+        assert!(download.media_proxy_for("").is_none());
+    }
 }

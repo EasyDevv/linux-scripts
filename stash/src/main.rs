@@ -1,7 +1,14 @@
+mod browser_tls;
+mod media_route;
 mod config;
 mod downloads;
 mod hls;
+mod job_sources;
 mod store;
+#[cfg(test)]
+mod stall_timeout_tests;
+#[cfg(test)]
+mod blocked_recovery_tests;
 mod web;
 mod worker;
 
@@ -22,6 +29,7 @@ use uuid::Uuid;
 
 use config::AppConfig;
 use downloads::JobManager;
+use job_sources::{JobSource, normalize_sources, original_size_for};
 
 struct AppState {
     config: AppConfig,
@@ -64,6 +72,7 @@ struct JobReq {
     referer: Option<String>,
     origin: Option<String>,
     headers: Option<Vec<HeaderPair>>,
+    sources: Option<Vec<JobSource>>,
 }
 
 #[derive(Deserialize)]
@@ -347,6 +356,16 @@ async fn create_job(
             state.config.retry.retry_interval_secs,
         )
         .await;
+    if let Some(raw_sources) = body.sources.clone() {
+        let sources = normalize_sources(raw_sources, &body.src_url);
+        if !sources.is_empty() {
+            let original_size = original_size_for(&body.src_url, &sources);
+            state
+                .jobs
+                .set_job_sources(&job_id, &sources, original_size)
+                .await;
+        }
+    }
     info!("job created: id={job_id}, filename={filename}");
 
     let resp = job_row.to_response();

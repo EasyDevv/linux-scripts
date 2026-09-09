@@ -6,13 +6,48 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use futures_util::StreamExt;
 use tokio::io::AsyncWriteExt;
 
+use crate::media_route::MediaRoute;
+
 const HTTP_IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 const SEGMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(180);
 const SEGMENT_ATTEMPTS: u32 = 3;
+const SEGMENT_RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
+// The scheduler must not cancel the worker before its bounded retry loop ends.
+pub(crate) const STALL_TIMEOUT_SECS: u64 = SEGMENT_TIMEOUT.as_secs() * SEGMENT_ATTEMPTS as u64
+    + SEGMENT_RETRY_DELAY.as_secs() * (SEGMENT_ATTEMPTS as u64 - 1) + 60;
+
 
 #[derive(Debug, Clone)]
 pub struct HlsSegment {
     pub uri: String,
+    /// Validated EXTINF duration in seconds (finite and positive).
+    /// None for legacy playlists or malformed/missing duration values.
+    pub duration: Option<f64>,
+}
+
+/// Parse the seconds value of an `#EXTINF:<dur>,<title>` line.
+/// Returns None unless the value is a finite, positive number.
+pub fn parse_extinf_duration(line: &str) -> Option<f64> {
+    let rest = line.trim().strip_prefix("#EXTINF:")?;
+    // The duration is everything before the (mandatory) comma; title may contain commas.
+    let raw = rest.split(',').next()?.trim();
+    let seconds: f64 = raw.parse().ok()?;
+    if seconds.is_finite() && seconds > 0.0 {
+        Some(seconds)
+    } else {
+        None
+    }
+}
+
+/// Build one ffmpeg concat-demuxer entry shared by both HLS mux branches.
+/// An explicit `duration` directive overrides the demuxer's per-file inference,
+/// which otherwise accumulates raw-segment A/V container offsets as timing drift.
+pub fn ffmpeg_concat_entry(path: &Path, duration: Option<f64>) -> String {
+    let mut entry = crate::ffmpeg_concat_entry(path);
+    if let Some(seconds) = duration.filter(|seconds| seconds.is_finite() && *seconds > 0.0) {
+        entry.push_str(&format!("duration {:.6}\n", seconds));
+    }
+    entry
 }
 
 #[derive(Debug)]
@@ -20,6 +55,14 @@ pub struct ResolvedPlaylist {
     pub segments: Vec<HlsSegment>,
     pub has_encryption: bool,
     pub map_uri: Option<String>,
+}
+
+pub fn playlist_cache_key(playlist: &ResolvedPlaylist) -> String {
+    use std::hash::{Hash, Hasher};
+    let mut hash = std::collections::hash_map::DefaultHasher::new();
+    playlist.map_uri.hash(&mut hash);
+    for segment in &playlist.segments { segment.uri.hash(&mut hash); }
+    format!("playlist-{:016x}", hash.finish())
 }
 
 fn is_hop_by_hop(name: &str) -> bool {
@@ -141,6 +184,7 @@ pub fn parse_playlist(body: &str, base_url: &str) -> Result<ResolvedPlaylist, St
     let mut segments = Vec::new();
     let mut has_encryption = false;
     let mut map_uri = None;
+    let mut pending_duration: Option<f64> = None;
 
     for line in &lines {
         let line = line.trim();
@@ -153,9 +197,12 @@ pub fn parse_playlist(body: &str, base_url: &str) -> Result<ResolvedPlaylist, St
         } else if line.starts_with("#EXT-X-MAP:") {
             let attrs = parse_attrs(line.trim_start_matches("#EXT-X-MAP:"));
             map_uri = attrs.get("URI").map(|u| resolve_url(base_url, u));
+        } else if line.starts_with("#EXTINF:") {
+            pending_duration = parse_extinf_duration(line);
         } else if !line.is_empty() && !line.starts_with('#') {
             segments.push(HlsSegment {
                 uri: resolve_url(base_url, line),
+                duration: pending_duration.take(),
             });
         }
     }
@@ -172,10 +219,12 @@ pub async fn fetch_and_resolve(
     client: &reqwest::Client,
     cancel: Arc<AtomicBool>,
     headers: &[(String, String)],
+    route: Option<&MediaRoute>,
+    referer: &str,
 ) -> Result<ResolvedPlaylist, String> {
     let mut current_url = url.to_string();
     loop {
-        let body = fetch_text(client, &current_url, cancel.clone(), headers).await?;
+        let body = fetch_text(client, &current_url, cancel.clone(), headers, route, referer).await?;
         let resolved = parse_playlist(&body, &current_url)?;
 
         match resolved.map_uri.as_ref() {
@@ -196,6 +245,8 @@ pub async fn download_segments(
     progress: Arc<dyn Fn(u64, u64, u64) + Send + Sync>,
     headers: &[(String, String)],
     stream_tx: Option<&tokio::sync::mpsc::UnboundedSender<PathBuf>>,
+    route: Option<&MediaRoute>,
+    referer: &str,
 ) -> Result<(Vec<PathBuf>, u64), String> {
     if resolved.has_encryption {
         return Err("encrypted HLS (EXT-X-KEY) is not supported".into());
@@ -223,7 +274,7 @@ pub async fn download_segments(
             Some(size) => size,
             None => {
                 let (data, size) =
-                    download_data_with_timeout(client, map_uri, cancel.clone(), headers).await?;
+                    download_data_with_timeout(client, map_uri, cancel.clone(), headers, route, referer).await?;
                 write_file(&path, &data).await?;
                 size
             }
@@ -238,20 +289,29 @@ pub async fn download_segments(
         files.push(path);
     }
 
-    for (i, seg) in resolved.segments.iter().enumerate() {
-        if cancel.load(Ordering::Relaxed) {
-            return Err("cancelled".into());
-        }
-        let path = dest_dir.join(format!("segment-{i:06}.ts"));
-        let seg_bytes = match existing_file_size(&path).await {
-            Some(size) => size,
-            None => {
-                let (data, size) =
-                    download_data_with_timeout(client, &seg.uri, cancel.clone(), headers).await?;
-                write_file(&path, &data).await?;
-                size
+    // Bounded, ordered prefetch: keep mux order without buffering the whole video.
+    let concurrency = if route.is_some() { 4 } else { 1 };
+    let mut pending = futures_util::stream::iter(resolved.segments.clone().into_iter().enumerate())
+        .map(|(i, seg)| {
+            let cancel = cancel.clone();
+            async move {
+                if cancel.load(Ordering::Relaxed) { return Err("cancelled".to_string()); }
+                let path = dest_dir.join(format!("segment-{i:06}.ts"));
+                let size = match existing_file_size(&path).await {
+                    Some(size) => size,
+                    None => {
+                        let (data, size) = download_data_with_timeout(
+                            client, &seg.uri, cancel, headers, route, referer,
+                        ).await?;
+                        write_file(&path, &data).await?;
+                        size
+                    }
+                };
+                Ok::<_, String>((path, size))
             }
-        };
+        }).buffered(concurrency);
+    while let Some(result) = pending.next().await {
+        let (path, seg_bytes) = result?;
         if let Some(tx) = stream_tx {
             tx.send(path.clone())
                 .map_err(|_| "streaming HLS mux stopped".to_string())?;
@@ -278,9 +338,14 @@ async fn fetch_text(
     url: &str,
     cancel: Arc<AtomicBool>,
     headers: &[(String, String)],
+    route: Option<&MediaRoute>,
+    referer: &str,
 ) -> Result<String, String> {
     if cancel.load(Ordering::Relaxed) {
         return Err("cancelled".into());
+    }
+    if let Some(route) = route {
+        return route.fetch_text(referer, url, headers).await;
     }
     let mut req = client.get(url);
     for (k, v) in headers {
@@ -293,7 +358,8 @@ async fn fetch_text(
         .map_err(|_| "fetch text: timed out waiting for response".to_string())?
         .map_err(|e| format!("fetch text: {e}"))?;
     if !resp.status().is_success() {
-        return Err(format!("fetch text: HTTP {}", resp.status()));
+        let status = resp.status();
+        return Err(format!("fetch text: HTTP {status}"));
     }
     tokio::time::timeout(HTTP_IDLE_TIMEOUT, resp.text())
         .await
@@ -306,9 +372,16 @@ async fn download_data(
     url: &str,
     cancel: Arc<AtomicBool>,
     headers: &[(String, String)],
+    route: Option<&MediaRoute>,
+    referer: &str,
 ) -> Result<(Vec<u8>, u64), String> {
     if cancel.load(Ordering::Relaxed) {
         return Err("cancelled".into());
+    }
+    if let Some(route) = route {
+        let data = unwrap_png_transport(route.fetch_bytes(referer, url, headers).await?);
+        let size = data.len() as u64;
+        return Ok((data, size));
     }
     let mut req = client.get(url);
     for (k, v) in headers {
@@ -321,7 +394,8 @@ async fn download_data(
         .map_err(|_| "download: timed out waiting for response".to_string())?
         .map_err(|e| format!("download: {e}"))?;
     if !resp.status().is_success() {
-        return Err(format!("download: HTTP {}", resp.status()));
+        let status = resp.status();
+        return Err(format!("download: HTTP {status}"));
     }
     let total = resp.content_length().unwrap_or(0);
     let mut stream = resp.bytes_stream();
@@ -344,7 +418,7 @@ async fn download_data(
 
 fn is_permanent_segment_error(error: &str) -> bool {
     let lower = error.to_ascii_lowercase();
-    ["http 400", "http 401", "http 404", "http 405", "http 410"]
+    ["http 400", "http 401", "http 403", "http 404", "http 405", "http 407", "http 410"]
         .iter()
         .any(|status| lower.contains(status))
 }
@@ -354,6 +428,8 @@ async fn download_data_with_timeout(
     url: &str,
     cancel: Arc<AtomicBool>,
     headers: &[(String, String)],
+    route: Option<&MediaRoute>,
+    referer: &str,
 ) -> Result<(Vec<u8>, u64), String> {
     let mut last_error = String::new();
     for attempt in 1..=SEGMENT_ATTEMPTS {
@@ -362,7 +438,7 @@ async fn download_data_with_timeout(
         }
         match tokio::time::timeout(
             SEGMENT_TIMEOUT,
-            download_data(client, url, cancel.clone(), headers),
+            download_data(client, url, cancel.clone(), headers, route, referer),
         )
         .await
         {
@@ -381,7 +457,7 @@ async fn download_data_with_timeout(
             }
         }
         if attempt < SEGMENT_ATTEMPTS {
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            tokio::time::sleep(SEGMENT_RETRY_DELAY).await;
         }
     }
     Err(last_error)
@@ -456,6 +532,78 @@ mod tests {
             result.segments[1].uri,
             "https://example.com/path/to/seg2.ts"
         );
+        assert_eq!(result.segments[0].duration, Some(10.0));
+        assert_eq!(result.segments[1].duration, Some(9.5));
+    }
+
+    #[test]
+    fn extinf_durations_valid_invalid_and_missing() {
+        let body = "#EXTM3U\n\
+                     #EXTINF:9.009,title,with,commas\n\
+                     seg1.ts\n\
+                     #EXTINF:10,\n\
+                     seg2.ts\n\
+                     #EXTINF:-1,\n\
+                     seg3.ts\n\
+                     #EXTINF:nan,\n\
+                     seg4.ts\n\
+                     #EXTINF:notanumber,\n\
+                     seg5.ts\n\
+                     #EXTINF:1e999,\n\
+                     seg6.ts\n\
+                     seg7.ts\n\
+                     #EXT-X-ENDLIST\n";
+        let base = "https://example.com/playlist.m3u8";
+        let result = parse_playlist(body, base).unwrap();
+        assert_eq!(result.segments.len(), 7);
+        assert_eq!(result.segments[0].duration, Some(9.009));
+        assert_eq!(result.segments[1].duration, Some(10.0));
+        assert_eq!(result.segments[2].duration, None);
+        assert_eq!(result.segments[3].duration, None);
+        assert_eq!(result.segments[4].duration, None);
+        assert_eq!(result.segments[5].duration, None);
+        assert_eq!(result.segments[6].duration, None);
+    }
+
+    #[test]
+    fn extinf_duration_does_not_leak_across_segments() {
+        let body = "#EXTM3U\n\
+                     #EXTINF:4.000,\n\
+                     seg1.ts\n\
+                     seg2.ts\n";
+        let result = parse_playlist(body, "https://example.com/playlist.m3u8").unwrap();
+        assert_eq!(result.segments[0].duration, Some(4.0));
+        assert_eq!(result.segments[1].duration, None);
+    }
+
+    #[test]
+    fn playlist_cache_key_ignores_durations() {
+        let with = ResolvedPlaylist {
+            segments: vec![HlsSegment { uri: "https://cdn/a.ts".into(), duration: Some(9.5) }],
+            has_encryption: false,
+            map_uri: None,
+        };
+        let without = ResolvedPlaylist {
+            segments: vec![HlsSegment { uri: "https://cdn/a.ts".into(), duration: None }],
+            has_encryption: false,
+            map_uri: None,
+        };
+        assert_eq!(playlist_cache_key(&with), playlist_cache_key(&without));
+    }
+
+    #[test]
+    fn concat_entries_carry_explicit_durations_and_escape_quotes() {
+        let plain = ffmpeg_concat_entry(Path::new("/tmp/seg 1.ts"), Some(9.5));
+        assert_eq!(plain, "file '/tmp/seg 1.ts'\nduration 9.500000\n");
+
+        let quoted = ffmpeg_concat_entry(Path::new("/tmp/it's.ts"), Some(0.734067));
+        assert_eq!(
+            quoted,
+            "file '/tmp/it'\\''s.ts'\nduration 0.734067\n"
+        );
+
+        let legacy = ffmpeg_concat_entry(Path::new("/tmp/init.mp4"), None);
+        assert_eq!(legacy, "file '/tmp/init.mp4'\n");
     }
 
     #[test]
@@ -495,9 +643,11 @@ mod tests {
             segments: vec![
                 HlsSegment {
                     uri: "https://example.com/first.ts".to_string(),
+                    duration: None,
                 },
                 HlsSegment {
                     uri: "https://example.com/second.ts".to_string(),
+                    duration: None,
                 },
             ],
             has_encryption: false,
@@ -514,6 +664,8 @@ mod tests {
             Arc::new(|_, _, _| {}),
             &[],
             Some(&tx),
+            None,
+            "",
         )
         .await
         .unwrap();
@@ -695,5 +847,26 @@ mod tests {
         assert!(hdrs.contains_key("referer"));
         assert!(hdrs.contains_key("origin"));
         assert!(!hdrs.contains_key("connection"));
+    }
+}
+
+#[cfg(test)]
+mod transport_regression_tests {
+    use super::*;
+
+    #[test]
+    fn cache_identity_includes_order_and_init_segment() {
+        let mut playlist = ResolvedPlaylist {
+            segments: vec![HlsSegment { uri: "https://cdn/a.ts".into(), duration: None }, HlsSegment { uri: "https://cdn/b.ts".into(), duration: None }],
+            has_encryption: false, map_uri: None,
+        };
+        let key = playlist_cache_key(&playlist);
+        assert_eq!(key, playlist_cache_key(&playlist));
+        playlist.segments.reverse();
+        assert_ne!(key, playlist_cache_key(&playlist));
+        playlist.segments.reverse();
+        playlist.map_uri = Some("https://cdn/init.mp4".into());
+        assert_ne!(key, playlist_cache_key(&playlist));
+        assert!(is_permanent_segment_error("download: HTTP 403 Forbidden; native media route fallback: TypeError"));
     }
 }

@@ -429,6 +429,14 @@ pub fn open_db(path: &Path) -> rusqlite::Result<Connection> {
         "ALTER TABLE download_jobs ADD COLUMN uploaded_segments INTEGER NOT NULL DEFAULT 0",
         [],
     );
+    let _ = db.execute(
+        "ALTER TABLE download_jobs ADD COLUMN sources_json TEXT NOT NULL DEFAULT '[]'",
+        [],
+    );
+    let _ = db.execute(
+        "ALTER TABLE download_jobs ADD COLUMN original_size_bytes INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
 
     {
         let mut backfill_stmt = db.prepare(
@@ -1059,15 +1067,17 @@ pub fn requeue_excess_running_jobs(
 pub fn requeue_stalled_running_jobs(
     db: &Connection,
     stale_before: u64,
+    hls_stale_before: u64,
     now: u64,
 ) -> rusqlite::Result<Vec<String>> {
     let mut stmt = db.prepare(
         "SELECT id FROM download_jobs
          WHERE status = 'running' AND updated_at < ?1
+           AND (phase != 'download' OR updated_at < ?2)
            AND headers_json NOT LIKE '%browser-hls%'",
     )?;
     let ids = stmt
-        .query_map(params![stale_before as i64], |row| row.get::<_, String>(0))?
+        .query_map(params![stale_before as i64, hls_stale_before as i64], |row| row.get::<_, String>(0))?
         .collect::<Result<Vec<_>, _>>()?;
     drop(stmt);
     for id in &ids {
@@ -1376,6 +1386,66 @@ pub fn fail_job(db: &Connection, id: &str, error_msg: &str, now: u64) -> rusqlit
              completed_at = ?3, updated_at = ?3
          WHERE id = ?1 AND status NOT IN ('completed', 'cancelled')",
         params![id, error_msg, now as i64],
+    )?;
+    Ok(rows > 0)
+}
+
+pub fn set_job_sources(
+    db: &Connection,
+    id: &str,
+    sources_json: &str,
+    original_size_bytes: u64,
+) -> rusqlite::Result<bool> {
+    let rows = db.execute(
+        "UPDATE download_jobs
+         SET sources_json = ?2, original_size_bytes = ?3
+         WHERE id = ?1",
+        params![id, sources_json, original_size_bytes as i64],
+    )?;
+    Ok(rows > 0)
+}
+
+pub fn get_job_sources(
+    db: &Connection,
+    id: &str,
+) -> rusqlite::Result<(String, u64)> {
+    db.query_row(
+        "SELECT sources_json, original_size_bytes FROM download_jobs WHERE id = ?1",
+        params![id],
+        |row| Ok((row.get(0)?, row.get::<_, i64>(1)? as u64)),
+    )
+}
+
+pub fn switch_job_source(
+    db: &Connection,
+    id: &str,
+    src_url: &str,
+    sources_json: &str,
+    now: u64,
+) -> rusqlite::Result<bool> {
+    db.execute(
+        "DELETE FROM download_job_parts WHERE job_id = ?1",
+        params![id],
+    )?;
+    let rows = db.execute(
+        "UPDATE download_jobs
+         SET src_url = ?2,
+             sources_json = ?3,
+             status = 'queued',
+             phase = '',
+             last_error = '',
+             downloaded_bytes = 0,
+             total_bytes = 0,
+             uploaded_segments = 0,
+             total_segments = 0,
+             supports_ranges = 0,
+             etag = '',
+             last_modified = '',
+             file_path = '',
+             next_retry_at = ?4,
+             updated_at = ?4
+         WHERE id = ?1 AND status NOT IN ('completed', 'cancelled')",
+        params![id, src_url, sources_json, now as i64],
     )?;
     Ok(rows > 0)
 }
@@ -2773,7 +2843,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            requeue_stalled_running_jobs(&db, 20, 100).unwrap(),
+            requeue_stalled_running_jobs(&db, 20, 20, 100).unwrap(),
             vec!["stalled"]
         );
         let job = get_job(&db, "stalled").unwrap().unwrap();
@@ -2809,7 +2879,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            requeue_stalled_running_jobs(&db, 20, 100).unwrap(),
+            requeue_stalled_running_jobs(&db, 20, 20, 100).unwrap(),
             vec!["stalled"]
         );
         let job = get_job(&db, "stalled").unwrap().unwrap();
@@ -2843,7 +2913,7 @@ mod tests {
         )
         .unwrap();
 
-        assert!(requeue_stalled_running_jobs(&db, 20, 100).unwrap().is_empty());
+        assert!(requeue_stalled_running_jobs(&db, 20, 20, 100).unwrap().is_empty());
         let job = get_job(&db, "hls").unwrap().unwrap();
         assert_eq!(job.status, "running");
         assert_eq!(job.retry_count, 0);

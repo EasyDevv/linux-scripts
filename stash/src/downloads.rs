@@ -15,6 +15,10 @@ use tracing::{error, info, warn};
 
 use crate::config::{AppConfig, VpnConfig};
 use crate::hls;
+use crate::media_route::{MediaRoute, referer_from_headers};
+use crate::job_sources::{
+    JobSource, decode_sources, encode_sources, mark_tried, next_blocked_alternate,
+};
 use crate::store::{self, JobPart, JobRow, unix_now};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,7 +77,7 @@ fn classify_failure_for(message: &str, src_url: Option<&str>) -> FailureKind {
         } else {
             FailureKind::IpBlocked
         }
-    } else if ["http 400", "http 401", "http 404", "http 405", "http 410"]
+    } else if ["http 400", "http 401", "http 404", "http 405", "http 407", "http 410"]
         .iter()
         .any(|status| lower.contains(status))
         || lower.contains("encrypted hls")
@@ -328,6 +332,51 @@ impl JobManager {
         .expect("create job")
     }
 
+    pub async fn set_job_sources(
+        &self,
+        id: &str,
+        sources: &[JobSource],
+        original_size: Option<u64>,
+    ) {
+        let db = self.db.lock().await;
+        let _ = store::set_job_sources(
+            &db,
+            id,
+            &encode_sources(sources),
+            original_size.unwrap_or(0),
+        );
+    }
+
+    pub async fn job_source_urls(&self, id: &str) -> Vec<String> {
+        let db = self.db.lock().await;
+        let Ok((json, size)) = store::get_job_sources(&db, id) else { return Vec::new() };
+        let mut sources = decode_sources(&json);
+        let current = store::get_job(&db, id).ok().flatten().map(|job| job.src_url).unwrap_or_default();
+        let mut urls = Vec::new();
+        while let Some(next) = crate::job_sources::next_eligible_source(
+            &sources, &current, (size > 0).then_some(size),
+        ).cloned() {
+            mark_tried(&mut sources, &next.url);
+            urls.push(next.url);
+        }
+        urls
+    }
+
+    async fn activate_hls_source(&self, id: &str, url: &str) -> Result<(), String> {
+        let db = self.db.lock().await;
+        let (json, _) = store::get_job_sources(&db, id).map_err(|e| e.to_string())?;
+        let mut sources = decode_sources(&json);
+        mark_tried(&mut sources, url);
+        let changed = db.execute(
+            "UPDATE download_jobs SET src_url = ?2, updated_at = ?3, sources_json = ?4,
+             downloaded_bytes = 0, uploaded_segments = 0, total_segments = 0, total_bytes = 0
+             WHERE id = ?1 AND status = 'running'",
+            rusqlite::params![id, url, unix_now() as i64, encode_sources(&sources)],
+        ).map_err(|e| e.to_string())?;
+        if changed != 1 { return Err("cancelled".into()); }
+        Ok(())
+    }
+
     pub async fn get_job(&self, id: &str) -> Option<JobRow> {
         let db = self.db.lock().await;
         store::get_job(&db, id).ok().flatten()
@@ -381,7 +430,12 @@ impl JobManager {
         let now = unix_now();
         let ids = {
             let db = self.db.lock().await;
-            store::requeue_stalled_running_jobs(&db, now.saturating_sub(stale_timeout_secs), now)
+            store::requeue_stalled_running_jobs(
+                &db,
+                now.saturating_sub(stale_timeout_secs),
+                now.saturating_sub(stale_timeout_secs.max(hls::STALL_TIMEOUT_SECS)),
+                now,
+            )
                 .unwrap_or_default()
         };
         let active = self.active.lock().await;
@@ -391,6 +445,35 @@ impl JobManager {
             }
         }
         ids
+    }
+
+    /// Release legacy forbidden retries before slot admission, without a network request.
+    pub async fn settle_nonretryable_retries(&self) -> rusqlite::Result<usize> {
+        let active_ids: Vec<String> = self.active.lock().await.keys().cloned().collect();
+        let db = self.db.lock().await;
+        let now = unix_now();
+        let mut settled = 0;
+        // Slot accounting excludes forbidden retries already; query the actual
+        // retry queue, including entries whose backoff deadline is in the future.
+        let mut stmt = db.prepare("SELECT id FROM download_jobs WHERE status = 'retry_wait' AND cancel_requested = 0")?;
+        let ids = stmt.query_map([], |row| row.get::<_, String>(0))?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        drop(stmt);
+        for id in ids {
+            let Some(job) = store::get_job(&db, &id)? else { continue; };
+            if job.status != "retry_wait" || job.is_browser_hls() || active_ids.contains(&job.id) {
+                continue;
+            }
+            let kind = classify_failure_for(&job.last_error, Some(&job.src_url));
+            if !matches!(kind, FailureKind::IpBlocked | FailureKind::ExpiredSource | FailureKind::Permanent) {
+                continue;
+            }
+            if kind != FailureKind::IpBlocked || !switch_blocked_source(&db, &job, now)? {
+                store::fail_job(&db, &job.id, &job.last_error, now)?;
+            }
+            settled += 1;
+        }
+        Ok(settled)
     }
 
     pub async fn list_due_jobs(&self, now: u64) -> Vec<JobRow> {
@@ -538,22 +621,27 @@ impl JobManager {
         }
         let now = unix_now();
         let db = self.db.lock().await;
-        let src_url = store::get_job(&db, id)
-            .ok()
-            .flatten()
-            .map(|job| job.src_url);
-        match classify_failure_for(error_msg, src_url.as_deref()) {
+        let job = store::get_job(&db, id).ok().flatten();
+        let src_url = job.as_ref().map(|job| job.src_url.as_str());
+        match classify_failure_for(error_msg, src_url) {
             FailureKind::Permanent | FailureKind::ExpiredSource => {
                 let _ = store::fail_job(&db, id, error_msg, now);
                 false
             }
             FailureKind::DiskFull => unreachable!(),
+            FailureKind::IpBlocked => {
+                if let Some(job) = job.as_ref() {
+                    if switch_blocked_source(&db, job, now).unwrap_or(false) {
+                        return true;
+                    }
+                }
+                // A 403 does not prove an IP problem. Repeating the same request or
+                // changing the global VPN is not a recovery strategy without evidence.
+                let _ = store::fail_job(&db, id, error_msg, now);
+                false
+            }
             _ => {
-                let retry_count = store::get_job(&db, id)
-                    .ok()
-                    .flatten()
-                    .map(|job| job.retry_count)
-                    .unwrap_or(0);
+                let retry_count = job.as_ref().map(|job| job.retry_count).unwrap_or(0);
                 let delay = retry_delay(retry_interval, retry_count, id);
                 store::schedule_retry(&db, id, error_msg, now, max_retries, delay).unwrap_or(false)
             }
@@ -1464,7 +1552,6 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
 
     let client = http_client::build(&config);
     let last_downloaded = job.downloaded_bytes;
-    let last_completed_segments = job.uploaded_segments as u64;
     let flush_interval =
         tokio::time::Duration::from_millis(config.scheduler.progress_flush_interval_ms);
 
@@ -1516,12 +1603,61 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
             info!("job {job_id}: HLS download via reqwest ({})", job.src_url);
 
             let hls_headers = headers_from_json(&job.headers_json);
+            let referer = referer_from_headers(&hls_headers);
+            let route = match MediaRoute::from_file(config.download.media_proxy_for(&referer), &config.download.user_agent)? {
+                Some(route) => Some(route),
+                None => MediaRoute::for_browser_tls(&job.src_url, &config.vpn.socks_url)?,
+            };
+            let mut playlist_urls = vec![job.src_url.clone()];
+            for url in jobs.job_source_urls(&job_id).await {
+                if !playlist_urls.iter().any(|existing| existing == &url) {
+                    playlist_urls.push(url);
+                }
+            }
 
             jobs.set_job_phase(&job_id, "download").await;
 
-            let resolved =
-                hls::fetch_and_resolve(&job.src_url, &client, cancel.clone(), &hls_headers).await?;
+            let mut resolved = None;
+            let mut last_hls_error = None;
+            for playlist_url in &playlist_urls {
+                if cancel.load(Ordering::Relaxed) { return Err("cancelled".into()); }
+                if playlist_url != &job.src_url {
+                    jobs.activate_hls_source(&job_id, playlist_url).await?;
+                }
+                match hls::fetch_and_resolve(
+                    playlist_url,
+                    &client,
+                    cancel.clone(),
+                    &hls_headers,
+                    route.as_ref(),
+                    &referer,
+                )
+                .await
+                {
+                    Ok(playlist) => {
+                        if playlist_url != &job.src_url {
+                            info!("job {job_id}: HLS playlist via selected fallback {playlist_url}");
+                        }
+                        resolved = Some(playlist);
+                        break;
+                    }
+                    Err(error) => {
+                        let kind = classify_failure_for(&error, Some(playlist_url));
+                        if !matches!(kind, FailureKind::IpBlocked | FailureKind::ExpiredSource) {
+                            return Err(error);
+                        }
+                        last_hls_error = Some(error);
+                    }
+                }
+            }
+            let resolved = resolved.ok_or_else(|| {
+                last_hls_error.unwrap_or_else(|| "hls playlist fetch failed".into())
+            })?;
 
+            // Never reuse numbered segments from a different resolved playlist.
+            let segment_dir = temp_dir.join(hls::playlist_cache_key(&resolved));
+            tokio::fs::create_dir_all(&segment_dir).await
+                .map_err(|error| format!("create segment cache: {error}"))?;
             let mut streaming_mux = if should_stream_hls_mux(&resolved) {
                 let pipe_dir = temp_dir.join("mux-pipes");
                 let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
@@ -1537,7 +1673,10 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                 let concat_list_path = pipe_dir.join("segments.ffconcat");
                 let concat_list = pipes
                     .iter()
-                    .map(|path| crate::ffmpeg_concat_entry(path))
+                    .zip(resolved.segments.iter())
+                    .map(|(path, segment)| {
+                        crate::hls::ffmpeg_concat_entry(path, segment.duration)
+                    })
                     .collect::<String>();
                 tokio::fs::write(&concat_list_path, concat_list)
                     .await
@@ -1592,9 +1731,9 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                         jobs_mgr
                             .update_hls_progress(
                                 &jid,
-                                completed.max(last_completed_segments),
+                                completed,
                                 total,
-                                downloaded_bytes.max(last_downloaded),
+                                downloaded_bytes,
                             )
                             .await;
                         reported = completed;
@@ -1609,11 +1748,13 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
             let segment_result = hls::download_segments(
                 &resolved,
                 &client,
-                &temp_dir,
+                &segment_dir,
                 cancel.clone(),
                 hls_progress.clone(),
                 &hls_headers,
                 streaming_mux.as_ref().map(|(_, tx, _, _)| tx),
+                route.as_ref(),
+                &referer,
             )
             .await;
             drop(hls_progress);
@@ -1644,9 +1785,19 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                 result?;
             } else {
                 let concat_list_path = temp_dir.join("segments.ffconcat");
+                // segment_files is [init.mp4?] + segments in playlist order.
+                let mut segment_durations: Vec<Option<f64>> =
+                    Vec::with_capacity(segment_files.len());
+                if resolved.map_uri.is_some() {
+                    segment_durations.push(None);
+                }
+                segment_durations.extend(resolved.segments.iter().map(|segment| segment.duration));
                 let concat_list = segment_files
                     .iter()
-                    .map(|path| crate::ffmpeg_concat_entry(path))
+                    .zip(segment_durations.iter())
+                    .map(|(path, duration)| {
+                        crate::hls::ffmpeg_concat_entry(path, *duration)
+                    })
                     .collect::<String>();
                 tokio::fs::write(&concat_list_path, concat_list)
                     .await
@@ -1904,65 +2055,42 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
     }
 }
 
-// ── Scheduler ───────────────────────────────────────────────
-
-fn is_ip_blocked_retry(job: &JobRow) -> bool {
-    if job.status != "retry_wait" || job.is_browser_hls() {
-        return false;
+fn switch_blocked_source(
+    db: &rusqlite::Connection,
+    job: &JobRow,
+    now: u64,
+) -> rusqlite::Result<bool> {
+    let (json, original_size_bytes) = store::get_job_sources(db, &job.id)?;
+    let mut sources = decode_sources(&json);
+    if sources.is_empty() {
+        return Ok(false);
     }
-    classify_failure_for(&job.last_error, Some(&job.src_url)) == FailureKind::IpBlocked
+    mark_tried(&mut sources, &job.src_url);
+    let original_size = if original_size_bytes > 0 {
+        Some(original_size_bytes)
+    } else {
+        None
+    };
+    let Some(next) = next_blocked_alternate(&sources, &job.src_url, original_size).cloned() else {
+        return Ok(false);
+    };
+    mark_tried(&mut sources, &next.url);
+    let switched = store::switch_job_source(db, &job.id, &next.url, &encode_sources(&sources), now)?;
+    if switched {
+        // Cache identity is the resolved playlist hash. Keep old caches for safe
+        // resume; never perform recursive filesystem I/O under the database lock.
+        info!(
+            "job {}: blocked, switching source to {}",
+            job.id, next.url
+        );
+    }
+    Ok(switched)
 }
+
+// ── Scheduler ───────────────────────────────────────────────
 
 fn is_ip_block_error(error: &str) -> bool {
     classify_failure(error) == FailureKind::IpBlocked
-}
-
-fn next_vpn_location(
-    locations: &[VpnLocation],
-    current: &str,
-    excluded: &[String],
-) -> Option<String> {
-    let usable: Vec<&VpnLocation> = locations
-        .iter()
-        .filter(|location| {
-            !excluded
-                .iter()
-                .any(|name| name.eq_ignore_ascii_case(&location.name))
-        })
-        .collect();
-    if usable.is_empty() {
-        return None;
-    }
-    let current_index = usable
-        .iter()
-        .position(|location| location.name.eq_ignore_ascii_case(current));
-    match current_index {
-        Some(index) if usable.len() > 1 => Some(usable[(index + 1) % usable.len()].name.clone()),
-        Some(_) => None,
-        None => Some(usable[0].name.clone()),
-    }
-}
-
-async fn rotate_vpn_for_blocked_retry(
-    jobs: &JobManager,
-    vpn: &RwLock<VpnConfig>,
-) -> Result<String, String> {
-    let mut config = vpn.write().await;
-    let locations = list_locations(&config)
-        .await
-        .map_err(|error| format!("list locations: {error}"))?;
-    let next = next_vpn_location(
-        &locations,
-        &config.required_location,
-        &config.excluded_locations,
-    )
-    .ok_or_else(|| "no alternate VPN location available".to_string())?;
-    let updated = switch_vpn_location(&config, &next)
-        .await
-        .map_err(|error| format!("switch to {next}: {error}"))?;
-    jobs.save_vpn_location(&updated.required_location).await;
-    *config = updated;
-    Ok(next)
 }
 
 pub async fn run_scheduler(
@@ -1973,7 +2101,9 @@ pub async fn run_scheduler(
     concurrency_mode: Arc<AtomicU8>,
 ) {
     let poll = Duration::from_secs(config.scheduler.poll_interval_secs);
-    let mut next_rotation_attempt = Instant::now();
+    if config.vpn.auto_rotate_on_ip_block {
+        warn!("legacy auto_rotate_on_ip_block is ignored: HTTP 403 alone must not rotate the global VPN");
+    }
     loop {
         tokio::time::sleep(poll).await;
 
@@ -2020,41 +2150,14 @@ pub async fn run_scheduler(
         for jid in jobs.requeue_excess_running_jobs(limit, mode).await {
             warn!("scheduler: excess job {jid} returned to queue");
         }
+        match jobs.settle_nonretryable_retries().await {
+            Ok(count) if count > 0 => info!("scheduler: settled {count} legacy blocked retries"),
+            Err(error) => warn!("scheduler: settling blocked retries failed: {error}"),
+            _ => {}
+        }
         let occupying = jobs.list_slot_jobs().await;
         let due = jobs.list_due_jobs(unix_now()).await;
-        let has_running = occupying.iter().any(|job| job.status == "running");
-        let due = if config.vpn.auto_rotate_on_ip_block && has_running {
-            due.into_iter()
-                .filter(|job| !is_ip_blocked_retry(job))
-                .collect::<Vec<_>>()
-        } else {
-            due
-        };
-        let mut due = store::select_due_jobs(due, &occupying, limit, mode);
-        if due.is_empty() {
-            continue;
-        }
-
-        let has_blocked_retry = due.iter().any(is_ip_blocked_retry);
-        if has_blocked_retry && config.vpn.auto_rotate_on_ip_block {
-            if has_running {
-                due.retain(|job| !is_ip_blocked_retry(job));
-            } else if Instant::now() >= next_rotation_attempt {
-                match rotate_vpn_for_blocked_retry(&jobs, &vpn).await {
-                    Ok(location) => {
-                        info!("scheduler: VPN rotated to {location} for IP-blocked retries");
-                        next_rotation_attempt = Instant::now() + Duration::from_secs(60);
-                    }
-                    Err(error) => {
-                        warn!("scheduler: VPN rotation deferred: {error}");
-                        next_rotation_attempt = Instant::now() + Duration::from_secs(60);
-                        due.retain(|job| !is_ip_blocked_retry(job));
-                    }
-                }
-            } else {
-                due.retain(|job| !is_ip_blocked_retry(job));
-            }
-        }
+        let due = store::select_due_jobs(due, &occupying, limit, mode);
 
         for job_row in due {
             let jid = job_row.id.clone();
@@ -2169,9 +2272,9 @@ mod tests {
     use std::sync::atomic::AtomicBool;
 
     use super::{
-        DiskSpaceAction, FailureKind, JobManager, VpnLocation, classify_failure,
+        DiskSpaceAction, FailureKind, JobManager, classify_failure,
         classify_failure_for, config_for_location, disk_space_action, is_hls_url,
-        is_ip_block_error, migrate_staged_files, next_vpn_location, parse_status_info,
+        is_ip_block_error, migrate_staged_files, parse_status_info,
         parse_vpn_locations, retry_delay, should_stream_hls_mux,
     };
     use crate::config::VpnConfig;
@@ -2243,34 +2346,6 @@ mod tests {
 
         assert_eq!(config.required_location, "new york");
         assert_eq!(config.connect_command, ["connect", "-l", "New York"]);
-    }
-
-    #[test]
-    fn vpn_rotation_skips_seoul_and_wraps() {
-        let locations = vec![
-            VpnLocation {
-                name: "Seoul".into(),
-                label: "Seoul, South Korea".into(),
-            },
-            VpnLocation {
-                name: "Tokyo".into(),
-                label: "Tokyo, Japan".into(),
-            },
-            VpnLocation {
-                name: "Hong Kong".into(),
-                label: "Hong Kong, Hong Kong".into(),
-            },
-        ];
-        let excluded = vec!["Seoul".to_string()];
-
-        assert_eq!(
-            next_vpn_location(&locations, "tokyo", &excluded).as_deref(),
-            Some("Hong Kong")
-        );
-        assert_eq!(
-            next_vpn_location(&locations, "Hong Kong", &excluded).as_deref(),
-            Some("Tokyo")
-        );
     }
 
     #[test]
@@ -2407,6 +2482,7 @@ mod tests {
         let short = crate::hls::ResolvedPlaylist {
             segments: vec![crate::hls::HlsSegment {
                 uri: "https://cdn.example/seg.ts".into(),
+                duration: Some(6.0),
             }],
             has_encryption: false,
             map_uri: None,
@@ -2415,6 +2491,7 @@ mod tests {
             segments: (0..200)
                 .map(|index| crate::hls::HlsSegment {
                     uri: format!("https://cdn.example/video{index}.jpeg"),
+                    duration: None,
                 })
                 .collect(),
             has_encryption: false,
@@ -2423,6 +2500,7 @@ mod tests {
         let mapped = crate::hls::ResolvedPlaylist {
             segments: vec![crate::hls::HlsSegment {
                 uri: "https://cdn.example/seg.m4s".into(),
+                duration: Some(4.0),
             }],
             has_encryption: false,
             map_uri: Some("https://cdn.example/init.mp4".into()),
@@ -2434,3 +2512,33 @@ mod tests {
 }
 
 // ── Sync helper (preserved for health) ──────────────────────
+
+#[cfg(test)]
+mod source_regression_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn source_activation_preserves_running_and_excludes_tried_and_wrong_sizes() {
+        let db = store::open_db(std::path::Path::new(":memory:")).unwrap();
+        store::create_job(&db, "source-test", "https://page.test/video", "https://cdn/master.txt",
+            "test.mp4", "[]", "/tmp/stash-source-test", 3, 30, 1).unwrap();
+        db.execute("UPDATE download_jobs SET status='running', uploaded_segments=12, downloaded_bytes=100 WHERE id='source-test'", []).unwrap();
+        let jobs = JobManager::new(db);
+        let sources = vec![
+            JobSource { url: "https://cdn/master.txt".into(), size_bytes: Some(600), tried: true },
+            JobSource { url: "https://cdn/huge.m3u8".into(), size_bytes: Some(1200), tried: false },
+            JobSource { url: "https://cdn/signed.m3u8?asn=1".into(), size_bytes: Some(500), tried: false },
+        ];
+        jobs.set_job_sources("source-test", &sources, Some(600)).await;
+        assert_eq!(jobs.job_source_urls("source-test").await, vec!["https://cdn/signed.m3u8?asn=1"]);
+        jobs.activate_hls_source("source-test", "https://cdn/signed.m3u8?asn=1").await.unwrap();
+        let job = jobs.get_job("source-test").await.unwrap();
+        assert_eq!(job.status, "running");
+        assert_eq!(job.src_url, "https://cdn/signed.m3u8?asn=1");
+        assert_eq!(job.uploaded_segments, 0);
+        assert_eq!(job.downloaded_bytes, 0);
+        assert!(jobs.job_source_urls("source-test").await.is_empty());
+        jobs.fail_or_retry("source-test", "fetch text: HTTP 403 Forbidden; Chrome fallback: Failed to fetch", 3, 30).await;
+        assert_eq!(jobs.get_job("source-test").await.unwrap().status, "failed");
+    }
+}

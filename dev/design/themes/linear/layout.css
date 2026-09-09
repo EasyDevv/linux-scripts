@@ -72,6 +72,10 @@
 	--spacing: 0.25rem;
 
 	/* Project primitives */
+	--status-info: rgb(78, 167, 252);
+	--status-highlight: rgb(187, 135, 252);
+	--status-danger: rgb(235, 87, 87);
+	--status-neutral: rgb(149, 162, 179);
 	--card-spacing: 0.75rem;
 	--card-spacing-sm: 0.5rem;
 	--elevated-ring: rgb(35 37 42 / 10%);
@@ -82,8 +86,10 @@
 	--radius-pill: 9999px;
 	--control-height-nav: 28px;
 	--control-height: 32px;
+	--select-trigger-height: 30px;
 	--sidebar-width: 244px;
 	--panel-inset: 8px;
+	--shell-footer-height: 36px;
 	--sidebar-collapse-duration: 300ms;
 	--sidebar-collapse-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 	--sidebar-hide-below: 1100px;
@@ -92,6 +98,8 @@
 	--dialog-cap: 480px;
 	--dialog-invite-cap: 562px;
 	--well-row-inset: 16px;
+	--list-row-hover-inset: 8px;
+	--list-group-gap: 2px;
 	--panel-shadow: 0 0.5px 1px 1px rgb(0 0 0 / 0.3);
 	--ink-soft: rgb(35, 37, 42);
 	--ink-subtle: rgb(107, 111, 118);
@@ -138,6 +146,9 @@
 	--elevated-ring: rgb(255 255 255 / 10%);
 	--ink-soft: rgb(227, 228, 230);
 	--ink-subtle: rgb(145, 146, 148);
+	--select-menu: rgb(40, 41, 43);
+	--select-item-highlight: rgb(60, 61, 64);
+	--select-menu-border: rgb(63, 64, 68);
 }
 
 @theme inline {
@@ -194,6 +205,10 @@
 	--shadow-2xl: var(--shadow-2xl);
 
 	/* Project utilities */
+	--color-status-info: var(--status-info);
+	--color-status-highlight: var(--status-highlight);
+	--color-status-danger: var(--status-danger);
+	--color-status-neutral: var(--status-neutral);
 	--font-heading: var(--font-heading);
 	--color-elevated-ring: var(--elevated-ring);
 	--color-card-footer: var(--card-footer);
@@ -238,15 +253,111 @@
 	transition-timing-function: var(--sidebar-collapse-ease);
 }
 
+/* Canvas rail: no border-e. The floating main hairline + --panel-shadow is the seam. */
+[data-slot="sidebar-container"] {
+	border-inline-end-width: 0;
+}
+
 html[data-scheme="dark"] [data-slot="input"] {
+	height: var(--control-height);
+	min-height: var(--control-height);
+	padding: 6px 12px;
 	background-color: var(--secondary);
 	border-color: var(--input);
 	font-size: var(--text-heading-sm);
 	line-height: var(--text-heading-sm--line-height);
 }
 html[data-scheme="dark"] [data-slot="select-trigger"] {
+	position: relative;
+	height: var(--select-trigger-height);
+	min-height: var(--select-trigger-height);
+	padding: 1px 28px 1px 10px;
 	background-color: var(--accent);
 	color: var(--accent-foreground);
 	border-color: transparent;
 	font-size: var(--text-heading-sm);
+	font-weight: 400;
+	line-height: normal;
+}
+html[data-scheme="dark"] [data-slot="select-trigger"] svg {
+	display: none;
+}
+html[data-scheme="dark"] [data-slot="select-trigger"]::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: 10px;
+	width: 0;
+	height: 0;
+	margin-top: -2px;
+	border-left: 4.5px solid transparent;
+	border-right: 4.5px solid transparent;
+	border-top: 5px solid currentColor;
+	pointer-events: none;
+	opacity: 0.7;
+}
+[data-slot="select-item"] {
+	height: var(--control-height);
+	justify-content: flex-start;
+	gap: 8px;
+	padding-block: 0;
+	padding-inline: 12px;
+	background-color: transparent;
+	color: var(--foreground);
+}
+[data-slot="select-item"]::before {
+	content: "";
+	position: absolute;
+	inset-block: 0;
+	inset-inline: 4px;
+	z-index: 0;
+	pointer-events: none;
+	border-radius: var(--radius-sm);
+	background-color: transparent;
+}
+[data-slot="select-item"]:focus,
+[data-slot="select-item"][data-highlighted] {
+	background-color: transparent;
+	color: var(--foreground);
+}
+html[data-scheme="dark"] [data-slot="select-content"] {
+	background-color: var(--select-menu);
+	border: var(--hairline-width) solid var(--select-menu-border);
+	box-shadow:
+		rgb(0 0 0 / 0.125) 0 3px 8px,
+		rgb(0 0 0 / 0.125) 0 2px 5px,
+		rgb(0 0 0 / 0.125) 0 1px 1px;
+}
+[data-slot="select-item"][data-highlighted]::before {
+	background-color: var(--select-item-highlight, var(--accent));
+}
+[data-slot="select-item"] > * {
+	position: relative;
+	z-index: 1;
+}
+[data-slot="select-item"] > span:first-of-type {
+	position: static;
+	order: 2;
+	width: auto;
+	height: auto;
+}
+[data-slot="select-item"] > span:last-of-type {
+	flex: 0 1 auto;
+	order: 1;
+}
+[data-select-viewport] {
+	height: auto !important;
+	min-height: 0;
+}
+[data-slot="select-content"] {
+	animation: select-content-arm 120ms linear;
+}
+@keyframes select-content-arm {
+	0%,
+	99% {
+		pointer-events: none;
+	}
+	100% {
+		pointer-events: auto;
+	}
 }

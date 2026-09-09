@@ -1,122 +1,251 @@
 {
 	"slug": "linear",
-	"measuredAt": "2026-09-06",
-	"viewport": { "width": 1440, "height": 900, "scheme": "dark" },
+	"measuredAt": "2026-09-09",
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"scheme": "dark"
+	},
 	"live": "https://linear.app/easydevs/projects/all",
 	"pages": [
 		{
+			"id": "inbox",
+			"url": "https://linear.app/easydevs/inbox",
+			"taught": [
+				"shell"
+			]
+		},
+		{
 			"id": "projects-all",
 			"url": "https://linear.app/easydevs/projects/all",
-			"taught": ["shell", "sidebarNavItem", "ghostAction", "columnHeader", "pillTab"]
+			"taught": [
+				"shell",
+				"sidebarNavItem",
+				"ghostAction",
+				"columnHeader",
+				"pillTab"
+			]
 		},
 		{
 			"id": "project-overview",
 			"url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
-			"taught": ["panelHeaderTitle", "heroIdentity", "subtitle", "propertyChip", "emptyUpdate"]
+			"taught": [
+				"panelHeaderTitle",
+				"heroIdentity",
+				"subtitle",
+				"propertyChip",
+				"emptyUpdate"
+			]
 		},
 		{
 			"id": "custom-view",
 			"url": "https://linear.app/easydevs/view/testview-74f235637401",
-			"taught": ["issueRow", "groupHeader", "pillTab"]
+			"taught": [
+				"issueRow",
+				"groupHeader",
+				"pillTab"
+			]
 		},
 		{
 			"id": "members",
 			"url": "https://linear.app/easydevs/members",
-			"taught": ["columnHeader", "statusChip"]
+			"taught": [
+				"columnHeader",
+				"statusChip",
+				"shell.footer"
+			]
 		},
 		{
 			"id": "team-overview",
 			"url": "https://linear.app/easydevs/team/EAS/overview",
-			"taught": ["heroIdentity", "sectionHeading", "panelHeaderTitle"]
+			"taught": [
+				"heroIdentity",
+				"sectionHeading",
+				"panelHeaderTitle"
+			]
 		},
 		{
 			"id": "team-issues",
 			"url": "https://linear.app/easydevs/team/EAS/all",
-			"taught": ["issueRow", "groupHeader", "pillTab"]
+			"taught": [
+				"issueRow",
+				"groupHeader",
+				"pillTab",
+				"skeleton",
+				"syncActionState"
+			]
+		},
+		{
+			"id": "issue-labels",
+			"url": "https://linear.app/easydevs/settings/issue-labels",
+			"taught": [
+				"syncActionState"
+			]
+		},
+		{
+			"id": "project-statuses",
+			"url": "https://linear.app/easydevs/settings/project-statuses",
+			"taught": [
+				"syncActionState"
+			]
+		},
+		{
+			"id": "views-issues",
+			"url": "https://linear.app/easydevs/views/issues",
+			"taught": [
+				"skeleton"
+			]
+		},
+		{
+			"id": "team-active",
+			"url": "https://linear.app/easydevs/team/EAS/active",
+			"taught": [
+				"skeleton",
+				"issueRow",
+				"groupHeader"
+			]
 		},
 		{
 			"id": "settings-integrations",
 			"url": "https://linear.app/easydevs/settings/integrations",
 			"family": "settings-form",
-			"taught": ["settingsPageTitle", "settingsLede", "contentNarrow"]
+			"taught": [
+				"settingsPageTitle",
+				"settingsLede",
+				"contentNarrow"
+			]
 		},
 		{
 			"id": "settings-workspace",
 			"url": "https://linear.app/easydevs/settings/workspace",
 			"family": "settings-form",
-			"taught": ["settingsPageTitle", "formRow", "settingsSection", "destructiveGhost"]
+			"taught": [
+				"settingsPageTitle",
+				"formRow",
+				"settingsSection",
+				"destructiveGhost"
+			]
 		},
 		{
 			"id": "settings-teams",
 			"url": "https://linear.app/easydevs/settings/teams",
 			"family": "settings-list",
-			"taught": ["settingsPageTitle", "settingsPrimary", "columnHeader"]
+			"taught": [
+				"settingsPageTitle",
+				"settingsPrimary",
+				"columnHeader"
+			]
 		},
 		{
 			"id": "settings-members",
 			"url": "https://linear.app/easydevs/settings/members",
 			"family": "settings-list",
-			"taught": ["settingsPageTitle", "settingsPrimary", "columnHeader", "statusChip", "dialog"]
+			"taught": [
+				"settingsPageTitle",
+				"settingsPrimary",
+				"columnHeader",
+				"statusChip",
+				"dialog"
+			]
 		},
 		{
 			"id": "settings-security",
 			"url": "https://linear.app/easydevs/settings/security",
 			"family": "settings-form",
-			"taught": ["settingsSection", "settingsGhost", "switch"]
+			"taught": [
+				"settingsSection",
+				"settingsGhost",
+				"switch"
+			]
 		},
 		{
 			"id": "settings-api",
 			"url": "https://linear.app/easydevs/settings/api",
 			"family": "settings-form",
-			"taught": ["settingsSection", "settingsGhost"]
+			"taught": [
+				"settingsSection",
+				"settingsGhost"
+			]
 		},
 		{
 			"id": "settings-applications",
 			"url": "https://linear.app/easydevs/settings/applications",
 			"family": "settings-form",
-			"taught": ["settingsPageTitle", "settingsLede"]
+			"taught": [
+				"settingsPageTitle",
+				"settingsLede"
+			]
 		},
 		{
 			"id": "settings-billing",
 			"url": "https://linear.app/easydevs/settings/billing",
 			"family": "settings-form",
-			"taught": ["settingsPrimary", "settingsGhost", "settingsSection"]
+			"taught": [
+				"settingsPrimary",
+				"settingsGhost",
+				"settingsSection"
+			]
 		},
 		{
 			"id": "settings-usage",
 			"url": "https://linear.app/easydevs/settings/usage",
 			"family": "settings-form",
-			"taught": ["settingsSection", "settingsMutedFill", "dialog"]
+			"taught": [
+				"settingsSection",
+				"settingsMutedFill",
+				"dialog"
+			]
 		},
 		{
 			"id": "settings-import-export",
 			"url": "https://linear.app/easydevs/settings/import-export",
 			"family": "settings-form",
-			"taught": ["settingsSection", "settingsGhost"]
+			"taught": [
+				"settingsSection",
+				"settingsGhost"
+			]
 		},
 		{
 			"id": "settings-team-eas",
 			"url": "https://linear.app/easydevs/settings/teams/EAS",
 			"family": "settings-form",
-			"taught": ["settingsPageTitle", "panelHeaderTitle", "settingsSection"]
+			"taught": [
+				"settingsPageTitle",
+				"panelHeaderTitle",
+				"settingsSection"
+			]
 		},
 		{
 			"id": "settings-team-general",
 			"url": "https://linear.app/easydevs/settings/teams/EAS/general",
 			"family": "settings-form",
-			"taught": ["formWell", "formRow", "selectControl", "settingsSection", "settingsLede"]
+			"taught": [
+				"formWell",
+				"formRow",
+				"selectControl",
+				"settingsSection",
+				"settingsLede"
+			]
 		},
 		{
 			"id": "settings-team-workflow",
 			"url": "https://linear.app/easydevs/settings/teams/EAS/workflow",
 			"family": "settings-form",
-			"taught": ["formWell", "settingsSection", "settingsLede"]
+			"taught": [
+				"formWell",
+				"settingsSection",
+				"settingsLede"
+			]
 		},
 		{
 			"id": "settings-new-team",
 			"url": "https://linear.app/easydevs/settings/new-team",
 			"family": "settings-form",
-			"taught": ["settingsPageTitle", "formRow", "panelHeaderTitle"]
+			"taught": [
+				"settingsPageTitle",
+				"formRow",
+				"panelHeaderTitle"
+			]
 		}
 	],
 	"tokens": {
@@ -131,7 +260,14 @@
 		"inkMuted": "--ink-subtle"
 	},
 	"shell": {
-		"sidebar": { "x": 0, "y": 0, "w": "--sidebar-width", "h": 900, "bg": "--background" },
+		"sidebar": {
+			"x": 0,
+			"y": 0,
+			"w": "--sidebar-width",
+			"h": 900,
+			"bg": "--background",
+			"borderAgainstCanvas": false
+		},
 		"main": {
 			"inset": "--panel-inset",
 			"gutterToSidebar": "--panel-inset",
@@ -145,6 +281,12 @@
 			"duration": "--sidebar-collapse-duration",
 			"ease": "--sidebar-collapse-ease",
 			"hideBelow": "--sidebar-hide-below"
+		},
+		"footer": {
+			"h": "--shell-footer-height",
+			"bg": "--background",
+			"insideMain": false,
+			"border": false
 		}
 	},
 	"roles": {
@@ -152,7 +294,11 @@
 			"height": "--control-height-nav",
 			"radius": "--radius-sm",
 			"insetX": 12,
-			"label": { "font": "--text-heading-sm", "idle": "--muted-foreground", "active": "--foreground" },
+			"label": {
+				"font": "--text-heading-sm",
+				"idle": "--muted-foreground",
+				"active": "--foreground"
+			},
 			"activeBg": "--sidebar-accent",
 			"icon": 14
 		},
@@ -165,6 +311,14 @@
 			"color": "--ink-subtle",
 			"hitHeight": "--control-height-nav"
 		},
+		"syncActionState": {
+			"leftToRight": "--status-info",
+			"rightToLeft": "--status-highlight",
+			"delete": "--status-danger",
+			"skip": "--status-neutral",
+			"backgroundAlpha": 0.15,
+			"shape": "icon-sm ghost action"
+		},
 		"columnHeader": {
 			"font": "--text-body-sm",
 			"color": "--muted-foreground"
@@ -175,13 +329,32 @@
 				"font": "--text-body-base",
 				"color": "--muted-foreground"
 			},
-			"title": { "font": "--text-heading-sm", "color": "--foreground" }
+			"title": {
+				"font": "--text-heading-sm",
+				"color": "--foreground"
+			},
+			"hover": {
+				"fill": "--accent",
+				"radius": "--radius-sm",
+				"insetX": "--list-row-hover-inset",
+				"insetXPx": 8,
+				"insetY": 0
+			}
 		},
 		"groupHeader": {
 			"height": 36,
 			"radius": "--radius-sm",
-			"label": { "font": "--text-heading-sm", "color": "--ink-soft" },
-			"fill": "--sidebar-accent"
+			"label": {
+				"font": "--text-heading-sm",
+				"color": "--ink-soft"
+			},
+			"fill": "--sidebar-accent",
+			"envelope": {
+				"gapStart": "--list-group-gap",
+				"gapEnd": "--list-group-gap",
+				"gapPx": 2,
+				"interRowGap": 0
+			}
 		},
 		"pillTab": {
 			"font": "--text-label-sm",
@@ -222,20 +395,28 @@
 			"betweenGroups": 48
 		},
 		"formRow": {
-			"label": { "font": "--text-heading-sm", "color": "--foreground" },
+			"label": {
+				"font": "--text-heading-sm",
+				"color": "--foreground"
+			},
 			"control": {
 				"height": "--control-height",
 				"radius": "--radius-sm",
 				"border": "--input",
-				"width": 200
+				"width": 200,
+				"font": "--text-heading-sm",
+				"pad": "6px 12px"
 			}
 		},
 		"selectControl": {
 			"height": 30,
+			"heightToken": "--select-trigger-height",
 			"radius": "--radius-sm",
 			"bg": "--accent",
 			"color": "--accent-foreground",
-			"font": "--text-heading-sm"
+			"font": "--text-heading-sm",
+			"weight": 400,
+			"hasDefaultValue": true
 		},
 		"settingsPrimary": {
 			"height": "--control-height",
@@ -274,6 +455,23 @@
 			"height": "--hairline-width",
 			"insetX": "--well-row-inset",
 			"fill": "--foreground"
+		},
+		"skeleton": {
+			"fill": "--muted",
+			"radius": "--radius-md",
+			"keepChrome": true,
+			"slotsOnly": true,
+			"keepLastNumbers": true
+		},
+		"selectMenu": {
+			"fill": "--select-menu",
+			"border": "--select-menu-border",
+			"itemHighlight": "--select-item-highlight",
+			"highlightInsetInline": 4,
+			"highlightRadius": "--radius-sm",
+			"itemHeight": "--control-height",
+			"checkAfterLabel": true,
+			"alignSelectedToTrigger": true
 		}
 	}
 }

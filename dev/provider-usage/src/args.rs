@@ -63,14 +63,16 @@ pub fn dispatch(args: &[String]) -> Result<()> {
         Command::Refresh { target } => {
             let target = target.unwrap_or_default();
             let providers = if target.is_empty() {
-                vec!["openai".to_string(), "commandcode".to_string(), "opencode-go".to_string(), "grok".to_string()]
+                vec![
+                    "openai".to_string(),
+                    "commandcode".to_string(),
+                    "opencode-go".to_string(),
+                    "grok".to_string(),
+                ]
             } else {
                 vec![target]
             };
-            let mut answers = Vec::new();
-            for item in providers {
-                answers.push(core.refresh(&item)?);
-            }
+            let answers = core.refresh_many(&providers)?;
             if options.json {
                 println!("{}", serde_json::to_string_pretty(&answers)?);
             } else {

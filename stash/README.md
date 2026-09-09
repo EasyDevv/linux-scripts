@@ -73,7 +73,7 @@ GET  /stash/test/userscript.user.js
 기본 경로는 `~/.config/stash/config.toml`. 필드와 기본값은 `src/config.rs`.
 
 최상위: `bind`, `sqlite_path`, `allowed_roots`, `max_results`, `download_root`, `temp_root`.
-`[download]`: `default_concurrency`, `max_concurrency`, `chunk_size_bytes`, `user_agent`.
+`[download]`: `default_concurrency`, `max_concurrency`, `chunk_size_bytes`, `user_agent`, `media_proxy_file`, `media_proxy_referer_hosts`.
 `[scheduler]`: `poll_interval_secs`, `resume_on_start`, `progress_flush_interval_ms`.
 `[retry]`: `max_retries`, `retry_interval_secs`.
 `[vpn]`: `command`, `socks_url`, `auto_connect`, `connect_command`, `connect_timeout_secs`, `verify_before_each_job`, `required_location`, `required_mode`, `auto_rotate_on_ip_block`, `excluded_locations`.
@@ -83,6 +83,43 @@ GET  /stash/test/userscript.user.js
 - `allowed_roots` 와 `download_root` 는 없으면 자동 생성된다.
 - `sqlite_path` 상위 디렉터리도 없으면 자동 생성된다.
 - `under` 와 `path` 입력은 항상 `allowed_roots` 경계 안에서 검증된다.
+
+### Blocked 복구 정책
+
+- 403은 IP 차단을 확정하는 근거가 아니다. 안전한 미시도 대체 소스가 있으면 전환하고, 없으면 원래 오류를 보존한 채 `failed`/Blocked로 끝낸다. 후보 목록 유무에 따라 같은 요청을 무한 재시도하지 않는다.
+- 과거 `retry_wait`에 남은 403·Expired·Gone 같은 비재시도 오류는 스케줄러가 정리한다. 실행 중인 워커, 일시 오류 재시도, 사용자가 지운 잡/파일은 재생성하거나 중단하지 않는다. 기존 코드도 403 대기 잡은 슬롯 수에서 제외한다.
+- `auto_rotate_on_ip_block`/`excluded_locations`는 이전 설정과의 호환을 위해 남아 있지만, 단순 HTTP 403에 의한 자동 VPN 회전에는 더 이상 사용하지 않는다. 수동 VPN 설정 기능은 유지한다.
+- 대체 소스 전환 중 DB 잠금을 잡은 채 캐시 디렉터리를 지우지 않는다. 목록별 캐시 식별자가 소스 혼합을 막는다.
+
+### MissAV CDN의 Chrome 호환 전송
+
+정확히 `https://surrit.com`인 HLS 목록과 세그먼트는 `/usr/bin/curl-impersonate`와 내장 Chrome 131 프로필(`src/browser_tls_profile.conf`, 배포판 `curl_chrome131` 기준)로 요청한다. **이 실행 파일이 설치되어 있어야 한다.** 기존 `vpn.socks_url`을 그대로 사용하며 IP/VPN 위치는 바꾸지 않는다. `recordplay.biz`/`playrecord.biz`용 명시적 HTTPS 프록시 경로가 설정되어 있으면 그 경로가 우선한다.
+
+브라우저/CDP는 필요 없다. 실행 인자에 URL·프록시 자격 증명·헤더를 넣지 않고 stdin 설정으로 전달한다. 각 요청의 호스트를 검사하고 리다이렉트를 따라가지 않는다. 셸 없이 프로세스를 직접 관리하며, 시간 제한·읽는 도중의 응답 크기 제한·취소 시 종료를 적용한다. 원시 stderr나 자격 증명을 오류에 노출하지 않는다.
+
+2026-09-08 비교: 동일한 surrit URL이 일반 curl에서는 Cloudflare 403, Chrome 호환 요청에서는 직접 연결과 기존 SOCKS 모두 정상 M3U8 200을 반환했다. 이 결과는 요청 프로필의 효과이며 모든 사이트의 403을 같은 원인으로 분류하지 않는다. 예를 들어 확인한 Google Storage 403은 `UserProjectAccountProblem`(원본 프로젝트 결제 계정 부재)로, 요청 프로필이나 VPN 변경으로 고칠 수 없다.
+
+### 브라우저와 독립적인 HLS 요청 경로
+
+`download.media_proxy_file`과 `media_proxy_referer_hosts`를 설정하면 **Referer 호스트가 정확히 일치하는 잡의 HLS 목록·세그먼트**는 해당 HTTPS 프록시를 사용하는 네이티브 `reqwest` 경로로 고정된다. 설정하지 않으면 기존 SOCKS 경로를 유지한다. 중간에 두 경로를 섞지 않는다. Chrome/CDP, 확장 프로그램, 열린 영상 탭은 다운로드에 필요하지 않다.
+
+```toml
+[download]
+media_proxy_file = "/absolute/private/path/media-proxy.json"
+media_proxy_referer_hosts = ["recordplay.biz", "playrecord.biz"]
+```
+
+별도 JSON 파일 형식은 `{"url":"https://proxy.example:443","username":"...","password":"..."}`. 일반 파일·소유자 전용 권한(`chmod 600`)만 허용한다. 실제 인증 정보는 저장소, 잡의 `headers_json`, 로그에 넣지 않는다. 프록시 인증이 만료되어 HTTP 407이 나오면 이 파일의 인증 정보를 갱신해야 한다. 자동으로 브라우저의 자격 증명을 읽거나 VPN 위치를 변경하지 않는다.
+
+소스가 특정 IP/ASN에 묶인 경우 URL을 발급받은 경로와 다운로드 경로를 맞춰야 한다. 2026-09-07 대조에서는 브라우저의 AdGuard 도쿄 HTTPS 경로와 CLI의 라고스 SOCKS 경로가 달랐으며, 같은 도쿄 경로에서는 일반 curl도 HLS를 HTTP 200으로 받았다. 서명 URL의 403만으로 실제 만료나 TLS 지문 차이를 단정하면 안 된다.
+
+대체 소스는 기존 크기 제한(2배 이상 차이 제외)과 시도 기록을 따르고, 사용한 소스를 잡에 저장한다. 세그먼트 재개 캐시는 해석된 목록(순서·초기화 세그먼트 포함)별로 분리해 다른 소스의 파일을 혼합하지 않는다.
+
+HLS 합치기는 `#EXTINF`의 유효한 길이를 파일·스트리밍 FIFO 양쪽 concat 목록에 전달한다. 컨테이너가 추정한 개별 길이를 누적하면 영상·음성 시작 시각 차이가 쌓일 수 있다. 실제 검증에서는 3620.754초 원본이 기존 방식으로 3671.902초가 됐으나 수정 후 3620.852초가 됐다. 파일 경로 이스케이프는 공통 함수를 사용한다.
+
+2026-09-08 대표 검증: MissAV 기존 Blocked 3건이 전체 다운로드·h264/AAC·길이 검사를 통과했다(원본과 차이 0.10/0.14/0.07초). 회귀 테스트 108개 통과. 이는 대표 3건 검증이며 10건 전체 게이트 통과를 뜻하지 않는다. 나머지 과거 실패 기록을 지우거나 자동 재개하지 않는다.
+
+HLS 다운로드 단계의 정체 감시는 세그먼트 전체 재시도 예산보다 길게 잡는다(현재 180초 × 3회 + 재시도 간격 4초 + 여유 60초 = 604초). 일반 다운로드의 120초 기준으로 HLS 워커를 먼저 취소해 재시도 횟수를 소진하지 않도록 별도 마감 시각을 사용한다.
 
 ## 실행
 

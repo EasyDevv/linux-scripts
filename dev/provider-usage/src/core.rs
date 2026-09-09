@@ -125,14 +125,53 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
     }
 
     pub fn refresh(&self, provider_or_model: &str) -> Result<RemainingAnswer> {
-        let provider = provider_from_model(provider_or_model)
-            .unwrap_or_else(|| provider_or_model.trim().to_ascii_lowercase());
-        let model = if provider_or_model.contains('/') {
-            provider_or_model.to_string()
-        } else {
-            format!("{provider}/")
-        };
+        let (_provider, model) = refresh_target(provider_or_model);
         self.remaining(&model, true)
+    }
+
+    pub fn refresh_many(&self, providers: &[String]) -> Result<Vec<RemainingAnswer>>
+    where
+        P: Sync,
+    {
+        if providers.len() <= 1 {
+            return providers.iter().map(|item| self.refresh(item)).collect();
+        }
+        let now = self.clock.now();
+        let before = self.store.load()?;
+        let jobs: Vec<(String, String)> =
+            providers.iter().map(|item| refresh_target(item)).collect();
+        let probes = &self.probes;
+        let jobs_ref = &jobs;
+        let outcomes: Vec<ProbeOutcome> = std::thread::scope(|scope| {
+            let mut joins = Vec::with_capacity(jobs.len());
+            for i in 0..jobs.len() {
+                joins.push(scope.spawn(move || probes.probe(&jobs_ref[i].0, now)));
+            }
+            joins
+                .into_iter()
+                .enumerate()
+                .map(|(i, join)| {
+                    join.join().unwrap_or_else(|_| {
+                        ProbeOutcome::unknown(
+                            probes.cache_key(&jobs_ref[i].0),
+                            Some("probe".into()),
+                        )
+                    })
+                })
+                .collect()
+        });
+        let mut cache = self.store.load()?;
+        let mut answers = Vec::with_capacity(jobs.len());
+        for ((provider, model), outcome) in jobs.into_iter().zip(outcomes) {
+            let prev = before.providers.get(&outcome.cache_key).cloned();
+            let (key, snapshot) = outcome_snapshot(&provider, now, outcome, prev.as_ref());
+            cache.providers.insert(key, snapshot.clone());
+            answers.push(RemainingAnswer::from_snapshot(
+                &model, &provider, &snapshot, false,
+            ));
+        }
+        self.store.save(&cache)?;
+        Ok(answers)
     }
 
     pub fn mark_exhausted(&self, model: &str, until: Option<i64>) -> Result<RemainingAnswer> {
@@ -163,23 +202,11 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
     }
 
     fn probe_provider(&self, provider: &str, now: i64) -> Result<ProviderSnapshot> {
-        let mut outcome = self.probes.probe(provider, now);
+        let outcome = self.probes.probe(provider, now);
         let mut cache = self.store.load()?;
-        if provider == "grok" {
-            let prev = cache.providers.get(&outcome.cache_key).cloned();
-            grok::apply_inferred_weekly_reset(&mut outcome, prev.as_ref(), now);
-        }
-        let snapshot = ProviderSnapshot {
-            checked_at: now,
-            state: outcome.state,
-            reason: outcome.reason,
-            reset_at: outcome.reset_at,
-            fresh_until: policy::fresh_until(now, outcome.state, outcome.reset_at),
-            remaining_credits: outcome.remaining_credits,
-            windows: outcome.windows,
-            renews_at: outcome.renews_at,
-        };
-        cache.providers.insert(outcome.cache_key, snapshot.clone());
+        let prev = cache.providers.get(&outcome.cache_key).cloned();
+        let (key, snapshot) = outcome_snapshot(provider, now, outcome, prev.as_ref());
+        cache.providers.insert(key, snapshot.clone());
         self.store.save(&cache)?;
         Ok(snapshot)
     }
@@ -189,6 +216,40 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
         cache.providers.insert(key, snapshot);
         self.store.save(&cache)
     }
+}
+
+fn refresh_target(provider_or_model: &str) -> (String, String) {
+    let provider = provider_from_model(provider_or_model)
+        .unwrap_or_else(|| provider_or_model.trim().to_ascii_lowercase());
+    let model = if provider_or_model.contains('/') {
+        provider_or_model.to_string()
+    } else {
+        format!("{provider}/")
+    };
+    (provider, model)
+}
+
+fn outcome_snapshot(
+    provider: &str,
+    now: i64,
+    mut outcome: ProbeOutcome,
+    prev: Option<&ProviderSnapshot>,
+) -> (String, ProviderSnapshot) {
+    if provider == "grok" {
+        grok::apply_inferred_weekly_reset(&mut outcome, prev, now);
+    }
+    let key = outcome.cache_key;
+    let snapshot = ProviderSnapshot {
+        checked_at: now,
+        state: outcome.state,
+        reason: outcome.reason,
+        reset_at: outcome.reset_at,
+        fresh_until: policy::fresh_until(now, outcome.state, outcome.reset_at),
+        remaining_credits: outcome.remaining_credits,
+        windows: outcome.windows,
+        renews_at: outcome.renews_at,
+    };
+    (key, snapshot)
 }
 
 pub fn provider_from_model(model: &str) -> Option<String> {
@@ -594,5 +655,69 @@ mod tests {
         let status = core.status().unwrap();
         let snap = status.providers.get("grok:abc").unwrap();
         assert_eq!(snap.windows[0].reset_at, Some(1_060 + 7 * 86_400));
+    }
+
+    #[test]
+    fn refresh_many_probes_in_parallel_and_merges_cache() {
+        use std::sync::Mutex;
+        use std::time::{Duration, Instant};
+
+        struct Frozen(i64);
+        impl Clock for Frozen {
+            fn now(&self) -> i64 {
+                self.0
+            }
+        }
+
+        struct DelayProbes {
+            delay: Duration,
+            count: Mutex<u32>,
+        }
+        impl Probes for DelayProbes {
+            fn cache_key(&self, provider: &str) -> String {
+                format!("{provider}:k")
+            }
+            fn probe(&self, provider: &str, _now: i64) -> ProbeOutcome {
+                *self.count.lock().expect("count") += 1;
+                std::thread::sleep(self.delay);
+                ProbeOutcome {
+                    cache_key: format!("{provider}:k"),
+                    state: ProviderState::Available,
+                    reason: None,
+                    reset_at: None,
+                    remaining_credits: Some(1),
+                    windows: Vec::new(),
+                    renews_at: None,
+                }
+            }
+        }
+
+        let delay = Duration::from_millis(150);
+        let core = UsageCore {
+            clock: Frozen(1_000),
+            store: MemoryStore::default(),
+            probes: DelayProbes {
+                delay,
+                count: Mutex::new(0),
+            },
+        };
+        let names = vec![
+            "openai".into(),
+            "commandcode".into(),
+            "opencode-go".into(),
+            "grok".into(),
+        ];
+        let started = Instant::now();
+        let answers = core.refresh_many(&names).unwrap();
+        let elapsed = started.elapsed();
+        assert_eq!(answers.len(), 4);
+        assert_eq!(*core.probes.count.lock().expect("count"), 4);
+        assert_eq!(core.store.load().unwrap().providers.len(), 4);
+        assert!(
+            elapsed < delay * 3,
+            "expected parallel wall < {:?}, got {:?}",
+            delay * 3,
+            elapsed
+        );
     }
 }

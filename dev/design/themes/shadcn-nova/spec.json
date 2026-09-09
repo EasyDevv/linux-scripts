@@ -1,5 +1,5 @@
 {
-	"slug": "nova",
+	"slug": "shadcn-nova",
 	"liveUrl": "https://www.shadcn-svelte.com/create/preview?preset=b0&fromPreview=true",
 	"imports": [
 		"@import \"tailwindcss\";",

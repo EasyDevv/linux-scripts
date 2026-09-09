@@ -666,6 +666,15 @@ mod tests {
     }
 
     #[test]
+    fn zero_to_partial_weekly_refill_locks() {
+        let prev = snapshot(Some(0), None);
+        assert_eq!(
+            infer_weekly_reset(1_000, Some(11_068), Some(&prev)),
+            Some(1_000 + WEEKLY_PERIOD_SECS)
+        );
+    }
+
+    #[test]
     fn keeps_cli_reset_at() {
         let prev = snapshot(Some(4_000), None);
         let mut outcome = ProbeOutcome {

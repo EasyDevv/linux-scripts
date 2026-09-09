@@ -1,6 +1,6 @@
 [
+	{ "slug": "shadcn-nova", "label": "Nova", "scheme": "dark" },
 	{ "slug": "linear", "label": "Linear", "scheme": "dark" },
-	{ "slug": "nova", "label": "Nova", "scheme": "dark" },
 	{ "slug": "notion", "label": "Notion", "scheme": "light" },
 	{ "slug": "airbnb", "label": "Airbnb", "scheme": "light" },
 	{ "slug": "kbland", "label": "KB부동산", "scheme": "light" },

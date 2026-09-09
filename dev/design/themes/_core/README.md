@@ -11,8 +11,8 @@ Canonical shadcn `layout.css` **scheme**, not a company theme.
 Validate:
 
 ```bash
-bun ~/dev/dashboard/apps/client/src/lib/server/design/cli/validate-layout-scheme.ts --all
-bun ~/dev/dashboard/apps/client/src/lib/server/design/cli/validate-layout-scheme.ts --project <layout.css>
+bun ~/.local/share/scripts/dev/design/cli/validate-layout-scheme.ts --all
+bun ~/.local/share/scripts/dev/design/cli/validate-layout-scheme.ts --project <layout.css>
 ```
 
-Stock shadcn token names for diffs stay in `~/.agents/skills-ready/shadcn-svelte/theme/default.css`.
+Stock shadcn token **names** are the `_core` `:root` / `@theme inline` entries before `/* Project primitives */` and `/* Project utilities */`. Preview default slug is `shadcn-nova`.
