@@ -8,6 +8,8 @@ styles.json                  # slug catalog (toolbar); first entry is the previe
 themes/_core/layout.css      # scheme contract
 themes/shadcn-nova/          # default preview slug when no ?style=
 themes/<slug>/layout.css     # live theme sources
+ref/<host>/                  # live site analysis: PNG + pages/*.mhtml + index.json
+themes/<slug>/ref/           # shadcn-svelte reconstructions of those pages
 cli/                         # portable collect/compare/validate/chrome gates
 _inbox/                      # stubs and extraction working files
 ```

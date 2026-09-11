@@ -1,0 +1,138 @@
+{
+  "capturedAt": "2026-09-10T13:26:53.505Z",
+  "scheme": "dark",
+  "pages": [
+    {
+      "id": "projects-all",
+      "url": "https://linear.app/easydevs/team/EAS/projects/all"
+    },
+    {
+      "id": "team-all",
+      "url": "https://linear.app/easydevs/team/EAS/all"
+    },
+    {
+      "id": "project-overview",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    },
+    {
+      "id": "tablet",
+      "width": 768,
+      "height": 1024,
+      "mobile": false
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844,
+      "mobile": true
+    }
+  ],
+  "files": [
+    {
+      "page": "projects-all",
+      "viewport": "desktop",
+      "url": "https://linear.app/easydevs/team/EAS/projects/all",
+      "file": "desktop/projects-all.png"
+    },
+    {
+      "page": "projects-all",
+      "viewport": "tablet",
+      "url": "https://linear.app/easydevs/team/EAS/projects/all",
+      "file": "tablet/projects-all.png"
+    },
+    {
+      "page": "projects-all",
+      "viewport": "mobile",
+      "url": "https://linear.app/easydevs/team/EAS/projects/all",
+      "file": "mobile/projects-all.png"
+    },
+    {
+      "page": "team-all",
+      "viewport": "desktop",
+      "url": "https://linear.app/easydevs/team/EAS/all",
+      "file": "desktop/team-all.png"
+    },
+    {
+      "page": "team-all",
+      "viewport": "tablet",
+      "url": "https://linear.app/easydevs/team/EAS/all",
+      "file": "tablet/team-all.png"
+    },
+    {
+      "page": "team-all",
+      "viewport": "mobile",
+      "url": "https://linear.app/easydevs/team/EAS/all",
+      "file": "mobile/team-all.png"
+    },
+    {
+      "page": "project-overview",
+      "viewport": "desktop",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077",
+      "file": "desktop/project-overview.png"
+    },
+    {
+      "page": "project-overview",
+      "viewport": "tablet",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077",
+      "file": "tablet/project-overview.png"
+    },
+    {
+      "page": "project-overview",
+      "viewport": "mobile",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077",
+      "file": "mobile/project-overview.png"
+    },
+    {
+      "page": "project-overview",
+      "viewport": "desktop",
+      "kind": "popover",
+      "id": "project-actions",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
+      "file": "popovers/project-actions.png"
+    },
+    {
+      "page": "project-overview",
+      "viewport": "desktop",
+      "kind": "popover",
+      "id": "help",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
+      "file": "popovers/help.png"
+    },
+    {
+      "page": "project-overview",
+      "viewport": "desktop",
+      "kind": "popover",
+      "id": "workspace",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
+      "file": "popovers/workspace.png"
+    }
+  ],
+  "snapshots": [
+    {
+      "page": "projects-all",
+      "url": "https://linear.app/easydevs/team/EAS/projects/all",
+      "file": "pages/projects-all.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "team-all",
+      "url": "https://linear.app/easydevs/team/EAS/all",
+      "file": "pages/team-all.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "project-overview",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077",
+      "file": "pages/project-overview.mhtml",
+      "format": "mhtml"
+    }
+  ]
+}

@@ -44,10 +44,12 @@
 				"height": "--control-height-nav",
 				"radius": "--radius-sm",
 				"font": "--text-heading-sm",
-				"idle": "--muted-foreground",
+				"idle": "--ink-soft",
 				"active": "--foreground",
 				"activeBg": "--sidebar-accent",
 				"icon": "size-3.5",
+				"iconColor": "--muted-foreground",
+				"nestedStart": "19px",
 				"not": "default Button"
 			}
 		},
@@ -222,9 +224,13 @@
 		},
 		"tabs": {
 			"selected": "filled capsule",
+			"fill": "--tab-selected",
+			"color": "--foreground",
 			"radius": "--radius-pill",
 			"height": "--control-height-nav",
-			"unselected": "ghost"
+			"unselected": "filled capsule",
+			"idle": "--tab-idle",
+			"ink": "--muted-foreground"
 		},
 		"productCta": {
 			"kind": "ghost",
@@ -316,8 +322,23 @@
 			"fillAlpha": 0.1,
 			"notWellBorder": true
 		},
+		"fold": {
+			"duration": "--panel-fold-duration",
+			"ease": "--panel-fold-ease",
+			"properties": [
+				"height",
+				"opacity"
+			],
+			"where": "in-panel collapsible (milestone description)"
+		},
 		"status": "dot or one-word chip",
-		"inspector": "right column inside main, same surface, not a modal"
+		"inspector": {
+			"where": "right column inside main, same surface, not a modal",
+			"bg": "--inspector",
+			"border": "--inspector-border",
+			"radius": "--radius-md",
+			"shadow": "--panel-shadow"
+		}
 	},
 	"header": {
 		"shared": true,

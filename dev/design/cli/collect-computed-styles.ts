@@ -6,7 +6,31 @@ type CDPMessage = {
 	error?: { message: string };
 };
 
+type ChromeTab = {
+	type: string;
+	url?: string;
+	title?: string;
+	webSocketDebuggerUrl?: string;
+};
+
 const args = Bun.argv.slice(2);
+if (args.includes("--help") || args.includes("-h")) {
+	process.stdout.write(`collect-computed-styles.ts
+
+  --port <N>          CDP port (default 9222)
+  --ws <url>          Pin a tab WebSocket (required when several pages are open)
+  --url <href>        Navigate, or select the tab whose url matches
+  --compact           Omit typography inventory
+  --target name::css  Named CSS selector
+  --xpath name::path  Named XPath
+  --out <file>        Write JSON (default stdout)
+
+Report fields: selected[].paintOwner + paintChain, style.backgroundRgb / colorRgb,
+roles.pills, roles.filledSurfaces. Do not trust a transparent target background.
+`);
+	process.exit(0);
+}
+
 const valueFor = (flag: string) => {
 	const index = args.indexOf(flag);
 	return index >= 0 ? args[index + 1] : undefined;
@@ -28,17 +52,38 @@ function parseTargets(flag: "--target" | "--xpath") {
 const port = Number(valueFor("--port") ?? 9222);
 const output = valueFor("--out");
 const targetUrl = valueFor("--url");
+const wsFlag = valueFor("--ws");
 const compact = args.includes("--compact");
 const targets = parseTargets("--target");
 const xpaths = parseTargets("--xpath");
-const tabs = await fetch(`http://127.0.0.1:${port}/json/list`).then(
-	(response) => response.json(),
-);
-const tab = tabs.find(
-	(candidate: { type: string }) => candidate.type === "page",
-);
+const tabs = (await fetch(`http://127.0.0.1:${port}/json/list`).then((response) =>
+	response.json(),
+)) as ChromeTab[];
+const pages = tabs.filter((candidate) => candidate.type === "page");
 
-if (!tab?.webSocketDebuggerUrl) {
+function pickTab(): ChromeTab {
+	if (wsFlag) {
+		const hit = pages.find((page) => page.webSocketDebuggerUrl === wsFlag);
+		if (hit) return hit;
+		return { type: "page", webSocketDebuggerUrl: wsFlag };
+	}
+	if (targetUrl) {
+		const needle = targetUrl.split("#")[0] ?? targetUrl;
+		const hit = pages.find((page) => (page.url ?? "").split("#")[0] === needle)
+			?? pages.find((page) => (page.url ?? "").includes(needle));
+		if (hit) return hit;
+	}
+	if (pages.length === 1 && pages[0]) return pages[0];
+	const listing = pages
+		.map((page, index) => `  [${index}] ${page.title ?? ""} ${page.url ?? ""}`)
+		.join("\n");
+	throw new Error(
+		`Multiple CDP pages on port ${port}; pass --ws <webSocketDebuggerUrl>.\n${listing}`,
+	);
+}
+
+const tab = pickTab();
+if (!tab.webSocketDebuggerUrl) {
 	throw new Error(`No page target found on CDP port ${port}`);
 }
 
@@ -76,7 +121,16 @@ function command(method: string, params: Record<string, unknown> = {}) {
 }
 
 if (targetUrl) {
-	await command("Page.navigate", { url: targetUrl });
+	const here = (
+		(await command("Runtime.evaluate", {
+			expression: "location.href",
+			returnByValue: true,
+		})) as { result?: { value?: string } }
+	).result?.value;
+	const want = targetUrl.split("#")[0];
+	if (!here || here.split("#")[0] !== want) {
+		await command("Page.navigate", { url: targetUrl });
+	}
 }
 
 const deadline = Date.now() + 15_000;
@@ -110,6 +164,20 @@ const expression = String.raw`(() => {
 		"rowGap", "columnGap"
 	];
 	const selector = "h1,h2,h3,h4,h5,h6,p,span,a,button,li,blockquote,strong,label,input,textarea";
+	const rgbOf = (value) => {
+		if (!value) return value;
+		try {
+			const ctx = document.createElement("canvas").getContext("2d");
+			if (!ctx) return value;
+			ctx.fillStyle = "#000000";
+			ctx.fillStyle = value;
+			return ctx.fillStyle;
+		} catch {
+			return value;
+		}
+	};
+	const opaqueBg = (value) =>
+		Boolean(value) && value !== "rgba(0, 0, 0, 0)" && value !== "transparent";
 	const visible = (element) => {
 		const rect = element.getBoundingClientRect();
 		const style = getComputedStyle(element);
@@ -117,10 +185,40 @@ const expression = String.raw`(() => {
 	};
 	const cleanText = (element) => (element.innerText || element.value || element.placeholder || "")
 		.trim().replace(/\s+/g, " ").slice(0, 140);
+	const paintChain = (element, max = 8) => {
+		const out = [];
+		let node = element;
+		let depth = 0;
+		while (node && node !== document.documentElement && depth < max) {
+			const style = getComputedStyle(node);
+			out.push({
+				depth,
+				tag: node.tagName.toLowerCase(),
+				className: typeof node.className === "string" ? node.className.slice(0, 80) : undefined,
+				backgroundColor: style.backgroundColor,
+				backgroundRgb: rgbOf(style.backgroundColor),
+				color: style.color,
+				colorRgb: rgbOf(style.color),
+				borderColor: style.borderTopColor,
+				borderRgb: rgbOf(style.borderTopColor),
+				borderWidth: style.borderTopWidth,
+				borderRadius: style.borderRadius,
+				boxShadow: style.boxShadow,
+				height: style.height,
+				width: style.width,
+				padding: style.padding,
+				opaque: opaqueBg(style.backgroundColor),
+			});
+			node = node.parentElement;
+			depth += 1;
+		}
+		return out;
+	};
 	const inspect = (element) => {
 		if (!element) return null;
 		const style = getComputedStyle(element);
 		const rect = element.getBoundingClientRect();
+		const chain = paintChain(element);
 		const icons = [...element.querySelectorAll("svg, img")].map((icon) => {
 			const iconStyle = getComputedStyle(icon);
 			const iconRect = icon.getBoundingClientRect();
@@ -138,6 +236,7 @@ const expression = String.raw`(() => {
 			tag: element.tagName.toLowerCase(), text: cleanText(element),
 			href: element.href || undefined,
 			ariaExpanded: element.getAttribute("aria-expanded") || undefined,
+			ariaPressed: element.getAttribute("aria-pressed") || undefined,
 			box: {
 				x: rect.x, y: rect.y, width: rect.width, height: rect.height,
 				clientWidth: element.clientWidth, clientHeight: element.clientHeight,
@@ -145,11 +244,16 @@ const expression = String.raw`(() => {
 			},
 			style: {
 				...Object.fromEntries(properties.map((property) => [property, style[property]])),
+				colorRgb: rgbOf(style.color),
 				display: style.display, boxSizing: style.boxSizing, zoom: style.zoom,
 				padding: style.padding, margin: style.margin, gap: style.gap,
 				border: style.border, borderRadius: style.borderRadius,
-				backgroundColor: style.backgroundColor, boxShadow: style.boxShadow
+				backgroundColor: style.backgroundColor,
+				backgroundRgb: rgbOf(style.backgroundColor),
+				boxShadow: style.boxShadow
 			},
+			paintChain: chain,
+			paintOwner: chain.find((layer) => layer.opaque) || chain[0] || null,
 			icons
 		};
 	};
@@ -169,10 +273,7 @@ const expression = String.raw`(() => {
 		if (group.samples.length < 6) group.samples.push({ tag: entry.tag, text: entry.text });
 		groups.set(key, group);
 	}
-	const buttons = [...document.querySelectorAll("a,button")].filter(visible).filter((element) => {
-		const style = getComputedStyle(element);
-		return element.tagName === "BUTTON" || style.backgroundColor !== "rgba(0, 0, 0, 0)" || style.borderTopWidth !== "0px";
-	}).map((element, index) => {
+	const buttons = [...document.querySelectorAll("a,button")].filter(visible).map((element, index) => {
 		return { index, ...inspect(element) };
 	});
 	const fields = [...document.querySelectorAll("input,textarea,select")]
@@ -218,6 +319,26 @@ const expression = String.raw`(() => {
 		});
 		spacingGroups.set(key, group);
 	}
+	const parsePx = (value) => Number.parseFloat(value) || 0;
+	const pills = buttons.filter((item) => {
+		const height = item?.box?.height ?? 0;
+		const radius = item?.style?.borderRadius ?? "";
+		return height >= 24 && height <= 36 && (radius.includes("9999") || radius === "50%" || parsePx(radius) >= height / 2 - 1);
+	}).slice(0, 24);
+	const filledSurfaces = [...document.body.querySelectorAll("div,section,aside,article")]
+		.filter(visible)
+		.map((element) => inspect(element))
+		.filter((item) => {
+			const owner = item.paintOwner;
+			if (!owner?.opaque) return false;
+			const height = parsePx(owner.height);
+			const width = parsePx(owner.width);
+			const radius = parsePx(owner.borderRadius);
+			const border = parsePx(owner.borderWidth);
+			const shadowed = owner.boxShadow && owner.boxShadow !== "none";
+			return height >= 72 && width >= 160 && width <= 480 && radius >= 6 && (border > 0 || shadowed);
+		})
+		.slice(0, 16);
 	const selected = Object.fromEntries([
 		...targetConfig.targets.map(({ name, query }) => [name, inspect(document.querySelector(query))]),
 		...targetConfig.xpaths.map(({ name, query }) => [name, inspect(document.evaluate(query, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue)])
@@ -230,6 +351,7 @@ const expression = String.raw`(() => {
 		buttons,
 		fields,
 		spacing: [...spacingGroups.values()].sort((left, right) => right.count - left.count),
+		roles: { pills, filledSurfaces },
 		selected
 	};
 })()`;

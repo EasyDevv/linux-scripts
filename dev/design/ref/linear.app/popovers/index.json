@@ -1,0 +1,42 @@
+{
+  "capturedAt": "2026-09-10T15:11:19.210Z",
+  "items": [
+    {
+      "id": "project-actions",
+      "ok": true,
+      "file": "project-actions.png",
+      "x": 351,
+      "y": 48,
+      "w": 262,
+      "h": 350,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Showing all items\nCopy\n\u25b6\nUnfavorite\nALT F\nAlt\nF\nSubscribe\n\u25b6\nRemind me\nShift H\n\u21e7\nH\n\u25b6\nChange update schedule\u2026\nConfigure Slack notifications\u2026\nShow description history\nShow updates and activity\nControl U\nCtrl\nU\nDelete"
+    },
+    {
+      "id": "help",
+      "ok": true,
+      "file": "help.png",
+      "x": 12,
+      "y": 498,
+      "w": 384,
+      "h": 364,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Showing all items\nQuestion Mark\n?\nDocs\nContact us\nKeyboard shortcuts\nControl /\nCtrl\n/\nLinear status\nDownload apps\nSettings\nG, then S\nG\nthen\nS\nSlack community\nWhat\u2019s new\nPriority inbox\nCoding sessions: environments, browser use, and updated "
+    },
+    {
+      "id": "status",
+      "ok": true,
+      "file": "status.png",
+      "note": "cropped from overlapping capture; Change status\u2026 list"
+    },
+    {
+      "id": "workspace",
+      "ok": true,
+      "file": "workspace.png",
+      "w": 230,
+      "h": 154
+    }
+  ]
+}

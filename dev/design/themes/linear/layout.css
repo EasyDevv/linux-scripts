@@ -92,6 +92,8 @@
 	--shell-footer-height: 36px;
 	--sidebar-collapse-duration: 300ms;
 	--sidebar-collapse-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+	--panel-fold-duration: 0.2s;
+	--panel-fold-ease: cubic-bezier(0.33, 1, 0.68, 1);
 	--sidebar-hide-below: 1100px;
 	--content-narrow: 39rem;
 	--hairline-width: 0.8px;
@@ -103,6 +105,10 @@
 	--panel-shadow: 0 0.5px 1px 1px rgb(0 0 0 / 0.3);
 	--ink-soft: rgb(35, 37, 42);
 	--ink-subtle: rgb(107, 111, 118);
+	--tab-idle: rgb(226, 226, 226);
+	--tab-selected: rgb(255, 255, 255);
+	--inspector: rgb(255, 255, 255);
+	--inspector-border: rgb(226, 226, 226);
 }
 
 .dark {
@@ -149,6 +155,10 @@
 	--select-menu: rgb(40, 41, 43);
 	--select-item-highlight: rgb(60, 61, 64);
 	--select-menu-border: rgb(63, 64, 68);
+	--tab-idle: rgb(27, 28, 29);
+	--tab-selected: rgb(41, 41, 43);
+	--inspector: rgb(25, 26, 27);
+	--inspector-border: rgb(33, 35, 37);
 }
 
 @theme inline {

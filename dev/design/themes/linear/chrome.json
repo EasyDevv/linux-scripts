@@ -282,6 +282,15 @@
 			"ease": "--sidebar-collapse-ease",
 			"hideBelow": "--sidebar-hide-below"
 		},
+		"panelFold": {
+			"from": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077",
+			"duration": "--panel-fold-duration",
+			"ease": "--panel-fold-ease",
+			"properties": [
+				"height",
+				"opacity"
+			]
+		},
 		"footer": {
 			"h": "--shell-footer-height",
 			"bg": "--background",
@@ -296,11 +305,13 @@
 			"insetX": 12,
 			"label": {
 				"font": "--text-heading-sm",
-				"idle": "--muted-foreground",
+				"idle": "--ink-soft",
 				"active": "--foreground"
 			},
 			"activeBg": "--sidebar-accent",
-			"icon": 14
+			"icon": 14,
+			"iconColor": "--muted-foreground",
+			"nestedStart": 19
 		},
 		"panelHeaderTitle": {
 			"font": "--text-heading-sm",
@@ -359,7 +370,11 @@
 		"pillTab": {
 			"font": "--text-label-sm",
 			"selected": "--foreground",
-			"radius": "--radius-pill"
+			"fill": "--tab-selected",
+			"idle": "--tab-idle",
+			"ink": "--muted-foreground",
+			"radius": "--radius-pill",
+			"height": 28
 		},
 		"heroIdentity": {
 			"font": "--text-title",

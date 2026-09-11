@@ -16,3 +16,21 @@ export function designStore() {
 export function themeLayoutPath(slug: string, root = designStore()) {
 	return resolve(root, "themes", slug, "layout.css");
 }
+
+/** Durable live-site analysis. Keyed by hostname, not theme slug. */
+export function designRefRoot(root = designStore()) {
+	return resolve(root, "ref");
+}
+
+export function hostKey(raw: string) {
+	const value = raw.trim();
+	if (!value) throw new Error("empty host");
+	const url = value.includes("://")
+		? new URL(value)
+		: new URL(`https://${value}`);
+	return url.hostname.replace(/^www\./i, "");
+}
+
+export function refDirForHost(host: string, root = designStore()) {
+	return resolve(designRefRoot(root), hostKey(host));
+}

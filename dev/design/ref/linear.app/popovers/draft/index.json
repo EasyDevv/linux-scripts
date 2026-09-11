@@ -1,0 +1,154 @@
+{
+  "capturedAt": "2026-09-10T15:11:39.306Z",
+  "items": [
+    {
+      "id": "project-actions",
+      "ok": true,
+      "file": "project-actions.png",
+      "x": 425,
+      "y": 48,
+      "w": 260,
+      "h": 350,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Copy\nFavorite\nAlt\nF\nSubscribe\nRemind me\n⇧\nH\nChange update schedule…\nConfigure Slack notifications…\nShow description history\nShow updates and activity\nCtrl\nU\nDelete"
+    },
+    {
+      "id": "notifications",
+      "ok": true,
+      "file": "notifications.png",
+      "x": 1084,
+      "y": 48,
+      "w": 335,
+      "h": 300,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "8px",
+      "text": "Send inbox notifications for\nTest\n\nAn issue is added to the project\nAn issue is marked completed or canceled\nComments and changes to project description\nNew project update is posted\n\nUpdate schedule\n\nNo expectation for updates\n\nChange\n\nSlac"
+    },
+    {
+      "id": "help",
+      "ok": true,
+      "file": "help.png",
+      "x": 12,
+      "y": 490,
+      "w": 384,
+      "h": 374,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Docs\nContact us\nKeyboard shortcuts\nCtrl\n/\nLinear status\nDownload apps\nSettings\nG then S\nSlack community\nWhat's new\nPriority inbox\nCoding sessions: environments, browser use, and …\nFull changelog"
+    },
+    {
+      "id": "workspace",
+      "ok": true,
+      "file": "workspace.png",
+      "x": 12,
+      "y": 40,
+      "w": 230,
+      "h": 166,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Settings\nG then S\nInvite and manage members\nSwitch workspace\nO then W\nLog out\nAlt\n⇧\nQ"
+    },
+    {
+      "id": "agent",
+      "ok": false,
+      "reason": "no overlay"
+    },
+    {
+      "id": "resources",
+      "ok": true,
+      "file": "resources.png",
+      "x": 293,
+      "y": 299,
+      "w": 260,
+      "h": 78,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Create new document…\nAdd a link…\nCtrl\nAlt\nL"
+    },
+    {
+      "id": "status",
+      "ok": true,
+      "file": "status.png",
+      "x": 293,
+      "y": 225,
+      "w": 307,
+      "h": 174,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Backlog\n1\nPlanned\n2\nIn Progress\n3\nCompleted\n4\nCanceled\n5"
+    },
+    {
+      "id": "priority",
+      "ok": true,
+      "file": "priority.png",
+      "x": 372,
+      "y": 225,
+      "w": 307,
+      "h": 174,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "No priority\n0\nUrgent\n1\nHigh\n2\nMedium\n3\nLow\n4"
+    },
+    {
+      "id": "lead",
+      "ok": true,
+      "file": "lead.png",
+      "x": 1180,
+      "y": 259,
+      "w": 260,
+      "h": 110,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "No lead\nLemon Blue\nInvite and add…"
+    },
+    {
+      "id": "target-date",
+      "ok": true,
+      "file": "target-date.png",
+      "x": 1133,
+      "y": 319,
+      "w": 307,
+      "h": 197,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Target date\n\nDay\nMonth\nQuarter\nHalf-year\nYear"
+    },
+    {
+      "id": "labels",
+      "ok": true,
+      "file": "labels.png",
+      "x": 1117,
+      "y": 409,
+      "w": 307,
+      "h": 77,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Start typing to create a new label"
+    },
+    {
+      "id": "milestone-actions",
+      "ok": true,
+      "file": "milestone-actions.png",
+      "x": 1146,
+      "y": 524,
+      "w": 260,
+      "h": 218,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Edit…\nSet target date…\nCopy\nMove milestone to\nConvert to project\nDelete…\nCtrl\n⌫"
+    },
+    {
+      "id": "slack",
+      "ok": true,
+      "file": "slack.png",
+      "x": 1180,
+      "y": 379,
+      "w": 260,
+      "h": 78,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Connect channel\nManage Slack settings…"
+    }
+  ]
+}

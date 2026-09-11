@@ -10,6 +10,9 @@
 - Live URL (issue status colors): https://linear.app/easydevs/team/EAS/all
 - Status colors: info `rgb(78, 167, 252)`, highlight `rgb(187, 135, 252)`, danger `rgb(235, 87, 87)`, neutral `rgb(149, 162, 179)`
 - Viewport: 1440×900, page scale 100%, `html.dark`
+- Overview HTML (2026-09-10, `project/test-…/overview`): selected tab fill `lch(16.7 0.98 272)` → `--tab-selected` rgb(41,41,43); idle tab fill `lch(10.1 0.59 272)` → `--tab-idle` rgb(27,28,29), text `--muted-foreground`; inspector card fill `lch(9.2 0.85 272)` → `--inspector` rgb(25,26,27), border `lch(13.6 1.93 272)` → `--inspector-border` rgb(33,35,37), radius 10px (`--radius-md`), shadow `--panel-shadow`. Idle tabs are filled capsules, not outline.
+- Captures: `{designDir}/ref/linear.app/` (`projects-all`, `team-all`, `project-overview`) — PNGs + `pages/*.mhtml` + `index.json`
+- Reconstructions: `{designDir}/themes/linear/ref/{page}/page.svelte` (shadcn-svelte + this `layout.css`)
 - Responsive (settings General screencast): rail stays 244 with `--panel-inset` gutter while shrinking; at `--sidebar-hide-below` (1100px) the rail slides start (`--sidebar-collapse-duration` / `--sidebar-collapse-ease`); tablet keeps horizontal form rows; mobile stacks wells (`@container` 28rem)
 - Font: Inter Variable → Inter + Noto Sans KR
 - `.dark` is the measured workspace. `:root` uses Linear’s `--*-light` variables so the draft scheme toggle can switch modes.
