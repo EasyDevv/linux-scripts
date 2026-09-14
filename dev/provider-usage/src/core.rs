@@ -647,14 +647,15 @@ mod tests {
             },
         };
         let first = core.remaining("grok/x", true).unwrap();
-        assert_eq!(first.reset_at, None);
+        let expected = crate::grok::next_saturday_utc(1_000);
+        assert_eq!(first.reset_at, Some(expected));
         core.probes.remaining.set(15_000);
         core.clock.0.set(1_060);
         let second = core.remaining("grok/x", true).unwrap();
-        assert_eq!(second.reset_at, Some(1_060 + 7 * 86_400));
+        assert_eq!(second.reset_at, Some(expected));
         let status = core.status().unwrap();
         let snap = status.providers.get("grok:abc").unwrap();
-        assert_eq!(snap.windows[0].reset_at, Some(1_060 + 7 * 86_400));
+        assert_eq!(snap.windows[0].reset_at, Some(expected));
     }
 
     #[test]

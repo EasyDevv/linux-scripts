@@ -1,492 +1,634 @@
 {
-	"slug": "linear",
-	"measuredAt": "2026-09-09",
-	"viewport": {
-		"width": 1440,
-		"height": 900,
-		"scheme": "dark"
-	},
-	"live": "https://linear.app/easydevs/projects/all",
-	"pages": [
-		{
-			"id": "inbox",
-			"url": "https://linear.app/easydevs/inbox",
-			"taught": [
-				"shell"
-			]
-		},
-		{
-			"id": "projects-all",
-			"url": "https://linear.app/easydevs/projects/all",
-			"taught": [
-				"shell",
-				"sidebarNavItem",
-				"ghostAction",
-				"columnHeader",
-				"pillTab"
-			]
-		},
-		{
-			"id": "project-overview",
-			"url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
-			"taught": [
-				"panelHeaderTitle",
-				"heroIdentity",
-				"subtitle",
-				"propertyChip",
-				"emptyUpdate"
-			]
-		},
-		{
-			"id": "custom-view",
-			"url": "https://linear.app/easydevs/view/testview-74f235637401",
-			"taught": [
-				"issueRow",
-				"groupHeader",
-				"pillTab"
-			]
-		},
-		{
-			"id": "members",
-			"url": "https://linear.app/easydevs/members",
-			"taught": [
-				"columnHeader",
-				"statusChip",
-				"shell.footer"
-			]
-		},
-		{
-			"id": "team-overview",
-			"url": "https://linear.app/easydevs/team/EAS/overview",
-			"taught": [
-				"heroIdentity",
-				"sectionHeading",
-				"panelHeaderTitle"
-			]
-		},
-		{
-			"id": "team-issues",
-			"url": "https://linear.app/easydevs/team/EAS/all",
-			"taught": [
-				"issueRow",
-				"groupHeader",
-				"pillTab",
-				"skeleton",
-				"syncActionState"
-			]
-		},
-		{
-			"id": "issue-labels",
-			"url": "https://linear.app/easydevs/settings/issue-labels",
-			"taught": [
-				"syncActionState"
-			]
-		},
-		{
-			"id": "project-statuses",
-			"url": "https://linear.app/easydevs/settings/project-statuses",
-			"taught": [
-				"syncActionState"
-			]
-		},
-		{
-			"id": "views-issues",
-			"url": "https://linear.app/easydevs/views/issues",
-			"taught": [
-				"skeleton"
-			]
-		},
-		{
-			"id": "team-active",
-			"url": "https://linear.app/easydevs/team/EAS/active",
-			"taught": [
-				"skeleton",
-				"issueRow",
-				"groupHeader"
-			]
-		},
-		{
-			"id": "settings-integrations",
-			"url": "https://linear.app/easydevs/settings/integrations",
-			"family": "settings-form",
-			"taught": [
-				"settingsPageTitle",
-				"settingsLede",
-				"contentNarrow"
-			]
-		},
-		{
-			"id": "settings-workspace",
-			"url": "https://linear.app/easydevs/settings/workspace",
-			"family": "settings-form",
-			"taught": [
-				"settingsPageTitle",
-				"formRow",
-				"settingsSection",
-				"destructiveGhost"
-			]
-		},
-		{
-			"id": "settings-teams",
-			"url": "https://linear.app/easydevs/settings/teams",
-			"family": "settings-list",
-			"taught": [
-				"settingsPageTitle",
-				"settingsPrimary",
-				"columnHeader"
-			]
-		},
-		{
-			"id": "settings-members",
-			"url": "https://linear.app/easydevs/settings/members",
-			"family": "settings-list",
-			"taught": [
-				"settingsPageTitle",
-				"settingsPrimary",
-				"columnHeader",
-				"statusChip",
-				"dialog"
-			]
-		},
-		{
-			"id": "settings-security",
-			"url": "https://linear.app/easydevs/settings/security",
-			"family": "settings-form",
-			"taught": [
-				"settingsSection",
-				"settingsGhost",
-				"switch"
-			]
-		},
-		{
-			"id": "settings-api",
-			"url": "https://linear.app/easydevs/settings/api",
-			"family": "settings-form",
-			"taught": [
-				"settingsSection",
-				"settingsGhost"
-			]
-		},
-		{
-			"id": "settings-applications",
-			"url": "https://linear.app/easydevs/settings/applications",
-			"family": "settings-form",
-			"taught": [
-				"settingsPageTitle",
-				"settingsLede"
-			]
-		},
-		{
-			"id": "settings-billing",
-			"url": "https://linear.app/easydevs/settings/billing",
-			"family": "settings-form",
-			"taught": [
-				"settingsPrimary",
-				"settingsGhost",
-				"settingsSection"
-			]
-		},
-		{
-			"id": "settings-usage",
-			"url": "https://linear.app/easydevs/settings/usage",
-			"family": "settings-form",
-			"taught": [
-				"settingsSection",
-				"settingsMutedFill",
-				"dialog"
-			]
-		},
-		{
-			"id": "settings-import-export",
-			"url": "https://linear.app/easydevs/settings/import-export",
-			"family": "settings-form",
-			"taught": [
-				"settingsSection",
-				"settingsGhost"
-			]
-		},
-		{
-			"id": "settings-team-eas",
-			"url": "https://linear.app/easydevs/settings/teams/EAS",
-			"family": "settings-form",
-			"taught": [
-				"settingsPageTitle",
-				"panelHeaderTitle",
-				"settingsSection"
-			]
-		},
-		{
-			"id": "settings-team-general",
-			"url": "https://linear.app/easydevs/settings/teams/EAS/general",
-			"family": "settings-form",
-			"taught": [
-				"formWell",
-				"formRow",
-				"selectControl",
-				"settingsSection",
-				"settingsLede"
-			]
-		},
-		{
-			"id": "settings-team-workflow",
-			"url": "https://linear.app/easydevs/settings/teams/EAS/workflow",
-			"family": "settings-form",
-			"taught": [
-				"formWell",
-				"settingsSection",
-				"settingsLede"
-			]
-		},
-		{
-			"id": "settings-new-team",
-			"url": "https://linear.app/easydevs/settings/new-team",
-			"family": "settings-form",
-			"taught": [
-				"settingsPageTitle",
-				"formRow",
-				"panelHeaderTitle"
-			]
-		}
-	],
-	"tokens": {
-		"canvas": "--background",
-		"panel": "--card",
-		"well": "--secondary",
-		"navActive": "--sidebar-accent",
-		"hairline": "--border",
-		"ink": "--foreground",
-		"inkSecondary": "--ink-soft",
-		"inkTertiary": "--muted-foreground",
-		"inkMuted": "--ink-subtle"
-	},
-	"shell": {
-		"sidebar": {
-			"x": 0,
-			"y": 0,
-			"w": "--sidebar-width",
-			"h": 900,
-			"bg": "--background",
-			"borderAgainstCanvas": false
-		},
-		"main": {
-			"inset": "--panel-inset",
-			"gutterToSidebar": "--panel-inset",
-			"bg": "--card",
-			"radius": "--radius",
-			"border": "--border",
-			"shadow": "--panel-shadow"
-		},
-		"collapse": {
-			"mode": "slide-start",
-			"duration": "--sidebar-collapse-duration",
-			"ease": "--sidebar-collapse-ease",
-			"hideBelow": "--sidebar-hide-below"
-		},
-		"panelFold": {
-			"from": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077",
-			"duration": "--panel-fold-duration",
-			"ease": "--panel-fold-ease",
-			"properties": [
-				"height",
-				"opacity"
-			]
-		},
-		"footer": {
-			"h": "--shell-footer-height",
-			"bg": "--background",
-			"insideMain": false,
-			"border": false
-		}
-	},
-	"roles": {
-		"sidebarNavItem": {
-			"height": "--control-height-nav",
-			"radius": "--radius-sm",
-			"insetX": 12,
-			"label": {
-				"font": "--text-heading-sm",
-				"idle": "--ink-soft",
-				"active": "--foreground"
-			},
-			"activeBg": "--sidebar-accent",
-			"icon": 14,
-			"iconColor": "--muted-foreground",
-			"nestedStart": 19
-		},
-		"panelHeaderTitle": {
-			"font": "--text-heading-sm",
-			"color": "--ink-soft"
-		},
-		"ghostAction": {
-			"font": "--text-label-sm",
-			"color": "--ink-subtle",
-			"hitHeight": "--control-height-nav"
-		},
-		"syncActionState": {
-			"leftToRight": "--status-info",
-			"rightToLeft": "--status-highlight",
-			"delete": "--status-danger",
-			"skip": "--status-neutral",
-			"backgroundAlpha": 0.15,
-			"shape": "icon-sm ghost action"
-		},
-		"columnHeader": {
-			"font": "--text-body-sm",
-			"color": "--muted-foreground"
-		},
-		"issueRow": {
-			"pitch": 36,
-			"identifier": {
-				"font": "--text-body-base",
-				"color": "--muted-foreground"
-			},
-			"title": {
-				"font": "--text-heading-sm",
-				"color": "--foreground"
-			},
-			"hover": {
-				"fill": "--accent",
-				"radius": "--radius-sm",
-				"insetX": "--list-row-hover-inset",
-				"insetXPx": 8,
-				"insetY": 0
-			}
-		},
-		"groupHeader": {
-			"height": 36,
-			"radius": "--radius-sm",
-			"label": {
-				"font": "--text-heading-sm",
-				"color": "--ink-soft"
-			},
-			"fill": "--sidebar-accent",
-			"envelope": {
-				"gapStart": "--list-group-gap",
-				"gapEnd": "--list-group-gap",
-				"gapPx": 2,
-				"interRowGap": 0
-			}
-		},
-		"pillTab": {
-			"font": "--text-label-sm",
-			"selected": "--foreground",
-			"fill": "--tab-selected",
-			"idle": "--tab-idle",
-			"ink": "--muted-foreground",
-			"radius": "--radius-pill",
-			"height": 28
-		},
-		"heroIdentity": {
-			"font": "--text-title",
-			"color": "--foreground"
-		},
-		"propertyChip": {
-			"font": "--text-heading-sm",
-			"color": "--ink-soft",
-			"height": "--control-height-nav"
-		},
-		"settingsPageTitle": {
-			"font": "--text-title",
-			"weight": 500,
-			"color": "--foreground",
-			"y": 72.8
-		},
-		"settingsLede": {
-			"font": "--text-body-base",
-			"color": "--muted-foreground"
-		},
-		"settingsSection": {
-			"font": "--text-heading",
-			"color": "--foreground"
-		},
-		"contentNarrow": {
-			"width": "--content-narrow"
-		},
-		"formWell": {
-			"bg": "--secondary",
-			"radius": "--radius-md",
-			"pad": 16,
-			"titleToWell": 32,
-			"betweenGroups": 48
-		},
-		"formRow": {
-			"label": {
-				"font": "--text-heading-sm",
-				"color": "--foreground"
-			},
-			"control": {
-				"height": "--control-height",
-				"radius": "--radius-sm",
-				"border": "--input",
-				"width": 200,
-				"font": "--text-heading-sm",
-				"pad": "6px 12px"
-			}
-		},
-		"selectControl": {
-			"height": 30,
-			"heightToken": "--select-trigger-height",
-			"radius": "--radius-sm",
-			"bg": "--accent",
-			"color": "--accent-foreground",
-			"font": "--text-heading-sm",
-			"weight": 400,
-			"hasDefaultValue": true
-		},
-		"settingsPrimary": {
-			"height": "--control-height",
-			"radius": "--radius-pill",
-			"bg": "--primary",
-			"color": "--primary-foreground"
-		},
-		"settingsGhost": {
-			"height": "--control-height",
-			"radius": "--radius-pill",
-			"color": "--ink-soft"
-		},
-		"settingsMutedFill": {
-			"height": "--control-height",
-			"radius": "--radius-pill",
-			"bg": "--accent",
-			"color": "--ink-soft"
-		},
-		"destructiveGhost": {
-			"height": "--control-height",
-			"radius": "--radius-pill",
-			"color": "--destructive"
-		},
-		"backToApp": {
-			"height": "--control-height-nav",
-			"radius": "--radius-pill",
-			"font": "--text-heading-sm",
-			"color": "--muted-foreground"
-		},
-		"dialog": {
-			"cap": "--dialog-cap",
-			"inviteCap": "--dialog-invite-cap",
-			"close": "--control-height-nav"
-		},
-		"wellRowHairline": {
-			"height": "--hairline-width",
-			"insetX": "--well-row-inset",
-			"fill": "--foreground"
-		},
-		"skeleton": {
-			"fill": "--muted",
-			"radius": "--radius-md",
-			"keepChrome": true,
-			"slotsOnly": true,
-			"keepLastNumbers": true
-		},
-		"selectMenu": {
-			"fill": "--select-menu",
-			"border": "--select-menu-border",
-			"itemHighlight": "--select-item-highlight",
-			"highlightInsetInline": 4,
-			"highlightRadius": "--radius-sm",
-			"itemHeight": "--control-height",
-			"checkAfterLabel": true,
-			"alignSelectedToTrigger": true
-		}
-	}
+  "slug": "linear",
+  "measuredAt": "2026-09-14",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "scheme": "dark"
+  },
+  "live": "https://linear.app/easydevs/projects/all",
+  "pages": [
+    {
+      "id": "inbox",
+      "url": "https://linear.app/easydevs/inbox",
+      "taught": [
+        "shell"
+      ]
+    },
+    {
+      "id": "projects-all",
+      "url": "https://linear.app/easydevs/projects/all",
+      "taught": [
+        "shell",
+        "sidebarNavItem",
+        "ghostAction",
+        "columnHeader",
+        "pillTab"
+      ]
+    },
+    {
+      "id": "project-overview",
+      "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
+      "taught": [
+        "panelHeaderTitle",
+        "heroIdentity",
+        "subtitle",
+        "propertyChip",
+        "emptyUpdate"
+      ]
+    },
+    {
+      "id": "custom-view",
+      "url": "https://linear.app/easydevs/view/testview-74f235637401",
+      "taught": [
+        "issueRow",
+        "groupHeader",
+        "pillTab"
+      ]
+    },
+    {
+      "id": "members",
+      "url": "https://linear.app/easydevs/members",
+      "taught": [
+        "columnHeader",
+        "statusChip",
+        "shell.footer"
+      ]
+    },
+    {
+      "id": "team-overview",
+      "url": "https://linear.app/easydevs/team/EAS/overview",
+      "taught": [
+        "heroIdentity",
+        "sectionHeading",
+        "panelHeaderTitle"
+      ]
+    },
+    {
+      "id": "team-issues",
+      "url": "https://linear.app/easydevs/team/EAS/all",
+      "taught": [
+        "issueRow",
+        "groupHeader",
+        "pillTab",
+        "skeleton",
+        "syncActionState"
+      ]
+    },
+    {
+      "id": "issue-labels",
+      "url": "https://linear.app/easydevs/settings/issue-labels",
+      "taught": [
+        "syncActionState"
+      ]
+    },
+    {
+      "id": "project-statuses",
+      "url": "https://linear.app/easydevs/settings/project-statuses",
+      "taught": [
+        "syncActionState"
+      ]
+    },
+    {
+      "id": "views-issues",
+      "url": "https://linear.app/easydevs/views/issues",
+      "taught": [
+        "skeleton"
+      ]
+    },
+    {
+      "id": "team-active",
+      "url": "https://linear.app/easydevs/team/EAS/active",
+      "taught": [
+        "skeleton",
+        "issueRow",
+        "groupHeader"
+      ]
+    },
+    {
+      "id": "settings-integrations",
+      "url": "https://linear.app/easydevs/settings/integrations",
+      "family": "settings-form",
+      "taught": [
+        "settingsPageTitle",
+        "settingsLede",
+        "contentNarrow"
+      ]
+    },
+    {
+      "id": "settings-workspace",
+      "url": "https://linear.app/easydevs/settings/workspace",
+      "family": "settings-form",
+      "taught": [
+        "settingsPageTitle",
+        "formRow",
+        "settingsSection",
+        "destructiveGhost"
+      ]
+    },
+    {
+      "id": "settings-teams",
+      "url": "https://linear.app/easydevs/settings/teams",
+      "family": "settings-list",
+      "taught": [
+        "settingsPageTitle",
+        "settingsPrimary",
+        "columnHeader"
+      ]
+    },
+    {
+      "id": "settings-members",
+      "url": "https://linear.app/easydevs/settings/members",
+      "family": "settings-list",
+      "taught": [
+        "settingsPageTitle",
+        "settingsPrimary",
+        "columnHeader",
+        "statusChip",
+        "dialog"
+      ]
+    },
+    {
+      "id": "settings-security",
+      "url": "https://linear.app/easydevs/settings/security",
+      "family": "settings-form",
+      "taught": [
+        "settingsSection",
+        "settingsGhost",
+        "switch"
+      ]
+    },
+    {
+      "id": "settings-api",
+      "url": "https://linear.app/easydevs/settings/api",
+      "family": "settings-form",
+      "taught": [
+        "settingsSection",
+        "settingsGhost"
+      ]
+    },
+    {
+      "id": "settings-applications",
+      "url": "https://linear.app/easydevs/settings/applications",
+      "family": "settings-form",
+      "taught": [
+        "settingsPageTitle",
+        "settingsLede"
+      ]
+    },
+    {
+      "id": "settings-billing",
+      "url": "https://linear.app/easydevs/settings/billing",
+      "family": "settings-form",
+      "taught": [
+        "settingsPrimary",
+        "settingsGhost",
+        "settingsSection"
+      ]
+    },
+    {
+      "id": "settings-usage",
+      "url": "https://linear.app/easydevs/settings/usage",
+      "family": "settings-form",
+      "taught": [
+        "settingsSection",
+        "settingsMutedFill",
+        "dialog"
+      ]
+    },
+    {
+      "id": "settings-import-export",
+      "url": "https://linear.app/easydevs/settings/import-export",
+      "family": "settings-form",
+      "taught": [
+        "settingsSection",
+        "settingsGhost"
+      ]
+    },
+    {
+      "id": "settings-team-eas",
+      "url": "https://linear.app/easydevs/settings/teams/EAS",
+      "family": "settings-form",
+      "taught": [
+        "settingsPageTitle",
+        "panelHeaderTitle",
+        "settingsSection"
+      ]
+    },
+    {
+      "id": "settings-team-general",
+      "url": "https://linear.app/easydevs/settings/teams/EAS/general",
+      "family": "settings-form",
+      "taught": [
+        "formWell",
+        "formRow",
+        "selectControl",
+        "settingsSection",
+        "settingsLede"
+      ]
+    },
+    {
+      "id": "settings-team-workflow",
+      "url": "https://linear.app/easydevs/settings/teams/EAS/workflow",
+      "family": "settings-form",
+      "taught": [
+        "formWell",
+        "settingsSection",
+        "settingsLede"
+      ]
+    },
+    {
+      "id": "settings-new-team",
+      "url": "https://linear.app/easydevs/settings/new-team",
+      "family": "settings-form",
+      "taught": [
+        "settingsPageTitle",
+        "formRow",
+        "panelHeaderTitle"
+      ]
+    },
+    {
+      "id": "team-all-board",
+      "url": "https://linear.app/easydevs/team/EAS/all (Board layout, Display options > Board)",
+      "taught": [
+        "boardColumn",
+        "boardCard",
+        "hiddenColumns",
+        "displayOptions.board"
+      ]
+    }
+  ],
+  "tokens": {
+    "canvas": "--background",
+    "panel": "--card",
+    "well": "--secondary",
+    "navActive": "--sidebar-accent",
+    "hairline": "--border",
+    "ink": "--foreground",
+    "inkSecondary": "--ink-soft",
+    "inkTertiary": "--muted-foreground",
+    "inkMuted": "--ink-subtle",
+    "boardBand": "--board-band",
+    "boardCard": "--board-card",
+    "boardChipBorder": "--board-chip-border",
+    "boardAdd": "--board-add"
+  },
+  "shell": {
+    "sidebar": {
+      "x": 0,
+      "y": 0,
+      "w": "--sidebar-width",
+      "h": 900,
+      "bg": "--background",
+      "borderAgainstCanvas": false
+    },
+    "main": {
+      "inset": "--panel-inset",
+      "gutterToSidebar": "none (pane flush with the rail in all three desktop captures)",
+      "bg": "--card",
+      "radius": "--radius",
+      "border": "--border",
+      "shadow": "--panel-shadow"
+    },
+    "collapse": {
+      "mode": "slide-start",
+      "duration": "--sidebar-collapse-duration",
+      "ease": "--sidebar-collapse-ease",
+      "hideBelow": "--sidebar-hide-below"
+    },
+    "panelFold": {
+      "from": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077",
+      "duration": "--panel-fold-duration",
+      "ease": "--panel-fold-ease",
+      "properties": [
+        "height",
+        "opacity"
+      ]
+    },
+    "footer": {
+      "h": "--shell-footer-height",
+      "bg": "--background",
+      "insideMain": false,
+      "border": false
+    }
+  },
+  "roles": {
+    "sidebarNavItem": {
+      "height": "--control-height-nav",
+      "radius": "--radius-sm",
+      "insetX": 12,
+      "label": {
+        "font": "--text-heading-sm",
+        "idle": "--ink-soft",
+        "active": "--foreground"
+      },
+      "activeBg": "--sidebar-accent",
+      "icon": 14,
+      "iconColor": "--muted-foreground",
+      "nestedStart": 19
+    },
+    "panelHeaderTitle": {
+      "font": "--text-heading-sm",
+      "color": "--ink-soft"
+    },
+    "ghostAction": {
+      "font": "--text-label-sm",
+      "color": "--ink-subtle",
+      "hitHeight": "--control-height-nav"
+    },
+    "syncActionState": {
+      "leftToRight": "--status-info",
+      "rightToLeft": "--status-highlight",
+      "delete": "--status-danger",
+      "skip": "--status-neutral",
+      "backgroundAlpha": 0.15,
+      "shape": "icon-sm ghost action"
+    },
+    "columnHeader": {
+      "font": "--text-body-sm",
+      "color": "--muted-foreground"
+    },
+    "issueRow": {
+      "pitch": 44,
+      "identifier": {
+        "font": "--text-body-base",
+        "color": "--muted-foreground"
+      },
+      "title": {
+        "font": "--text-heading-sm",
+        "color": "--foreground"
+      },
+      "hover": {
+        "fill": "mark rgb(26, 26, 27)",
+        "radius": "--radius-sm",
+        "insetX": "--list-row-hover-inset",
+        "insetXPx": 8,
+        "insetY": 0,
+        "note": "team-all capture: hover/selected band rgb(26,26,27), not --accent rgb(35,35,37)"
+      },
+      "pitchPx": 44,
+      "grid": "8px 18px 16px 42px 16px minmax(0,1fr) 16px 60px 18px",
+      "gap": 8,
+      "measuredFrom": "ref/linear.app/desktop/team-all.png (rows 44px pitch, band inset 8px)",
+      "glyph": {
+        "progress": "ring + centre bar rgb(240, 191, 0)",
+        "done": "filled disc rgb(94, 106, 210) + --card check",
+        "canceled": "filled disc --status-neutral + --card x",
+        "todo": "ring rgb(220, 220, 220)"
+      },
+      "priorityCell": {
+        "measuredFrom": "live DOM, https://linear.app/easydevs/team/EAS/all list row (CDP 9201, 2026-09-14)",
+        "grid": "the 16px [priority] column of the row grid; the trigger is a 16x36 box with no disc and no hover fill",
+        "glyph": "16x16 at the column centre (column 16px, row 44px)",
+        "glyphInk": "priorityMark.cell.ink at rest -> priorityMark.cell.hoverInk while the row is hovered (the live svg keeps its muted fill attribute, so the paint is a CSS override, not a per-priority swatch)",
+        "noPriorityGlyph": "live carries an aria-label of \"No Priority\" and three 3x1.5 r0.5 dashes; the draft draws the lucide ellipsis icon instead",
+        "menu": "opens left-aligned to the cell (287 vs the cell's 286.8px left edge), top 4.4px under the cell's bottom = the row's bottom edge; see priorityMenu"
+      }
+    },
+    "groupHeader": {
+      "height": 36,
+      "radius": "--radius-sm",
+      "label": {
+        "font": "--text-heading-sm",
+        "color": "--ink-soft"
+      },
+      "fill": "mark rgb(28, 28, 27)",
+      "envelope": {
+        "gapStart": "--list-group-gap",
+        "gapEnd": "--list-group-gap",
+        "gapPx": 2,
+        "interRowGap": 0
+      },
+      "heightPx": 36,
+      "fillNote": "capture band rgb(28,28,27); --sidebar-accent rgb(34,35,37) is the rail item",
+      "chevron": "28px hit target at band+4, ink color-mix(--muted-foreground 28%)",
+      "plus": "24px hit target at the band end, 8px padding-right"
+    },
+    "pillTab": {
+      "font": "--text-label-sm",
+      "selected": "--foreground",
+      "fill": "--tab-selected",
+      "idle": "--tab-idle",
+      "ink": "--muted-foreground",
+      "radius": "--radius-pill",
+      "height": 28
+    },
+    "heroIdentity": {
+      "font": "--text-title",
+      "color": "--foreground"
+    },
+    "propertyChip": {
+      "font": "--text-heading-sm",
+      "color": "--ink-soft",
+      "height": "--control-height-nav"
+    },
+    "settingsPageTitle": {
+      "font": "--text-title",
+      "weight": 500,
+      "color": "--foreground",
+      "y": 72.8
+    },
+    "settingsLede": {
+      "font": "--text-body-base",
+      "color": "--muted-foreground"
+    },
+    "settingsSection": {
+      "font": "--text-heading",
+      "color": "--foreground"
+    },
+    "contentNarrow": {
+      "width": "--content-narrow"
+    },
+    "formWell": {
+      "bg": "--secondary",
+      "radius": "--radius-md",
+      "pad": 16,
+      "titleToWell": 32,
+      "betweenGroups": 48
+    },
+    "formRow": {
+      "label": {
+        "font": "--text-heading-sm",
+        "color": "--foreground"
+      },
+      "control": {
+        "height": "--control-height",
+        "radius": "--radius-sm",
+        "border": "--input",
+        "width": 200,
+        "font": "--text-heading-sm",
+        "pad": "6px 12px"
+      }
+    },
+    "selectControl": {
+      "height": 30,
+      "heightToken": "--select-trigger-height",
+      "radius": "--radius-sm",
+      "bg": "--accent",
+      "color": "--accent-foreground",
+      "font": "--text-heading-sm",
+      "weight": 400,
+      "hasDefaultValue": true
+    },
+    "settingsPrimary": {
+      "height": "--control-height",
+      "radius": "--radius-pill",
+      "bg": "--primary",
+      "color": "--primary-foreground"
+    },
+    "settingsGhost": {
+      "height": "--control-height",
+      "radius": "--radius-pill",
+      "color": "--ink-soft"
+    },
+    "settingsMutedFill": {
+      "height": "--control-height",
+      "radius": "--radius-pill",
+      "bg": "--accent",
+      "color": "--ink-soft"
+    },
+    "destructiveGhost": {
+      "height": "--control-height",
+      "radius": "--radius-pill",
+      "color": "--destructive"
+    },
+    "backToApp": {
+      "height": "--control-height-nav",
+      "radius": "--radius-pill",
+      "font": "--text-heading-sm",
+      "color": "--muted-foreground"
+    },
+    "dialog": {
+      "cap": "--dialog-cap",
+      "inviteCap": "--dialog-invite-cap",
+      "close": "--control-height-nav"
+    },
+    "wellRowHairline": {
+      "height": "--hairline-width",
+      "insetX": "--well-row-inset",
+      "fill": "--foreground"
+    },
+    "skeleton": {
+      "fill": "--muted",
+      "radius": "--radius-md",
+      "keepChrome": true,
+      "slotsOnly": true,
+      "keepLastNumbers": true
+    },
+    "selectMenu": {
+      "fill": "--select-menu",
+      "border": "--select-menu-border",
+      "itemHighlight": "--select-item-highlight",
+      "highlightInsetInline": 4,
+      "highlightRadius": "--radius-sm",
+      "itemHeight": "--control-height",
+      "checkAfterLabel": true,
+      "alignSelectedToTrigger": true
+    },
+    "displayOptions": {
+      "source": "live linear.app/easydevs/team/EAS/all toolbar > Display options",
+      "surface": "menuMark.bg rgb(33, 33, 34), 0.8px border, 12px radius, menu shadow",
+      "width": 302,
+      "rowHeight": 32,
+      "sectionPadX": 16,
+      "sectionPadY": 8,
+      "valueChip": "100x24, radius 8, rgb(44, 44, 45), text rgb(200, 201, 203), caret 18px inset",
+      "segment": "32px track, 28px pill, on rgb(57, 58, 60) / off rgb(44, 44, 45)",
+      "toggle": "24x14, on --primary / off rgb(114, 115, 116), 10px white knob",
+      "propertyChip": "24px pill, on rgb(61, 62, 64) / off rgb(44, 44, 45), 5px gaps",
+      "sectionLabels": [
+        "List options: rgb(200, 201, 203)",
+        "Display properties: --muted-foreground"
+      ],
+      "anchor": "top 100% + 4px under the trigger, right-aligned to it"
+    },
+    "issuePanel": {
+      "source": "live linear.app/easydevs/issue/EAS-5/test right rail",
+      "width": 376,
+      "rowHeight": 28,
+      "rowGap": 4,
+      "sectionGap": 20,
+      "sections": [
+        "Properties (Status/Priority/Assignee rows)",
+        "Labels (chips + add)",
+        "Project (Add to project)"
+      ],
+      "row": "radius --radius-pill, padding 0 10px 0 6px, 13px/500 --ink-soft, icon 14-16px at +6, text at +28",
+      "labelChip": "25px pill, --inspector-border hairline, 9px dot, 13px/500 --ink-soft",
+      "dock": "inside the list container as an <aside> sibling of the scroll area (team-all capture path)"
+    },
+    "boardColumn": {
+      "width": 348,
+      "rowPad": 4,
+      "headerHeight": 50,
+      "band": {
+        "inset": 4,
+        "radius": "5px 5px 0 0",
+        "fill": "--board-band",
+        "shape": "one 340px-wide element from the header row +4px down the whole column: rgb(15,15,15) at the top fading to transparent at the column bottom (748px)"
+      },
+      "headerRow": "318x50; icon 14px; 10px to the label, 8px to the count; ellipsis + plus are 24px targets with a 2px gap",
+      "label": "--text-heading-sm / 500 / --ink-soft",
+      "count": "--text-heading-sm / 450 / --muted-foreground",
+      "body": "694px, padding 1px 0 0 12px, scrollbar-gutter: stable (15px card gutter)",
+      "measuredFrom": "ref/linear.app/desktop/team-all-board.png + live DOM (2026-09-14)"
+    },
+    "boardCard": {
+      "width": 319,
+      "height": 117,
+      "pitch": 125,
+      "radius": 8,
+      "fill": "--board-card",
+      "ring": "0 0 0 1px --board-card-ring (live: lch(100 0 0 / 0.048) 0 0 0 1px)",
+      "pad": 8,
+      "rows": "id 15.2 + 6 + title 16 (37.2) | 10 | chips 24 | 6 | created 24",
+      "chips": "24px pills, --radius-pill, --board-chip-border hairline, 6px icon-label gap, 4px between chips",
+      "glyphs": "priority 16px (No priority = 3 dashes; High = 3 ascending bars), project cube --status-neutral, label dot 9px, sub-issue ring 16px rgb(43,44,46) + rgb(94,106,210), unassigned avatar 18px --board-avatar-ink",
+      "measuredFrom": "ref/linear.app/desktop/team-all-board.png + live DOM (2026-09-14)"
+    },
+    "hiddenColumns": {
+      "where": "trailing 350px region inside the board scroller (only visible when scrolled right)",
+      "width": 350,
+      "pad": "0 12px 0 0",
+      "content": "▾ Hidden columns header (50px) + collapsed column tabs (38px, fill --list-row-fill)",
+      "note": "widens the board scroll range to 2098px, which the capture scrollbar reflects"
+    },
+    "filterMenu": {
+      "measuredFrom": "ref/linear.app/popovers/filter-options.png + live DOM (2026-09-14)",
+      "box": "261.6x707 at (1168, 92); right edge on the panel edge = 77px right of the Add filter disc",
+      "rows": "37px input row (padding 0 12px 0 14px, input 202x36, \"F\" chip 18x18.8 r4 + 0.8px rgb(41,42,45)), then a 6px-inset list: 19 items of 32px (padding 0 18px 0 14px, icon 16x16, label 13px) + 4 separators of 12px",
+      "inks": "hover pill 248x32 r8 rgb(49,50,52); submenu marker 6px \"▶\" rgb(98,99,101); icons paint rgb(156,157,159)"
+    },
+    "popoverMotion": {
+      "measuredFrom": "live popover frames, CDP 9201 (2026-09-14); 3 runs per direction at 60Hz",
+      "surface": "linear.app animates an inline surface div (opacity: 2; transform: scale(1); transform-origin: 100% 0px at rest) for the Display options popover; the Add filter menu runs the same spring on the popper container instead (its transform-origin is 129.2px -3.9px = centre-x, trigger bottom edge)",
+      "enter": "58ms; φ samples [ms, φ]: 13→0.1377, 24.5→0.3149, 40.5→0.432, 58→1; opacity = 2φ, scale = 0.98 + 0.02φ. Menu container frames: 0.1971/0.983943 · 0.2919/0.985839 · 0.4418/0.988835 · 0.5/0.992031 (\"op/scale\")",
+      "exit": "207ms; scale = 1 − 0.02ψ with ψ: 15→0.1814, 32→0.42, 49→1 (holds); opacity decays 1 → 0.764@49 → 0.4913@66 → 0.3132@83 → 0.199@99 → 0.1262@116 → 0.08@133 → 0.0507@149 → 0.0321@166 → 0.0204@183 → 0.0129@199, unmounted at ~207ms (the filter menu reuses the same measured exit)",
+      "submenusDoNotAnimate": "measured across all 16 filter submenus: from the first frame after hover the surface is opacity 1 / transform none (no enter animation)"
+    },
+    "filterSubmenu": {
+      "measuredFrom": "live DOM + crops, CDP 9201 (2026-09-14); all 16 submenus captured",
+      "placement": "opens left; the submenu's right edge sits 2.2px inside the menu's left edge (1171 vs 1168.8); top offsets are per submenu (row top −44 for the six wide ones, −7 for the rest)",
+      "box": "border-box sizes measured per submenu: 229.6 wide for the six with a search row (Status/Assignee/Agent/Agent Session/Creator/Priority), 174.6–216.6 for the compact ones; heights 42–270",
+      "rows": "37px \"Filter…\" search row when the list is long; 32px option rows with a 16x14 select box at 14px in (border 0.8px rgb(133,134,137), radius 3px) and the label at 60px; navigation rows (Dates/Relations/Project properties) drop the box and put the label at 38px; 12px item counts at 12px in rgb(98,99,101); hover pill 216x32 r8 inset 6px",
+      "inks": "label rgb(229,230,232); counts/arrow rgb(98,99,101); select box rgb(133,134,137); avatar chip 16px with 9px white initials on var(--board-avatar-user)"
+    },
+    "priorityMenu": {
+      "measuredFrom": "live https://linear.app/easydevs/team/EAS/all list row priority cell (CDP 9201, 2026-09-14; crop ref/linear.app/popovers/priority-list.png)",
+      "trigger": "the row's 16px priority cell (see issueRow.priorityCell)",
+      "box": "261.6x211 at (287, 178) = 0.8px border + 260 content + 0.8px border; the shared draft surface is 260 border-box (1.6px narrower)",
+      "surface": "menuMark.bg, 12px radius, 0.8px menuMark.border hairline, menuMark.shadow, z 600",
+      "searchRow": "36.8px, padding 0 12px 0 14px, input 202x36 padding 10px 0 9px placeholder \"Change priority to…\", \"P\" chip 18x18.8 r4 padding 2px border 0.8px menuMark.sep font 400 12px/13.2px",
+      "rows": "6px-inset list of 5 rows of 32px (padding 0 18px 0 14px): icon 16x16 at 14px in, label at 38px 13px/450, trailing 16x16 check before the 12px/500 kbd at 18px in",
+      "inks": "label menuMark.text; option icons menuMark.kbd and white when the row is hovered/highlighted/selected (the check follows it); hover/selected pill 248x32 r8 menuMark.hover; kbd menuMark.kbd; the Urgent fill attribute is overridden by the row ink (measurement in chrome.ts priorityMark)",
+      "labels": [
+        "No priority 0",
+        "Urgent 1",
+        "High 2",
+        "Medium 3",
+        "Low 4"
+      ],
+      "motion": "same inline-surface spring as popoverMotion (transform-origin = cell left edge / cell bottom), resting inline opacity: 2"
+    }
+  }
 }

@@ -1,0 +1,161 @@
+<script lang="ts">
+	import ChevronRight from "@lucide/svelte/icons/chevron-right";
+	import { boardMark } from "./chrome.ts";
+	import type { BoardCard } from "./data.ts";
+	import StatusGlyph from "./status-glyph.svelte";
+
+	/** Measured board card: id row (+ parent breadcrumb) with the assignee avatar, title row,
+	 *  chip row (priority / project / labels / sub-issue progress) and the Created footer. */
+	let { card }: { card: BoardCard } = $props();
+
+	const idStyle = `font-size: var(--text-body-sm); line-height: normal; font-weight: 450; color: var(--muted-foreground)`;
+	const metaStyle = `font-size: var(--text-body-sm); line-height: normal; font-weight: 450; color: var(--muted-foreground)`;
+	const chipStyle = `display: flex; align-items: center; gap: 6px; height: ${boardMark.chipHeight}px; border-radius: var(--radius-pill); background: ${boardMark.cardFill}; border: ${boardMark.chipBorder}; font-size: var(--text-body-sm); line-height: normal; font-weight: 450; color: var(--muted-foreground)`;
+</script>
+
+<div
+	class="board-card"
+	data-role="board-card"
+	style="border-radius: {boardMark.cardRadius}px; background: {boardMark.cardFill}; box-shadow: {boardMark
+		.cardRing}; padding: {boardMark.cardPad}px"
+>
+	<!-- id row (15px) + 6px + title row (16px) = the measured 37px title block -->
+	<div class="flex items-start" style="height: {boardMark.titleRowHeight}px">
+		<div class="min-w-0 flex-1">
+			<div class="flex items-center gap-1" style="line-height: normal">
+				<span style={idStyle}>{card.id}</span>
+				{#if card.parent}
+					<ChevronRight class="size-3 shrink-0 text-muted-foreground" strokeWidth={2} />
+					<span class="truncate" style={idStyle}>{card.parent}</span>
+				{/if}
+			</div>
+			<div class="flex items-center" style="height: 16px; margin-top: {boardMark.titleGap}px">
+				<span class="shrink-0" style="display: block; width: {boardMark.chipIcon}px; height: {boardMark
+					.chipIcon}px"
+				>
+					<StatusGlyph tone={card.tone} />
+				</span>
+				<span
+					class="truncate font-medium"
+					style="margin-left: 6px; font-size: var(--text-heading-sm); line-height: 16px">{card.title}</span
+				>
+			</div>
+		</div>
+		{#if card.avatar}
+			<span
+				class="grid shrink-0 place-items-center font-medium"
+				style="width: {boardMark.avatar}px; height: {boardMark.avatar}px; border-radius: var(--radius-pill); background: {card
+					.avatar.color}; color: var(--primary-foreground); font-size: 9px"
+				aria-label={card.avatar.initials}>{card.avatar.initials}</span
+			>
+		{:else}
+			<svg
+				class="shrink-0"
+				viewBox="0 0 16 16"
+				width={boardMark.avatar}
+				height={boardMark.avatar}
+				fill="var(--board-avatar-ink)"
+				aria-label="Unassigned"
+			>
+				<!-- Linear's unassigned-avatar glyph, copied from the live app -->
+				<path fill-rule="evenodd" clip-rule="evenodd" d="M10.25 6.75C10.25 7.99264 9.24264 9 8 9C6.75736 9 5.75 7.99264 5.75 6.75C5.75 5.50736 6.75736 4.5 8 4.5C9.24264 4.5 10.25 5.50736 10.25 6.75Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M8.5752 10C9.97242 10 11.2611 10.6106 12.1436 11.6143C12.1563 11.5997 12.17 11.586 12.1826 11.5713C12.4518 11.2567 12.9255 11.2202 13.2402 11.4893C13.5548 11.7585 13.5913 12.2321 13.3223 12.5469C13.0953 12.8123 12.8478 13.0593 12.584 13.2881C12.5484 13.3246 12.5106 13.3593 12.4668 13.3887C11.3913 14.2811 10.0437 14.8571 8.56738 14.9756C8.56118 14.9762 8.55508 14.978 8.54883 14.9785C8.51409 14.9812 8.4792 14.9822 8.44434 14.9844C8.38882 14.9879 8.3332 14.991 8.27734 14.9932C8.18529 14.9968 8.09287 15 8 15C7.90681 15 7.81406 14.9968 7.72168 14.9932C7.66583 14.991 7.6102 14.9879 7.55469 14.9844C7.52015 14.9822 7.48558 14.9812 7.45117 14.9785C7.44459 14.978 7.43816 14.9763 7.43164 14.9756C5.94988 14.8564 4.59683 14.2772 3.51953 13.3789C3.50616 13.3677 3.49384 13.3556 3.48145 13.3438C3.47213 13.3365 3.46218 13.33 3.45312 13.3223C3.17492 13.0844 2.91561 12.8251 2.67773 12.5469C2.40865 12.2321 2.44515 11.7585 2.75977 11.4893C3.07452 11.2202 3.54818 11.2567 3.81738 11.5713C3.83028 11.5864 3.84339 11.6013 3.85645 11.6162C4.73898 10.612 6.02721 10.0001 7.4248 10H8.5752ZM7.4248 11.5C6.47086 11.5001 5.59107 11.9168 4.9873 12.6016C5.85267 13.1696 6.88689 13.5 8 13.5C9.11327 13.5 10.1472 13.1687 11.0127 12.6006C10.4088 11.9164 9.52878 11.5 8.5752 11.5H7.4248Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M1.82715 6.76172C2.24007 6.79385 2.54868 7.15444 2.5166 7.56738C2.50553 7.70999 2.5 7.85427 2.5 8C2.5 8.14573 2.50553 8.29001 2.5166 8.43262C2.54868 8.84556 2.24007 9.20615 1.82715 9.23828C1.41418 9.27036 1.05357 8.9618 1.02148 8.54883C1.00741 8.36759 1 8.18457 1 8C1 7.81543 1.00741 7.63241 1.02148 7.45117C1.05357 7.0382 1.41418 6.72964 1.82715 6.76172Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M14.1729 6.76172C14.5858 6.72964 14.9464 7.0382 14.9785 7.45117C14.9926 7.63241 15 7.81543 15 8C15 8.18457 14.9926 8.36759 14.9785 8.54883C14.9464 8.9618 14.5858 9.27036 14.1729 9.23828C13.7599 9.20615 13.4513 8.84556 13.4834 8.43262C13.4945 8.29001 13.5 8.14573 13.5 8C13.5 7.85427 13.4945 7.70999 13.4834 7.56738C13.4513 7.15444 13.7599 6.79385 14.1729 6.76172Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M3.45312 2.67773C3.76789 2.40865 4.24155 2.44515 4.51074 2.75977C4.77982 3.07452 4.74329 3.54818 4.42871 3.81738C4.20954 4.00475 4.00475 4.20954 3.81738 4.42871C3.54818 4.74329 3.07452 4.77982 2.75977 4.51074C2.44515 4.24155 2.40865 3.76789 2.67773 3.45312C2.91561 3.17492 3.17492 2.91561 3.45312 2.67773Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M11.4893 2.75977C11.7585 2.44515 12.2321 2.40865 12.5469 2.67773C12.8251 2.91561 13.0844 3.17492 13.3223 3.45312C13.5913 3.76789 13.5548 4.24155 13.2402 4.51074C12.9255 4.77982 12.4518 4.74329 12.1826 4.42871C11.9953 4.20954 11.7905 4.00475 11.5713 3.81738C11.2567 3.54818 11.2202 3.07452 11.4893 2.75977Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M8 1C8.18457 1 8.36759 1.00741 8.54883 1.02148C8.9618 1.05357 9.27036 1.41418 9.23828 1.82715C9.20615 2.24007 8.84556 2.54868 8.43262 2.5166C8.29001 2.50553 8.14573 2.5 8 2.5C7.85427 2.5 7.70999 2.50553 7.56738 2.5166C7.15444 2.54868 6.79385 2.24007 6.76172 1.82715C6.72964 1.41418 7.0382 1.05357 7.45117 1.02148C7.63241 1.00741 7.81543 1 8 1Z"></path>
+			</svg>
+		{/if}
+	</div>
+
+	<div class="flex items-center" style="height: {boardMark.chipHeight}px; gap: {boardMark.chipsGap}px; margin: {boardMark
+		.chipsTop}px 0 {boardMark.chipsBottom}px">
+		<span class="shrink-0" style="{chipStyle}; padding: {boardMark.chipPadIcon}">
+			<svg
+				viewBox="0 0 16 16"
+				width={boardMark.priorityIcon}
+				height={boardMark.priorityIcon}
+				fill="var(--muted-foreground)"
+				aria-label={card.priority === "high" ? "High Priority" : "No Priority"}
+			>
+				{#if card.priority === "high"}
+					<rect x="1.5" y="8" width="3" height="6" rx="1" />
+					<rect x="6.5" y="5" width="3" height="9" rx="1" />
+					<rect x="11.5" y="2" width="3" height="12" rx="1" />
+				{:else}
+					<rect x="1.5" y="7.25" width="3" height="1.5" rx="0.5" opacity="0.9" />
+					<rect x="6.5" y="7.25" width="3" height="1.5" rx="0.5" opacity="0.9" />
+					<rect x="11.5" y="7.25" width="3" height="1.5" rx="0.5" opacity="0.9" />
+				{/if}
+			</svg>
+		</span>
+
+		{#if card.project}
+			<span class="shrink-0" style="{chipStyle}; padding: {boardMark.chipPadLabel}">
+				<svg
+					viewBox="0 0 16 16"
+					width={boardMark.chipIcon}
+					height={boardMark.chipIcon}
+					fill="var(--status-neutral)"
+					aria-label="Project"
+				>
+					<!-- Linear's #Project symbol, copied from the live app -->
+					<path
+						fill-rule="evenodd"
+						clip-rule="evenodd"
+						d="M7.331 1.07a3.2 3.2 0 0 1 1.338 0c.498.106.967.377 1.904.917l1.354.78c.937.541 1.406.812 1.747 1.19.301.334.53.728.669 1.156.157.484.157 1.025.157 2.107v1.56l-.003.718c-.007.63-.036 1.026-.154 1.389l-.057.158a3.2 3.2 0 0 1-.612.998l-.135.138c-.33.312-.792.578-1.612 1.051l-1.354.78-.623.357c-.55.309-.907.481-1.281.56l-.166.032a3.2 3.2 0 0 1-1.006 0l-.166-.031c-.374-.08-.73-.252-1.281-.561l-.623-.356-1.354-.78c-.82-.474-1.281-.74-1.612-1.052l-.135-.138a3.2 3.2 0 0 1-.612-.998l-.057-.158c-.118-.363-.147-.758-.154-1.39L1.5 8.78V7.22c0-.946 0-1.479.105-1.921l.052-.186c.122-.374.312-.723.56-1.028l.11-.128c.255-.284.583-.507 1.126-.83l.62-.36 1.354-.78c.82-.473 1.281-.739 1.718-.869zM3 7.22v1.56c0 1.183.018 1.439.084 1.643l.064.167q.11.246.292.449l.059.06c.151.143.427.318 1.323.835l1.354.78.632.36c.188.104.33.178.442.233V8.482l-4.247-1.93zm5.75 1.262v4.826c.212-.106.533-.282 1.074-.594l1.354-.78.628-.368c.499-.297.646-.407.754-.527l.113-.14q.158-.218.243-.476l.022-.081c.035-.144.051-.351.058-.835L13 8.78V7.22l-.004-.668zM7.82 2.51l-.177.027c-.159.034-.328.106-.835.39l-.632.359-1.354.78c-.896.517-1.172.692-1.323.834l-.059.06q-.046.051-.086.104l4.645 2.112 4.645-2.112-.084-.103c-.109-.12-.255-.23-.754-.528l-.628-.367-1.354-.78c-.897-.517-1.186-.668-1.386-.728l-.08-.021a1.7 1.7 0 0 0-.538-.027"
+					/>
+				</svg>
+				{card.project}
+			</span>
+		{/if}
+
+		{#each card.labels ?? [] as label (label.name)}
+			<span class="shrink-0" style="{chipStyle}; padding: {boardMark.chipPadLabel}">
+				<span
+					class="grid shrink-0 place-items-center"
+					style="width: {boardMark.chipIcon}px; height: {boardMark.chipIcon}px"
+				>
+					<span
+						style="width: {boardMark.labelDot}px; height: {boardMark.labelDot}px; border-radius: var(--radius-pill); background: {label
+							.color}"
+					></span>
+				</span>
+				{label.name}
+			</span>
+		{/each}
+
+		{#if card.progress}
+			<span class="shrink-0" style="{chipStyle}; padding: {boardMark.chipPadLabel}">
+				<svg
+					viewBox="0 0 16 16"
+					width={boardMark.priorityIcon}
+					height={boardMark.priorityIcon}
+					aria-hidden="true"
+				>
+					<circle
+						cx="8"
+						cy="8"
+						r="7"
+						fill="none"
+						stroke-width="2"
+						stroke={boardMark.progressRingTrack}
+						stroke-dasharray="43.98"
+						transform="rotate(-47.35 8 8)"
+					/>
+					<circle
+						cx="8"
+						cy="8"
+						r="7"
+						fill="none"
+						stroke-width="2"
+						stroke={boardMark.statusInk.done}
+						stroke-dasharray="43.98"
+						stroke-dashoffset="43.5"
+						transform="rotate(-76 8 8)"
+					/>
+				</svg>
+				{card.progress}
+			</span>
+		{/if}
+	</div>
+
+	<div class="flex items-center" style="height: {boardMark.chipHeight}px">
+		<span style={metaStyle}>Created {card.date}</span>
+	</div>
+</div>

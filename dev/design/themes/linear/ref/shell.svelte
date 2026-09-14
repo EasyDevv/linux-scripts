@@ -68,7 +68,7 @@
 				{@render header?.()}
 			</AppHeader>
 			{#if tools}
-				<div class="flex h-9 shrink-0 items-center gap-1 px-3" data-role="toolbar">
+				<div class="flex shrink-0 items-center gap-1 px-2" style="height: 43px" data-role="toolbar">
 					{@render tools()}
 				</div>
 			{/if}

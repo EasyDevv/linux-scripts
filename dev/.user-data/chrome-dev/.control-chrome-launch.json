@@ -1,0 +1,10 @@
+{
+  "port": 9222,
+  "requestedPort": 9222,
+  "binary": "(existing browser)",
+  "url": "http://dashboard.localhost/design/draft?file=surfaces%2F05-prompt%2Fpage.svelte&project=novel-writer&style=linear&scheme=dark&t=bands1",
+  "userDataDir": "/home/easydev/.local/share/scripts/dev/.user-data/chrome-dev",
+  "command": "attach-existing-browser",
+  "launchedAt": "2026-09-12T11:06:32.302Z",
+  "source": "attached"
+}

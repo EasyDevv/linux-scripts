@@ -12,9 +12,9 @@
 </script>
 
 <header
-	class="flex h-11 shrink-0 items-center gap-2 px-3"
+	class="flex h-11 shrink-0 items-center gap-2"
 	data-role="app-header"
-	style={headerRule}
+	style="{headerRule}; padding-inline: 18px"
 >
 	{#if title}
 		<h1 class="min-w-0 truncate font-medium text-[color:var(--ink-soft)]" style={titleStyle}>

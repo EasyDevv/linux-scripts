@@ -6,6 +6,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* The live app renders text with grayscale AA (computed: -webkit-font-smoothing: antialiased;
+   text-rendering: optimizeLegibility), which keeps glyph weights/edges matching the captures. */
+body {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+
 :root {
 	color-scheme: light;
 
@@ -102,6 +111,16 @@
 	--well-row-inset: 16px;
 	--list-row-hover-inset: 8px;
 	--list-group-gap: 2px;
+	--list-group-fill: rgb(226, 226, 226);
+	--list-row-fill: rgb(239, 239, 240);
+	--board-band: rgb(226, 226, 226);
+	--board-card: rgb(255, 255, 255);
+	--board-card-ring: rgb(35 37 42 / 8%);
+	--board-chip-border: rgb(226, 226, 226);
+	--board-add: rgb(255 255 255 / 70%);
+	--board-add-border: rgb(214, 215, 217);
+	--board-avatar-ink: rgb(176, 181, 192);
+	--board-avatar-user: rgb(0, 103, 192);
 	--panel-shadow: 0 0.5px 1px 1px rgb(0 0 0 / 0.3);
 	--ink-soft: rgb(35, 37, 42);
 	--ink-subtle: rgb(107, 111, 118);
@@ -156,6 +175,18 @@
 	--select-item-highlight: rgb(60, 61, 64);
 	--select-menu-border: rgb(63, 64, 68);
 	--tab-idle: rgb(27, 28, 29);
+	/* measured from the team-all capture: the list band/hover fills are darker than --sidebar-accent */
+	--list-group-fill: rgb(28, 28, 27);
+	--list-row-fill: rgb(26, 26, 27);
+	/* measured from the live board view (ref/linear.app/desktop/team-board.png, 2026-09-14) */
+	--board-band: rgb(15, 15, 15);
+	--board-card: rgb(26, 26, 27);
+	--board-card-ring: rgb(255 255 255 / 4.8%);
+	--board-chip-border: rgb(47, 48, 51);
+	--board-add: rgb(26 26 28 / 50%);
+	--board-add-border: rgb(34, 35, 37);
+	--board-avatar-ink: rgb(92, 93, 95);
+	--board-avatar-user: rgb(0, 103, 192);
 	--tab-selected: rgb(41, 41, 43);
 	--inspector: rgb(25, 26, 27);
 	--inspector-border: rgb(33, 35, 37);
@@ -213,6 +244,11 @@
 	--shadow-lg: var(--shadow-lg);
 	--shadow-xl: var(--shadow-xl);
 	--shadow-2xl: var(--shadow-2xl);
+
+	--color-board-band: var(--board-band);
+	--color-board-card: var(--board-card);
+	--color-list-group-fill: var(--list-group-fill);
+	--color-list-row-fill: var(--list-row-fill);
 
 	/* Project utilities */
 	--color-status-info: var(--status-info);

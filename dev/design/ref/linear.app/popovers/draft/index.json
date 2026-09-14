@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-10T15:11:39.306Z",
+  "capturedAt": "2026-09-14T11:40:00.000Z",
   "items": [
     {
       "id": "project-actions",
@@ -149,6 +149,19 @@
       "bg": "rgb(33, 33, 34)",
       "radius": "12px",
       "text": "Connect channel\nManage Slack settings…"
+    },
+    {
+      "id": "priority-list",
+      "ok": true,
+      "file": "priority-list.png",
+      "x": 287,
+      "y": 178,
+      "w": 260,
+      "h": 210.6,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "text": "Change priority to… / P / No priority 0 / Urgent 1 / High 2 / Medium 3 / Low 4 (No priority selected)",
+      "note": "team-all list row priority cell (row menu); lucide option icons, 1.6px narrower than the live 289x239 crop pair"
     }
   ]
 }

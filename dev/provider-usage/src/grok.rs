@@ -434,7 +434,6 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
     }
 }
 
-const WEEKLY_GRANT_CENTS: i64 = 15_000;
 const WEEKLY_PERIOD_SECS: i64 = 7 * 86_400;
 
 pub(crate) fn apply_inferred_weekly_reset(
@@ -458,33 +457,33 @@ pub(crate) fn apply_inferred_weekly_reset(
 
 fn infer_weekly_reset(
     now: i64,
-    remaining: Option<i64>,
+    _remaining: Option<i64>,
     prev: Option<&ProviderSnapshot>,
 ) -> Option<i64> {
-    let prev = prev?;
-    let mut reset_at = prev.reset_at.or_else(|| {
-        prev.windows
-            .iter()
-            .find(|window| window.name == "weekly")
-            .and_then(|window| window.reset_at)
+    let sticky = prev.and_then(|prev| {
+        prev.reset_at.or_else(|| {
+            prev.windows
+                .iter()
+                .find(|window| window.name == "weekly")
+                .and_then(|window| window.reset_at)
+        })
     });
-    if reset_at.is_none() {
-        let current = remaining.unwrap_or(0);
-        let previous = prev.remaining_credits.unwrap_or(0);
-        if is_weekly_fill(previous, current) {
-            reset_at = Some(now.saturating_add(WEEKLY_PERIOD_SECS));
-        }
-    }
-    reset_at.map(|ts| advance_weekly(ts, now))
+    Some(advance_weekly(
+        sticky.unwrap_or_else(|| next_saturday_utc(now)),
+        now,
+    ))
 }
 
-fn is_weekly_fill(previous: i64, current: i64) -> bool {
-    if current <= previous {
-        return false;
+pub(crate) fn next_saturday_utc(now: i64) -> i64 {
+    const DAY: i64 = 86_400;
+    let day = now.div_euclid(DAY);
+    let weekday = (day + 4).rem_euclid(7);
+    let days_until_sat = (6 - weekday).rem_euclid(7);
+    let mut sat = (day + days_until_sat) * DAY;
+    if sat <= now {
+        sat = sat.saturating_add(7 * DAY);
     }
-    let near_grant = current.saturating_mul(100) >= WEEKLY_GRANT_CENTS.saturating_mul(95);
-    let large_jump = current.saturating_sub(previous).saturating_mul(4) >= WEEKLY_GRANT_CENTS;
-    near_grant || large_jump
+    sat
 }
 
 fn advance_weekly(reset_at: i64, now: i64) -> i64 {
@@ -602,29 +601,21 @@ mod tests {
     }
 
     #[test]
-    fn infers_weekly_reset_on_grant_fill() {
+    fn infers_next_saturday_without_sticky() {
         let prev = snapshot(Some(4_000), None);
         assert_eq!(
             infer_weekly_reset(1_000, Some(15_000), Some(&prev)),
-            Some(1_000 + WEEKLY_PERIOD_SECS)
+            Some(next_saturday_utc(1_000))
+        );
+        assert_eq!(
+            infer_weekly_reset(1_000, Some(15_000), None),
+            Some(next_saturday_utc(1_000))
         );
     }
 
     #[test]
-    fn first_sample_does_not_lock() {
-        assert_eq!(infer_weekly_reset(1_000, Some(15_000), None), None);
-    }
-
-    #[test]
-    fn jitter_does_not_lock() {
-        let prev = snapshot(Some(8_000), None);
-        assert_eq!(infer_weekly_reset(1_000, Some(8_010), Some(&prev)), None);
-    }
-
-    #[test]
-    fn small_jump_does_not_lock() {
-        let prev = snapshot(Some(100), None);
-        assert_eq!(infer_weekly_reset(1_000, Some(2_000), Some(&prev)), None);
+    fn next_saturday_after_sunday_morning() {
+        assert_eq!(next_saturday_utc(1_789_258_751), 1_789_776_000);
     }
 
     #[test]
@@ -647,32 +638,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn large_jump_without_peak_still_locks() {
-        let prev = snapshot(Some(100), None);
-        assert_eq!(
-            infer_weekly_reset(1_000, Some(8_000), Some(&prev)),
-            Some(1_000 + WEEKLY_PERIOD_SECS)
-        );
-    }
-
-    #[test]
-    fn exhausted_to_grant_locks() {
-        let prev = snapshot(None, None);
-        assert_eq!(
-            infer_weekly_reset(1_000, Some(15_000), Some(&prev)),
-            Some(1_000 + WEEKLY_PERIOD_SECS)
-        );
-    }
-
-    #[test]
-    fn zero_to_partial_weekly_refill_locks() {
-        let prev = snapshot(Some(0), None);
-        assert_eq!(
-            infer_weekly_reset(1_000, Some(11_068), Some(&prev)),
-            Some(1_000 + WEEKLY_PERIOD_SECS)
-        );
-    }
 
     #[test]
     fn keeps_cli_reset_at() {

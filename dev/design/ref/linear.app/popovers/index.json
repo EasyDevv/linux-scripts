@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-09-10T15:11:19.210Z",
+  "capturedAt": "2026-09-14T11:40:00.000Z",
   "items": [
     {
       "id": "project-actions",
@@ -11,7 +11,7 @@
       "h": 350,
       "bg": "rgb(33, 33, 34)",
       "radius": "12px",
-      "text": "Showing all items\nCopy\n\u25b6\nUnfavorite\nALT F\nAlt\nF\nSubscribe\n\u25b6\nRemind me\nShift H\n\u21e7\nH\n\u25b6\nChange update schedule\u2026\nConfigure Slack notifications\u2026\nShow description history\nShow updates and activity\nControl U\nCtrl\nU\nDelete"
+      "text": "Showing all items\nCopy\n▶\nUnfavorite\nALT F\nAlt\nF\nSubscribe\n▶\nRemind me\nShift H\n⇧\nH\n▶\nChange update schedule…\nConfigure Slack notifications…\nShow description history\nShow updates and activity\nControl U\nCtrl\nU\nDelete"
     },
     {
       "id": "help",
@@ -23,13 +23,13 @@
       "h": 364,
       "bg": "rgb(33, 33, 34)",
       "radius": "12px",
-      "text": "Showing all items\nQuestion Mark\n?\nDocs\nContact us\nKeyboard shortcuts\nControl /\nCtrl\n/\nLinear status\nDownload apps\nSettings\nG, then S\nG\nthen\nS\nSlack community\nWhat\u2019s new\nPriority inbox\nCoding sessions: environments, browser use, and updated "
+      "text": "Showing all items\nQuestion Mark\n?\nDocs\nContact us\nKeyboard shortcuts\nControl /\nCtrl\n/\nLinear status\nDownload apps\nSettings\nG, then S\nG\nthen\nS\nSlack community\nWhat’s new\nPriority inbox\nCoding sessions: environments, browser use, and updated "
     },
     {
       "id": "status",
       "ok": true,
       "file": "status.png",
-      "note": "cropped from overlapping capture; Change status\u2026 list"
+      "note": "cropped from overlapping capture; Change status… list"
     },
     {
       "id": "workspace",
@@ -37,6 +37,76 @@
       "file": "workspace.png",
       "w": 230,
       "h": 154
+    },
+    {
+      "id": "display-options",
+      "ok": true,
+      "file": "display-options.png",
+      "x": 1085,
+      "y": 92,
+      "w": 302,
+      "h": 537,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "source": "live https://linear.app/easydevs/team/EAS/all toolbar > Display options (2026-09-13)",
+      "text": "List Board Grouping Status Sub-grouping No grouping Ordering Priority Order completed by recency Completed issues All Show sub-issues List options Nested sub-issues Show empty groups Display properties ID Status Assignee Priority Project Due date Milestone Labels Links Time in status Created Updated"
+    },
+    {
+      "id": "issue-panel",
+      "ok": true,
+      "file": "issue-panel.png",
+      "x": 993,
+      "y": 53,
+      "w": 376,
+      "h": 564,
+      "bg": "rgb(18, 18, 19)",
+      "radius": "0px",
+      "source": "live https://linear.app/easydevs/issue/EAS-5/test right rail (2026-09-13)",
+      "text": "Properties In Progress High LB Lemon Blue Labels Bug Feature Project Add to project"
+    },
+    {
+      "id": "board-display-options",
+      "ok": true,
+      "file": "board-display-options.png",
+      "x": 1080,
+      "y": 86,
+      "w": 314,
+      "h": 554,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "note": "Board variant of the view Display options popover (live team-all toolbar, Board layout, 2026-09-14)",
+      "text": "List Board / Columns Status / Rows No grouping / Ordering Priority / Order completed by recency / Completed issues All / Show sub-issues / Board options / Show empty columns / Display properties / ID Status Assignee Priority Project Due date Milestone Labels Links Time in status Created Updated / Reset Set default for everyone"
+    },
+    {
+      "id": "filter-options",
+      "ok": true,
+      "file": "filter-options.png",
+      "x": 1168,
+      "y": 92,
+      "w": 262,
+      "h": 707,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "source": "live https://linear.app/easydevs/team/EAS/all toolbar > Add filter (2026-09-14, CDP 9201)",
+      "note": "crop 290x735 = menu 261.6x707 + 14px margin; no enter/exit animation (menu rows appear instantly)",
+      "text": "Add Filter… F AI filter Advanced filter Status Assignee Agent Agent Session Creator Priority Labels Relations Suggested label Dates Project Project properties Subscribers Auto-closed Content Links Template"
+    },
+    {
+      "id": "priority-list",
+      "ok": true,
+      "file": "priority-list.png",
+      "x": 287,
+      "y": 178,
+      "w": 261.6,
+      "h": 211,
+      "bg": "rgb(33, 33, 34)",
+      "radius": "12px",
+      "source": "live https://linear.app/easydevs/team/EAS/all list row priority cell (2026-09-14, CDP 9201, 1440x900 dpr 1)",
+      "note": "crop 289x239 = menu 261.6x211 + 14px margin; 1.6px wider than the shared 260px draft surface because the live 260px is the content width inside the 0.8px border",
+      "text": "Showing all items / Change priority to… / P / No priority 0 / Urgent 1 / High 2 / Medium 3 / Low 4 (High selected)",
+      "rows": "36.8px search row (padding 0 12px 0 14px, input 202x36 padding 10px 0 9px, \"P\" chip 18x18.8 r4 + 0.8px rgb(41,42,45)), 6px-inset list of 5 rows of 32px (padding 0 18px 0 14px, icon 16x16 at 14px in, label at 38px 13px/450, kbd 12px/500, trailing check 16x16)",
+      "inks": "label rgb(229,230,232); option icons rgb(156,157,159) — the Urgent fill attribute is overridden — and follow the row to #fff when it is highlighted or selected; hover pill 248x32 r8 rgb(49,50,52); kbd rgb(156,157,159)",
+      "anchor": "left edge on the trigger cell (287 = the cell's 286.8px left edge), top 4px under the row's bottom edge"
     }
   ]
 }

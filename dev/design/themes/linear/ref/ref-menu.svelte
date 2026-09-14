@@ -14,6 +14,7 @@
 		searchKbd,
 		selected,
 		onPick,
+		iconInk = "label",
 		trigger,
 	}: {
 		items: RefMenuItem[];
@@ -23,6 +24,9 @@
 		searchKbd?: string;
 		selected?: string;
 		onPick?: (label: string) => void;
+		/** `label` = icons inherit the item ink (menuMark.text); `muted` = the measured live option ink
+		 *  rgb(156,157,159), following the row to #fff when it is hovered, highlighted or selected. */
+		iconInk?: "label" | "muted";
 		trigger: Snippet<[{ props: Record<string, unknown> }]>;
 	} = $props();
 
@@ -46,6 +50,10 @@
 
 	function isThen(part: string) {
 		return part === "then";
+	}
+
+	function isSelected(label: string) {
+		return selected === label;
 	}
 
 	function matches(item: RefMenuItem, needle: string) {
@@ -125,12 +133,13 @@
 					{@render kbdRow(item.kbd)}
 				{/if}
 			</DropdownMenu.SubTrigger>
-			<DropdownMenu.SubContent class={contentClass} style={surface} sideOffset={4}>
-				<div style="padding: 6px 0">
+			<DropdownMenu.SubContent class={contentClass} style={surface} sideOffset={4} data-icon-ink={iconInk}>
+				<div class="ref-menu-list" style="padding: 6px 0">
 					{#each item.items as sub (sub.label)}
 						<DropdownMenu.Item
 							class={itemClass}
 							style={menuItemStyle}
+							data-selected={isSelected(sub.label)}
 							onSelect={() => onPick?.(sub.label)}
 						>
 							{#if sub.icon}
@@ -146,7 +155,12 @@
 			</DropdownMenu.SubContent>
 		</DropdownMenu.Sub>
 	{:else}
-		<DropdownMenu.Item class={itemClass} style={menuItemStyle} onSelect={() => onPick?.(item.label)}>
+		<DropdownMenu.Item
+			class={itemClass}
+			style={menuItemStyle}
+			data-selected={isSelected(item.label)}
+			onSelect={() => onPick?.(item.label)}
+		>
 			{#if item.bullet}
 				<span class="flex size-4 items-center justify-center">
 					<span class="size-1 rounded-full" style="background: {menuMark.text}"></span>
@@ -159,7 +173,11 @@
 			{/if}
 			<span class={labelClass}>{item.label}</span>
 			{#if selected === item.label}
-				<Check class="size-4 shrink-0" strokeWidth={2} style="color: {menuMark.kbd}; margin-right: 1px" />
+				<Check
+					class="size-4 shrink-0"
+					strokeWidth={2}
+					style="{iconInk === "muted" ? "" : `color: ${menuMark.kbd};`} margin-right: 1px"
+				/>
 			{/if}
 			{#if item.kbd}
 				{@render kbdRow(item.kbd)}
@@ -179,7 +197,7 @@
 			{@render trigger({ props })}
 		{/snippet}
 	</DropdownMenu.Trigger>
-	<DropdownMenu.Content {align} sideOffset={4} class={contentClass} style={surface} onOpenAutoFocus={onOpenAutoFocus}>
+	<DropdownMenu.Content {align} sideOffset={4} class={contentClass} style={surface} data-icon-ink={iconInk} onOpenAutoFocus={onOpenAutoFocus}>
 		{#if search}
 			<div
 				style="height: 37px; padding: 0 12px 0 14px; border-bottom: 0.8px solid {menuMark.sep}"
@@ -203,7 +221,7 @@
 				</div>
 			</div>
 		{/if}
-		<div style="padding: 6px 0">
+		<div class="ref-menu-list" style="padding: 6px 0">
 			{#each visible as item (item.label)}
 				{@render row(item)}
 			{/each}
@@ -224,16 +242,47 @@
 		border-radius: 8px;
 		z-index: 0;
 	}
+	:global(.ref-menu-item.ref-menu-item:hover::before),
 	:global(.ref-menu-item.ref-menu-item[data-highlighted]::before),
 	:global(.ref-menu-item.ref-menu-item:focus::before) {
+		background: rgb(49, 50, 52);
+	}
+	:global(
+		.ref-menu-list:not(:has(.ref-menu-item:hover)):not(:has(.ref-menu-item[data-highlighted]))
+			.ref-menu-item[data-selected="true"]::before
+	) {
 		background: rgb(49, 50, 52);
 	}
 	:global(.ref-menu-item.ref-menu-item > *) {
 		position: relative;
 		z-index: 1;
 	}
+	/* Measured live option ink: the icon paints rgb(156,157,159) at rest and follows the row to #fff
+	   with its label (the same compound as the label rules above, so both stay in sync). */
+	:global([data-icon-ink="muted"] .ref-menu-item svg) {
+		color: rgb(156, 157, 159);
+	}
+	:global([data-icon-ink="muted"] .ref-menu-item:hover svg),
+	:global([data-icon-ink="muted"] .ref-menu-item[data-highlighted] svg),
+	:global([data-icon-ink="muted"] .ref-menu-item:focus svg),
+	:global(
+		[data-icon-ink="muted"]
+			.ref-menu-list:not(:has(.ref-menu-item:hover)):not(:has(.ref-menu-item[data-highlighted]))
+			.ref-menu-item[data-selected="true"]
+			svg
+	) {
+		color: #fff;
+	}
+	:global(.ref-menu-item.ref-menu-item:hover .ref-menu-label),
 	:global(.ref-menu-item.ref-menu-item[data-highlighted] .ref-menu-label),
 	:global(.ref-menu-item.ref-menu-item:focus .ref-menu-label) {
+		color: #fff !important;
+	}
+	:global(
+		.ref-menu-list:not(:has(.ref-menu-item:hover)):not(:has(.ref-menu-item[data-highlighted]))
+			.ref-menu-item[data-selected="true"]
+			.ref-menu-label
+	) {
 		color: #fff !important;
 	}
 </style>

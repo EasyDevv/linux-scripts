@@ -13,6 +13,11 @@
     {
       "id": "project-overview",
       "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview#milestone-f652695d-376d-453d-838c-f69b6af0e077"
+    },
+    {
+      "id": "team-all-board",
+      "url": "https://linear.app/easydevs/team/EAS/all",
+      "view": "Board (same route as team-all; switch via Display options > Board)"
     }
   ],
   "viewports": [
@@ -113,6 +118,32 @@
       "id": "workspace",
       "url": "https://linear.app/easydevs/project/test-e6937f6cefe6/overview",
       "file": "popovers/workspace.png"
+    },
+    {
+      "page": "team-all-board",
+      "viewport": "desktop",
+      "url": "https://linear.app/easydevs/team/EAS/all (Board view)",
+      "file": "desktop/team-all-board.png"
+    },
+    {
+      "page": "team-all-board",
+      "viewport": "tablet",
+      "url": "https://linear.app/easydevs/team/EAS/all (Board view)",
+      "file": "tablet/team-all-board.png"
+    },
+    {
+      "page": "team-all-board",
+      "viewport": "mobile",
+      "url": "https://linear.app/easydevs/team/EAS/all (Board view)",
+      "file": "mobile/team-all-board.png"
+    },
+    {
+      "page": "team-all-board",
+      "viewport": "desktop",
+      "kind": "popover",
+      "id": "board-display-options",
+      "url": "https://linear.app/easydevs/team/EAS/all (Board view)",
+      "file": "popovers/board-display-options.png"
     }
   ],
   "snapshots": [
