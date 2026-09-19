@@ -212,3 +212,180 @@ export const displayMark = {
 	toggleKnob: "rgb(255, 254, 255)",
 	sectionLabel: "rgb(200, 201, 203)",
 };
+
+/**
+ * Agent chat, measured from the live app (linear.app/easydevs/{agent,projects/all,team/EAS/all},
+ * CDP 9201 2026-09-14, viewport 1440x900 dark).
+ *
+ * The footer strip carries three controls, left to right inside its right cluster (2px gaps,
+ * 10px from the window edge): the minimized-chat chip, the `Agent` launcher and `Chat history`.
+ * Chip and launcher are both 8px-radius controls that read differently on purpose: the chip is a
+ * filled surface once its chat is open (and stays flat/muted while minimized), the launcher is a
+ * chromeless icon+label that only gets a fill on hover.
+ *
+ * Panel tone relation (the point of the composition): the floating panel's 0.8px rim is the same
+ * tone as the chip's active fill — rgb(35,36,38) vs rgb(35,35,37), i.e. `--accent`. The panel body
+ * is one step darker, `--secondary` rgb(26,26,27), inside a 0.8px ring of `--background`.
+ */
+export const agentMark = {
+	/** Floating panel: 400x600, opened 32px from the window's right edge and 34px off the bottom. */
+	panel: {
+		width: 400,
+		height: 600,
+		radius: "12px 12px 16px 16px",
+		fill: "var(--secondary)",
+		/** 0.8px inner ring of the canvas tone between the rim and the body. */
+		ring: "var(--background)",
+		/** measured rgb(35, 36, 38) — the same tone as the chip's active fill (`--accent`). */
+		rim: "var(--accent)",
+		insetRight: 32,
+		insetBottom: 34,
+	},
+	header: {
+		height: 48,
+		pad: "0 6px 0 10px",
+		titleFont: "var(--text-heading-sm)",
+		titleWeight: 500,
+		titleInk: "var(--foreground)",
+		titlePadLeft: 6,
+		button: 28,
+		/** header controls are circular; the footer controls are 8px radius. */
+		buttonRadius: "var(--radius-pill)",
+		buttonPad: "0 2px",
+		glyph: 14,
+		glyphInk: "var(--ink-soft)",
+		gap: 2,
+	},
+	body: {
+		pad: "24px 16px 32px",
+		stampFont: 12,
+		stampWeight: 500,
+		/** measured rgb(92, 93, 95) */
+		stampInk: "rgb(92, 93, 95)",
+		messageFont: "var(--text-heading-sm)",
+		messageWeight: 450,
+		messageInk: "var(--accent-foreground)",
+		/** user turn: right-aligned filled bubble, measured rgb(35, 35, 37) / radius 8 / pad 8px 12px. */
+		bubbleFill: "var(--accent)",
+		bubbleRadius: "var(--radius-sm)",
+		bubblePad: "8px 12px",
+		actionButton: 24,
+		actionRadius: "var(--radius-pill)",
+	},
+	composer: {
+		/** live strip around the input: pad 0 8px 8px on the 398.4 panel inner. */
+		stripPad: "0 8px 8px",
+		/** data-agent-panel-input-wrapper: pad 4, margin 0 -4px -4px, radius 8. */
+		wrapPad: "4px",
+		wrapMargin: "0 -4px -4px",
+		wrapRadius: "8px",
+		pad: "6px 4px",
+		fill: "var(--accent)",
+		radius: 7,
+		shadow: "lch(0 0 0 / 0.3) 0px 0.5px 1px 1px",
+		stackGap: 8,
+		editorRowPad: "2px 6px",
+		toolbarPad: "0 6px 4px 2px",
+		toolbarGap: 8,
+		editorFont: 13,
+		editorWeight: 450,
+		editorLine: "20.8px",
+		editorPad: "0",
+		editorInk: "var(--accent-foreground)",
+		/** live ::before on empty ProseMirror: lch(41.928 1.65 272) */
+		placeholderInk: "rgb(92, 93, 95)",
+		placeholder: "Reply…",
+		agentPlaceholder: "@ to mention any issue, project, or document",
+		skills: {
+			height: 24,
+			radius: "var(--radius-pill)",
+			pad: "0 6px 0 4px",
+			font: "var(--text-label-sm)",
+			weight: 500,
+			/** measured rgb(156, 157, 160) */
+			ink: "rgb(156, 157, 160)",
+			glyph: 14,
+		},
+		action: {
+			size: 24,
+			radius: "var(--radius-pill)",
+			pad: "0 2px",
+			ink: "var(--ink-soft)",
+		},
+		/** send is the only filled circle in the composer: measured rgb(42, 43, 45), radius 12. */
+		send: {
+			size: 24,
+			radius: "var(--radius)",
+			fill: "rgb(42, 43, 45)",
+			ink: "var(--ink-soft)",
+		},
+	},
+	footer: {
+		gap: 2,
+		padRight: 10,
+		padLeft: 10,
+		height: 28,
+		/** left corner of the footer row (sidebar side), not part of the right cluster. */
+		help: {
+			size: 24,
+			radius: "50%",
+			pad: "0 2px",
+			glyph: 14,
+			ink: "var(--ink-soft)",
+			hoverFill: "rgb(27, 28, 29)",
+			hoverInk: "var(--foreground)",
+		},
+	},
+	/** Minimized/active chat chip: 173.2x28 wrapper (inner 27px + 1px bottom pad), radius 8. */
+	chip: {
+		maxWidth: "240px",
+		outerHeight: 28,
+		innerHeight: 27,
+		radius: "var(--radius-sm)",
+		pad: "0 8px",
+		gap: 5,
+		labelPadRight: 8,
+		closeTop: 6,
+		closeRight: 4,
+		font: "var(--text-label-sm)",
+		weight: 450,
+		/** minimized: no fill, muted label; a hover only lifts the label ink. */
+		idleFill: "transparent",
+		idleInk: "var(--muted-foreground)",
+		hoverFill: "rgb(24, 24, 26)",
+		hoverInk: "var(--foreground)",
+		/** open: filled with the same tone as the panel rim. */
+		activeFill: "var(--accent)",
+		activeInk: "var(--foreground)",
+		close: 16,
+		closeGlyph: 12,
+	},
+	/** `Agent` launcher: 77.5x28, radius 8 (not a pill), label 12/500, muted until hovered. */
+	launcher: {
+		height: 28,
+		radius: "var(--radius-sm)",
+		pad: "0 12px 0 10px",
+		gap: 6,
+		font: "var(--text-label-sm)",
+		weight: 500,
+		ink: "var(--muted-foreground)",
+		hoverFill: "rgb(24, 24, 26)",
+		hoverInk: "var(--foreground)",
+		activeFill: "rgb(24, 24, 26)",
+		activeInk: "var(--foreground)",
+		glyph: 14,
+	},
+	/** `Chat history`: 28x28 radius 8 icon disc; its glyph reads brighter than the launcher label. */
+	history: {
+		size: 28,
+		radius: "var(--radius-sm)",
+		pad: "0 2px",
+		glyph: 14,
+		ink: "var(--ink-soft)",
+		hoverFill: "rgb(27, 28, 29)",
+		hoverInk: "var(--foreground)",
+	},
+	/** live control transition: border 0.15s, background-color 0.15s, color 0.15s, opacity 0.15s */
+	controlTransition:
+		"border 0.15s, background-color 0.15s, color 0.15s, opacity 0.15s",
+};

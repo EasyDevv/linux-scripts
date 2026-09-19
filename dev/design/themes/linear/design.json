@@ -83,7 +83,10 @@
       "reservesMainBottom": "--shell-footer-height",
       "hairline": false,
       "font": "--text-body-sm",
-      "color": "--muted-foreground"
+      "color": "--muted-foreground",
+      "corner": "Open Help menu at the left (24x24 circle, 10px inset, 16x16 question-mark glyph)",
+      "controls": "right cluster: chat chip (while a chat is minimized) + Agent launcher + Chat history, 2px gaps, 10px from the window's right edge",
+      "note": "the footer has no fill of its own: canvas tone, no hairline (matches the live strip); the chip and the launcher are both 8px-radius controls that read differently — the chip is the filled surfaced one"
     },
     "gutterToMain": "none"
   },
@@ -658,6 +661,15 @@
       "evidence": "ref/linear.app/popovers/filter-options.png",
       "submenus": "hover-expanded, opening left with their measured border-box sizes; instant (no animation measured); 32px rows with an optional 16x14 select box (label 60px in) vs navigation rows (label 38px in); component ref/team-filter-popover.svelte, data ref/filter-submenus.ts"
     },
-    "sharedChrome": "menuSurface + menuMark (bg rgb(33,33,34), border rgb(50,51,54), radius 12, ring shadow) — the filter menu matches the store's measured menu chrome exactly; icons inline in ref/filter-icons.ts"
+    "sharedChrome": "menuSurface + menuMark (bg rgb(33,33,34), border rgb(50,51,54), radius 12, ring shadow) — the filter menu matches the store's measured menu chrome exactly; icons inline in ref/filter-icons.ts",
+    "agentChat": {
+      "component": "ref/app-footer.svelte (shared: shell.svelte mounts it on all three ref pages)",
+      "source": "live linear.app footer + floating agent chat (CDP 9201, 2026-09-14)",
+      "chrome": "agentMark in ref/chrome.ts; screenshot evidence in ref/linear.app/popovers/agent-*.png",
+      "toneRelation": "the panel's 0.8px rim is the same tone as the chip's active fill (--accent rgb(35,35,37) vs the measured rim rgb(35,36,38)); the panel body is one step darker (--secondary rgb(26,26,27)) inside a 0.8px ring of --background rgb(9,9,10)",
+      "enter": "58ms, scale 0.98 → 1 from 100% 100% (the footer chip's corner), opacity 0 → 2 (clamped to 1 when painted)",
+      "exit": "207ms, the same measured curve as displayOptions (scale → 0.98 at 49ms, exponential opacity tail)",
+      "states": "chip visible while a chat with content is minimized; `Close chat` / the chip's ✕ removes the chip; the launcher opens the panel (title `New chat` when the session is empty)"
+    }
   }
 }

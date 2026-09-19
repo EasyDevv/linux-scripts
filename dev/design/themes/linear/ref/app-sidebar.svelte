@@ -44,6 +44,10 @@
 
 	const itemClass =
 		"h-7 w-full translate-x-0 gap-1.5 rounded-sm px-2 py-0 font-medium text-[color:var(--ink-soft)] [&>svg]:size-3.5 [&>svg]:text-muted-foreground [&_svg]:size-3.5 [&_svg]:text-muted-foreground";
+
+	function foldGrid(open: boolean) {
+		return `display: grid; grid-template-rows: ${open ? "1fr" : "0fr"}; opacity: ${open ? "1" : "0"}; pointer-events: ${open ? "auto" : "none"}; transition: grid-template-rows var(--panel-fold-duration) var(--panel-fold-ease), opacity var(--panel-fold-duration) var(--panel-fold-ease)`;
+	}
 </script>
 
 <Sidebar.Root
@@ -120,18 +124,22 @@
 		<Sidebar.Group class="px-3 pt-3 pb-0">
 			<Sidebar.GroupLabel class="h-7 gap-1 px-2 font-medium text-muted-foreground" style={navStyle}>
 				{#snippet child({ props })}
-					<button type="button" {...props} onclick={() => (workspaceOpen = !workspaceOpen)}>
+					<button
+						type="button"
+						{...props}
+						aria-expanded={workspaceOpen}
+						onclick={() => (workspaceOpen = !workspaceOpen)}
+					>
 						Workspace
-						{#if workspaceOpen}
-							<ChevronDown class="size-2" strokeWidth={2.5} />
-						{:else}
-							<ChevronRight class="size-2" strokeWidth={2.5} />
-						{/if}
+						<ChevronRight
+							class="size-2 shrink-0 transition-transform {workspaceOpen ? 'rotate-90' : ''}"
+							strokeWidth={2.5}
+						/>
 					</button>
 				{/snippet}
 			</Sidebar.GroupLabel>
-			{#if workspaceOpen}
-				<Sidebar.GroupContent>
+			<div class="min-h-0 overflow-hidden" style={foldGrid(workspaceOpen)}>
+				<Sidebar.GroupContent class="min-h-0 overflow-hidden">
 					<Sidebar.Menu style="gap: 1px">
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton
@@ -162,41 +170,60 @@
 						</Sidebar.MenuItem>
 					</Sidebar.Menu>
 				</Sidebar.GroupContent>
-			{/if}
+			</div>
 		</Sidebar.Group>
 
 		<Sidebar.Group class="px-3 pt-3 pb-0">
 			<Sidebar.GroupLabel class="h-7 gap-1 px-2 font-medium text-muted-foreground" style={navStyle}>
 				{#snippet child({ props })}
-					<button type="button" {...props} onclick={() => (teamsOpen = !teamsOpen)}>
+					<button type="button" {...props} aria-expanded={teamsOpen} onclick={() => (teamsOpen = !teamsOpen)}>
 						Your teams
-						{#if teamsOpen}
-							<ChevronDown class="size-2" strokeWidth={2.5} />
-						{:else}
-							<ChevronRight class="size-2" strokeWidth={2.5} />
-						{/if}
+						<ChevronRight
+							class="size-2 shrink-0 transition-transform {teamsOpen ? 'rotate-90' : ''}"
+							strokeWidth={2.5}
+						/>
 					</button>
 				{/snippet}
 			</Sidebar.GroupLabel>
-			{#if teamsOpen}
-				<Sidebar.GroupContent>
+			<div class="min-h-0 overflow-hidden" style={foldGrid(teamsOpen)}>
+				<Sidebar.GroupContent class="min-h-0 overflow-hidden">
 					<Sidebar.Menu style="gap: 1px">
 						<Sidebar.MenuItem>
-							<Sidebar.MenuButton
-								size="sm"
-								class={itemClass}
-								style={navStyle}
-								onclick={() => (teamOpen = !teamOpen)}
-							>
-								<span
-									class="flex size-4 shrink-0 items-center justify-center rounded-[3px] text-[9px] font-medium text-background"
-									style="background: {mark.team}">E</span
-								>
-								<span class="min-w-0 truncate text-left">{workspace.team}</span>
-								<ChevronDown class="size-2" strokeWidth={2.5} />
+							<Sidebar.MenuButton size="sm" class={itemClass} style={navStyle}>
+								{#snippet child({ props })}
+									<button
+										type="button"
+										{...props}
+										onclick={(event) => {
+											const fold =
+												event.target instanceof Element &&
+												event.target.closest("[data-role='fold']");
+											if (fold) {
+												teamOpen = !teamOpen;
+												return;
+											}
+											go("team-all/page.svelte");
+										}}
+									>
+										<span
+											class="flex size-4 shrink-0 items-center justify-center rounded-[3px] text-[9px] font-medium text-background"
+											style="background: {mark.team}">E</span
+										>
+										<span class="min-w-0 truncate text-left">{workspace.team}</span>
+										<span data-role="fold" class="ml-auto inline-flex">
+											<ChevronRight
+												class="size-2 shrink-0 transition-transform {teamOpen ? 'rotate-90' : ''}"
+												strokeWidth={2.5}
+											/>
+										</span>
+									</button>
+								{/snippet}
 							</Sidebar.MenuButton>
-							{#if teamOpen}
-								<Sidebar.MenuSub class="mx-0 w-auto border-0 px-0" style="margin-inline-start: 19px">
+							<div class="min-h-0 overflow-hidden" style={foldGrid(teamOpen)}>
+								<Sidebar.MenuSub
+									class="mx-0 min-h-0 w-auto overflow-hidden border-0 px-0"
+									style="margin-inline-start: 19px"
+								>
 									<Sidebar.MenuSubItem>
 										<Sidebar.MenuSubButton size="sm" class="{itemClass} w-full" style={navStyle}>
 											<House strokeWidth={1.75} />
@@ -244,28 +271,27 @@
 										</Sidebar.MenuSubButton>
 									</Sidebar.MenuSubItem>
 								</Sidebar.MenuSub>
-							{/if}
+							</div>
 						</Sidebar.MenuItem>
 					</Sidebar.Menu>
 				</Sidebar.GroupContent>
-			{/if}
+			</div>
 		</Sidebar.Group>
 
 		<Sidebar.Group class="px-3 pt-3 pb-0">
 			<Sidebar.GroupLabel class="h-7 gap-1 px-2 font-medium text-muted-foreground" style={navStyle}>
 				{#snippet child({ props })}
-					<button type="button" {...props} onclick={() => (tryOpen = !tryOpen)}>
+					<button type="button" {...props} aria-expanded={tryOpen} onclick={() => (tryOpen = !tryOpen)}>
 						Try
-						{#if tryOpen}
-							<ChevronDown class="size-2" strokeWidth={2.5} />
-						{:else}
-							<ChevronRight class="size-2" strokeWidth={2.5} />
-						{/if}
+						<ChevronRight
+							class="size-2 shrink-0 transition-transform {tryOpen ? 'rotate-90' : ''}"
+							strokeWidth={2.5}
+						/>
 					</button>
 				{/snippet}
 			</Sidebar.GroupLabel>
-			{#if tryOpen}
-				<Sidebar.GroupContent>
+			<div class="min-h-0 overflow-hidden" style={foldGrid(tryOpen)}>
+				<Sidebar.GroupContent class="min-h-0 overflow-hidden">
 					<Sidebar.Menu style="gap: 1px">
 						<Sidebar.MenuItem>
 							<Sidebar.MenuButton size="sm" class={itemClass} style={navStyle}>
@@ -287,7 +313,7 @@
 						</Sidebar.MenuItem>
 					</Sidebar.Menu>
 				</Sidebar.GroupContent>
-			{/if}
+			</div>
 		</Sidebar.Group>
 	</Sidebar.Content>
 </Sidebar.Root>

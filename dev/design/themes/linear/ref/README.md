@@ -4,6 +4,17 @@ shadcn-svelte reconstructions of `{designDir}/ref/linear.app/` using `../layout.
 
 Shared chrome: `app-sidebar.svelte`, `app-header.svelte`, `app-footer.svelte` composed by `shell.svelte`.
 
+The footer carries the measured agent chat (`app-footer.svelte`, constants in `agentMark`): the left corner
+`Open Help menu` disc, then the right cluster `chat chip → Agent launcher → Chat history` with 2px gaps and a 10px
+window inset. Chip and launcher are both 8px-radius controls that read differently on purpose — the chip is the
+filled surfaced one while its chat is open (and stays flat/muted while minimized), the launcher is a chromeless
+icon+label that only fills on hover. Clicking either opens the 400x600 floating panel (32px right, 34px bottom),
+whose 0.8px rim is the same tone as the chip's active fill (`--accent`) over a `--secondary` body, inside a 0.8px
+`--background` ring. The launcher plane and the history circle-arrow are Linear's own filled glyphs (kept verbatim
+in `agent-glyphs.ts`; lucide has no equivalent). Footer states: a minimized chat with content keeps its chip,
+`Close chat` and the chip's own ✕ drop the chip, and opening with no session shows a `New chat` panel with no chip.
+Evidence: `{designDir}/ref/linear.app/popovers/agent-{footer,footer-minimized,help,panel}.png` vs `popovers/draft/`.
+
 Property menus (project overview aside): `prop-status.svelte`, `prop-priority.svelte` on `prop-picker.svelte` (RefMenu). Dates/labels: `prop-popover.svelte`.
 
 Issue status glyphs live in `status-glyph.svelte` (measured 14x14 SVGs from the live app: dashed backlog ring, todo/progress arcs, filled done/canceled discs).

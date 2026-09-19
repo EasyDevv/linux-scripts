@@ -630,5 +630,24 @@
       ],
       "motion": "same inline-surface spring as popoverMotion (transform-origin = cell left edge / cell bottom), resting inline opacity: 2"
     }
+  },
+  "agentChat": {
+    "measuredFrom": "live linear.app/easydevs/{agent,projects/all,team/EAS/all} footer + floating chat, CDP 9201 (2026-09-14), 1440x900 dark",
+    "component": "ref/app-footer.svelte (shared chrome, mounted by shell.svelte)",
+    "footerRow": "28px control row, 2px gaps, 10px from the window's edges; the live footer strip is 1196x32 at x244 with 4px vertical padding",
+    "cornerHelp": "24x24 circle at 10px from the left edge, padding 0 2px, 16x16 question-mark glyph in --ink-soft, hover fill rgb(27,28,29) + white ink; opens the measured helpMenu dropdown (popovers/help.png)",
+    "controls": "chat chip (only while a chat with content is minimized) + Agent launcher + Chat history, in that order inside the right cluster",
+    "chip": "173.2x28 wrapper (27px inner + 1px bottom pad), radius 8 (--radius-sm), padding 0 8px, gap 5px, label 12px/450 truncated with ellipsis (8px right padding), close 16x16 hit box with a 12x12 glyph pinned at top 14 / right 4 (absolute, so it overlaps the label's tail); minimized = transparent fill + --muted-foreground label, hover = rgb(24,24,26) + --foreground, open = --accent fill + --foreground",
+    "launcher": "77.5x28, radius 8 (not a pill), 0.8px transparent border, padding 0 12px 0 10px, 6px gap, 14x14 measured plane glyph, 12px/500 --muted-foreground; hover fill rgb(24,24,26) + --foreground",
+    "history": "28x28, radius 8, 0.8px transparent border, padding 0 2px, 16x16 measured circular-arrow glyph in --ink-soft; hover fill rgb(27,28,29) + --foreground",
+    "transition": "border 0.15s, background-color 0.15s, color 0.15s, opacity 0.15s (live footer controls)",
+    "states": "measured: a minimized chat with content keeps its chip; `Close chat` (and the chip's own `Close` ✕) removes the chip entirely; opening from the launcher when no chat exists shows the panel with the title `New chat` and no chip",
+    "panel": "400x600 floating surface at 32px right / 34px bottom; --secondary body rgb(26,26,27), 0.8px --accent rim (measured rgb(35,36,38) — the chip's active fill tone), 0.8px --background inner ring (rgb(9,9,10)), radius 12/12/16/16, menuMark.shadow",
+    "panelHeader": "48px, padding 0 6px 0 10px, title 13px/500 --foreground at +6px then a 28px round ellipsis disc; right cluster = minimize / open full page / close, 28px round discs with 14px glyphs in --ink-soft, 2px gaps",
+    "panelBody": "padding 24px 16px 32px; centered 12px/500 rgb(92,93,95) timestamp; user turn = right-aligned --accent bubble (radius 8, padding 8px 12px, 13px/450 --accent-foreground) with a 24px copy/edit action row under it (lucide pencil stands in for the live filled pencil, same substitution policy as the priority glyph); agent turn = plain 13px/450 --accent-foreground text with a thumbs-up / thumbs-down / copy action row",
+    "composer": "filled box inset 9px (--accent, radius 7, padding 6px 4px, --panel-shadow); editor 15px/450 --accent-foreground with the `Reply…` placeholder; bottom row = Skills (75x24 pill, 12px/500 rgb(156,157,160), 14px box glyph + chevron) and attach (24x24 circle) + send (24x24 circle, rgb(42,43,45))",
+    "motion": "same measured spring as the popovers: 58ms enter (scale 0.98 → 1, opacity → 2) and the 207ms exit via popoverOut; origin 100% 100% (the footer chip's corner)",
+    "icons": "the launcher plane and the Chat history circle-arrow are Linear's own filled glyphs (16x16 viewBox, no stroke) kept verbatim in ref/agent-glyphs.ts; lucide has no equivalent",
+    "evidence": "{designDir}/ref/linear.app/popovers/agent-{footer,footer-minimized,help,panel}.png (live) and popovers/draft/agent-*.png"
   }
 }

@@ -107,6 +107,58 @@
       "rows": "36.8px search row (padding 0 12px 0 14px, input 202x36 padding 10px 0 9px, \"P\" chip 18x18.8 r4 + 0.8px rgb(41,42,45)), 6px-inset list of 5 rows of 32px (padding 0 18px 0 14px, icon 16x16 at 14px in, label at 38px 13px/450, kbd 12px/500, trailing check 16x16)",
       "inks": "label rgb(229,230,232); option icons rgb(156,157,159) — the Urgent fill attribute is overridden — and follow the row to #fff when it is highlighted or selected; hover pill 248x32 r8 rgb(49,50,52); kbd rgb(156,157,159)",
       "anchor": "left edge on the trigger cell (287 = the cell's 286.8px left edge), top 4px under the row's bottom edge"
+    },
+    {
+      "id": "agent-footer",
+      "ok": true,
+      "file": "agent-footer.png",
+      "x": 1100,
+      "y": 860,
+      "w": 340,
+      "h": 38,
+      "bg": "rgb(9, 9, 10)",
+      "radius": "0px",
+      "text": "Greeting from Lemon Blue × | Agent | Chat history",
+      "note": "open-chat footer: the chip is filled (rgb(35,35,37)) with white 12px/450 label + 12px ×; Agent = 14px plane glyph + 12px/500 label in rgb(145,146,148); Chat history = 16px circular-arrow glyph in rgb(226,227,229)"
+    },
+    {
+      "id": "agent-footer-minimized",
+      "ok": true,
+      "file": "agent-footer-minimized.png",
+      "x": 1100,
+      "y": 860,
+      "w": 340,
+      "h": 40,
+      "bg": "rgb(9, 9, 10)",
+      "radius": "0px",
+      "text": "Agent | Chat history",
+      "note": "after Close chat: no chip at all; the launcher and Chat history remain (the chip only exists while a chat with content is minimized)"
+    },
+    {
+      "id": "agent-help",
+      "ok": true,
+      "file": "agent-help.png",
+      "x": 0,
+      "y": 858,
+      "w": 300,
+      "h": 42,
+      "bg": "rgb(9, 9, 10)",
+      "radius": "50%",
+      "text": "",
+      "note": "Open Help menu: 24x24 circular control at x10 in the footer's left corner, 16x16 question-mark glyph in --ink-soft, hover fill rgb(27,28,29)"
+    },
+    {
+      "id": "agent-panel",
+      "ok": true,
+      "file": "agent-panel.png",
+      "x": 926,
+      "y": 264,
+      "w": 404,
+      "h": 604,
+      "bg": "rgb(26, 26, 27)",
+      "radius": "12px 12px 16px 16px",
+      "text": "Greeting from Lemon Blue ⋯ − ↗ × | Today 오후 2:22 | hi | Hi Lemon Blue — I can help with issues, projects, cycles, and workspace questions. | Reply… | Skills ⌄",
+      "note": "400x600 floating panel: --secondary body, 0.8px rgb(35,36,38) rim inside a 0.8px rgb(9,9,10) ring; user turn is a right-aligned rgb(35,35,37) bubble (radius 8, pad 8px 12px); composer is a filled --accent box (radius 7, inset 9px) with the 24x24 rgb(42,43,45) send disc"
     }
   ]
 }
