@@ -63,3 +63,6 @@ dev/*/.serena/project.local.yml
 
 # draft builder layout-src hash
 dev/design/.cache/
+
+*.exe
+*.msi
