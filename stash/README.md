@@ -111,6 +111,17 @@ media_proxy_referer_hosts = ["recordplay.biz", "playrecord.biz"]
 
 별도 JSON 파일 형식은 `{"url":"https://proxy.example:443","username":"...","password":"..."}`. 일반 파일·소유자 전용 권한(`chmod 600`)만 허용한다. 실제 인증 정보는 저장소, 잡의 `headers_json`, 로그에 넣지 않는다. 프록시 인증이 만료되어 HTTP 407이 나오면 이 파일의 인증 정보를 갱신해야 한다. 자동으로 브라우저의 자격 증명을 읽거나 VPN 위치를 변경하지 않는다.
 
+자격 증명은 AdGuard VPN 확장 프로그램이 세션마다 교체하므로 손으로 복사하면 다시 낡는다. `scripts/sync-media-proxy.ts`가 CDP로 확장의 `chrome.storage.local.proxy_config`를 읽어 `media_proxy_file`을 갱신한다(`bun test scripts` 18건, `--check`로 쓰기 없이 비교, `--verify`로 프록시 CONNECT 확인, 비밀 값은 sha256 앞 12자만 출력).
+
+```bash
+bun scripts/sync-media-proxy.ts --check          # 갱신 필요 여부만 확인
+bun scripts/sync-media-proxy.ts --verify         # 갱신 후 프록시 경유 확인
+```
+
+`worker_cdp_url`·`media_proxy_file`은 `config.toml`에서 읽고, 확장 ID는 CDP 타깃에서 먼저 찾고 없으면 `--profile`(기본 `~/dev/tampermonkey/.user-data/chrome-tampermonkey`)의 `Extensions/`를 스캔한다. 확장의 현재 엔드포인트가 바뀌면 호스트도 함께 갱신하고 경고한다(서명 URL은 ASN에 묶여 있어 위치가 바뀌면 403이 날 수 있다). `--keep-host`로 기존 호스트를 고정할 수 있다.
+
+프록시 CONNECT가 407로 거절되면 `reqwest`는 응답이 아닌 연결 오류를 돌려주므로 잡에는 `media route connection failed`로 기록되고, `classify_failure_for`는 이를 일시 오류로 보아 `[retry] max_retries`만큼 재시도한 뒤 `failed`로 끝난다. UI도 `Failed`로만 표시하고 Expired/Blocked로 분류하지 않는다.
+
 소스가 특정 IP/ASN에 묶인 경우 URL을 발급받은 경로와 다운로드 경로를 맞춰야 한다. 2026-09-07 대조에서는 브라우저의 AdGuard 도쿄 HTTPS 경로와 CLI의 라고스 SOCKS 경로가 달랐으며, 같은 도쿄 경로에서는 일반 curl도 HLS를 HTTP 200으로 받았다. 서명 URL의 403만으로 실제 만료나 TLS 지문 차이를 단정하면 안 된다.
 
 대체 소스는 기존 크기 제한(2배 이상 차이 제외)과 시도 기록을 따르고, 사용한 소스를 잡에 저장한다. 세그먼트 재개 캐시는 해석된 목록(순서·초기화 세그먼트 포함)별로 분리해 다른 소스의 파일을 혼합하지 않는다.
@@ -127,6 +138,8 @@ HLS 다운로드 단계의 정체 감시는 세그먼트 전체 재시도 예산
 cargo build --release
 /var/tmp/stash-cargo-target/release/stash ~/.config/stash/config.toml
 ```
+
+감독 실행(executor)은 `scripts/stash-run.sh`를 진입점으로 쓴다. 래퍼가 `sync-media-proxy.ts --quiet`를 먼저 실행한 뒤 stash를 `exec`하므로 stash가 뜰 때마다 media proxy 자격 증명이 맞춰진다(Chrome·확장·bun이 없으면 경고만 남기고 stash는 그대로 시작한다). `~/.config/systemd/user/executor.json`의 `stash.cmd`가 이 래퍼를 가리키며, 래퍼 시작 시에만 동기화하므로 stash가 유휴일 때나 잡마다 드는 비용은 없다.
 
 `.cargo/config.toml` 이 빌드 산출물(`target-dir`)을 `/var/tmp/stash-cargo-target` 으로 보낸다. `/tmp` 는 tmpfs(RAM) 라서 큰 빌드 캐시는 `/var/tmp` (디스크) 를 쓴다.
 

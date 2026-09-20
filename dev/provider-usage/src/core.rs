@@ -286,6 +286,7 @@ pub struct LiveProbes<H> {
     pub http: H,
     pub commandcode_key: Option<String>,
     pub opencode_cookie: Option<String>,
+    pub opencode_api_key: Option<String>,
     pub opencode_workspace: Option<String>,
     pub commandcode_base: String,
     pub openai: Option<auth::OpenaiSession>,
@@ -300,6 +301,7 @@ impl LiveProbes<ReqwestHttp> {
             http: ReqwestHttp::with_timeout_ms(REMAINING_TIMEOUT_MS)?,
             commandcode_key: auth::commandcode_api_key(&auth::env_lookup, None),
             opencode_cookie: auth::opencode_cookie(&auth::env_lookup, None),
+            opencode_api_key: auth::opencode_api_key(&auth::env_lookup, None),
             opencode_workspace: auth::opencode_workspace_id(&auth::env_lookup, None),
             commandcode_base: DEFAULT_COMMANDCODE_BASE.to_string(),
             openai: auth::openai_session(&auth::env_lookup),
@@ -316,7 +318,12 @@ impl<H: Http> Probes for LiveProbes<H> {
     fn cache_key(&self, provider: &str) -> String {
         match provider {
             "commandcode" => cache_key(provider, self.commandcode_key.as_deref()),
-            "opencode-go" => cache_key(provider, self.opencode_cookie.as_deref()),
+            "opencode-go" => cache_key(
+                provider,
+                self.opencode_api_key
+                    .as_deref()
+                    .or(self.opencode_cookie.as_deref()),
+            ),
             "openai" => cache_key(
                 provider,
                 self.openai.as_ref().map(|s| s.access_token.as_str()),
@@ -354,9 +361,29 @@ impl<H: Http> Probes for LiveProbes<H> {
                     renews_at: None,
                 },
             },
-            "opencode-go" => match self.opencode_cookie.as_deref() {
-                Some(cookie) => {
-                    opencode_go::probe(&self.http, cookie, self.opencode_workspace.as_deref(), now)
+            "opencode-go" => {
+                let key_outcome = self.opencode_api_key.as_deref().map(|key| {
+                    opencode_go::probe_api_key(&self.http, key, now).unwrap_or_else(|_| {
+                        ProbeOutcome {
+                            cache_key: self.cache_key(provider),
+                            state: ProviderState::Unknown,
+                            reason: Some("network".into()),
+                            reset_at: None,
+                            remaining_credits: None,
+                            windows: Vec::new(),
+                            renews_at: None,
+                        }
+                    })
+                });
+                match key_outcome {
+                    Some(outcome) if outcome.state != ProviderState::Unknown => outcome,
+                    key_unknown => match self.opencode_cookie.as_deref() {
+                        Some(cookie) => opencode_go::probe(
+                            &self.http,
+                            cookie,
+                            self.opencode_workspace.as_deref(),
+                            now,
+                        )
                         .unwrap_or_else(|_| ProbeOutcome {
                             cache_key: self.cache_key(provider),
                             state: ProviderState::Unknown,
@@ -365,18 +392,19 @@ impl<H: Http> Probes for LiveProbes<H> {
                             remaining_credits: None,
                             windows: Vec::new(),
                             renews_at: None,
-                        })
+                        }),
+                        None => key_unknown.unwrap_or(ProbeOutcome {
+                            cache_key: self.cache_key(provider),
+                            state: ProviderState::Unknown,
+                            reason: Some("config".into()),
+                            reset_at: None,
+                            remaining_credits: None,
+                            windows: Vec::new(),
+                            renews_at: None,
+                        }),
+                    },
                 }
-                None => ProbeOutcome {
-                    cache_key: self.cache_key(provider),
-                    state: ProviderState::Unknown,
-                    reason: Some("config".into()),
-                    reset_at: None,
-                    remaining_credits: None,
-                    windows: Vec::new(),
-                    renews_at: None,
-                },
-            },
+            }
             "openai" => match &self.openai {
                 Some(session) => openai::probe(
                     &self.http,

@@ -215,6 +215,13 @@
         "weight": 450,
         "color": "--muted-foreground",
         "where": "one line under settings page title"
+      },
+      {
+        "id": "composerEditor",
+        "font": "--text-editor",
+        "weight": 450,
+        "color": "--accent-foreground",
+        "where": "agent composer editor (agent page): 15px/24px, placeholder --placeholder-foreground"
       }
     ]
   },

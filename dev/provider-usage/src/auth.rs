@@ -250,6 +250,14 @@ pub fn opencode_cookie(
         .or_else(|| agent_credential(env, &["opencode-go", "opencode_go"]))
 }
 
+pub fn opencode_api_key(
+    env: &dyn Fn(&str) -> Option<String>,
+    env_file: Option<&Path>,
+) -> Option<String> {
+    env_override(env, env_file, &["OPENCODE_GO_API_KEY"])
+        .or_else(|| agent_credential(env, &["opencode-go", "opencode_go"]))
+}
+
 pub fn opencode_workspace_id(
     env: &dyn Fn(&str) -> Option<String>,
     env_file: Option<&Path>,

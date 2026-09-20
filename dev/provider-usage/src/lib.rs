@@ -6,6 +6,7 @@ mod commandcode;
 mod core;
 mod grok;
 mod http;
+mod iso;
 mod openai;
 mod opencode_go;
 mod policy;

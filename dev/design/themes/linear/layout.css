@@ -124,6 +124,11 @@ body {
 	--panel-shadow: 0 0.5px 1px 1px rgb(0 0 0 / 0.3);
 	--ink-soft: rgb(35, 37, 42);
 	--ink-subtle: rgb(107, 111, 118);
+	/* Live agent composer editor (linear.app/easydevs/agent, 2026-09-20):
+	   --editor-placeholder-color lch(39.452% 1.425 272) = rgb(92, 93, 95) over the --accent
+	   composer fill, i.e. --muted-foreground at 52%. The expression resolves per scheme, so
+	   light derives the same relationship (live light value not captured yet). */
+	--placeholder-foreground: color-mix(in srgb, var(--muted-foreground) 52%, transparent);
 	--tab-idle: rgb(226, 226, 226);
 	--tab-selected: rgb(255, 255, 255);
 	--inspector: rgb(255, 255, 255);
@@ -273,6 +278,12 @@ body {
 	--text-heading-sm: 13px;
 	--text-heading-sm--line-height: 16px;
 	--text-heading-sm--font-weight: 500;
+	/* Live composer editor (linear.app/easydevs/agent, 2026-09-20): --font-size-regular 15px,
+	   --font-weight-normal 450, --editor-line-height 1.6 -> 24px. Not a heading: --text-heading
+	   is 15/23/500 and reads heavier than the live editor. */
+	--text-editor: 15px;
+	--text-editor--line-height: 24px;
+	--text-editor--font-weight: 450;
 	--text-body-base: 13px;
 	--text-body-base--line-height: 16px;
 	--text-body-sm: 12px;

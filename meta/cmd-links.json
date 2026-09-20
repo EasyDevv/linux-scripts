@@ -320,6 +320,7 @@
         "dev/provider-usage/src/commandcode.rs",
         "dev/provider-usage/src/core.rs",
         "dev/provider-usage/src/http.rs",
+        "dev/provider-usage/src/iso.rs",
         "dev/provider-usage/src/opencode_go.rs",
         "dev/provider-usage/src/policy.rs"
       ],

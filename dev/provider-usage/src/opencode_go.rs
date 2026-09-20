@@ -6,6 +6,7 @@ use crate::core::ProbeOutcome;
 use crate::http::Http;
 
 pub const OPENCODE_BASE_URL: &str = "https://opencode.ai";
+pub const OPENCODE_ZEN_GO_USAGE_URL: &str = "https://opencode.ai/zen/go/v1/usage";
 const OPENCODE_SERVER_URL: &str = "https://opencode.ai/_server";
 const WORKSPACES_SERVER_ID: &str =
     "def39973159c7f0483d8793a822b8dbb10d067e12c65455fcb4608459ba0234f";
@@ -142,6 +143,33 @@ fn cache_windows(windows: &[UsageWindow], now: i64) -> Vec<crate::cache::UsageWi
 
 pub fn is_windows_exhausted(windows: &[UsageWindow]) -> bool {
     windows.iter().any(|window| window.used_percent >= 100.0)
+}
+
+pub fn parse_usage_from_json(text: &str, now: i64) -> Option<SubscriptionUsage> {
+    let value: serde_json::Value = serde_json::from_str(text).ok()?;
+    let usage = value.get("usage")?.as_object()?;
+    let mut windows = Vec::new();
+    for name in ["rolling", "weekly", "monthly"] {
+        let Some(entry) = usage.get(name) else {
+            continue;
+        };
+        let Some(percent) = entry.get("percent").and_then(|value| value.as_f64()) else {
+            continue;
+        };
+        windows.push(UsageWindow {
+            name: name.to_string(),
+            used_percent: clamp_percent(percent),
+            reset_in_sec: entry
+                .get("resetsAt")
+                .and_then(|value| value.as_str())
+                .and_then(crate::iso::parse_iso_unix)
+                .map(|reset_at| reset_at.saturating_sub(now)),
+        });
+    }
+    if windows.is_empty() {
+        return None;
+    }
+    Some(SubscriptionUsage { windows })
 }
 
 fn clamp_percent(value: f64) -> f64 {
@@ -295,36 +323,66 @@ pub fn probe(
             continue;
         }
         if let Some(parsed) = parse_subscription_from_page_text(&response.body) {
-            let renews_at = monthly_renews(&parsed.windows, now);
-            if is_windows_exhausted(&parsed.windows) {
-                let window = parsed
-                    .windows
-                    .iter()
-                    .find(|item| item.used_percent >= 100.0)
-                    .unwrap_or(&parsed.windows[0]);
-                let reset_at = window.reset_in_sec.map(|secs| now.saturating_add(secs));
-                return Ok(ProbeOutcome {
-                    cache_key,
-                    state: ProviderState::Exhausted,
-                    reason: Some(format!("window:{}", window.name)),
-                    reset_at,
-                    remaining_credits: None,
-                    windows: cache_windows(&parsed.windows, now),
-                    renews_at,
-                });
-            }
-            return Ok(ProbeOutcome {
-                cache_key,
-                state: ProviderState::Available,
-                reason: None,
-                reset_at: None,
-                remaining_credits: None,
-                windows: cache_windows(&parsed.windows, now),
-                renews_at,
-            });
+            return Ok(usage_outcome(cache_key, &parsed, now));
         }
     }
     Ok(unknown(cache_key, Some("error".into())))
+}
+
+pub fn probe_api_key(http: &dyn Http, key: &str, now: i64) -> Result<ProbeOutcome> {
+    let cache_key = crate::auth::cache_key("opencode-go", Some(key));
+    let key = key.trim();
+    if key.is_empty() {
+        return Ok(unknown(cache_key, Some("unavailable".into())));
+    }
+    let authorization = format!("Bearer {key}");
+    let response = http.get(
+        OPENCODE_ZEN_GO_USAGE_URL,
+        &[
+            ("Authorization", authorization.as_str()),
+            ("Accept", "application/json"),
+        ],
+    )?;
+    if response.status >= 400 {
+        return Ok(unknown(
+            cache_key,
+            Some(format!("http:{}", response.status)),
+        ));
+    }
+    match parse_usage_from_json(&response.body, now) {
+        Some(parsed) => Ok(usage_outcome(cache_key, &parsed, now)),
+        None => Ok(unknown(cache_key, Some("usage".into()))),
+    }
+}
+
+fn usage_outcome(cache_key: String, parsed: &SubscriptionUsage, now: i64) -> ProbeOutcome {
+    let renews_at = monthly_renews(&parsed.windows, now);
+    if is_windows_exhausted(&parsed.windows) {
+        let window = parsed
+            .windows
+            .iter()
+            .find(|item| item.used_percent >= 100.0)
+            .unwrap_or(&parsed.windows[0]);
+        let reset_at = window.reset_in_sec.map(|secs| now.saturating_add(secs));
+        return ProbeOutcome {
+            cache_key,
+            state: ProviderState::Exhausted,
+            reason: Some(format!("window:{}", window.name)),
+            reset_at,
+            remaining_credits: None,
+            windows: cache_windows(&parsed.windows, now),
+            renews_at,
+        };
+    }
+    ProbeOutcome {
+        cache_key,
+        state: ProviderState::Available,
+        reason: None,
+        reset_at: None,
+        remaining_credits: None,
+        windows: cache_windows(&parsed.windows, now),
+        renews_at,
+    }
 }
 
 fn monthly_renews(windows: &[UsageWindow], now: i64) -> Option<i64> {
@@ -372,6 +430,10 @@ $R[20]={rollingUsage:$R[21]={status:"ok",resetInSec:7200,usagePercent:100},weekl
 </script></body></html>
 "#;
 
+    const USAGE_JSON: &str = r#"
+{"usage":{"rolling":{"status":"ok","percent":0,"resetsAt":"1970-01-02T00:00:00.000Z"},"weekly":{"status":"ok","percent":67,"resetsAt":"1970-01-03T00:00:00.000Z"},"monthly":{"status":"ok","percent":67,"resetsAt":"1970-01-05T00:00:00.000Z"}}}
+"#;
+
     #[test]
     fn normalize_cookie_input_wraps_bare_iron_seals() {
         assert_eq!(normalize_cookie_input("Fe26.2**abc"), "auth=Fe26.2**abc");
@@ -393,6 +455,45 @@ $R[20]={rollingUsage:$R[21]={status:"ok",resetInSec:7200,usagePercent:100},weekl
             parse_workspace_ids(r#"id: "wrk_TESTWORKSPACEID123""#),
             vec!["wrk_TESTWORKSPACEID123"]
         );
+    }
+
+    #[test]
+    fn parse_usage_json_reads_api_windows() {
+        let parsed = parse_usage_from_json(USAGE_JSON, 1_000).unwrap();
+        assert_eq!(parsed.windows.len(), 3);
+        assert_eq!(parsed.windows[0].name, "rolling");
+        assert_eq!(parsed.windows[0].used_percent, 0.0);
+        assert_eq!(parsed.windows[0].reset_in_sec, Some(86_400 - 1_000));
+        assert_eq!(parsed.windows[1].used_percent, 67.0);
+        assert_eq!(parsed.windows[2].reset_in_sec, Some(345_600 - 1_000));
+    }
+
+    #[test]
+    fn parse_usage_json_rejects_unknown_bodies() {
+        assert!(parse_usage_from_json("not json", 1_000).is_none());
+        assert!(parse_usage_from_json(r#"{"usage":{}}"#, 1_000).is_none());
+    }
+
+    #[test]
+    fn probe_api_key_reads_usage_endpoint() {
+        let http = MapHttp {
+            routes: vec![("/zen/go/v1/usage".into(), 200, USAGE_JSON.to_string())],
+        };
+        let outcome = probe_api_key(&http, "sk-test", 1_000).unwrap();
+        assert_eq!(outcome.state, ProviderState::Available);
+        assert_eq!(outcome.windows.len(), 3);
+        assert_eq!(outcome.windows[1].used_percent, 67.0);
+        assert_eq!(outcome.renews_at, Some(345_600));
+    }
+
+    #[test]
+    fn probe_api_key_reports_http_errors() {
+        let http = MapHttp {
+            routes: vec![("/zen/go/v1/usage".into(), 402, String::new())],
+        };
+        let outcome = probe_api_key(&http, "sk-test", 1_000).unwrap();
+        assert_eq!(outcome.state, ProviderState::Unknown);
+        assert_eq!(outcome.reason.as_deref(), Some("http:402"));
     }
 
     #[test]
