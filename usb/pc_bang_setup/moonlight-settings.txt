@@ -1,0 +1,19 @@
+# Moonlight 원격데스크톱 프리셋. SETUP.cmd가 Moonlight 설치 직후 이 값을 적용한다.
+# 형식: KEY=value 한 줄에 하나. # 주석·빈 줄 무시. 따옴표 불필요.
+# 적용 위치(Windows): HKCU\SOFTWARE\Moonlight Game Streaming Project\Moonlight
+#   (SETUP을 실행한 관리자 계정에 적용. Moonlight를 처음 실행하기 전에 적용되므로
+#    첫 실행부터 아래 설정으로 열린다.)
+
+# 해상도 4K
+width=3840
+height=2160
+# 프레임 30
+fps=30
+# 비트레이트(Kbps). 40000 = Moonlight 4K 기본값과 동일.
+bitrate=40000
+# 창 모드: 0=전체화면 독점, 1=테두리 없는 창(전체화면 데스크톱), 2=창
+windowmode=1
+# 게임 대신 원격데스크톱에 맞게 마우스 최적화: true=켬(절대 마우스), false=끔(게임용 캡처)
+mouseacceleration=true
+# 게임 최적화: 원격데스크톱 용도이므로 끔
+gameopts=false

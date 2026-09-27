@@ -1,0 +1,26 @@
+{
+  "pages": [
+    {
+      "id": "home",
+      "url": "https://www.threads.com/"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    }
+  ],
+  "files": [],
+  "snapshots": [
+    {
+      "page": "home",
+      "url": "https://www.threads.com/",
+      "file": "pages/home.mhtml",
+      "format": "mhtml"
+    }
+  ],
+  "capturedAt": "2026-09-22T04:44:41.023Z"
+}

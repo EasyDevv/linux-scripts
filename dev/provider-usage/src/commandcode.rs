@@ -129,6 +129,7 @@ pub fn probe(http: &dyn Http, api_key: &str, base_url: &str) -> Result<ProbeOutc
     if is_credits_exhausted(&credits) {
         let (reason, reset_at) = exhaustion_reason(&credits).unwrap_or(("credits".into(), None));
         return Ok(ProbeOutcome {
+            plan: None,
             cache_key,
             state: ProviderState::Exhausted,
             reason: Some(reason),
@@ -139,6 +140,7 @@ pub fn probe(http: &dyn Http, api_key: &str, base_url: &str) -> Result<ProbeOutc
         });
     }
     Ok(ProbeOutcome {
+        plan: None,
         cache_key,
         state: ProviderState::Available,
         reason: None,
@@ -230,6 +232,7 @@ fn monthly_window(credits: &Credits, subscription: Option<&Subscription>) -> Opt
 
 fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
     ProbeOutcome {
+        plan: None,
         cache_key,
         state: ProviderState::Unknown,
         reason,

@@ -1,0 +1,45 @@
+{
+  "pages": [
+    {
+      "id": "paywall-article",
+      "url": "https://levelup.gitconnected.com/the-best-developer-is-no-longer-the-one-who-writes-the-best-code-996e8ed0869b"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844,
+      "mobile": true
+    }
+  ],
+  "files": [
+    {
+      "page": "paywall-article",
+      "viewport": "desktop",
+      "url": "https://levelup.gitconnected.com/the-best-developer-is-no-longer-the-one-who-writes-the-best-code-996e8ed0869b",
+      "file": "desktop/paywall-article.png"
+    },
+    {
+      "page": "paywall-article",
+      "viewport": "mobile",
+      "url": "https://levelup.gitconnected.com/the-best-developer-is-no-longer-the-one-who-writes-the-best-code-996e8ed0869b",
+      "file": "mobile/paywall-article.png"
+    }
+  ],
+  "snapshots": [
+    {
+      "page": "paywall-article",
+      "url": "https://levelup.gitconnected.com/the-best-developer-is-no-longer-the-one-who-writes-the-best-code-996e8ed0869b",
+      "file": "pages/paywall-article.mhtml",
+      "format": "mhtml"
+    }
+  ],
+  "capturedAt": "2026-09-22T06:20:06.651Z"
+}

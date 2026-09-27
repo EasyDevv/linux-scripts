@@ -365,6 +365,7 @@ fn usage_outcome(cache_key: String, parsed: &SubscriptionUsage, now: i64) -> Pro
             .unwrap_or(&parsed.windows[0]);
         let reset_at = window.reset_in_sec.map(|secs| now.saturating_add(secs));
         return ProbeOutcome {
+            plan: None,
             cache_key,
             state: ProviderState::Exhausted,
             reason: Some(format!("window:{}", window.name)),
@@ -375,6 +376,7 @@ fn usage_outcome(cache_key: String, parsed: &SubscriptionUsage, now: i64) -> Pro
         };
     }
     ProbeOutcome {
+        plan: None,
         cache_key,
         state: ProviderState::Available,
         reason: None,
@@ -402,6 +404,7 @@ fn is_workspace_id(value: &str) -> bool {
 
 fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
     ProbeOutcome {
+        plan: None,
         cache_key,
         state: ProviderState::Unknown,
         reason,

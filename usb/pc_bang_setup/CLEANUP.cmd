@@ -1,5 +1,7 @@
 @echo off
-rem pc_bang_setup root launcher: removes BOTH Orca and Tailscale, no residue.
+rem pc_bang_setup root launcher: removes whichever of Orca / Moonlight /
+rem Tailscale is present, no residue. Microsoft Edge ships with Windows and is
+rem never installed or removed by this kit.
 rem Delegates to orca\Orca-Session.ps1. Uses Windows PowerShell 5.1 explicitly.
 setlocal
 net session >nul 2>&1
@@ -17,6 +19,6 @@ if %CODE% neq 0 (
   pause
   exit /b %CODE%
 )
-echo [RESULT] Cleanup clean, code 0. Remember to revoke the grant on the desktop (Orca Settings - Remote Orca Servers - Shared Server Access).
+echo [RESULT] Cleanup clean, code 0. If Orca was used, remember to revoke the grant on the desktop (Orca Settings - Remote Orca Servers - Shared Server Access).
 echo %cmdcmdline% | find /I "/c" >nul && pause
 exit /b 0

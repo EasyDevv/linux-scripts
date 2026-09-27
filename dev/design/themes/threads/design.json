@@ -1,0 +1,263 @@
+{
+	"slug": "threads",
+	"measuredAt": "2026-09-22",
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"scheme": "dark"
+	},
+	"thesis": "Canvas is the page. Columns are separated by hairlines, not by cards, panels, or shadows. One narrow reading column (640px) holds post rows that expand in place. layout.css owns values; this file says which token applies and what not to copy.",
+	"applyOnto": "product feed skeleton",
+	"doNotCopy": [
+		"threads wordmark",
+		"@easy__dev identity",
+		"following/ghost-post/archive rail rows",
+		"insights",
+		"X.com quote-card chrome",
+		"carousel dots"
+	],
+	"notThreads": [
+		"floating main panel (Sidebar.Inset) — threads has no panel fill, radius, or shadow",
+		"252px labeled rail as the default — this product's rail starts icon-only at --rail-width",
+		"right discover column — the live home feed has none; this product adds it (plan §3)",
+		"카드 상단의 아바타·저자 줄 — 단일 저자 블로그라 36px 아바타와 48px 컬럼을 두지 않는다. 제목이 카드의 첫 줄이고, 글의 나이(`2시간`)는 하단 메타 줄 왼쪽 끝에 선다",
+		"액션 줄의 숫자 카운트 — 서버 집계가 없으므로 하트·답글과 카운트를 두지 않는다. 아이콘 전용 공유·저장 두 개만 우측 끝에 모은다",
+		"펼침 애니메이션 240ms(라이브 `--panel-fold-duration` 200ms의 1.2배)와 라이브에 없는 라인 리빌 — layout.css의 측정값은 그대로 두고, 피드 수치는 `.product/lib/feed-motion.ts`가 소유한다",
+		"본문 러닝 텍스트의 줄 상자 23px(1.53) — 라이브 `--text-body-base`는 15px/21px(1.4)이고 그 토큰은 그대로 둔다. 글 본문만 23px로 읽고, 이 값이 접힘 창(4줄 = 92px)·페이드 밴드(2줄 = 46px)·리빌 속도의 단위가 된다(`FEED_LINE_PX`). 커버 → 본문 첫 줄 간격은 20px다(`FEED_COVER_GAP_PX`) — 캡션 뒤 간격과 같은 값이어야 한다: 한 글 안의 두 이미지→텍스트 seam(표지→본문, 캡션→다음 블록)이 9.6px 대 20px로 달라 어색했다",
+		"본문 소제목(h2)을 위해 테마 스케일에 단계 하나를 추가했다: `--text-heading-base`(17px/24px, w600). 라이브 스케일은 15px(`--text-heading-sm`)와 20px(`--text-title`) 사이가 비어 있어, 소제목이 본문 크기이거나 제목 크기일 수밖에 없었다. 17px은 본문보다 +13%, 제목보다 −15%로 양쪽 어느 쪽과도 '거의 비슷'해지지 않는다(앞서 `--text-title`을 썼다가 h1과 구분되지 않아 내렸다)"
+	],
+	"families": [
+		"feed",
+		"post",
+		"discover"
+	],
+	"shell": {
+		"model": "three-column-canvas",
+		"canvas": "--background",
+		"sidebar": {
+			"fill": "--sidebar",
+			"width": "--rail-width-expanded",
+			"railWidth": "--rail-width",
+			"onCanvas": true,
+			"borderAgainstCanvas": false,
+			"radius": false,
+			"collapsible": "icon",
+			"hideBelow": "--sidebar-hide-below",
+			"collapse": {
+				"mode": "slide-start",
+				"duration": "--sidebar-collapse-duration",
+				"ease": "--sidebar-collapse-ease"
+			},
+			"variant": "sidebar",
+			"primitive": "Sidebar",
+			"nav": {
+				"item": "Sidebar.MenuButton",
+				"height": "--control-height-nav",
+				"radius": "--radius-lg",
+				"font": "--text-body-base",
+				"idle": "--foreground",
+				"active": "--foreground",
+				"activeBg": "--row-selected-fill",
+				"icon": "var(--icon-size)",
+				"iconColor": "--foreground",
+				"rowPadding": "5.5px 9px",
+				"gap": "10px",
+				"not": "default Button",
+				"weight": 400,
+				"activeWeight": 600,
+				"hoverBg": "--row-hover-fill"
+			}
+		},
+		"main": {
+			"fill": "--background",
+			"width": "--feed-width",
+			"centered": true,
+			"border": "--border",
+			"borderWidth": "--hairline-width",
+			"radius": false,
+			"shadow": false,
+			"header": {
+				"height": "--shell-header-height",
+				"sticky": true,
+				"pad": "10px 24px 8px",
+				"title": "--text-title"
+			}
+		},
+		"discover": {
+			"width": "--discover-width",
+			"fill": "--background",
+			"border": false,
+			"sticky": true
+		},
+		"footer": "none on desktop; mobile swaps the rail for a bottom nav (--control-height-nav rows)",
+		"gutterToMain": "none"
+	},
+	"type": {
+		"font": "--font-sans",
+		"notDocumentBody": true,
+		"notMarketingScale": true,
+		"roles": [
+			{
+				"id": "columnTitle",
+				"font": "--text-title",
+				"weight": 600,
+				"color": "--foreground",
+				"where": "feed column h1 in the sticky header, 20px/25px measured"
+			},
+			{
+				"id": "navLabelIdle",
+				"font": "--text-body-base",
+				"weight": 400,
+				"color": "--foreground",
+				"where": "rail rows (15px/21px measured)"
+			},
+			{
+				"id": "navLabelActive",
+				"font": "--text-body-base",
+				"weight": 600,
+				"color": "--foreground",
+				"fill": "--row-selected-fill",
+				"where": "current rail row; measured w600 vs w400 idle"
+			},
+			{
+				"id": "authorName",
+				"font": "--text-heading-sm",
+				"weight": 600,
+				"color": "--foreground",
+				"where": "post handle"
+			},
+			{
+				"id": "postTitle",
+				"font": "--text-heading-sm",
+				"weight": 600,
+				"color": "--foreground",
+				"where": "collapsed card title"
+			},
+			{
+				"id": "postBody",
+				"font": "--text-body-base",
+				"weight": 400,
+				"color": "--foreground",
+				"where": "preview and expanded body: 15px/21px measured"
+			},
+			{
+				"id": "postPreview",
+				"font": "--text-body-base",
+				"weight": 400,
+				"color": "--ink-subtle",
+				"where": "collapsed card summary under the title (3 lines); the live post body uses --foreground, the summary is a deliberate step down"
+			},
+			{
+				"id": "meta",
+				"font": "--text-body-base",
+				"weight": 400,
+				"color": "--ink-subtle",
+				"where": "relative time, tag chips"
+			},
+			{
+				"id": "actionCount",
+				"font": "--text-body-sm",
+				"weight": 400,
+				"color": "--ink-soft",
+				"where": "like / reply / share counts: 13px/18.2px measured"
+			},
+			{
+				"id": "indexBadge",
+				"font": "--text-label-sm",
+				"weight": 600,
+				"color": "--ink-subtle",
+				"where": "multi-image index: 12px/16.8px measured"
+			},
+			{
+				"id": "sectionLabel",
+				"font": "--text-heading-sm",
+				"weight": 600,
+				"color": "--foreground",
+				"where": "Trending / Popular headers in the discover column"
+			}
+		]
+	},
+	"controls": {
+		"navRow": {
+			"height": "--control-height-nav",
+			"radius": "--radius-lg",
+			"activeBg": "--sidebar-accent",
+			"noAccentBar": true
+		},
+		"actions": {
+			"commit": {
+				"kind": "filled text pill",
+				"radius": "--radius-pill",
+				"fill": "--primary",
+				"color": "--primary-foreground",
+				"where": "게시/Post in the composer row"
+			},
+			"namedSecondary": {
+				"kind": "outline text pill",
+				"radius": "--radius-pill"
+			},
+			"toolChrome": {
+				"kind": "icon button, no fill",
+				"size": "var(--action-row-height)",
+				"radius": "--radius-pill",
+				"icon": "18px",
+				"color": "--muted-foreground"
+			}
+		},
+		"emphasis": {
+			"fill": "--primary",
+			"where": "one commit pill per screen at most"
+		},
+		"search": "quiet inline field with a leading icon, never a hero search",
+		"dialog": {
+			"width": "min(100% - 2rem, 560px)",
+			"sideInsetUntilCap": true,
+			"title": {
+				"font": "--text-title",
+				"weight": 600
+			},
+			"noHeaderFooterRule": true,
+			"cap": "--dialog-cap"
+		},
+		"menu": {
+			"fill": "--menu-fill",
+			"radius": "--radius-panel",
+			"rowPad": "10px 12px",
+			"rowRadius": "--radius-lg",
+			"separator": "--menu-separator",
+			"shadow": "--menu-shadow"
+		},
+		"status": {
+			"info": "--status-info",
+			"danger": "--status-danger",
+			"note": "measured: link / secondary user names use --status-info, the logout row uses --status-danger"
+		}
+	},
+	"lists": {
+		"kind": "hairline-separated rows in one narrow column, not a card stack",
+		"rowPad": "var(--feed-pad-y) var(--feed-pad-x)",
+		"rowPadMobile": "var(--feed-pad-y) var(--feed-pad-x-mobile)",
+		"hairline": "--hairline",
+		"hairlineWidth": "--hairline-width",
+		"avatar": {
+			"size": "--avatar-size",
+			"radius": "--radius-pill",
+			"gutter": "12px"
+		},
+		"actionRow": {
+			"height": "--action-row-height",
+			"gap": "8px",
+			"icon": "var(--icon-size)",
+			"firstInset": "-8px"
+		},
+		"emptyState": "quiet sentence, no illustration",
+		"fold": {
+			"duration": "--panel-fold-duration",
+			"ease": "--panel-fold-ease"
+		},
+		"rowFill": {
+			"hover": "--row-hover-fill",
+			"selected": "--row-selected-fill"
+		}
+	}
+}

@@ -242,6 +242,21 @@ fn grok_session_from_cli(env: &dyn Fn(&str) -> Option<String>) -> Option<GrokSes
     preferred.or(fallback)
 }
 
+pub fn lithosai_api_key(
+    env: &dyn Fn(&str) -> Option<String>,
+    env_file: Option<&Path>,
+) -> Option<String> {
+    env_override(env, env_file, &["LITHOSAI_API_KEY"])
+        .or_else(|| agent_credential(env, &["lithosai"]))
+}
+
+pub fn lithosai_console_cookie(
+    env: &dyn Fn(&str) -> Option<String>,
+    env_file: Option<&Path>,
+) -> Option<String> {
+    env_override(env, env_file, &["LITHOSAI_CONSOLE_COOKIE"])
+}
+
 pub fn opencode_cookie(
     env: &dyn Fn(&str) -> Option<String>,
     env_file: Option<&Path>,
@@ -448,6 +463,40 @@ mod tests {
         ]);
         let env = |key: &str| map.get(key).cloned();
         assert_eq!(commandcode_api_key(&env, None).as_deref(), Some("pi-cc-key"));
+    }
+
+    #[test]
+    fn reads_lithosai_key_and_console_cookie() {
+        let dir = tempdir().unwrap();
+        let home = dir.path();
+        let agent = home.join(".pi").join("agent");
+        fs::create_dir_all(&agent).unwrap();
+        fs::write(
+            agent.join("auth.json"),
+            r#"{"lithosai":{"type":"api_key","key":"pi-lithos-key"}}"#,
+        )
+        .unwrap();
+        fs::write(
+            agent.join(".env"),
+            "LITHOSAI_CONSOLE_COOKIE=\"KEYCLOAK_SESSION=abc\"\n",
+        )
+        .unwrap();
+        let home_s = home.to_string_lossy().to_string();
+        let env = |key: &str| {
+            if key == "HOME" {
+                Some(home_s.clone())
+            } else {
+                None
+            }
+        };
+        assert_eq!(
+            lithosai_api_key(&env, None).as_deref(),
+            Some("pi-lithos-key")
+        );
+        assert_eq!(
+            lithosai_console_cookie(&env, None).as_deref(),
+            Some("KEYCLOAK_SESSION=abc")
+        );
     }
 
     #[test]

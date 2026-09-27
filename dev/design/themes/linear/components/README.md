@@ -42,6 +42,21 @@ Reuse:
 
 Do not restyle the menu surface with `bg-popover` / default Popover shadow. Keep this file’s surface, 13px type, and `prop-menu-item` highlight.
 
+## agent-composer/
+
+Agent chat composer with an inline `/` command and `@` path palette. Box `bg-accent` + `--radius-sm` + `--panel-shadow` + `6px 4px` padding, editor on top, control row under it, palette anchored above the box (dashboard **05-projects**, source `.product/surfaces/05-projects/page.svelte`; reference `novel-writer .product/lib/agent-panel.svelte`).
+
+Reuse:
+
+1. Copy `prop-menu.ts`, `prop-menu.svelte`, `composer-tokens.ts` next to the call site or into `$lib`. The surface, the 32px row, and the `prop-menu-item` highlight are the same values `prop-picker.svelte` and `design.json` `popovers.sharedChrome` carry.
+2. Make the composer box `position: relative` and put the palette inside it: `left: 0; right: 0; bottom: calc(100% + 6px); z-index: 1; overflow: hidden; max-width: 100%`, surface width `max-content`, `min-width: 180px`. Title row `8px 18px 2px 14px` in `--text-body-sm` 450 `--muted-foreground`; list `max-height: 320px; overflow-y: auto`.
+3. Rows are `label + /alias` badge. Keep `data-highlighted` on the active index, move the index on `onmouseenter`, and `onmousedown` preventDefault so focus stays in the editor.
+4. Re-read the caret token on `input`, `keyup`, `click`, and `focus` (`tokenAt(value, selectionStart)`). Reset the active index when the query changes and clear the dismissed flag when the token disappears.
+5. Keys on the editor: ↑↓ move with wrap, Enter/Tab pick (`preventDefault`), Esc sets the dismissed flag to the current query. Do not intercept Enter while the menu is closed — the editor keeps its newline and submit stays on the send button.
+6. ARIA: the button that owns the popup carries `aria-haspopup="listbox"` + `aria-expanded`, the editor carries `aria-controls` + `aria-activedescendant`, the list is `role="listbox"` with `role="option"` + `aria-selected` rows. `aria-expanded` on the editor itself warns (`a11y_role_supports_aria_props`, role textbox).
+7. Pick inserts `{sigil}{alias} ` at the token and puts the caret after it; when a button opened the palette with no token, insert at the caret with one separating space. Clear the caret token when submit empties the field, or the empty field reopens the palette.
+8. `hint` is the ghost line left after a pick: show it while the value equals the token, blank the editor’s ink (`color: transparent`) while keeping `caret-color`, and draw the overlay at the editor’s own type and padding.
+
 ## status-popover.svelte
 
 02-workspace **속성.상태** row. Current value **검토중** uses `CirclePause` + `text-status-info` + kbd `3`. Copy `prop-picker.svelte` with this file.

@@ -1,0 +1,100 @@
+{
+	"slug": "threads",
+	"measuredAt": "2026-09-22",
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"scheme": "dark"
+	},
+	"live": "https://www.threads.com/",
+	"pages": [
+		{
+			"id": "home",
+			"url": "https://www.threads.com/",
+			"taught": [
+				"shell",
+				"columnTitle",
+				"postRow",
+				"avatar",
+				"authorRow",
+				"body",
+				"actionRow",
+				"hairline",
+				"sidebarNavItem",
+				"menu",
+				"mobileShell"
+			]
+		}
+	],
+	"geometry": {
+		"desktop": {
+			"sidebar": "252 wide, 900 tall at x0; padding 0 15px; nav block padding 22px 22px 0 0",
+			"navItem": "200x32 (--control-height-nav); --radius-lg; inner padding 5.5px 9px; gap 10px; icon 18x18 (--icon-size)",
+			"columnTitle": "h1 20px/25px w600 at (417,22); header block padding 10px 24px 8px; sticky header 640x72",
+			"feedColumn": "640 wide at x393, 5795 tall; 1px inline --border; centered in the viewport",
+			"postRow": "638 wide; padding 12px 24px (--feed-pad-y/--feed-pad-x); content 590 from x418",
+			"avatar": "36x36 circle at (418,165); 48px column including the 12px gutter",
+			"authorRow": "15px/21px at y161; handle w600 --foreground; time w400 --ink-subtle; row gap 6px",
+			"body": "15px/21px w400 --foreground, starts y185 (3px under the author row)",
+			"actionRow": "550x36 at (458,660), 8px left of the content inset; buttons 50/42/53/44 wide; gap 8px; icons 18-19px (--icon-size); counts 13px/18.2px --ink-soft",
+			"hairline": "--hairline 1px, 638 wide, above each row at y148"
+		},
+		"mobile": {
+			"viewport": "390x844",
+			"header": "fixed 390x60, --background at 85% alpha, wordmark 32x32 centered, 24x24 icon buttons at x12 and x341",
+			"bottomNav": "fixed 390x50 at y794, --background at 85% alpha",
+			"postRow": "390 wide, padding 12px (no 24px gutter)",
+			"avatar": "36x36"
+		}
+	},
+	"roles": {
+		"canvas": {
+			"taught": "home desktop dark + light",
+			"token": "--background",
+			"note": "post rows are transparent on the canvas; only --hairline separates them"
+		},
+		"elevated": {
+			"taught": "home desktop dark (top-left menu)",
+			"token": "--card / --popover",
+			"note": "menu panel 240 wide, --radius-panel, section fill --card, 1px --hairline between sections"
+		},
+		"columnBorder": {
+			"taught": "home desktop",
+			"token": "--border",
+			"note": "1px inline border on the feed column; the sidebar has no border against the canvas"
+		},
+		"hairline": {
+			"taught": "home desktop",
+			"token": "--hairline",
+			"note": "row divider above each post; --hairline-width is 1px"
+		},
+		"navItem": {
+			"taught": "home desktop (rail rows)",
+			"token": "--row-hover-fill / --row-selected-fill",
+			"note": "hover and current-row fills only; no accent bar, no text color change, active label w600"
+		},
+		"commitPill": {
+			"taught": "home desktop",
+			"token": "--primary",
+			"note": "게시 button: filled --radius-pill, height 32, --primary-foreground text"
+		},
+		"inkLadder": {
+			"taught": "home desktop dark + light (post leaves)",
+			"token": "--foreground -> --ink-soft -> --ink-subtle",
+			"note": "body and handle are --foreground; counts are --ink-soft; time and index badge are --ink-subtle. Measured values live in SOURCE.md."
+		},
+		"status": {
+			"taught": "home desktop (user names, top-left menu)",
+			"token": "--status-info / --status-danger",
+			"note": "link and secondary user names use --status-info; the logout row uses --status-danger. Measured values live in SOURCE.md."
+		}
+	},
+	"notMeasured": [
+		"linear's mid-weight heading role (15/23/500) — threads exposes only 400 and 600 weights",
+		"light menu fill and separator — derived from --popover / --border",
+		"--panel-fold-duration/ease — threads has no measured card fold; borrowed from linear",
+		"--dialog-cap 560px — no threads dialog was captured",
+		"right discover column (the live home feed has none; plan §3 adds it)"
+	],
+	"captures": "{designDir}/ref/threads.com/ — desktop home light/dark, desktop home menu, mobile home dark; PNGs + pages/home.mhtml + index.json"
+}

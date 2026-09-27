@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { relative, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { designRefRoot, hostKey, refDirForHost } from "./paths.ts";
 
 export const VIEWPORTS = {

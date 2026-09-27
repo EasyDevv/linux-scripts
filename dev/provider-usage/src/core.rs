@@ -8,6 +8,7 @@ use crate::cache::{
 use crate::commandcode;
 use crate::grok;
 use crate::http::{Http, ReqwestHttp};
+use crate::lithosai;
 use crate::openai;
 use crate::opencode_go;
 use crate::policy::{self, Remaining};
@@ -23,6 +24,7 @@ pub struct ProbeOutcome {
     pub remaining_credits: Option<i64>,
     pub windows: Vec<crate::cache::UsageWindow>,
     pub renews_at: Option<i64>,
+    pub plan: Option<crate::cache::PlanState>,
 }
 
 impl ProbeOutcome {
@@ -35,6 +37,7 @@ impl ProbeOutcome {
             remaining_credits: None,
             windows: Vec::new(),
             renews_at: None,
+            plan: None,
         }
     }
 }
@@ -182,6 +185,7 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
         let key = self.probes.cache_key(&provider);
         let reset_at = until.filter(|ts| *ts > now);
         let snapshot = ProviderSnapshot {
+            plan: None,
             checked_at: now,
             state: ProviderState::Exhausted,
             reason: Some("live-limit".into()),
@@ -248,6 +252,7 @@ fn outcome_snapshot(
         remaining_credits: outcome.remaining_credits,
         windows: outcome.windows,
         renews_at: outcome.renews_at,
+        plan: outcome.plan,
     };
     (key, snapshot)
 }
@@ -293,6 +298,8 @@ pub struct LiveProbes<H> {
     pub grok: Option<auth::GrokSession>,
     pub grok_management_key: Option<String>,
     pub grok_team_id: Option<String>,
+    pub lithosai_api_key: Option<String>,
+    pub lithosai_console_cookie: Option<String>,
 }
 
 impl LiveProbes<ReqwestHttp> {
@@ -308,6 +315,8 @@ impl LiveProbes<ReqwestHttp> {
             grok: auth::grok_session(&auth::env_lookup),
             grok_management_key: auth::grok_management_key(&auth::env_lookup, None),
             grok_team_id: auth::grok_team_id(&auth::env_lookup),
+            lithosai_api_key: auth::lithosai_api_key(&auth::env_lookup, None),
+            lithosai_console_cookie: auth::lithosai_console_cookie(&auth::env_lookup, None),
         })
     }
 }
@@ -334,6 +343,10 @@ impl<H: Http> Probes for LiveProbes<H> {
                     .as_deref()
                     .or_else(|| self.grok.as_ref().map(|s| s.access_token.as_str())),
             ),
+            "lithosai" => lithosai::cache_key(
+                self.lithosai_api_key.as_deref(),
+                self.lithosai_console_cookie.as_deref(),
+            ),
             other => cache_key(other, None),
         }
     }
@@ -343,6 +356,7 @@ impl<H: Http> Probes for LiveProbes<H> {
             "commandcode" => match self.commandcode_key.as_deref() {
                 Some(key) => commandcode::probe(&self.http, key, &self.commandcode_base)
                     .unwrap_or_else(|_| ProbeOutcome {
+                        plan: None,
                         cache_key: self.cache_key(provider),
                         state: ProviderState::Unknown,
                         reason: Some("network".into()),
@@ -352,6 +366,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                         renews_at: None,
                     }),
                 None => ProbeOutcome {
+                    plan: None,
                     cache_key: self.cache_key(provider),
                     state: ProviderState::Unknown,
                     reason: Some("config".into()),
@@ -365,6 +380,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                 let key_outcome = self.opencode_api_key.as_deref().map(|key| {
                     opencode_go::probe_api_key(&self.http, key, now).unwrap_or_else(|_| {
                         ProbeOutcome {
+                            plan: None,
                             cache_key: self.cache_key(provider),
                             state: ProviderState::Unknown,
                             reason: Some("network".into()),
@@ -385,6 +401,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             now,
                         )
                         .unwrap_or_else(|_| ProbeOutcome {
+                            plan: None,
                             cache_key: self.cache_key(provider),
                             state: ProviderState::Unknown,
                             reason: Some("network".into()),
@@ -394,6 +411,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             renews_at: None,
                         }),
                         None => key_unknown.unwrap_or(ProbeOutcome {
+                            plan: None,
                             cache_key: self.cache_key(provider),
                             state: ProviderState::Unknown,
                             reason: Some("config".into()),
@@ -416,6 +434,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     },
                 )
                 .unwrap_or_else(|_| ProbeOutcome {
+                    plan: None,
                     cache_key: self.cache_key(provider),
                     state: ProviderState::Unknown,
                     reason: Some("network".into()),
@@ -425,6 +444,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     renews_at: None,
                 }),
                 None => ProbeOutcome {
+                    plan: None,
                     cache_key: self.cache_key(provider),
                     state: ProviderState::Unknown,
                     reason: Some("config".into()),
@@ -438,6 +458,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                 if let Some(key) = self.grok_management_key.as_deref() {
                     grok::probe_management(&self.http, key, self.grok_team_id.as_deref())
                         .unwrap_or_else(|_| ProbeOutcome {
+                            plan: None,
                             cache_key: self.cache_key(provider),
                             state: ProviderState::Unknown,
                             reason: Some("network".into()),
@@ -455,6 +476,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                         },
                     )
                     .unwrap_or_else(|_| ProbeOutcome {
+                        plan: None,
                         cache_key: self.cache_key(provider),
                         state: ProviderState::Unknown,
                         reason: Some("network".into()),
@@ -465,6 +487,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     })
                 } else {
                     ProbeOutcome {
+                        plan: None,
                         cache_key: self.cache_key(provider),
                         state: ProviderState::Unknown,
                         reason: Some("config".into()),
@@ -475,7 +498,13 @@ impl<H: Http> Probes for LiveProbes<H> {
                     }
                 }
             }
+            "lithosai" => lithosai::probe(
+                &self.http,
+                self.lithosai_api_key.as_deref(),
+                self.lithosai_console_cookie.as_deref(),
+            ),
             _ => ProbeOutcome {
+                plan: None,
                 cache_key: self.cache_key(provider),
                 state: ProviderState::Unknown,
                 reason: Some("unsupported".into()),
@@ -525,6 +554,7 @@ mod tests {
                 .get(provider)
                 .cloned()
                 .unwrap_or(ProbeOutcome {
+                    plan: None,
                     cache_key: self.key.clone(),
                     state: ProviderState::Unknown,
                     reason: Some("missing".into()),
@@ -554,6 +584,7 @@ mod tests {
     #[test]
     fn cache_hit_skips_probe() {
         let outcome = ProbeOutcome {
+            plan: None,
             cache_key: "commandcode:abc".into(),
             state: ProviderState::Exhausted,
             reason: Some("credits".into()),
@@ -580,6 +611,7 @@ mod tests {
     #[test]
     fn past_fresh_until_reprobes() {
         let outcome = ProbeOutcome {
+            plan: None,
             cache_key: "commandcode:abc".into(),
             state: ProviderState::Exhausted,
             reason: Some("credits".into()),
@@ -598,6 +630,7 @@ mod tests {
     #[test]
     fn mark_exhausted_is_live_signal() {
         let outcome = ProbeOutcome {
+            plan: None,
             cache_key: "commandcode:abc".into(),
             state: ProviderState::Available,
             reason: None,
@@ -619,6 +652,7 @@ mod tests {
     #[test]
     fn force_refresh_ignores_fresh_cache() {
         let outcome = ProbeOutcome {
+            plan: None,
             cache_key: "commandcode:abc".into(),
             state: ProviderState::Exhausted,
             reason: Some("credits".into()),
@@ -648,6 +682,7 @@ mod tests {
             self.probes.set(self.probes.get() + 1);
             let remaining = self.remaining.get();
             ProbeOutcome {
+                plan: None,
                 cache_key: self.key.clone(),
                 state: ProviderState::Available,
                 reason: None,
@@ -710,6 +745,7 @@ mod tests {
                 *self.count.lock().expect("count") += 1;
                 std::thread::sleep(self.delay);
                 ProbeOutcome {
+                    plan: None,
                     cache_key: format!("{provider}:k"),
                     state: ProviderState::Available,
                     reason: None,

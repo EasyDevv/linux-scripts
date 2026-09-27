@@ -20,6 +20,22 @@ pub enum ProviderState {
     Unknown,
 }
 
+/// Subscription state reported by a provider account API.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlanState {
+    /// Raw plan key from the provider (for example `plus`, `free`, `pro`).
+    pub name: String,
+    /// Provider-supplied display label (for example `Plus`, `Free`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display: Option<String>,
+    /// Whether the provider still considers the subscription active.
+    pub active: bool,
+    /// Paid-through instant when the plan is canceled or expiring.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ends_at: Option<i64>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UsageWindow {
@@ -45,6 +61,9 @@ pub struct ProviderSnapshot {
     pub windows: Vec<UsageWindow>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub renews_at: Option<i64>,
+    /// Present when the provider reports a plan/subscription state.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<PlanState>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -213,6 +232,7 @@ mod tests {
                 remaining_credits: Some(0),
                 windows: Vec::new(),
                 renews_at: None,
+                plan: None,
             },
         );
         store.save(&cache).unwrap();

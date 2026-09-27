@@ -361,6 +361,7 @@ fn finish(
         None
     };
     ProbeOutcome {
+        plan: None,
         cache_key,
         state: if exhausted {
             ProviderState::Exhausted
@@ -377,6 +378,7 @@ fn finish(
 
 fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
     ProbeOutcome {
+        plan: None,
         cache_key,
         state: ProviderState::Unknown,
         reason,
@@ -538,6 +540,7 @@ mod tests {
 
     fn snapshot(remaining: Option<i64>, reset_at: Option<i64>) -> ProviderSnapshot {
         ProviderSnapshot {
+            plan: None,
             checked_at: 1,
             state: ProviderState::Available,
             reason: None,
@@ -591,11 +594,11 @@ mod tests {
         );
     }
 
-
     #[test]
     fn keeps_cli_reset_at() {
         let prev = snapshot(Some(4_000), None);
         let mut outcome = ProbeOutcome {
+            plan: None,
             cache_key: "grok:x".into(),
             state: ProviderState::Available,
             reason: None,

@@ -1,0 +1,206 @@
+{
+  "id": "01-post-more-menu",
+  "host": "www.threads.com",
+  "url": "https://www.threads.com/",
+  "openedBy": "div[role=button][aria-haspopup=menu] (20x20, post header row, the '...' control)",
+  "capturedAt": "2026-09-23T04:30:09.694844+00:00",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "deviceScaleFactor": 1,
+    "scheme": "dark"
+  },
+  "auth": "logged out",
+  "note": "Logged-out render is ghosted: elementFromPoint at the row centre returns a page-level overlay div and the screenshot shows rgb(11,11,11) where the panel computed style is rgb(38,38,38). All values below are computed styles, so they are unaffected by that overlay.",
+  "trigger": {
+    "tag": "div",
+    "role": "button",
+    "aria-haspopup": "menu",
+    "aria-expanded": "false -> true",
+    "tabindex": "0",
+    "box": [
+      845,
+      73,
+      20,
+      20
+    ]
+  },
+  "composition": {
+    "menu": {
+      "role": "menu",
+      "box": [
+        644,
+        99,
+        221,
+        60
+      ],
+      "boxNote": "the library's positioning box; the visible base is 240 wide and overhangs it by 19px on the right",
+      "background": "rgba(0, 0, 0, 0)",
+      "position": "relative"
+    },
+    "base": {
+      "box": [
+        644,
+        99,
+        240,
+        60
+      ],
+      "background": "rgb(16, 16, 16)",
+      "borderRadius": "16px",
+      "overflow": "hidden",
+      "margin": "6px -19px 6px 0px",
+      "boxShadow": "rgba(0, 0, 0, 0.25) 0px 0px 80px 0px, rgba(0, 0, 0, 0.05) 1px 1px 2px 0px, rgba(0, 0, 0, 0.06) 0px 8px 16px 0px",
+      "note": "the panel covers it fully, so this layer only supplies the radius clip and the shadow"
+    },
+    "panel": {
+      "role": "group",
+      "box": [
+        644,
+        99,
+        240,
+        60
+      ],
+      "contentBox": [
+        224,
+        44
+      ],
+      "background": "rgb(38, 38, 38)",
+      "padding": "8px",
+      "borderRadius": "0px"
+    },
+    "row": {
+      "role": "menuitem",
+      "tabindex": "0",
+      "box": [
+        652,
+        107,
+        224,
+        44
+      ],
+      "display": "inline-flex",
+      "padding": "12px 24px",
+      "borderRadius": "12px",
+      "border": "0px solid rgba(243, 245, 247, 0.15)",
+      "background": "rgba(0, 0, 0, 0)",
+      "font": "15px/21px 400",
+      "color": "rgb(243, 245, 247)",
+      "transition": "transform 0.1s ease",
+      "zIndex": "0"
+    },
+    "labelSlot": {
+      "box": [
+        676,
+        119,
+        148,
+        20
+      ],
+      "display": "flex",
+      "flexDirection": "column",
+      "overflow": "hidden",
+      "innerLabelBox": [
+        676,
+        120,
+        148,
+        18
+      ]
+    },
+    "trailingSlot": {
+      "box": [
+        832,
+        119,
+        20,
+        20
+      ],
+      "margin": "0px 0px 0px 8px",
+      "display": "flex",
+      "alignItems": "center",
+      "content": "link icon (16px svg)"
+    },
+    "fillLayer": {
+      "box": [
+        652,
+        107,
+        224,
+        44
+      ],
+      "position": "absolute",
+      "borderRadius": "12px",
+      "backgroundOnHover": "rgba(255, 255, 255, 0.04)",
+      "opacity": "0 -> 1",
+      "transition": "opacity 100ms cubic-bezier(0, 0, 1, 1)"
+    },
+    "itemText": "링크 복사 (copy link) — the only item offered while logged out",
+    "rootHtml": "<div role=\"menu\" class=\"html-div xdj266r ...\"><div class=\"html-div x1lziwak ...\"><div class=\"html-div xdj266r ... x6s0dn4 x78zum5 x5yr21d xl56j7k xyamay9 xv54qhq x1l90r2v xf7dkkf\"><div aria-label=\"읽어들이는 중...\" role=\"status\" data-visualcompletion=\"loading-state\" ...>"
+  },
+  "placement": {
+    "gapBelowTrigger": 6,
+    "transformOrigin": "top right (inline custom property --x-transformOrigin: top right on the animated wrapper)",
+    "animatedElement": "the base (240 wide), transform: matrix(scale,0,0,scale,0,0)"
+  },
+  "enter": {
+    "model": "scale 0 -> 1 from the anchored corner (top right on the live menu)",
+    "liveSamples": [
+      [
+        8.2,
+        null
+      ],
+      [
+        20.2,
+        null
+      ],
+      [
+        30.3,
+        0.101251
+      ],
+      [
+        47.1,
+        0.23184
+      ],
+      [
+        63.9,
+        0.405416
+      ],
+      [
+        80.5,
+        0.595863
+      ],
+      [
+        97.6,
+        0.769218
+      ],
+      [
+        113.7,
+        0.89946
+      ],
+      [
+        130.5,
+        0.975766
+      ],
+      [
+        147.7,
+        1.0
+      ]
+    ],
+    "sampleNote": "milliseconds after the click, then the base's scale (getComputedStyle transform matrix e). The menu mounts at ~25ms; the click handler starts the animation a frame earlier.",
+    "fit": {
+      "duration": "160ms",
+      "easing": "cubic-bezier(0.5, 0.5, 0.4, 0.9)",
+      "startOffset": "~20ms after the click",
+      "rms": 0.018,
+      "method": "grid search over bezier controls + start offset + duration against the 8 scale samples; the best spring fit was 6x worse (rms 0.25)"
+    },
+    "noFade": "base/panel opacity stayed 1 on every sampled frame: the enter is a pure scale, no fade",
+    "drivenBy": "JS per frame (no CSS transition: transition-property 'all' 0s, animation-name 'none' on every layer)"
+  },
+  "exit": {
+    "frames": 0,
+    "note": "clicking the trigger again detaches the menu in the same frame: sampling every frame for 500ms after the close never saw it, and document.querySelectorAll('[role=menu]') was 0 immediately"
+  },
+  "hoverProbe": {
+    "method": "CDP Input.dispatchMouseEvent mouseMoved over the row centre (synthetic MouseEvents do not trigger the live hover)",
+    "fillOpacity": "1",
+    "fillBackground": "rgba(255, 255, 255, 0.04)",
+    "labelColorUnchanged": "rgb(243, 245, 247)",
+    "pressTransformOnRow": "none (no press scale observed)"
+  }
+}

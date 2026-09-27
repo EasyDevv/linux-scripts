@@ -1,0 +1,7 @@
+Moonlight 오프라인 설치파일 자리.
+
+- release에서 받은 MoonlightSetup-*.exe (예: MoonlightSetup-6.1.0.exe)를
+  이 폴더에 넣으면 SETUP.cmd가 winget 다운로드 대신 이 파일로 설치한다
+  (무인 스위치: /quiet /norestart).
+- 파일이 없으면 winget (MoonlightGameStreamingProject.Moonlight)으로 설치한다.
+  PC방 인터넷 필요.

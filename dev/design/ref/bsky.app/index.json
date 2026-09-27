@@ -1,0 +1,33 @@
+{
+  "pages": [
+    {
+      "id": "browse",
+      "url": "https://bsky.app/"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    }
+  ],
+  "files": [
+    {
+      "page": "browse",
+      "viewport": "desktop",
+      "url": "https://bsky.app/",
+      "file": "desktop/browse.png"
+    }
+  ],
+  "snapshots": [
+    {
+      "page": "browse",
+      "url": "https://bsky.app/",
+      "file": "pages/browse.mhtml",
+      "format": "mhtml"
+    }
+  ],
+  "capturedAt": "2026-09-23T01:15:42.601Z"
+}
