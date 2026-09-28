@@ -1,65 +1,80 @@
-export type PageId = "button" | "components" | "foundation";
+export type PageId = "foundation" | "button" | "controls" | "inputs" | "lists" | "content" | "overlays" | "feedback";
 
 export type NavEntry = { label: string; page?: PageId; id?: string };
 export type NavGroup = { title: string; items: NavEntry[] };
 
-/** Sidebar IA copied from the live docs nav (tossmini-docs.toss.im). */
+/** Sidebar IA follows the live docs nav (tossmini-docs.toss.im): every TDS Mobile component
+ *  route maps to the catalogue page and anchor that renders its snippet. */
 export const NAV: NavGroup[] = [
 	{ title: "", items: [{ label: "소개" }, { label: "시작하기" }] },
 	{
 		title: "파운데이션",
-		items: [{ label: "Colors", page: "foundation" }, { label: "Typography", page: "foundation" }],
+		items: [
+			{ label: "Colors", page: "foundation", id: "colors" },
+			{ label: "Typography", page: "foundation", id: "typography" },
+			{ label: "Tokens", page: "foundation", id: "tokens" },
+		],
 	},
 	{
 		title: "컴포넌트",
 		items: [
-			{ label: "Badge", id: "badge" },
-			{ label: "Board Row", id: "board-row" },
-			{ label: "Bottom Sheet", id: "bottom-sheet" },
+			{ label: "Agreement", page: "content", id: "agreement" },
+			{ label: "Asset", page: "content", id: "asset" },
+			{ label: "Badge", page: "controls", id: "badge" },
+			{ label: "BarChart", page: "content", id: "bar-chart" },
+			{ label: "Board Row", page: "lists", id: "board-row" },
+			{ label: "Border", page: "lists", id: "border" },
+			{ label: "Bottom Info", page: "content", id: "bottom-info" },
+			{ label: "BottomCTA", page: "feedback", id: "bottom-cta" },
+			{ label: "BottomSheet", page: "overlays", id: "bottom-sheet" },
+			{ label: "Bubble", page: "content", id: "bubble" },
 			{ label: "Button", page: "button" },
-			{ label: "Checkbox", id: "checkbox" },
-			{ label: "Grid List", id: "grid-list" },
-			{ label: "Icon Button", id: "icon-button" },
-			{ label: "List Footer", id: "list-footer" },
-			{ label: "List Header", id: "list-header" },
-			{ label: "Paragraph", id: "paragraph" },
-			{ label: "Search Field", id: "search-field" },
-			{ label: "Segmented Control", id: "segmented-control" },
-			{ label: "Stepper", id: "stepper" },
-			{ label: "Switch", id: "switch" },
-			{ label: "Tab", id: "tab" },
-			{ label: "Text Button", id: "text-button" },
-			{ label: "TextField", id: "text-field" },
+			{ label: "Checkbox", page: "controls", id: "checkbox" },
+			{ label: "Dialog", page: "overlays", id: "dialog" },
+			{ label: "GridList", page: "lists", id: "grid-list" },
+			{ label: "Highlight", page: "content", id: "highlight" },
+			{ label: "Icon Button", page: "controls", id: "icon-button" },
+			{ label: "Keypad", page: "feedback", id: "keypad" },
+			{ label: "ListFooter", page: "lists", id: "list-footer" },
+			{ label: "ListHeader", page: "lists", id: "list-header" },
+			{ label: "ListRow", page: "lists", id: "list-row" },
+			{ label: "Loader", page: "feedback", id: "loader" },
+			{ label: "Menu", page: "overlays", id: "menu" },
+			{ label: "Modal", page: "overlays", id: "modal" },
+			{ label: "Numeric Spinner", page: "inputs", id: "numeric-spinner" },
+			{ label: "Paragraph", page: "content", id: "paragraph" },
+			{ label: "Post", page: "content", id: "post" },
+			{ label: "ProgressBar", page: "feedback", id: "progress-bar" },
+			{ label: "ProgressStepper", page: "feedback", id: "progress-stepper" },
+			{ label: "Rating", page: "inputs", id: "rating" },
+			{ label: "Result", page: "content", id: "result" },
+			{ label: "SearchField", page: "inputs", id: "search-field" },
+			{ label: "Segmented Control", page: "controls", id: "segmented-control" },
+			{ label: "Skeleton", page: "feedback", id: "skeleton" },
+			{ label: "Slider", page: "inputs", id: "slider" },
+			{ label: "Stepper", page: "lists", id: "stepper" },
+			{ label: "Switch", page: "controls", id: "switch" },
+			{ label: "Tab", page: "controls", id: "tab" },
+			{ label: "TableRow", page: "lists", id: "table-row" },
+			{ label: "Text Button", page: "controls", id: "text-button" },
+			{ label: "TextField", page: "inputs", id: "text-field" },
+			{ label: "Toast", page: "overlays", id: "toast" },
+			{ label: "Tooltip", page: "overlays", id: "tooltip" },
+			{ label: "Top", page: "content", id: "top" },
 		],
 	},
 ];
 
-/** TDS Button usage examples, transcribed from /components/button/ prose tables. */
-export const BUTTON_SECTIONS = [
-	{ id: "fill", title: "fill", rows: [{ label: "fill", tone: "fill" as const }] },
-	{
-		id: "weak",
-		title: "weak",
-		rows: [
-			{ label: "weak", tone: "weak" as const },
-			{ label: "weak + disabled", tone: "weak" as const, disabled: true },
-		],
-	},
-	{
-		id: "size",
-		title: "크기",
-		rows: [
-			{ label: "Small", size: "small" as const },
-			{ label: "Medium", size: "medium" as const },
-			{ label: "Large", size: "large" as const },
-		],
-	},
-	{
-		id: "danger",
-		title: "danger",
-		rows: [
-			{ label: "danger", tone: "danger" as const },
-			{ label: "danger + weak", tone: "danger-weak" as const },
-		],
-	},
-];
+export const PAGE_TITLE: Record<PageId, string> = {
+	foundation: "Foundation",
+	button: "Button",
+	controls: "Controls",
+	inputs: "Inputs",
+	lists: "Lists",
+	content: "Content",
+	overlays: "Overlays",
+	feedback: "Feedback & Actions",
+};
+
+export const draftHref = (page: PageId, id?: string) =>
+	`/design/draft?file=${page}/page.svelte&project=theme-toss&style=toss${id ? `#${id}` : ""}`;

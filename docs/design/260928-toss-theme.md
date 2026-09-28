@@ -5,6 +5,7 @@
 > 산출물: `~/.local/share/scripts/dev/design/themes/toss/`
 > 참조 저장소: `~/.local/share/scripts/dev/design/ref/tossmini-docs.toss.im/`
 > 상태: 완료. 게이트 전부 통과. live 셸 적용은 하지 않음.
+> 후속: [260929-toss-components.md](260929-toss-components.md) — 토큰 재구성, 47개 컴포넌트 전수, 이 문서의 greyOpacity·dim 표 오류 정정, 빌드 스크립트 이전(`/tmp` → `themes/toss/.build/`).
 
 ## 결론 (TL;DR)
 
@@ -266,7 +267,7 @@ inset이 y0이 아니라 y12인 것은 대시보드 셸 계약이 `--panel-inset
 
 ## 6. 짚어둘 것
 
-**레포의 [`emit-layout-css.ts`](../../apps/client/src/lib/server/design/cli/emit-layout-css.ts)가 깨져 있다.** 62행 `insertBeforeClose()`가
+**대시보드 레포의 `~/dev/dashboard/apps/client/src/lib/server/design/cli/emit-layout-css.ts`가 깨져 있다.** 62행 `insertBeforeClose()`가
 `/\n\t/*s*Project primitivess**/[sS]*$/` 라는 잘못된 정규식을 만들어 **기존 `threads`를 포함한
 모든 slug에서** 예외를 던진다.
 
@@ -294,9 +295,9 @@ SyntaxError: Invalid regular expression: nothing to repeat
 cd /tmp/site-to-design/toss
 bash build.sh                      # spec.json → layout.css + 다크 + tail, 게이트 확인
 cd ~/dev/dashboard
-bun [inject-draft-chrome.ts](../../apps/client/src/lib/server/design/cli/inject-draft-chrome.ts)   # 드래프트 sheet 갱신
+bun apps/client/src/lib/server/design/cli/inject-draft-chrome.ts   # 드래프트 sheet 갱신
 executor reload dashboard                                          # 새 ref 디렉터리 반영
-bun [measure-theme-ref.ts](../../.agents/skills/site-to-design/scripts/measure-theme-ref.ts) --slug toss --scheme light
+bun ~/.agents/skills-ready/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light
 ```
 
 미탐색 자료는 `/tmp/site-to-design/toss/`에 있다.

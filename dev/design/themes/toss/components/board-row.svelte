@@ -1,60 +1,102 @@
-<!-- TDS BoardRow (FAQ). Header padding 16px 16px 16px 24px, hover well radius 12 at
-     4px 6px, title 17/22.95, chevron 24x24, body padding 16px 0 with a 24px inset.
-     aria-expanded + aria-controls drive the fold. -->
+<!-- TDS BoardRow (components/board-row). FAQ-style disclosure row.
+     header   56h, padding 16px 16px 16px 24px, base surface, role=button + aria-expanded
+              prefix (e.g. "Q") 17/22.95/500 blue500, 8px before the title; title 17/22.95/500
+              (blue500 when open, grey700 closed); 24px grey400 chevron rotates on open
+     divider  closed rows keep a 1px hairline from x 24 at the bottom
+     content  blue500 at 4% wash, padding 16px 0, text 15/22.5 grey700 inset 0 24 -->
 <script lang="ts">
+	import type { Snippet } from "svelte";
+
 	let {
 		title,
-		body,
+		prefix,
 		open = $bindable(false),
-	}: { title: string; body: string; open?: boolean } = $props();
+		children,
+	}: { title: string; prefix?: string; open?: boolean; children: Snippet } = $props();
+
+	const id = `board-${Math.random().toString(36).slice(2, 8)}`;
 </script>
 
-<li>
-	data-tds-mobile-component="BoardRow"
-	<button
-		type="button"
+<li class="tds-board-row" data-tds-mobile-component="BoardRow" data-open={open}>
+	<div
+		class="header"
 		role="button"
+		tabindex="0"
+		aria-controls={id}
 		aria-expanded={open}
-		aria-controls="tds-board-body"
-		style:width="100%"
-		style:padding="16px 16px 16px 24px"
-		style:background="var(--surface-float)"
-		style:display="flex"
-		style:align-items="center"
 		onclick={() => (open = !open)}
+		onkeydown={(e) => (e.key === "Enter" || e.key === " ") && (open = !open)}
 	>
-		<div style:border-radius="var(--list-row-radius)" style:padding="4px 6px" style:flex="1" style:text-align="left">
-			<span
-				style:font-size="var(--text-heading-sm)"
-				style:line-height="22.95px"
-				style:color={open ? "var(--blue-500)" : "var(--grey-900)"}
-			>
-				{title}
-			</span>
+		<div class="title">
+			{#if prefix}<span class="prefix">{prefix}</span>{/if}
+			<span>{title}</span>
 		</div>
-		<svg
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			aria-hidden="true"
-			style:color="var(--grey-500)"
-			style:transform={open ? "rotate(180deg)" : "none"}
-		>
-			<path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-		</svg>
-	</button>
-	{#if open}
-		<div id="tds-board-body" aria-hidden="false" style:background="var(--surface-grey)" style:padding="16px 0">
-			<p
-				style:margin="0"
-				style:padding-inline="var(--row-inset)"
-				style:font-size="var(--text-body)"
-				style:line-height="var(--text-body--line-height)"
-				style:color="var(--grey-700)"
-			>
-				{body}
-			</p>
-		</div>
-	{/if}
+		<svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" /></svg>
+	</div>
+	<div class="content" {id} aria-hidden={!open} hidden={!open}>
+		<div class="inner">{@render children()}</div>
+	</div>
 </li>
+
+<style>
+	.tds-board-row {
+		position: relative;
+		list-style: none;
+	}
+	.header {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 16px 16px 16px var(--row-inset);
+		background: var(--surface-base);
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+	[data-open="false"] .header::after {
+		content: "";
+		position: absolute;
+		inset: auto 0 0 var(--row-inset);
+		height: 1px;
+		background: var(--hairline);
+	}
+	.title {
+		display: flex;
+		align-items: flex-start;
+		margin-right: 16px;
+		font-size: var(--text-row);
+		line-height: var(--text-row--line-height);
+		font-weight: 500;
+		color: var(--ink-soft);
+	}
+	[data-open="true"] .title {
+		color: var(--status-info);
+	}
+	.prefix {
+		margin-right: 8px;
+		color: var(--status-info);
+	}
+	.arrow {
+		flex-shrink: 0;
+		width: 24px;
+		height: 24px;
+		fill: none;
+		stroke: var(--grey-400);
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		transition: rotate 0.2s var(--panel-fold-ease);
+	}
+	[data-open="true"] .arrow {
+		rotate: 180deg;
+	}
+	.content {
+		background: color-mix(in srgb, var(--blue-500) 4%, var(--surface-base));
+	}
+	.inner {
+		padding: 16px var(--row-inset);
+		font-size: var(--text-t6);
+		line-height: var(--text-t6--line-height);
+		color: var(--ink-soft);
+	}
+</style>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-	import { NAV, type PageId } from "./data.ts";
+	import { NAV, draftHref, type PageId } from "./data.ts";
 	import { docsMark, navGroupStyle, navItemIdle, navItemSelected } from "./chrome.ts";
 
 	let { page }: { page: PageId } = $props();
@@ -8,10 +8,7 @@
 
 <Sidebar.Root class="h-full">
 	<Sidebar.Header class="bg-sidebar" style="padding: 14px 16px 10px">
-		<a
-			href="/design/draft?file=button/page.svelte&project=theme-toss&style=toss&scheme=light"
-			style="font-size: 16px; line-height: 24px; font-weight: 700; color: {docsMark.link}; text-decoration: none"
-		>
+		<a href={draftHref("foundation")} style="font-size: 16px; line-height: 24px; font-weight: 700; color: {docsMark.link}; text-decoration: none">
 			TDS Mobile
 		</a>
 	</Sidebar.Header>
@@ -20,18 +17,15 @@
 			{#if group.title}
 				<div style={navGroupStyle}>{group.title}</div>
 			{/if}
-			<Sidebar.Group>
+			<Sidebar.Group style="padding: 0 8px">
 				{#each group.items as item (item.label)}
 					<Sidebar.MenuItem value={item.label}>
 						{#if item.page}
-							<a
-								href={`/design/draft?file=${item.page}/page.svelte&project=theme-toss&style=toss&scheme=light`}
-								style={item.page === page ? navItemSelected : navItemIdle}
-							>
+							<a href={draftHref(item.page, item.id)} style={item.page === page && (!item.id || item.page === "button") ? navItemSelected : navItemIdle}>
 								{item.label}
 							</a>
 						{:else}
-							<button type="button" style={navItemIdle}>{item.label}</button>
+							<span style={navItemIdle}>{item.label}</span>
 						{/if}
 					</Sidebar.MenuItem>
 				{/each}

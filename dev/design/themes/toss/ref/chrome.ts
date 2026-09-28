@@ -25,23 +25,9 @@ export const docsMark = {
 /** Measured: nav 64px, 24px inline padding, 1px bottom rule. */
 export const navRule = `height: 64px; padding-inline: 24px; border-bottom: 1px solid ${docsMark.rule}`;
 
-/** Measured: main 16px 48px 0 padding -> content column 832px at x 304. */
-export const contentStyle = `max-width: var(--content-narrow); padding-block: 16px 0; margin-inline: auto`;
-
-/** Measured: h1 36/54/700, h2 30/45/600 with a 0.8px bottom rule at 4px. */
-export const pageTitleStyle = `font-size: 36px; line-height: 54px; font-weight: 700; color: ${docsMark.headingInk}`;
-export const sectionTitleStyle = `font-size: 30px; line-height: 45px; font-weight: 600; color: ${docsMark.headingInk}`;
-
-/** Measured: 16/28 body, breadcrumb 14/21 in the subtle ink with a 4px gap. */
-export const bodyStyle = `font-size: 16px; line-height: 28px; color: ${docsMark.bodyInk}`;
-export const breadcrumbStyle = `font-size: 14px; line-height: 21px; color: ${docsMark.subtleInk}`;
-
-/** Measured: inline code 14.4/28, 6px radius, 2px 3.6px padding, 0.8px rule. */
-export const inlineCodeStyle = `font-size: 14.4px; line-height: 28px; border-radius: 6px; padding: 2px 3.6px; border: 0.8px solid ${docsMark.inlineCodeRule}; background: ${docsMark.inlineCodeBg}`;
-
-/** Measured: 12px radius with 20px padding, white body. This is the docs
- *  example shell, not a TDS surface, so it uses the hairline width TDS uses. */
-export const previewStyle = `background: var(--surface-float); border: var(--hairline-width) solid var(--hairline); border-radius: 12px; padding: 20px`;
+/** Page column (doc.svelte): main 16px 48px 0 -> 832px content (--content-narrow), h1 36/54/700,
+ *  h2 30/45/600 over a 0.8px rule, body 16/28, breadcrumb 14/21. Preview box (demo.svelte): r12,
+ *  20px padding, 0.8px hairline — docs chrome, not TDS. */
 
 /** Sidebar: 256px rail, white body, selected row is a blue-50 pill with blue700 ink. */
 export const navItemStyle =

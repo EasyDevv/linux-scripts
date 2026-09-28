@@ -1,46 +1,87 @@
-<!-- TDS Badge. padding 3px 7px (4px 8px at large); radius tracks height, not one scale step:
-     21->9, 24->11, 26->12, 29->13. Weak variants are the hue at ~16%. -->
+<!-- TDS Badge (components/badge).
+     size   xsmall 21h r9 10/15/600 · small 24h r11 12/18/700 · medium 26h r12 13/19.5/700 · large 29h r13 14/21/700
+            padding 3px 7px (4px 8px at large); radius follows height, not one scale step
+     color  blue · teal · green · red · yellow · elephant (grey)
+     variant fill: 500-600 hue + white ink · weak: 400 hue at 16% + 400 ink -->
 <script lang="ts">
-	type Size = "xsmall" | "small" | "medium" | "large";
-	type Tone = "blue" | "teal" | "green" | "red" | "blue-weak" | "teal-weak" | "green-weak" | "red-weak";
+	import type { Snippet } from "svelte";
 
-	let { size = "medium", tone = "blue", children }: { size?: Size; tone?: Tone; children: import("svelte").Snippet } =
-		$props();
-
-	const SIZES: Record<Size, { h: string; r: string; pad: string; fs: string; lh: string; w: number }> = {
-		xsmall: { h: "21px", r: "9px", pad: "3px 7px", fs: "10px", lh: "15px", w: 600 },
-		small: { h: "24px", r: "11px", pad: "3px 7px", fs: "12px", lh: "18px", w: 700 },
-		medium: { h: "26px", r: "12px", pad: "3px 7px", fs: "13px", lh: "19.5px", w: 700 },
-		large: { h: "29px", r: "13px", pad: "4px 8px", fs: "14px", lh: "21px", w: 700 },
-	};
-	const TONES: Record<Tone, { fill: string; ink: string }> = {
-		blue: { fill: "var(--blue-500)", ink: "var(--surface-float)" },
-		teal: { fill: "var(--teal-500)", ink: "var(--surface-float)" },
-		green: { fill: "var(--green-600)", ink: "var(--surface-float)" },
-		red: { fill: "var(--red-500)", ink: "var(--surface-float)" },
-		"blue-weak": { fill: "var(--weak-info)", ink: "var(--blue-400)" },
-		"teal-weak": { fill: "var(--weak-info)", ink: "var(--teal-500)" },
-		"green-weak": { fill: "var(--weak-info)", ink: "var(--green-400)" },
-		"red-weak": { fill: "var(--weak-info)", ink: "var(--red-400)" },
-	};
-
-	const box = $derived(SIZES[size]);
-	const paint = $derived(TONES[tone]);
+	let {
+		size = "medium",
+		color = "blue",
+		variant = "fill",
+		children,
+	}: {
+		size?: "xsmall" | "small" | "medium" | "large";
+		color?: "blue" | "teal" | "green" | "red" | "yellow" | "elephant";
+		variant?: "fill" | "weak";
+		children: Snippet;
+	} = $props();
 </script>
 
-<span
-	data-tds-mobile-component="Badge"
-	style:height={box.h}
-	style:min-height={box.h}
-	style:padding={box.pad}
-	style:border-radius={box.r}
-	style:background={paint.fill}
-	style:color={paint.ink}
-	style:font-size={box.fs}
-	style:line-height={box.lh}
-	style:font-weight={box.w}
-	style:display="inline-flex"
-	style:align-items="center"
->
+<span class="tds-badge" data-tds-mobile-component="Badge" data-size={size} data-color={color} data-variant={variant}>
 	{@render children()}
 </span>
+
+<style>
+	.tds-badge {
+		--hue: var(--blue-500);
+		--weak: var(--blue-400);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 26px;
+		padding: 3px 7px;
+		border-radius: 12px;
+		background: var(--hue);
+		color: var(--ink-on-fill);
+		font-size: var(--text-t7);
+		line-height: var(--text-t7--line-height);
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.tds-badge[data-size="xsmall"] {
+		height: 21px;
+		border-radius: 9px;
+		font-size: 10px;
+		line-height: 15px;
+		font-weight: 600;
+	}
+	.tds-badge[data-size="small"] {
+		height: 24px;
+		border-radius: 11px;
+		font-size: var(--text-st12);
+		line-height: var(--text-st12--line-height);
+	}
+	.tds-badge[data-size="large"] {
+		height: 29px;
+		padding: 4px 8px;
+		border-radius: 13px;
+		font-size: var(--text-st11);
+		line-height: var(--text-st11--line-height);
+	}
+	.tds-badge[data-color="teal"] {
+		--hue: var(--teal-600);
+		--weak: var(--teal-400);
+	}
+	.tds-badge[data-color="green"] {
+		--hue: var(--green-600);
+		--weak: var(--green-400);
+	}
+	.tds-badge[data-color="red"] {
+		--hue: var(--red-500);
+		--weak: var(--red-400);
+	}
+	.tds-badge[data-color="yellow"] {
+		--hue: var(--yellow-600);
+		--weak: var(--yellow-700);
+	}
+	.tds-badge[data-color="elephant"] {
+		--hue: var(--grey-600);
+		--weak: var(--grey-600);
+	}
+	.tds-badge[data-variant="weak"] {
+		background: color-mix(in srgb, var(--weak) 16%, transparent);
+		color: var(--weak);
+	}
+</style>

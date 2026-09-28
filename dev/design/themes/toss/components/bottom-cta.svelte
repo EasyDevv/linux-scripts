@@ -1,26 +1,77 @@
-<!-- TDS BottomCTA. Bar padding 0 20px 20px on white, 56px solid button.
-     The two actions stack with an 8px gap in the Double variant. -->
+<!-- TDS BottomCTA.Single / BottomCTA.Double / FixedBottomCTA (components/BottomCTA).
+     A 36px fade (to top: base surface at 25% -> transparent) sits above the bar;
+     bar padding 0 20px 20px on the base surface (background "none" drops fill and fade).
+     Single = one xlarge (56h r16) block Button. Double = leftButton + rightButton in a row, gap 8,
+     each 56h r16 (left usually weak dark, right fill primary).
+     topAccessory / bottomAccessory: 15/22.5 grey600 text, 26px under / 24px over the buttons.
+     fixed pins the whole block to the bottom of the viewport (FixedBottomCTA). -->
 <script lang="ts">
 	import type { Snippet } from "svelte";
 
 	let {
-		primary,
-		secondary,
-	}: { primary: { label: string; onclick?: () => void }; secondary?: { label: string; onclick?: () => void } } =
-		$props();
-
-	const solid =
-		"display:flex; align-items:center; justify-content:center; width:100%; height:var(--control-height-xl); border:none; border-radius:var(--control-radius-xl); font-size:var(--text-control); font-weight:var(--text-control--font-weight); line-height:var(--control-label-leading); cursor:pointer";
+		fixed = false,
+		background = "default",
+		topAccessory,
+		bottomAccessory,
+		children,
+	}: {
+		fixed?: boolean;
+		background?: "default" | "none";
+		topAccessory?: Snippet;
+		bottomAccessory?: Snippet;
+		children: Snippet;
+	} = $props();
 </script>
 
-<div style:padding="0 var(--cta-inset) var(--cta-inset)" style:background="var(--surface-float)">
-	{#if secondary}
-		<button type="button" style={solid + `; background: var(--surface-hover); color: var(--grey-700);`} onclick={secondary.onclick}>
-			{secondary.label}
-		</button>
-		<div style:height="8px"></div>
-	{/if}
-	<button type="button" style={solid + `; background: var(--blue-500); color: var(--surface-float);`} onclick={primary.onclick}>
-		{primary.label}
-	</button>
+<div class="tds-bottom-cta" data-tds-mobile-component="BottomCTA" data-fixed={fixed} data-bg={background}>
+	<div class="fade" aria-hidden="true"></div>
+	<div class="bar">
+		{#if topAccessory}<div class="top">{@render topAccessory()}</div>{/if}
+		<div class="buttons">{@render children()}</div>
+		{#if bottomAccessory}<div class="bottom">{@render bottomAccessory()}</div>{/if}
+	</div>
 </div>
+
+<style>
+	.tds-bottom-cta[data-fixed="true"] {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 100;
+	}
+	.fade {
+		height: 36px;
+		background: linear-gradient(to top, var(--surface-base) 25%, transparent);
+		pointer-events: none;
+	}
+	.bar {
+		padding: 0 var(--cta-inset) var(--cta-inset);
+		background: var(--surface-base);
+	}
+	[data-bg="none"] .fade {
+		display: none;
+	}
+	[data-bg="none"] .bar {
+		background: none;
+	}
+	.buttons {
+		display: flex;
+		gap: 8px;
+	}
+	.buttons > :global(*) {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+	.top,
+	.bottom {
+		color: var(--ink-subtle);
+		font-size: var(--text-t6);
+		line-height: var(--text-t6--line-height);
+		text-align: center;
+	}
+	.top {
+		padding-bottom: 26px;
+	}
+	.bottom {
+		padding-top: 24px;
+	}
+</style>

@@ -27,6 +27,23 @@ many subset files). It is a proprietary Toss webfont and is **not** redistribute
 metrics close. Weight 600 in the theme maps to the nearest available synthetic/real
 face; the docs only ship 400 and 700, so 600 renders as synthesized semibold.
 
+## Dark mode policy
+
+**Apps in Toss does not support dark mode.** From the toss-docs MCP (`apps_in_toss` source):
+
+- `guide/faq.md` — "현재 앱인토스 미니앱에서는 다크 모드를 지원하지 않아요. 라이트 모드 기준으로 개발/디자인 및 출시해야 해요."
+- `design/prepare/design.md` — "다크 모드는 추후 지원할 예정이에요. 지금은 라이트 모드 기준으로만 디자인해 주세요."
+- `checklist/app-nongame.md` (release review) — "미니앱 테마는 라이트 모드로 구현돼 있어요."
+
+Only scoped APIs mention dark: `TossAds.attachBanner` `theme: auto|light|dark`, `NavigationBar` `theme`
+(icon/text colour only), `InitialProps.initialColorPreference`. The TDS Mobile docs name colours
+`adaptive.*` but never document switching. TDS React Native's `ShadowBackground` example uses
+`lightColor: '#000'`, `darkColor: '#fff'`.
+
+So **light is the only authoritative scheme**. The `.dark` block is unofficial reference data (the
+adaptive pairs the docs site still ships) plus three derived tweaks; this theme deliberately keeps
+black floating shadows in dark rather than the RN example's white.
+
 ## TDS colour system (authoritative, from `/foundation/colors/` + resolved tokens)
 
 Base hues 50..900. Light (`colors.*`):
@@ -42,7 +59,9 @@ Base hues 50..900. Light (`colors.*`):
 | teal | #edf8f8 | #bce9e9 | #89d8d8 | #58c7c7 | #30b6b6 | #18a5a5 | #109595 | #0c8585 | #097575 | #076565 |
 | purple | #f9f0fc | #edccf8 | #da9bef | #c770e4 | #b44bd7 | #a234c7 | #9128b4 | #8222a2 | #73228e | #65237b |
 
-Grey opacity (light / dark), used for every hairline, well and hover in TDS:
+Grey opacity (light / dark), used for every hairline, well and hover in TDS.
+The raw census stores each adaptive pair unordered; light is the dark-blue-based tint at every
+step (500, 700, 900 were swapped in the 260928 pass and are corrected here):
 
 | step | light | dark |
 | --- | --- | --- |
@@ -51,11 +70,11 @@ Grey opacity (light / dark), used for every hairline, well and hover in TDS:
 | 200 | `rgba(0,27,55,.10)` | `rgba(222,222,255,.19)` |
 | 300 | `rgba(0,29,58,.18)` | `rgba(224,224,255,.27)` |
 | 400 | `rgba(0,25,54,.31)` | `rgba(232,232,253,.36)` |
-| 500 | `rgba(242,242,255,.47)` | `rgba(3,24,50,.46)` |
+| 500 | `rgba(3,24,50,.46)` | `rgba(242,242,255,.47)` |
 | 600 | `rgba(0,19,43,.58)` | `rgba(248,248,255,.60)` |
-| 700 | `rgba(253,253,255,.75)` | `rgba(3,18,40,.70)` |
+| 700 | `rgba(3,18,40,.70)` | `rgba(253,253,255,.75)` |
 | 800 | `rgba(0,12,30,.80)` | `rgba(253,253,254,.89)` |
-| 900 | `#ffffff` | `rgba(2,9,19,.91)` |
+| 900 | `rgba(2,9,19,.91)` | `#ffffff` |
 
 Adaptive surfaces (light / dark):
 
@@ -66,12 +85,17 @@ Adaptive surfaces (light / dark):
 | `adaptiveLayeredBackground` | `#ffffff` | `#202027` |
 | `adaptiveFloatedBackground` | `#ffffff` | `#2c2c35` |
 | `adaptiveHairlineBorder` | `#e5e8eb` | `#3c3c47` |
-| `adaptiveDimmedBackground` | `rgba(0,0,0,.56)` | `rgba(0,0,0,.2)` |
+| `adaptiveDimmedBackground` | `rgba(0,0,0,.2)` | `rgba(0,0,0,.56)` |
 | `adaptiveDisabledBlue500` | `#c9e2ff` | `rgba(49,130,246,.2)` |
 | `adaptiveBackgroundLevel01/02` | — | `#202027` / `#2c2c35` |
 
-The dark adaptive hue ramps are in `layout.css` under the second `.dark` block; each is a
-resolved `adaptive*` custom property read from a live page, not a hand-mix.
+How light and dark were told apart: the docs force `<html class="light">`, and `:root` there
+resolves every `adaptive*` property to its **dark** value (`--adaptiveGrey700 = #c3c3c6`,
+`--adaptiveDimmedBackground = rgba(0,0,0,.56)`), while components render the light literals.
+The live Dialog / Modal / BottomSheet dim was measured open: black at opacity .2 → light = .2.
+Hue ramps were resolved by luminance order (light 50 is lightest, dark 50 is darkest) and the
+known light 500 of each hue. All ten steps of all eight hues plus greyOpacity are in `layout.css`
+(`:root` light, `.dark` dark).
 
 ## TDS typography scale
 
@@ -106,8 +130,9 @@ Semantic aliases (from `/foundation/typography/`), `sub Typography n` rows are t
 | sub Typography 12 | f12 | 12 / 18 | sub |
 | sub Typography 13 | f11 | 11 / 16.5 | 아예 안읽어도 됨 |
 
-Larger text (iOS/Android dynamic type) scales these by ~1.01…1.4×, so the values stay
-tokens; hard-coding them breaks larger-text mode.
+In `layout.css` these are `--text-t1 … --text-t7` and `--text-st1 … --text-st13` (+ `--line-height`),
+usable as `text-t5` utilities. Larger text (iOS/Android dynamic type) scales them by ~1.01…1.4×, so
+the values stay tokens; hard-coding them breaks larger-text mode.
 
 ## Measured control geometry
 
@@ -120,7 +145,7 @@ tokens; hard-coding them breaks larger-text mode.
 | TextButton | 77×28 | 8px (press 9px) | — | 17/21.284/500 |
 | IconButton | 48×48 | 12px | 12px, icon 24 | — |
 | IconButton bordered | 50×50 | 12px | 12px + 0.8px border | — |
-| Checkbox | 24×24 | 6px | label gap 8px | 1px stroke |
+| Checkbox | 24×24 | SVG (22 disc / 16×11 check) | label gap 8px | — |
 | Switch | 50×30 | 15px | thumb 24 on / 16 off | — |
 | Badge xsmall | 44×21 | 9px | 3px 7px | 10/15/600 |
 | Badge small | 44×24 | 11px | 3px 7px | 12/18/700 |
@@ -131,7 +156,7 @@ tokens; hard-coding them breaks larger-text mode.
 | SegmentedControl | 253×48 | 14px | 4px 5px | 17/25.5 |
 | Tab | 87×47 | — | 0 8px, indicator 2px + 0 10px | 17/21.284 |
 | ListRow | 44…82 h | 12px hover | 12px 24px | 17/22.95/500 |
-| ListHeader | — | — | 24px 0 8px | 20 title / 13 sub |
+| ListHeader | 301×81 | — | 24px 0 8px | 17/25.5/700 title / 13 sub |
 | ListFooter | 301×59 | — | 0 24px | 17/21.284/500 |
 | GridList cell | 79×75 | 9px | 12px 8px, gap 6px | 14/21/500 |
 | Stepper row | 301×74 | — | 3px 24px, icon 30, connector 2×32 | — |
@@ -139,7 +164,8 @@ tokens; hard-coding them breaks larger-text mode.
 | BottomCTA | — | — | 0 20px 20px | — |
 
 Button label leading is `fontSize × 1.252`, not the scale line height — recorded as
-`--control-label-leading`.
+`--control-label-leading`. List texts (ListRow, BoardRow, Post headings) use × 1.35 (`--text-row*`).
+This table is the first-pass subset; the full set of 47 components is in `chrome.json` `roles`.
 
 ## Docs shell (Nextra, not TDS)
 
@@ -153,73 +179,73 @@ promoted to a token.
 
 ## Build
 
-`spec.json` is the value source. `layout.css` is generated by
-`emit-layout-css.mts` (token blocks) + `dark-tokens.json` (adaptive dark palette) +
-`chrome-tail.css` (primitive chrome), driven by `build.sh`.
+`spec.json` is the value source; `layout.css` is generated — do not edit it by hand.
 
-The repo CLI `apps/client/src/lib/server/design/cli/emit-layout-css.ts` cannot do this
-job today: its `insertBeforeClose()` builds `/\n\t/*s*Project primitivess**/[sS]*$/`,
-which is an invalid regex and throws for **every** slug (verified against the existing
-`threads` spec as well). The local generator reproduces the same output with a correct
-marker match. Fixing the repo CLI is a separate change.
+```bash
+bun ~/.local/share/scripts/dev/design/themes/toss/.build/emit.ts
+```
+
+`.build/emit.ts` merges `spec.json` into `themes/_core/layout.css` (shadcn tokens replaced in place,
+everything else under the block's `/* Project primitives */` / `/* Project utilities */` marker,
+`spec.comments` as group headers) and appends `.build/chrome.css` (primitive `[data-slot]` chrome).
+Unlike the dashboard's `emit-layout-css.ts`, it can add non-shadcn tokens to `.dark`, which the
+adaptive palette needs.
+
+Token layers (linear's structure): palette ramps → roles (`--surface-*`, `--ink-*`, `--status-*`)
+→ component geometry (`--control-*`, `--field-*`, `--list-row-*`, `--dialog-*` …). The type scale
+(`--text-t1…t7`, `--text-st1…st13`, roles, control and list texts) lives in `:root` as runtime values
+and `@theme inline` only points at them: Tailwind v4 emits `@theme` variables only when CSS it
+compiles references them, so a snippet's scoped `var(--text-t5)` would otherwise be undefined.
 
 ## Not measured
 
-- Hover / pressed paint owner for buttons and list rows (a press overlay div exists at
-  1.05–2× the control box, but the state that triggers it was not captured).
-- Elevation shadows for modal / bottom sheet: only the `rgba(0,0,0,.56)` scrim was read.
-- Box numbers for Keypad, Chart, Top, Result, Rating, Bubble, Menu, Toast, Tooltip,
-  Slider, Progress, Skeleton, Loader, NumericSpinner, TableRow, Post, Highlight and
-  Border: enumerated in the route census and their prop tables read, but not measured.
+- **Dark rendering of components.** The docs force `.light`; dark values come from the adaptive
+  pairs. Three dark tweaks are derived, not measured: floating shadows turn black
+  (`.dark --shadow-float*`, `--shadow-toast`, `--shadow-thumb*`), the dark Button label follows
+  `--surface-base`, the Highlight mask stays static (`--highlight-dim`).
+- Tooltip large (never opened in the capture) and SegmentedControl large.
+- Pressed-state paint for buttons and list rows (press layers exist; the snippets use
+  `brightness(.92)` / greyOpacity50-100, not a measured value).
+- Agreement v3 and ListRow legacy (superseded APIs).
+
+Every other component route was measured at 390×844: static previews dumped to depth 7
+(`.preview` blocks), overlays opened with a real click and measured after 0.9–1.8s.
+Per-component numbers are in `chrome.json` `roles.*.geometry` and each snippet's header comment.
 
 ## Verification
 
-Run at 1440×900, `deviceScaleFactor 1`, on the managed dashboard stack
-(`http://dashboard.localhost`, `executor list` → `dashboard`, web 45110 / api 45111).
+Run at 1440×900, `deviceScaleFactor 1`, against `http://dashboard.localhost` (managed entry
+`dashboard`, web 45110 / api 45111).
 
 ```bash
-bun ~/.local/share/scripts/dev/design/cli/validate-layout-scheme.ts --all   # toss ok
-bun ~/.local/share/scripts/dev/design/cli/check-theme-chrome.ts --theme themes/toss  # ok
-bun ~/.local/share/scripts/dev/design/cli/compare-shadcn-theme.ts \
-  --project themes/toss/layout.css --default themes/_core/layout.css
-bun .agents/skills/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light
-bun .agents/skills/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme dark
+bun ~/.local/share/scripts/dev/design/cli/validate-layout-scheme.ts --project themes/toss/layout.css  # ok
+bun ~/.local/share/scripts/dev/design/cli/check-theme-chrome.ts --theme themes/toss                   # ok
+bun ~/.local/share/scripts/dev/design/cli/compare-shadcn-theme.ts --project themes/toss/layout.css     # missing 0, unsectioned 0
+bun ~/.agents/skills-ready/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light      # 8 pages ok
+bun ~/.agents/skills-ready/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme dark       # 8 pages ok
 ```
 
-`measure-theme-ref.ts`, light and dark, all three pages: `ok: true`, `fail: []`.
+`measure-theme-ref.ts`: foundation, button, controls, inputs, lists, content, overlays, feedback —
+light and dark, `ok: true`, `fail: []`. Every section of every page was also captured light and
+dark and read side by side; no console errors on any page.
 
-| page | sidebar | inset | inset radius | header | footer |
-| --- | --- | --- | --- | --- | --- |
-| button | 256px | x256 y12 1172×848 | 12px | 64px | 40px @ y860 |
-| components | 256px | same | 12px | 64px | 40px |
-| foundation | 256px | same | 12px | 64px | 40px |
+### Draft geometry vs live (offset boxes of the snippet roots)
 
-Sidebar 256px, header 64px and the 832px content column are the live docs measurements.
-The inset starts at x256/y12 rather than y0 because the dashboard shell contract insets the
-floating panel by `--panel-inset` (12px); the live docs nav is flush at y0. The footer exists
-only because `measure-theme-ref` gates on `data-role=app-footer` — the live page has none.
+Match: Button 32/38/48/56 · Switch 50×30 · Badge 21/24/26/29 · IconButton 48 / 50 (border) ·
+Segmented 48 · Tab 47/37 · TextField box 55, line 37, big 46, hero 40, wrapper 138 · SearchField
+well 44 · Slider 40 · ListRow 47/44/55/71 · ListFooter 59 · BoardRow 56 · TableRow 42 · GridList 75 ·
+Stepper 74 · ListHeader 81 · Dialog 320 wide · Toast 47/48 top, 51/60 bottom · Tooltip 36/49 ·
+ProgressBar 5/2/8 · Loader 48/60/80 · Keypad row 66 · BottomCTA bar 76 · Result 273 · BarChart 205.
 
-### Control comparison (live docs vs the reconstruction)
+Residuals, all font- or border-driven: NumericSpinner tiny/small 88/106 vs 87/105 (value box is
+as wide as "000" in the fallback font) · Menu 188 vs 186 (0.8px rule ×2) · Bubble 48 vs 50 (the
+live 26px line box comes from Toss Product Sans metrics; the snippet keeps the same inline-block
+structure).
 
-`collect-computed-styles.ts` on both, compared with `compare-computed-styles.ts --mode control`
-(`/tmp/site-to-design/toss/cmp/`). Named targets: `button-medium`, `badge-medium`, `switch-on`.
+### Control comparison (260928 pass, still valid)
 
-Exact matches: padding, border-radius, font-size, line-height, font-weight, colour, background,
-box height, and every measured geometry value. `button-medium` also matches `display: flex`.
-
-Four residual differences, all explained:
-
-1. **font family / text width** — the stacks agree on the measured order
-   (`"Toss Product Sans", Tossface, "SF Pro KR", "SF Pro Display", "SF Pro Icons", -apple-system,
-   BlinkMacSystemFont, …`); the theme inserts `Pretendard` after `BlinkMacSystemFont` so Korean
-   renders without the proprietary webfont. The live page loads the real face, the draft resolves
-   Pretendard, so a `13px/700` badge is 64px live and 67.7px in the draft. Box height, padding
-   and radius are unaffected.
-2. **default border colour** — `rgb(229,231,235)` live is the docs' global Tailwind
-   `border-color`; the theme's `*` rule uses the TDS hairline `rgb(229,232,235)`. No measured
-   control carries a border of its own, so this is the global default, not a component token.
-3. **switch label ink** — `rgb(51,65,85)` is ink inherited from the docs body; the snippet uses
-   the TDS grey800 `rgb(51,61,75)`.
-4. **checkbox graphic radius** — TDS draws the graphic in an SVG, so the live box reports
-   `border-radius: 0px`; the CSS port puts the shape on the box (`9999px` circle / `4px` line).
-   Recorded in `components/checkbox.svelte`.
+`collect-computed-styles.ts` → `compare-computed-styles.ts --mode control` on `button-medium`,
+`badge-medium`, `switch-on`: padding, radius, font-size, line-height, weight, colour, background
+and box height match. Residuals: text width from the font substitution (badge 64 vs 67.7px), the
+docs' global Tailwind border colour, and inherited docs ink on the switch label. The checkbox
+graphic is now an SVG like TDS (it was a CSS box in the first pass).

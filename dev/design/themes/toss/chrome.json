@@ -1,391 +1,367 @@
 {
 	"slug": "toss",
-	"capturedAt": "2026-09-28",
+	"capturedAt": "2026-09-29",
 	"sourceDir": "ref/tossmini-docs.toss.im",
-	"method": "getComputedStyle + offsetWidth/offsetHeight on live TDS docs nodes at 390px (deviceScaleFactor 1, mobile emulation). Computed styles and offset boxes are pre-transform, so nodes inside the scaled phone preview still report native geometry.",
+	"method": "getComputedStyle + offsetWidth/offsetHeight on live TDS docs nodes at 390x844 (dsf 1, mobile emulation). Static routes: every .preview block dumped to depth 7. Overlays (Dialog, Modal, BottomSheet, Toast, Tooltip): opened with a real click, then measured after 0.9-1.8s. Offset boxes are pre-transform, so nodes in the scaled phone preview report native geometry.",
 	"pages": {
-		"button": "https://tossmini-docs.toss.im/tds-mobile/components/button/",
+		"v4": "https://tossmini-docs.toss.im/tds-mobile/components/Agreement/v4/",
+		"frame": "https://tossmini-docs.toss.im/tds-mobile/components/Asset/frame/",
 		"badge": "https://tossmini-docs.toss.im/tds-mobile/components/badge/",
+		"bar-chart": "https://tossmini-docs.toss.im/tds-mobile/components/Chart/bar-chart/",
+		"board-row": "https://tossmini-docs.toss.im/tds-mobile/components/board-row/",
+		"divider": "https://tossmini-docs.toss.im/tds-mobile/components/border/",
+		"bottom-info": "https://tossmini-docs.toss.im/tds-mobile/components/bottom-info/",
+		"bottom-cta-double": "https://tossmini-docs.toss.im/tds-mobile/components/BottomCTA/Double/",
+		"bottom-cta-single": "https://tossmini-docs.toss.im/tds-mobile/components/BottomCTA/Single/",
+		"bottom-sheet": "https://tossmini-docs.toss.im/tds-mobile/components/bottom-sheet/",
+		"bubble": "https://tossmini-docs.toss.im/tds-mobile/components/bubble/",
+		"button": "https://tossmini-docs.toss.im/tds-mobile/components/button/",
 		"checkbox": "https://tossmini-docs.toss.im/tds-mobile/components/checkbox/",
-		"switch": "https://tossmini-docs.toss.im/tds-mobile/components/switch/",
-		"textField": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/text-field/",
-		"searchField": "https://tossmini-docs.toss.im/tds-mobile/components/search-field/",
-		"listRow": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-overview/",
-		"listRowComponents": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-components/",
-		"listHeader": "https://tossmini-docs.toss.im/tds-mobile/components/list-header/",
-		"listFooter": "https://tossmini-docs.toss.im/tds-mobile/components/list-footer/",
-		"gridList": "https://tossmini-docs.toss.im/tds-mobile/components/grid-list/",
-		"segmentedControl": "https://tossmini-docs.toss.im/tds-mobile/components/segmented-control/",
-		"tab": "https://tossmini-docs.toss.im/tds-mobile/components/tab/",
-		"stepper": "https://tossmini-docs.toss.im/tds-mobile/components/stepper/",
-		"boardRow": "https://tossmini-docs.toss.im/tds-mobile/components/board-row/",
-		"textButton": "https://tossmini-docs.toss.im/tds-mobile/components/text-button/",
-		"iconButton": "https://tossmini-docs.toss.im/tds-mobile/components/icon-button/",
-		"paragraph": "https://tossmini-docs.toss.im/tds-mobile/components/paragraph/",
-		"bottomSheet": "https://tossmini-docs.toss.im/tds-mobile/components/bottom-sheet/",
-		"bottomCTASingle": "https://tossmini-docs.toss.im/tds-mobile/components/BottomCTA/Single/",
-		"bottomCTADouble": "https://tossmini-docs.toss.im/tds-mobile/components/BottomCTA/Double/",
+		"alert-dialog": "https://tossmini-docs.toss.im/tds-mobile/components/Dialog/alert-dialog/",
+		"confirm-dialog": "https://tossmini-docs.toss.im/tds-mobile/components/Dialog/confirm-dialog/",
+		"grid-list": "https://tossmini-docs.toss.im/tds-mobile/components/grid-list/",
+		"highlight": "https://tossmini-docs.toss.im/tds-mobile/components/highlight/",
+		"icon-button": "https://tossmini-docs.toss.im/tds-mobile/components/icon-button/",
+		"number-keypad": "https://tossmini-docs.toss.im/tds-mobile/components/Keypad/number-keypad/",
+		"alphabet-keypad": "https://tossmini-docs.toss.im/tds-mobile/components/Keypad/alphabet-keypad/",
+		"full-secure-keypad": "https://tossmini-docs.toss.im/tds-mobile/components/Keypad/full-secure-keypad/",
+		"list-footer": "https://tossmini-docs.toss.im/tds-mobile/components/list-footer/",
+		"list-header": "https://tossmini-docs.toss.im/tds-mobile/components/list-header/",
+		"list-row-overview": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-overview/",
+		"list-row-components": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-components/",
+		"loader": "https://tossmini-docs.toss.im/tds-mobile/components/loader/",
+		"menu": "https://tossmini-docs.toss.im/tds-mobile/components/menu/",
 		"modal": "https://tossmini-docs.toss.im/tds-mobile/components/modal/",
-		"agreementV3": "https://tossmini-docs.toss.im/tds-mobile/components/Agreement/v3/",
-		"agreementV4": "https://tossmini-docs.toss.im/tds-mobile/components/Agreement/v4/",
-		"assetCheckFirst": "https://tossmini-docs.toss.im/tds-mobile/components/Asset/check-first/",
+		"numeric-spinner": "https://tossmini-docs.toss.im/tds-mobile/components/numeric-spinner/",
+		"paragraph": "https://tossmini-docs.toss.im/tds-mobile/components/paragraph/",
+		"post": "https://tossmini-docs.toss.im/tds-mobile/components/post/",
+		"progress-bar": "https://tossmini-docs.toss.im/tds-mobile/components/progress-bar/",
+		"progress-stepper": "https://tossmini-docs.toss.im/tds-mobile/components/progress-stepper/",
+		"rating": "https://tossmini-docs.toss.im/tds-mobile/components/rating/",
+		"result": "https://tossmini-docs.toss.im/tds-mobile/components/result/",
+		"search-field": "https://tossmini-docs.toss.im/tds-mobile/components/search-field/",
+		"segmented-control": "https://tossmini-docs.toss.im/tds-mobile/components/segmented-control/",
+		"skeleton": "https://tossmini-docs.toss.im/tds-mobile/components/skeleton/",
+		"slider": "https://tossmini-docs.toss.im/tds-mobile/components/slider/",
+		"stepper": "https://tossmini-docs.toss.im/tds-mobile/components/stepper/",
+		"switch": "https://tossmini-docs.toss.im/tds-mobile/components/switch/",
+		"tab": "https://tossmini-docs.toss.im/tds-mobile/components/tab/",
+		"table-row": "https://tossmini-docs.toss.im/tds-mobile/components/table-row/",
+		"text-button": "https://tossmini-docs.toss.im/tds-mobile/components/text-button/",
+		"text-field": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/text-field/",
+		"text-area": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/text-area/",
+		"split-text-field": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/split-text-field/",
+		"toast": "https://tossmini-docs.toss.im/tds-mobile/components/toast/",
+		"tooltip": "https://tossmini-docs.toss.im/tds-mobile/components/tooltip/",
+		"top": "https://tossmini-docs.toss.im/tds-mobile/components/top/",
 		"foundationColors": "https://tossmini-docs.toss.im/tds-mobile/foundation/colors/",
-		"foundationTypography": "https://tossmini-docs.toss.im/tds-mobile/foundation/typography/",
-		"docsShell": "https://tossmini-docs.toss.im/tds-mobile/components/button/ (1440x900)"
+		"foundationTypography": "https://tossmini-docs.toss.im/tds-mobile/foundation/typography/"
 	},
 	"roles": {
 		"canvas": {
 			"page": "docsShell",
 			"token": "--background",
-			"geometry": "sidebar 256px, nav 64px, main pad 16px 48px 0, content column 832px, toc 256px at x 1184"
+			"geometry": "sidebar 256, nav 64, main pad 16 48 0, content 832, toc 256"
 		},
-		"primaryButton": {
+		"button": {
 			"page": "button",
-			"token": "--blue-500",
-			"geometry": "56x96 default; label span min-height 56 padding 0 28; font 17/21.284/600",
-			"ink": "--surface-float",
+			"snippet": "components/button.svelte",
+			"geometry": "small 32 r8 px10 13 · medium 38 r10 px16 15 · large 48 r14 px16 17 · xlarge 56 r16 px28 17; label leading x1.252 / 600; fill = child layer; disabled opacity .3; loading = 3 dots 8px gap 7",
+			"fill": "--blue-500",
+			"ink": "--ink-on-fill",
 			"radius": "--control-radius-xl"
 		},
-		"buttonMedium": {
-			"page": "button",
-			"geometry": "73x38",
-			"radius": "10px",
-			"label": "padding 0 16, font 15/18.78/600"
-		},
-		"buttonSmall": {
-			"page": "button",
-			"geometry": "44x32",
-			"radius": "8px",
-			"label": "padding 0 10, font 13/16.276/600"
-		},
-		"buttonLarge": {
-			"page": "button",
-			"geometry": "66x48",
-			"radius": "14px",
-			"label": "padding 0 16, font 17/21.284/600"
-		},
-		"buttonWeak": {
-			"page": "BottomCTA__Double",
-			"fill": "--surface-hover",
-			"ink": "--grey-700",
-			"geometry": "125x56"
-		},
-		"buttonDanger": {
-			"page": "BottomCTA__Double",
-			"fill": "--red-500",
-			"weakFill": "--weak-danger",
-			"weakInk": "--red-600",
-			"geometry": "125x56"
-		},
 		"textButton": {
-			"page": "textButton",
-			"geometry": "77x28 radius 8, press layer 95x36 radius 9",
-			"font": "17/21.284/500",
-			"idle": "--grey-600",
-			"active": "--blue-500"
+			"page": "text-button",
+			"snippet": "components/text-button.svelte",
+			"geometry": "13/15/17 500, 20 600, 22/28 700 at x1.252; press dimmer inset -3/-7 r7 (13,15) · -4/-9 r9 (17) · -5/-11 r11 (20,22) · -7/-13 r13 (28)",
+			"ink": "--ink-subtle"
 		},
 		"iconButton": {
-			"page": "iconButton",
-			"geometry": "48x48 padding 12 radius 12, icon box 24x24",
-			"bordered": "50x50 with 0.8px border",
-			"attr": "aria-label"
+			"page": "icon-button",
+			"snippet": "components/icon-button.svelte",
+			"geometry": "48x48, padding 12, icon 24, r12; border variant 0.8px (49.6 box)",
+			"fill": "--grey-opacity-100"
 		},
 		"badge": {
 			"page": "badge",
-			"geometry": "padding 3px 7px; xsmall 44x21 r9 10/15/600; small 44x24 r11 12/18/700; medium 64x26 r12 13/19.5/700; large 49x29 r13 pad 4px 8px 14/21/700",
-			"fill": "--blue-500",
-			"ink": "--surface-float",
-			"weakAlpha": 0.16
+			"snippet": "components/badge.svelte",
+			"geometry": "xsmall 21 r9 10/15/600 · small 24 r11 12/18/700 · medium 26 r12 13/19.5/700 · large 29 r13 14/21/700; pad 3 7 (4 8 large); weak = 400 at 16%"
 		},
 		"checkbox": {
 			"page": "checkbox",
-			"geometry": "24x24 graphic, row gap 8px, 1px stroke",
-			"attr": "role=checkbox|aria-checked|data-checkbox-graphic"
+			"snippet": "components/checkbox.svelte",
+			"geometry": "24 box, 22 disc (circle) or 16x11 check (line); label gap 8; disabled .4",
+			"idle": "--grey-300",
+			"active": "--status-info"
 		},
 		"switch": {
 			"page": "switch",
-			"geometry": "track 50x30 r15, thumb 24 on / 16 off, radius 9999px",
-			"on": "--blue-500",
-			"off": "--grey-200",
-			"thumb": "--surface-float",
-			"attr": "role=switch|aria-checked|aria-disabled"
-		},
-		"textField": {
-			"page": "textField",
-			"geometry": "box 261x55 padding 14px 16px radius 14, border 0.8px; label pad 0 24 6, help pad 6 24 0; row pad 0 20 0 20 gap 6px 4px; container pad 16px 0",
-			"fill": "--surface-well",
-			"border": "--hairline",
-			"underline": "1.6px solid --grey-100",
-			"font": "17/25.5/400",
-			"helpInk": "--grey-600",
-			"placeholder": "--grey-400",
-			"attr": "aria-label=Placeholder|placeholder"
-		},
-		"searchField": {
-			"page": "searchField",
-			"geometry": "outer pad 14px 16px; well 269x44 radius 12 padding 8px 10px gap 8px"
-		},
-		"listRow": {
-			"page": "listRow",
-			"geometry": "row padding 12px 24px, hover radius 12, content gap 16px, accessory margin-left 12px, min 44px",
-			"hoverFill": "--surface-hover",
-			"title": "17/22.95/500",
-			"accessoryInk": "--grey-700"
-		},
-		"listHeader": {
-			"page": "listHeader",
-			"geometry": "padding 24px 0 8px, inset 24px, support 13/19.5, title 20px, accessory margin-left 24px, title row margin-top 4px",
-			"supportInk": "--grey-600"
-		},
-		"listFooter": {
-			"page": "listFooter",
-			"geometry": "row 301x59, inset 24px, 1px top hairline, label 17/21.284/500",
-			"active": "--blue-500",
-			"idle": "--grey-600",
-			"attr": "role=button"
-		},
-		"gridList": {
-			"page": "gridList",
-			"geometry": "gap 8px, padding 0 24px 8px, cell radius 9, cell padding 12px 8px gap 6px, label 14/21/500",
-			"cellFill": "--surface-well"
+			"snippet": "components/switch.svelte",
+			"geometry": "50x30 r15; thumb 16 at x7 (off) / 24 at x23 (on); disabled .3",
+			"idle": "--grey-200",
+			"active": "--status-info"
 		},
 		"segmentedControl": {
-			"page": "segmentedControl",
-			"geometry": "track 253x48 radius 14, inner padding 4px 5px, container pad 0 24px, item 17/25.5",
-			"track": "--surface-hover",
-			"selected": "600 --grey-800",
-			"idle": "--grey-600",
-			"attr": "role=radiogroup",
-			"idleWeight": 500,
-			"selectedWeight": 600
+			"page": "segmented-control",
+			"snippet": "components/segmented-control.svelte",
+			"geometry": "inset 0 24; track 48h r14 pad 4 5; items 40h r12, label pad 7 12, 17/25.5 600 selected / 500 idle; thumb r10 + 0 1px 2px .09",
+			"fill": "--grey-opacity-100"
 		},
 		"tab": {
 			"page": "tab",
-			"geometry": "bar 49h, inset 20px (14px small), tab 87x47 padding 0 8px, indicator 87x2 padding 0 10px",
-			"bar": "--surface-float",
-			"selected": "--foreground",
-			"idle": "--grey-600",
-			"attr": "role=tablist|role=tab|aria-selected|aria-orientation"
+			"snippet": "components/tab.svelte",
+			"geometry": "large 47h (+1px hairline) / small 37h; list inset 0 20; item pad 0 8; text 17 (15) x1.252, 12/14 vertical; 700 selected / 600 idle; indicator 2px r1 inset 10",
+			"ink": "--ink"
+		},
+		"textField": {
+			"page": "text-field",
+			"snippet": "components/text-field.svelte",
+			"geometry": "wrapper 16 0; label 13/19.5 pad 0 24 6; box 55h pad 14 16 r14 0.8px rule, row inset 0 20; line 22/31/600 + 1.6px rule 4px under; big 30/40/600; hero 30/40/600 no rule; help 13/19.5 pad 6 24 0",
+			"well": "--surface-well",
+			"border": "--grey-opacity-100"
+		},
+		"textArea": {
+			"page": "text-area",
+			"snippet": "components/text-area.svelte",
+			"geometry": "box well aligned top; fixed 200 or min 100 (grows)"
+		},
+		"splitTextField": {
+			"page": "split-text-field",
+			"snippet": "components/split-text-field.svelte",
+			"geometry": "box: two 55h wells + dash gap 6, inset 0 20; line: 22/31/600 gap 12, inset 0 24"
+		},
+		"searchField": {
+			"page": "search-field",
+			"snippet": "components/search-field.svelte",
+			"geometry": "bar 14 16 + 16 fade; well 44 min r12 pad 8 10 gap 8; icon 24; input 16/20",
+			"fill": "--grey-opacity-100"
+		},
+		"numericSpinner": {
+			"page": "numeric-spinner",
+			"snippet": "components/numeric-spinner.svelte",
+			"geometry": "tiny 87x32 r8 · small 105x39 r10 · medium 125x50 r14 · large 153x58 r16; value box white r6/8/10/14 + 0 1px 3px .09; minus grey300 at bound, plus grey700",
+			"fill": "--grey-100"
+		},
+		"slider": {
+			"page": "slider",
+			"snippet": "components/slider.svelte",
+			"geometry": "40h hit; 5px track r2.5 at y17.5; fill inside 12px inset; labels 13/19.5/500 grey600",
+			"fill": "--grey-200"
+		},
+		"rating": {
+			"page": "rating",
+			"snippet": "components/rating.svelte",
+			"geometry": "stars 20/24/32/40; gap 8 (tiny, small) 6 (medium, large) when editable, 0 read-only; value text 17/20/22/24 +4",
+			"fill": "--status-rating"
+		},
+		"listRow": {
+			"page": "list-row-overview",
+			"snippet": "components/list-row.svelte",
+			"geometry": "li min 44; pad 8/12/16/24 x 24; asset 30-40 + 12; texts gap 16 right; title 17/22.95/500 grey700; 2-row title 700 grey800 + 15/20.25 grey600; caption 13/17.55/500; indented divider from x24",
+			"ink": "--ink-soft"
+		},
+		"listHeader": {
+			"page": "list-header",
+			"snippet": "components/list-header.svelte",
+			"geometry": "pad 24 0 8; desc 13/19.5 grey600 inset 24; title row mt 4, 17/25.5/700 in a 0 4 / -4 box; right 13/19.5 grey700 mr 24"
+		},
+		"listFooter": {
+			"page": "list-footer",
+			"snippet": "components/list-footer.svelte",
+			"geometry": "li 59 min: 1px hairline + 58 content pad 0 24; 17 x1.252 / 500",
+			"ink": "--ink-link"
+		},
+		"boardRow": {
+			"page": "board-row",
+			"snippet": "components/board-row.svelte",
+			"geometry": "header 56 pad 16 16 16 24; prefix + 8; 17/22.95/500; chevron 24 grey400 rotates; content blue500 4% wash pad 16 0, text 15/22.5 inset 24"
+		},
+		"gridList": {
+			"page": "grid-list",
+			"snippet": "components/grid-list.svelte",
+			"geometry": "grid 1-3 cols gap 8 pad 0 24 8; cell min 72 r9 pad 12 8 gap 6; image 24; label 14/21/500",
+			"fill": "--surface-well"
+		},
+		"tableRow": {
+			"page": "table-row",
+			"snippet": "components/table-row.svelte",
+			"geometry": "li 42; left pad 10 8 10 24, right pad 10 24 10 8; 16/21.6"
+		},
+		"border": {
+			"page": "divider",
+			"snippet": "components/border.svelte",
+			"geometry": "full 1px · padding24 from x24 · height16 grey100 band",
+			"hairline": "--hairline"
 		},
 		"stepper": {
 			"page": "stepper",
-			"geometry": "row padding 3px 24px, icon 30x30 (36 large), icon column padding-right 14px, connector 2x32 radius 1px margin-top 6px, body padding 0 0 16px 0, right slot padding 4px 0 0 12px"
-		},
-		"boardRow": {
-			"page": "boardRow",
-			"geometry": "header padding 16px 16px 16px 24px, hover radius 12 margin 4px 6px, title 17/22.95, chevron 24x24, body padding 16px 0 with inset 24px",
-			"attr": "role=button|aria-expanded|aria-controls"
+			"snippet": "components/stepper.svelte",
+			"geometry": "row 74 pad 3 24; left 30 icon + 14; connector 2 grey200 r1 mt 6; center pb 16; A 17/25.5/700 + 15/22.5; B 20/29/700 + 13/19.5/500"
 		},
 		"paragraph": {
 			"page": "paragraph",
-			"geometry": "17/25.5; display 30/40; link padding 0 4px margin 0 -4px radius 4px, underline 0.8px",
-			"ink": "--grey-900",
-			"link": "--blue-500"
+			"snippet": "components/paragraph.svelte",
+			"geometry": "typography t1..st13, default t5 17/25.5 grey900",
+			"ink": "--ink-strong"
 		},
-		"bottomCTA": {
-			"page": "bottomCTASingle",
-			"geometry": "bar padding 0 20px 20px, background white",
+		"post": {
+			"page": "post",
+			"snippet": "components/post.svelte",
+			"geometry": "inset 0 24; h1 26 h2 22 (pt 16) h3 19 h4 17 (pt 8), all 700 x1.35; p 17/25.5 grey700; ol/ul inset 0 24 0 16, li pl 32 gap 8"
+		},
+		"top": {
+			"page": "top",
+			"snippet": "components/top.svelte",
+			"geometry": "pad 24/24; upper asset + 16; title t3 22/31/700 (st2 28/37 large); subtitle 17/25.5/500 grey700 pt 4; right Button medium margin 0 24 0 8; lower + 16"
+		},
+		"result": {
+			"page": "result",
+			"snippet": "components/result.svelte",
+			"geometry": "column centred pad 32 40 40; figure 60 + 12; title 17/25.5/600; desc 15/22.5 grey700 mt 4; button medium after 16"
+		},
+		"asset": {
+			"page": "frame",
+			"snippet": "components/asset.svelte",
+			"geometry": "square 40 r10 / 52 r12, squircle 40 r12, rectangle 80x54 / 100x68 r10, circle 30/36/40, card 24x36 r3 / 28x42 r3 / 32x48 r4; content 55/60/70%",
+			"fill": "--grey-100"
+		},
+		"bubble": {
+			"page": "bubble",
+			"snippet": "components/bubble.svelte",
+			"geometry": "pad 12 14 r16 16/24 max 253; 5px margin on the tail side; 13x17 tail; stack gap 8"
+		},
+		"bottomInfo": {
+			"page": "bottom-info",
+			"snippet": "components/bottom-info.svelte",
+			"geometry": "grey block pt 24; ul pad 0 24 24 13/19.5 (28 lines); li pl 24 gap 8; 160 fade"
+		},
+		"barChart": {
+			"page": "bar-chart",
+			"snippet": "components/bar-chart.svelte",
+			"geometry": "205h pad 12 24; bar 28 r7 radial 300→500; annotation 12/18/600 (700 step); axis 11/16.5/500 grey600 mt 6"
+		},
+		"highlight": {
+			"page": "highlight",
+			"snippet": "components/highlight.svelte",
+			"geometry": "mask greyOpacity700 (light) with a rounded hole + padding; message 15/22.5/700 white"
+		},
+		"agreement": {
+			"page": "v4",
+			"snippet": "components/agreement.svelte",
+			"geometry": "row margin 4 20 0; 28 check box (24 mark); text pad 2 4 15/22.5/600 grey700; xLarge 19/28/600; medium-title 17/25.5/700; small 13/19.5/500 grey500; necessity 필수 blue500 / 선택 grey500; badge pad 2 4 r4 13/19.5/600"
+		},
+		"dialog": {
+			"page": "alert-dialog",
+			"snippet": "components/dialog.svelte",
+			"geometry": "dim black 20%; panel 320 r24 float; body pad 22 22 0 gap 8; title 20/27/700 grey800; desc 15/22.5/500 grey600; alert footer m 14 16 16 TextButton 17/700 blue500 pad 6 12; confirm footer m 20 16 16 two 48h buttons gap 8",
 			"fill": "--surface-float"
 		},
+		"modal": {
+			"page": "modal",
+			"snippet": "components/modal.svelte",
+			"geometry": "panel 320 r24 pad 32 20 20 column centred; content + 24 + xlarge button"
+		},
 		"bottomSheet": {
-			"page": "bottomSheet",
-			"geometry": "sheet padding 16px, white surface",
-			"overlay": "--overlay-dimmed"
+			"page": "bottom-sheet",
+			"snippet": "components/bottom-sheet.svelte",
+			"geometry": "floating, 10 from sides and bottom; r28; grip 48x4 r5 grey200 at y12 in a 16 header; body 17/25.5 grey700 inset 24; CTA pad 16 20 20 (docs: 16 16 16 around a 56h button)",
+			"fill": "--surface-float"
 		},
-		"agreementRow": {
-			"page": "agreementV3",
-			"geometry": "well radius 12 fill --surface-hover, row padding 10px 20px, text 15/22.5"
+		"toast": {
+			"page": "toast",
+			"snippet": "components/toast.svelte",
+			"geometry": "top pill r100 m 0 18 pad 12 16 (12 left with a 24 addon + 8) float + 0 2px 30px greyOpacity200, 15/22.5/600 greyOpacity800 · bottom m 0 20 pad 14 20 grey500 white text; button 32h pill pad 6 12 greyOpacity400 gap 20"
 		},
-		"agreementToggle": {
-			"page": "agreementV4",
-			"geometry": "28x28 padding 2px radius 6px",
-			"attr": "role=button|aria-expanded"
+		"tooltip": {
+			"page": "tooltip",
+			"snippet": "components/tooltip.svelte",
+			"geometry": "small pad 8 12 r12 13/19.5/600 arrow 24 · medium pad 13 16 r16 15/22.5/700 arrow 38 box; float + 0 16px 60px greyOpacity300; max viewport-96"
 		},
-		"assetCheck": {
-			"page": "assetCheckFirst",
-			"geometry": "40x40 radius 12 fill --grey-100, check-first shadow blue500 7px 7px 0 -1px"
+		"menu": {
+			"page": "menu",
+			"snippet": "components/menu.svelte",
+			"geometry": "182 r20; glass white 80% blur 30 under a 0.8px white-75% rule; shadow 0 16px 60px greyOpacity200; list pad 10 0; header 36 pad 8 20 mb 4 13/19.5/700 grey500; item 42 pad 8 20 17/25.5/500 grey700; right icon 20 ml 16"
 		},
-		"switchDisabled": {
-			"page": "switch",
-			"geometry": "track 50x30 kept, opacity lowered",
-			"attr": "aria-disabled=true"
+		"bottomCta": {
+			"page": "bottom-cta-double",
+			"snippet": "components/bottom-cta.svelte",
+			"geometry": "36 fade (to top base 25%) + bar pad 0 20 20; single 56 r16 block; double two buttons gap 8; accessories 15/22.5 grey600 (26 under / 24 over)"
+		},
+		"loader": {
+			"page": "loader",
+			"snippet": "components/loader.svelte",
+			"geometry": "small 48 / medium 60 / large 80 box, ring margin 12/12/16, stroke 6 on 66 viewBox; label 15/22.5 grey800 mt 2"
+		},
+		"skeleton": {
+			"page": "skeleton",
+			"snippet": "components/skeleton.svelte",
+			"geometry": "pad 24 24 0; title 126x30 r11 +12; subtitle 83x22 r9 +12; spacer 24; card 64 r18 +16; list 42 r13 +32; listWithIcon 40 disc + 14 + 42 r13",
+			"fill": "--skeleton-fill"
+		},
+		"progressBar": {
+			"page": "progress-bar",
+			"snippet": "components/progress-bar.svelte",
+			"geometry": "light 2 · normal 5 r2.5 · bold 8 r4; grey200 track; blue400 fill"
+		},
+		"progressStepper": {
+			"page": "progress-stepper",
+			"snippet": "components/progress-stepper.svelte",
+			"geometry": "compact 34 row pad 0 24 m 16 0 8: 8 track r40 grey100 + blue500 24-29% fill with 0 0 50px glow; 8 dots, active blue500 + 16 halo; labels 13/19.5 700/600; icon: 56 row, 28 track and discs, 22 inner, 16 icon, gap 8"
+		},
+		"keypad": {
+			"page": "number-keypad",
+			"snippet": "components/number-keypad.svelte",
+			"geometry": "pad 0 10; table max 340; rows 66; cells pad 1; 30/64 grey700; backspace 20; alphabet 7 cols"
+		},
+		"secureKeypad": {
+			"page": "full-secure-keypad",
+			"snippet": "components/full-secure-keypad.svelte",
+			"geometry": "dark chrome; keys pad 6 0 10, 4 grid rows 50 pad 0 10 (one random empty cell per row); glyph 20/30 white + 13 hint; bottom 56: 43 · 43 · 107 · 107 (submit blue500)",
+			"fill": "--keypad-secure"
 		}
 	},
 	"colorRoles": {
-		"adaptiveGrey": {
-			"source": "foundation/colors + resolved adaptive-grey custom properties",
-			"light": {
-				"50": "--grey-50",
-				"100": "--grey-100",
-				"200": "--grey-200",
-				"300": "--grey-300",
-				"400": "--grey-400",
-				"500": "--grey-500",
-				"600": "--grey-600",
-				"700": "--grey-700",
-				"800": "--grey-800",
-				"900": "--grey-900"
-			},
-			"dark": {
-				"50": "--card",
-				"100": "--surface-float",
-				"200": "--border",
-				"300": "--grey-300",
-				"400": "--grey-400",
-				"500": "--grey-500",
-				"600": "--muted-foreground",
-				"700": "--grey-700",
-				"800": "--grey-800",
-				"900": "--foreground"
-			},
-			"darkNote": "다크 ramp 전문은 layout.css 두 번째 .dark 블록과 SOURCE.md 표 참조."
-		},
-		"adaptiveGreyOpacity": {
-			"source": "기록된 4개 값만 토큰화했고, 전문 ramp은 SOURCE.md 표 참조.",
-			"light": {
-				"50": "--surface-well",
-				"100": "--surface-hover",
-				"200": "--hairline"
-			},
-			"dark": {
-				"50": "--surface-well",
-				"100": "--surface-hover"
-			},
-			"unused": "200 이상은 실측한 컨트롤이 없어 토큰으로 승격하지 않았다."
-		},
-		"adaptiveHues": {
-			"note": "파운데이션/컬러스가 50..900 전체 램프를 문서로 정의한다. layout.css에는 컴포넌트와 chart 스케일이 실제로 쓰는 색만 토큰화했고, 전문은 SOURCE.md 표 참조.",
-			"blue": [
-				"--blue-50",
-				"--blue-100",
-				"--blue-200",
-				"--blue-300",
-				"--blue-400",
-				"--blue-500",
-				"--blue-600",
-				"--blue-700"
-			],
-			"red": [
-				"--red-400",
-				"--red-500",
-				"--red-600"
-			],
-			"green": [
-				"--green-400",
-				"--green-500",
-				"--green-600"
-			],
-			"orange": [
-				"--orange-500"
-			],
-			"teal": [
-				"--teal-500"
-			],
-			"yellow": [
-				"--yellow-500"
-			],
-			"purple": [
-				"--purple-500"
-			]
-		},
-		"adaptiveSurfaces": {
-			"background": [
-				"--card",
-				"--background"
-			],
-			"greyBackground": [
-				"--surface-grey",
-				"--sidebar"
-			],
-			"layeredBackground": [
-				"--card",
-				"--card"
-			],
-			"floatedBackground": [
-				"--surface-float",
-				"--popover"
-			],
-			"hairlineBorder": [
-				"--hairline",
-				"--border"
-			],
-			"dimmedBackground": [
-				"--overlay-dimmed",
-				"--overlay-dimmed"
-			],
-			"disabledBlue500": [
-				"--blue-100",
-				"--weak-info"
-			],
-			"note": "라이트/다크 두 칸 순서. 다크 값은 layout.css 두 번째 .dark 블록."
-		}
+		"palette": "--grey-50 … --purple-900, --grey-opacity-50 … 900 (adaptive pairs: :root light, .dark measured dark)",
+		"screen": "--surface-base",
+		"canvas": "--surface-grey",
+		"float": "--surface-float",
+		"well": "--surface-well",
+		"pressed": "--surface-hover",
+		"selected": "--surface-selected",
+		"hairline": "--hairline",
+		"dim": "--overlay-dimmed",
+		"inkStrong": "--ink-strong",
+		"ink": "--ink",
+		"inkSoft": "--ink-soft",
+		"inkSubtle": "--ink-subtle",
+		"inkFaint": "--ink-faint",
+		"inkDisabled": "--ink-disabled",
+		"inkOnFill": "--ink-on-fill",
+		"inkLink": "--ink-link",
+		"primary": "--blue-500",
+		"danger": "--red-500",
+		"success": "--green-500",
+		"rating": "--status-rating",
+		"note": "The live docs force a .light class; :root there resolves to the dark adaptive values, which is how the dark column of the palette was read. Component dark rendering is inferred from those adaptive pairs (not seen live), plus three derived dark tweaks: floating shadows turn black, the dark button label follows --surface-base, the highlight mask stays static.",
+		"darkPolicy": "Apps in Toss does not support dark mode (FAQ, design FAQ, non-game release checklist). The dark column is unofficial reference data."
 	},
 	"typography": {
-		"source": "foundation/typography + resolved tds-t custom properties (alias to f-scale)",
-		"fScale": {
-			"min": 11,
-			"max": 42,
-			"lineHeight": "fontSize x 1.5 for 11..29, x 4/3 for 30..42"
-		},
-		"alias": {
-			"t1": 30,
-			"t2": 26,
-			"t3": 22,
-			"t4": 20,
-			"t5": 17,
-			"t6": 15,
-			"t7": 13,
-			"st1": 29,
-			"st2": 28,
-			"st3": 27,
-			"st4": 25,
-			"st5": 24,
-			"st6": 23,
-			"st7": 21,
-			"st8": 19,
-			"st9": 18,
-			"st10": 16,
-			"st11": 14,
-			"st12": 12,
-			"st13": 11
-		},
-		"usage": {
-			"t1": "매우 큰 제목",
-			"t2": "큰 제목",
-			"t3": "일반 제목",
-			"t4": "작은 제목",
-			"t5": "일반 본문",
-			"t6": "작은 본문",
-			"t7": "안 읽어도 됨",
-			"st5": "조금 큰 제목",
-			"st8": "조금 큰 본문",
-			"st13": "아예 안읽어도 됨"
-		},
-		"iconHeight": {
-			"11": "12px",
-			"14": "15px",
-			"17": "19px",
-			"20": "22px",
-			"24": "27px",
-			"29": "33px",
-			"34": "39px"
-		},
-		"badgePadding": {
-			"11": "3px 6px",
-			"14": "3px 7px",
-			"19": "3px 7px",
-			"30": "4px 8px",
-			"39": "5px 10px"
-		},
-		"linkThickness": {
-			"11": "0.7px",
-			"16": "1px",
-			"19": "1.3px",
-			"23": "1.5px",
-			"29": "1.8px",
-			"35": "2px"
-		},
-		"largerText": "iOS/Android의 더 큰 텍스트는 1.01~1.4배로 확대된다. 토큰으로 추상화하고 값을 하드코딩하지 않는다."
+		"scale": "--text-t1 … --text-t7, --text-st1 … --text-st13",
+		"controlLabels": "--text-control-sm / -md / (base) / -lg / -xl / -2xl, leading --control-label-leading (1.252)",
+		"listTexts": "--text-row, --text-row-sm, --text-row-xs (x1.35)",
+		"roles": [
+			"--text-display",
+			"--text-title",
+			"--text-heading",
+			"--text-heading-sm",
+			"--text-subheading",
+			"--text-body",
+			"--text-body-sm",
+			"--text-label",
+			"--text-label-sm",
+			"--text-caption"
+		]
 	},
 	"docsShell": {
 		"note": "Nextra 문서 사이트 크롬. TDS 모바일 제품 화면이 아니며 theme-ref 셸 재현에만 쓴다. 값은 1440x900 실측.",
@@ -404,8 +380,11 @@
 		"colorMarks": "다음 잉크는 Nextra 팔레트라 토큰이 아니다. 값은 ref/chrome.ts의 measured 마크에 있다: docLink, docInk, docBodyInk, docCodeBg."
 	},
 	"notMeasured": [
-		"hover/pressed 프레임의 실제 페인트 오너(버튼 press 레이어는 1.05~2x 크기의 오버레이 div이나 트리거가 확인되지 않았다)",
-		"모달/시트 그림자(opacity 0.56 딤드에 실측했고, elevation shadow는 캡처하지 못했다)",
-		"Keypad · Chart · Top · Result · Rating · Bubble · Menu · Toast · Tooltip · Slider · Progress · Skeleton · Loader · NumericSpinner · TableRow · Post · Highlight · Border의 상자 수치는 전수 목록과 prop 표까지만 확인했다"
+		"Tooltip large (docs demo never opened in the capture; values follow the medium ratio)",
+		"Every component in dark mode (docs force .light)",
+		"SegmentedControl size large",
+		"Agreement v3 and ListRow legacy (superseded by v4 / current ListRow)",
+		"Chart variants beyond BarChart",
+		"Keypad key press states"
 	]
 }

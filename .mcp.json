@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "toss-docs": {
+      "command": "uvx",
+      "args": ["--refresh", "--from", "git+https://github.com/chabinhwang/toss-mcp@main", "toss-mcp"]
+    }
+  }
+}

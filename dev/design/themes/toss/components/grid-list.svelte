@@ -1,38 +1,67 @@
-<!-- TDS GridList. 8px gap, 0 24px 8px padding, cell radius 9 on a 2% well,
-     cell padding 12px 8px with a 6px internal gap, label 14/21/500. -->
+<!-- TDS GridList (components/grid-list).
+     ul grid, column 1 | 2 | 3 (default 3), gap 8px, padding 0 24px 8px.
+     Item min-height 72: r9 greyOpacity50 cell, column flex centred, gap 6, padding 12px 8px;
+     24px image, label 14/21/500 grey900. -->
 <script lang="ts">
-	let { items = [], columns = 3 }: { items?: { label: string; icon?: import("svelte").Snippet }[]; columns?: number } =
-		$props();
+	type Item = { label: string; image?: string; onclick?: () => void };
+
+	let { items, column = 3 }: { items: Item[]; column?: 1 | 2 | 3 } = $props();
 </script>
 
-<ul
-	style:display="grid"
-	data-tds-mobile-component="GridList"
-	style:grid-template-columns="repeat({columns}, minmax(0, 1fr))"
-	style:gap="var(--grid-gap)"
-	style:padding="0 var(--row-inset) 8px"
-	style:list-style="none"
-	style:margin="0"
->
+<ul class="tds-grid-list" data-tds-mobile-component="GridList" style:--cols={column}>
 	{#each items as item (item.label)}
 		<li>
-			<div
-				style:border-radius="var(--grid-cell-radius)"
-				style:background="var(--surface-well)"
-				style:padding="var(--grid-cell-padding)"
-				style:display="grid"
-				style:gap="6px"
-			>
-				{#if item.icon}{@render item.icon()}{/if}
-				<span
-					style:font-size="14px"
-					style:line-height="21px"
-					style:font-weight="500"
-					style:color="var(--grey-900)"
-				>
-					{item.label}
-				</span>
-			</div>
+			<button type="button" class="cell" onclick={item.onclick}>
+				{#if item.image}<img src={item.image} alt="" />{:else}<span class="ph" aria-hidden="true"></span>{/if}
+				<span class="label">{item.label}</span>
+			</button>
 		</li>
 	{/each}
 </ul>
+
+<style>
+	.tds-grid-list {
+		display: grid;
+		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+		gap: var(--grid-gap);
+		margin: 0;
+		padding: 0 var(--row-inset) 8px;
+		list-style: none;
+	}
+	li {
+		min-height: 72px;
+	}
+	.cell {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		width: 100%;
+		height: 100%;
+		padding: var(--grid-cell-padding);
+		border: 0;
+		border-radius: var(--grid-cell-radius);
+		background: var(--surface-well);
+		color: var(--ink-strong);
+		font: inherit;
+		cursor: pointer;
+		transition: background-color 0.1s;
+	}
+	.cell:active {
+		background: var(--grey-opacity-100);
+	}
+	img,
+	.ph {
+		width: 24px;
+		height: 24px;
+	}
+	.ph {
+		border-radius: 7px;
+		background: var(--grey-200);
+	}
+	.label {
+		font-size: var(--text-st11);
+		line-height: var(--text-st11--line-height);
+		font-weight: 500;
+	}
+</style>
