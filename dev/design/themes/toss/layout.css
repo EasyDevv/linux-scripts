@@ -1,0 +1,551 @@
+/* Measured from https://tossmini-docs.toss.im/tds-mobile/. Copy over a shadcn-svelte layout.css; keep the project's @import lines if they already exist. */
+/* Token scheme core. Copy to a company slug or a project layout.css, then change values. Keep the project's @import lines if they already exist. */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn-svelte/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+	color-scheme: light;
+
+	/* shadcn primitives and project overrides */
+	--background: rgb(242, 244, 246);
+	--foreground: rgb(25, 31, 40);
+	--card: rgb(255, 255, 255);
+	--card-foreground: rgb(25, 31, 40);
+	--popover: rgb(255, 255, 255);
+	--popover-foreground: rgb(25, 31, 40);
+	--primary: rgb(49, 130, 246);
+	--primary-foreground: rgb(255, 255, 255);
+	--secondary: rgb(242, 244, 246);
+	--secondary-foreground: rgb(25, 31, 40);
+	--muted: rgb(242, 244, 246);
+	--muted-foreground: rgb(107, 118, 132);
+	--accent: rgb(242, 244, 246);
+	--accent-foreground: rgb(25, 31, 40);
+	--destructive: rgb(240, 68, 82);
+	--destructive-foreground: rgb(255, 255, 255);
+	--border: rgb(229, 232, 235);
+	--input: rgb(229, 232, 235);
+	--ring: rgb(49, 130, 246);
+	--chart-1: rgb(49, 130, 246);
+	--chart-2: rgb(3, 178, 108);
+	--chart-3: rgb(240, 68, 82);
+	--chart-4: rgb(254, 152, 0);
+	--chart-5: rgb(24, 165, 165);
+	--sidebar: rgb(242, 244, 246);
+	--sidebar-foreground: rgb(25, 31, 40);
+	--sidebar-primary: rgb(49, 130, 246);
+	--sidebar-primary-foreground: rgb(255, 255, 255);
+	--sidebar-accent: rgb(2 32 71 / 5%);
+	--sidebar-accent-foreground: rgb(25, 31, 40);
+	--sidebar-border: rgb(229, 232, 235);
+	--sidebar-ring: rgb(49, 130, 246);
+	--font-sans:
+		"Toss Product Sans", Tossface, "SF Pro KR", "SF Pro Display", "SF Pro Icons", -apple-system, BlinkMacSystemFont, Pretendard, "Basier Square", "Apple SD Gothic Neo", Roboto, "Noto Sans KR", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+	--font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+	--font-mono:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+		"Courier New", monospace;
+	--radius: 0.75rem;
+	--shadow-x: 0;
+	--shadow-y: 1px;
+	--shadow-blur: 3px;
+	--shadow-spread: 0px;
+	--shadow-opacity: 0.1;
+	--shadow-color: oklch(0 0 0);
+	--shadow-2xs: 0 1px 2px 0 rgb(2 32 71 / 5%);
+	--shadow-xs: 0 1px 2px 0 rgb(2 32 71 / 5%);
+	--shadow-sm:
+		0 1px 3px 0 rgb(2 32 71 / 6%);
+	--shadow: 0 1px 3px 0 rgb(2 32 71 / 6%), 0 1px 2px -1px rgb(2 32 71 / 6%);
+	--shadow-md:
+		0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+	--shadow-lg:
+		0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+	--shadow-xl:
+		0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+	--shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+	--tracking-normal: 0em;
+	--spacing: 0.25rem;
+
+	/* Project primitives */
+	--grey-50: rgb(249, 250, 251);
+	--grey-100: rgb(242, 244, 246);
+	--grey-200: rgb(229, 232, 235);
+	--grey-300: rgb(209, 214, 219);
+	--grey-400: rgb(176, 184, 193);
+	--grey-500: rgb(139, 149, 161);
+	--grey-600: rgb(107, 118, 132);
+	--grey-700: rgb(78, 89, 104);
+	--grey-800: rgb(51, 61, 75);
+	--grey-900: rgb(25, 31, 40);
+	--blue-50: rgb(232, 243, 255);
+	--blue-100: rgb(201, 226, 255);
+	--blue-200: rgb(144, 194, 255);
+	--blue-300: rgb(100, 168, 255);
+	--blue-400: rgb(69, 147, 252);
+	--blue-500: rgb(49, 130, 246);
+	--blue-600: rgb(34, 114, 235);
+	--blue-700: rgb(27, 100, 218);
+	--red-400: rgb(246, 101, 112);
+	--red-500: rgb(240, 68, 82);
+	--red-600: rgb(228, 41, 57);
+	--green-400: rgb(21, 196, 126);
+	--green-500: rgb(3, 178, 108);
+	--green-600: rgb(2, 162, 98);
+	--orange-500: rgb(254, 152, 0);
+	--teal-500: rgb(24, 165, 165);
+	--yellow-500: rgb(255, 195, 66);
+	--purple-500: rgb(162, 52, 199);
+	--surface-grey: rgb(242, 244, 246);
+	--surface-float: rgb(255, 255, 255);
+	--surface-well: rgb(0 23 51 / 2%);
+	--surface-hover: rgb(2 32 71 / 5%);
+	--surface-selected: rgb(232, 243, 255);
+	--weak-info: rgb(69 147 252 / 16%);
+	--weak-danger: rgb(251 136 144 / 15%);
+	--overlay-dimmed: rgb(0 0 0 / 56%);
+	--hairline: rgb(229, 232, 235);
+	--hairline-width: 0.8px;
+	--divider-width: 1px;
+	--field-underline-width: 1.6px;
+	--control-height-nav: 32px;
+	--control-height: 38px;
+	--control-height-lg: 48px;
+	--control-height-xl: 56px;
+	--control-radius: 10px;
+	--control-radius-nav: 8px;
+	--control-radius-lg: 14px;
+	--control-radius-xl: 16px;
+	--control-padding-inline: 16px;
+	--control-padding-inline-nav: 10px;
+	--control-padding-inline-xl: 28px;
+	--control-label-leading: 1.252;
+	--icon-size: 24px;
+	--checkbox-size: 24px;
+	--checkbox-label-gap: 8px;
+	--switch-width: 50px;
+	--switch-height: 30px;
+	--switch-thumb-on: 24px;
+	--switch-thumb-off: 16px;
+	--badge-padding: 3px 7px;
+	--badge-padding-lg: 4px 8px;
+	--badge-radius: 12px;
+	--field-inset: 20px;
+	--row-inset: 24px;
+	--cta-inset: 20px;
+	--field-box-height: 55px;
+	--field-box-padding: 14px 16px;
+	--field-box-radius: 14px;
+	--field-label-gap: 6px;
+	--field-well-radius: 12px;
+	--field-well-padding: 8px 10px;
+	--list-row-padding-block: 12px;
+	--list-row-gap: 16px;
+	--list-row-radius: 12px;
+	--list-row-hover-inset: 6px;
+	--list-header-padding: 24px 0 8px;
+	--list-footer-row-height: 58px;
+	--grid-gap: 8px;
+	--grid-cell-radius: 9px;
+	--grid-cell-padding: 12px 8px;
+	--tab-height: 47px;
+	--tab-inset: 20px;
+	--tab-indicator-height: 2px;
+	--tab-indicator-inset: 10px;
+	--tab-item-padding: 8px;
+	--segment-radius: 14px;
+	--segment-padding: 4px 5px;
+	--segment-inset: 24px;
+	--stepper-inset: 3px 24px;
+	--stepper-icon: 30px;
+	--stepper-icon-offset: 14px;
+	--stepper-connector-width: 2px;
+	--stepper-connector-offset: 6px;
+	--sidebar-width: 256px;
+	--panel-inset: 12px;
+	--shell-footer-height: 40px;
+	--content-narrow: 52rem;
+	--panel-fold-duration: 0.2s;
+	--panel-fold-ease: cubic-bezier(0.33, 1, 0.68, 1);
+
+	/* Project primitives */
+	--card-spacing: 0.75rem;
+	--card-spacing-sm: 0.5rem;
+	--elevated-ring: rgb(2 32 71 / 5%);
+	--card-footer: color-mix(in oklch, var(--muted) 50%, transparent);
+	--font-heading: var(--font-sans);
+	--color-surface-100: var(--card);
+	--chart-axis-nudge: 0.5rem;
+	--radius-pill: 9999px;
+	--sidebar-collapse-duration: 300ms;
+	--sidebar-collapse-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.dark {
+	color-scheme: dark;
+
+	/* shadcn primitives and project overrides */
+	--background: rgb(23, 23, 28);
+	--foreground: rgb(255, 255, 255);
+	--card: rgb(32, 32, 39);
+	--card-foreground: rgb(255, 255, 255);
+	--popover: rgb(44, 44, 53);
+	--popover-foreground: rgb(255, 255, 255);
+	--primary: rgb(52, 133, 250);
+	--primary-foreground: rgb(23, 23, 28);
+	--secondary: rgb(32, 32, 39);
+	--secondary-foreground: rgb(255, 255, 255);
+	--muted: rgb(32, 32, 39);
+	--muted-foreground: rgb(158, 158, 164);
+	--accent: rgb(44, 44, 53);
+	--accent-foreground: rgb(255, 255, 255);
+	--destructive: rgb(240, 66, 81);
+	--destructive-foreground: rgb(255, 255, 255);
+	--border: rgb(60, 60, 71);
+	--input: rgb(60, 60, 71);
+	--ring: rgb(52, 133, 250);
+	--chart-1: oklch(0.81 0.1 252);
+	--chart-2: oklch(0.62 0.19 260);
+	--chart-3: oklch(0.55 0.22 263);
+	--chart-4: oklch(0.49 0.22 264);
+	--chart-5: oklch(0.42 0.18 266);
+	--sidebar: rgb(16, 16, 19);
+	--sidebar-foreground: rgb(255, 255, 255);
+	--sidebar-primary: rgb(52, 133, 250);
+	--sidebar-primary-foreground: rgb(23, 23, 28);
+	--sidebar-accent: rgb(217 217 255 / 11%);
+	--sidebar-accent-foreground: rgb(255, 255, 255);
+	--sidebar-border: rgb(60, 60, 71);
+	--sidebar-ring: rgb(52, 133, 250);
+
+	/* Project primitives */
+	--elevated-ring: oklch(1 0 0 / 10%);
+}
+
+@theme inline {
+	/* shadcn aliases and project overrides */
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	--font-sans: var(--font-sans);
+	--font-mono: var(--font-mono);
+	--font-serif: var(--font-serif);
+
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+
+	--shadow-2xs: var(--shadow-2xs);
+	--shadow-xs: var(--shadow-xs);
+	--shadow-sm: var(--shadow-sm);
+	--shadow: var(--shadow);
+	--shadow-md: var(--shadow-md);
+	--shadow-lg: var(--shadow-lg);
+	--shadow-xl: var(--shadow-xl);
+	--shadow-2xl: var(--shadow-2xl);
+
+	/* Project utilities */
+	--color-grey-50: var(--grey-50);
+	--color-grey-100: var(--grey-100);
+	--color-grey-200: var(--grey-200);
+	--color-grey-300: var(--grey-300);
+	--color-grey-400: var(--grey-400);
+	--color-grey-500: var(--grey-500);
+	--color-grey-600: var(--grey-600);
+	--color-grey-700: var(--grey-700);
+	--color-grey-800: var(--grey-800);
+	--color-grey-900: var(--grey-900);
+	--color-blue-400: var(--blue-400);
+	--color-blue-500: var(--blue-500);
+	--color-blue-600: var(--blue-600);
+	--color-blue-700: var(--blue-700);
+	--color-red-500: var(--red-500);
+	--color-red-600: var(--red-600);
+	--color-green-500: var(--green-500);
+	--color-green-600: var(--green-600);
+	--color-orange-500: var(--orange-500);
+	--color-teal-500: var(--teal-500);
+	--color-yellow-500: var(--yellow-500);
+	--color-purple-500: var(--purple-500);
+	--color-surface-grey: var(--surface-grey);
+	--color-surface-float: var(--surface-float);
+	--color-surface-well: var(--surface-well);
+	--color-surface-hover: var(--surface-hover);
+	--color-surface-selected: var(--surface-selected);
+	--color-overlay-dimmed: var(--overlay-dimmed);
+	--color-hairline: var(--hairline);
+	--radius-control: var(--control-radius);
+	--radius-control-nav: var(--control-radius-nav);
+	--radius-control-lg: var(--control-radius-lg);
+	--radius-control-xl: var(--control-radius-xl);
+	--spacing-field-inset: var(--field-inset);
+	--spacing-row-inset: var(--row-inset);
+	--spacing-cta-inset: var(--cta-inset);
+	--spacing-grid-gap: var(--grid-gap);
+	--font-heading: var(--font-heading);
+	--color-elevated-ring: var(--elevated-ring);
+	--color-card-footer: var(--card-footer);
+	--color-surface-100: var(--color-surface-100);
+	--spacing-card: var(--card-spacing);
+	--spacing-card-sm: var(--card-spacing-sm);
+	--radius-pill: var(--radius-pill);
+	--text-display: 30px;
+	--text-display--line-height: 40px;
+	--text-display--font-weight: 700;
+	--text-title: 26px;
+	--text-title--line-height: 35px;
+	--text-title--font-weight: 600;
+	--text-heading: 22px;
+	--text-heading--line-height: 31px;
+	--text-heading--font-weight: 600;
+	--text-heading-sm: 17px;
+	--text-heading-sm--line-height: 25.5px;
+	--text-heading-sm--font-weight: 600;
+	--text-body: 17px;
+	--text-body--line-height: 25.5px;
+	--text-body--font-weight: 400;
+	--text-body-sm: 15px;
+	--text-body-sm--line-height: 22.5px;
+	--text-body-sm--font-weight: 400;
+	--text-label: 13px;
+	--text-label--line-height: 19.5px;
+	--text-label--font-weight: 400;
+	--text-label-sm: 12px;
+	--text-label-sm--line-height: 18px;
+	--text-label-sm--font-weight: 400;
+	--text-caption: 11px;
+	--text-caption--line-height: 16.5px;
+	--text-caption--font-weight: 400;
+	--text-control: 17px;
+	--text-control--line-height: 21.284px;
+	--text-control--font-weight: 600;
+	--text-control-sm: 13px;
+	--text-control-sm--line-height: 16.276px;
+	--text-control-sm--font-weight: 600;
+
+	/* Project utilities */
+	--font-heading: var(--font-heading);
+	--color-elevated-ring: var(--elevated-ring);
+	--color-card-footer: var(--card-footer);
+	--color-surface-100: var(--color-surface-100);
+	--spacing-card: var(--card-spacing);
+	--spacing-card-sm: var(--card-spacing-sm);
+	--radius-pill: var(--radius-pill);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+/* Adaptive dark palette. TDS grey and every hue flip in dark; these are the
+   resolved adaptive colour custom properties, not a hand-mixed ramp. */
+.dark {
+	/* Project primitives */
+	--grey-50: rgb(32, 32, 39);
+	--grey-100: rgb(44, 44, 53);
+	--grey-200: rgb(60, 60, 71);
+	--grey-300: rgb(77, 77, 89);
+	--grey-400: rgb(98, 98, 109);
+	--grey-500: rgb(126, 126, 135);
+	--grey-600: rgb(158, 158, 164);
+	--grey-700: rgb(195, 195, 198);
+	--grey-800: rgb(228, 228, 229);
+	--grey-900: rgb(255, 255, 255);
+	--blue-400: rgb(69, 147, 252);
+	--blue-500: rgb(52, 133, 250);
+	--blue-600: rgb(68, 155, 255);
+	--blue-700: rgb(97, 176, 255);
+	--red-500: rgb(240, 66, 81);
+	--red-600: rgb(250, 97, 109);
+	--green-500: rgb(22, 187, 118);
+	--green-600: rgb(38, 207, 136);
+	--orange-500: rgb(241, 134, 0);
+	--teal-500: rgb(46, 170, 178);
+	--yellow-500: rgb(255, 177, 52);
+	--purple-500: rgb(174, 61, 209);
+	--surface-grey: rgb(32, 32, 39);
+	--surface-float: rgb(44, 44, 53);
+	--surface-well: rgb(217 217 255 / 5%);
+	--surface-hover: rgb(217 217 255 / 11%);
+	--surface-selected: rgb(32, 44, 77);
+	--overlay-dimmed: rgb(0 0 0 / 20%);
+	--hairline: rgb(60, 60, 71);
+	--elevated-ring: rgb(255 255 255 / 10%);
+}
+
+/* TDS primitive chrome. Every value is measured on the live TDS Mobile docs
+   (tossmini-docs.toss.im) at 390px; geometry per component, not per route. */
+[data-slot="input"],
+[data-slot="textarea"],
+[data-slot="native-select"] {
+	min-height: var(--field-box-height);
+	padding: var(--field-box-padding);
+	border: var(--hairline-width) solid var(--hairline);
+	border-radius: var(--field-box-radius);
+	background-color: var(--surface-well);
+	color: var(--foreground);
+	font-size: var(--text-body);
+	line-height: var(--text-body--line-height);
+}
+[data-slot="input"]::placeholder,
+[data-slot="textarea"]::placeholder {
+	color: var(--grey-400);
+}
+[data-slot="input"]:focus-visible,
+[data-slot="textarea"]:focus-visible {
+	outline: none;
+	border-color: var(--blue-500);
+}
+
+[data-slot="button"] {
+	height: var(--control-height);
+	min-height: var(--control-height);
+	padding-inline: var(--control-padding-inline);
+	border-radius: var(--control-radius);
+	font-size: var(--text-control-sm);
+	font-weight: var(--text-control-sm--font-weight);
+	line-height: var(--control-label-leading);
+	letter-spacing: 0;
+}
+[data-slot="button"][data-size="lg"] {
+	height: var(--control-height-lg);
+	border-radius: var(--control-radius-lg);
+	font-size: var(--text-control);
+}
+[data-slot="button"][data-size="xl"] {
+	height: var(--control-height-xl);
+	padding-inline: var(--control-padding-inline-xl);
+	border-radius: var(--control-radius-xl);
+	font-size: var(--text-control);
+}
+[data-slot="button"]:disabled {
+	opacity: 0.4;
+}
+
+[data-slot="checkbox"] {
+	width: var(--checkbox-size);
+	height: var(--checkbox-size);
+	border-radius: 6px;
+	border-width: var(--hairline-width);
+}
+
+[data-slot="switch"] {
+	width: var(--switch-width);
+	height: var(--switch-height);
+	border-radius: calc(var(--switch-height) / 2);
+	background-color: var(--grey-200);
+}
+[data-slot="switch"][data-state="checked"] {
+	background-color: var(--blue-500);
+}
+[data-slot="switch"] [data-slot="switch-thumb"] {
+	width: var(--switch-thumb-off);
+	height: var(--switch-thumb-off);
+	border-radius: 9999px;
+}
+[data-slot="switch"][data-state="checked"] [data-slot="switch-thumb"] {
+	width: var(--switch-thumb-on);
+	height: var(--switch-thumb-on);
+}
+
+[data-slot="badge"] {
+	padding: var(--badge-padding);
+	border-radius: var(--badge-radius);
+	font-size: var(--text-label);
+	line-height: var(--text-label--line-height);
+	font-weight: 600;
+}
+
+[data-slot="tabs-list"] {
+	height: var(--tab-height);
+	background-color: var(--surface-float);
+}
+[data-slot="tabs-trigger"] {
+	padding-inline: var(--tab-item-padding);
+	font-size: var(--text-body);
+	line-height: var(--control-label-leading);
+	color: var(--grey-600);
+}
+[data-slot="tabs-trigger"][data-state="active"] {
+	color: var(--foreground);
+}
+
+[data-slot="select-trigger"] {
+	height: var(--control-height);
+	min-height: var(--control-height);
+	padding: 0 var(--control-padding-inline);
+	border: var(--hairline-width) solid var(--hairline);
+	border-radius: var(--control-radius);
+	background-color: var(--surface-well);
+	font-size: var(--text-body-sm);
+}
+[data-slot="select-item"] {
+	min-height: var(--control-height-nav);
+	border-radius: var(--control-radius-nav);
+	font-size: var(--text-body-sm);
+}
+
+[data-slot="dialog-overlay"],
+[data-slot="sheet-overlay"],
+[data-slot="alert-dialog-overlay"] {
+	background-color: var(--overlay-dimmed);
+}
+[data-slot="dialog-content"],
+[data-slot="alert-dialog-content"] {
+	border-radius: var(--radius);
+	box-shadow: var(--shadow-lg);
+}
+
+[data-slot="card"] {
+	border-radius: var(--radius);
+	box-shadow: none;
+}
+[data-slot="separator"] {
+	background-color: var(--hairline);
+}
+
+[data-slot="sidebar-gap"],
+[data-slot="sidebar-container"] {
+	transition-duration: var(--sidebar-collapse-duration);
+	transition-timing-function: var(--sidebar-collapse-ease);
+}

@@ -69,6 +69,7 @@ pub fn dispatch(args: &[String]) -> Result<()> {
                     "opencode-go".to_string(),
                     "grok".to_string(),
                     "lithosai".to_string(),
+                    "claude".to_string(),
                 ]
             } else {
                 vec![target]

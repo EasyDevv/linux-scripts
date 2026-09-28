@@ -1,0 +1,411 @@
+{
+	"slug": "toss",
+	"capturedAt": "2026-09-28",
+	"sourceDir": "ref/tossmini-docs.toss.im",
+	"method": "getComputedStyle + offsetWidth/offsetHeight on live TDS docs nodes at 390px (deviceScaleFactor 1, mobile emulation). Computed styles and offset boxes are pre-transform, so nodes inside the scaled phone preview still report native geometry.",
+	"pages": {
+		"button": "https://tossmini-docs.toss.im/tds-mobile/components/button/",
+		"badge": "https://tossmini-docs.toss.im/tds-mobile/components/badge/",
+		"checkbox": "https://tossmini-docs.toss.im/tds-mobile/components/checkbox/",
+		"switch": "https://tossmini-docs.toss.im/tds-mobile/components/switch/",
+		"textField": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/text-field/",
+		"searchField": "https://tossmini-docs.toss.im/tds-mobile/components/search-field/",
+		"listRow": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-overview/",
+		"listRowComponents": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-components/",
+		"listHeader": "https://tossmini-docs.toss.im/tds-mobile/components/list-header/",
+		"listFooter": "https://tossmini-docs.toss.im/tds-mobile/components/list-footer/",
+		"gridList": "https://tossmini-docs.toss.im/tds-mobile/components/grid-list/",
+		"segmentedControl": "https://tossmini-docs.toss.im/tds-mobile/components/segmented-control/",
+		"tab": "https://tossmini-docs.toss.im/tds-mobile/components/tab/",
+		"stepper": "https://tossmini-docs.toss.im/tds-mobile/components/stepper/",
+		"boardRow": "https://tossmini-docs.toss.im/tds-mobile/components/board-row/",
+		"textButton": "https://tossmini-docs.toss.im/tds-mobile/components/text-button/",
+		"iconButton": "https://tossmini-docs.toss.im/tds-mobile/components/icon-button/",
+		"paragraph": "https://tossmini-docs.toss.im/tds-mobile/components/paragraph/",
+		"bottomSheet": "https://tossmini-docs.toss.im/tds-mobile/components/bottom-sheet/",
+		"bottomCTASingle": "https://tossmini-docs.toss.im/tds-mobile/components/BottomCTA/Single/",
+		"bottomCTADouble": "https://tossmini-docs.toss.im/tds-mobile/components/BottomCTA/Double/",
+		"modal": "https://tossmini-docs.toss.im/tds-mobile/components/modal/",
+		"agreementV3": "https://tossmini-docs.toss.im/tds-mobile/components/Agreement/v3/",
+		"agreementV4": "https://tossmini-docs.toss.im/tds-mobile/components/Agreement/v4/",
+		"assetCheckFirst": "https://tossmini-docs.toss.im/tds-mobile/components/Asset/check-first/",
+		"foundationColors": "https://tossmini-docs.toss.im/tds-mobile/foundation/colors/",
+		"foundationTypography": "https://tossmini-docs.toss.im/tds-mobile/foundation/typography/",
+		"docsShell": "https://tossmini-docs.toss.im/tds-mobile/components/button/ (1440x900)"
+	},
+	"roles": {
+		"canvas": {
+			"page": "docsShell",
+			"token": "--background",
+			"geometry": "sidebar 256px, nav 64px, main pad 16px 48px 0, content column 832px, toc 256px at x 1184"
+		},
+		"primaryButton": {
+			"page": "button",
+			"token": "--blue-500",
+			"geometry": "56x96 default; label span min-height 56 padding 0 28; font 17/21.284/600",
+			"ink": "--surface-float",
+			"radius": "--control-radius-xl"
+		},
+		"buttonMedium": {
+			"page": "button",
+			"geometry": "73x38",
+			"radius": "10px",
+			"label": "padding 0 16, font 15/18.78/600"
+		},
+		"buttonSmall": {
+			"page": "button",
+			"geometry": "44x32",
+			"radius": "8px",
+			"label": "padding 0 10, font 13/16.276/600"
+		},
+		"buttonLarge": {
+			"page": "button",
+			"geometry": "66x48",
+			"radius": "14px",
+			"label": "padding 0 16, font 17/21.284/600"
+		},
+		"buttonWeak": {
+			"page": "BottomCTA__Double",
+			"fill": "--surface-hover",
+			"ink": "--grey-700",
+			"geometry": "125x56"
+		},
+		"buttonDanger": {
+			"page": "BottomCTA__Double",
+			"fill": "--red-500",
+			"weakFill": "--weak-danger",
+			"weakInk": "--red-600",
+			"geometry": "125x56"
+		},
+		"textButton": {
+			"page": "textButton",
+			"geometry": "77x28 radius 8, press layer 95x36 radius 9",
+			"font": "17/21.284/500",
+			"idle": "--grey-600",
+			"active": "--blue-500"
+		},
+		"iconButton": {
+			"page": "iconButton",
+			"geometry": "48x48 padding 12 radius 12, icon box 24x24",
+			"bordered": "50x50 with 0.8px border",
+			"attr": "aria-label"
+		},
+		"badge": {
+			"page": "badge",
+			"geometry": "padding 3px 7px; xsmall 44x21 r9 10/15/600; small 44x24 r11 12/18/700; medium 64x26 r12 13/19.5/700; large 49x29 r13 pad 4px 8px 14/21/700",
+			"fill": "--blue-500",
+			"ink": "--surface-float",
+			"weakAlpha": 0.16
+		},
+		"checkbox": {
+			"page": "checkbox",
+			"geometry": "24x24 graphic, row gap 8px, 1px stroke",
+			"attr": "role=checkbox|aria-checked|data-checkbox-graphic"
+		},
+		"switch": {
+			"page": "switch",
+			"geometry": "track 50x30 r15, thumb 24 on / 16 off, radius 9999px",
+			"on": "--blue-500",
+			"off": "--grey-200",
+			"thumb": "--surface-float",
+			"attr": "role=switch|aria-checked|aria-disabled"
+		},
+		"textField": {
+			"page": "textField",
+			"geometry": "box 261x55 padding 14px 16px radius 14, border 0.8px; label pad 0 24 6, help pad 6 24 0; row pad 0 20 0 20 gap 6px 4px; container pad 16px 0",
+			"fill": "--surface-well",
+			"border": "--hairline",
+			"underline": "1.6px solid --grey-100",
+			"font": "17/25.5/400",
+			"helpInk": "--grey-600",
+			"placeholder": "--grey-400",
+			"attr": "aria-label=Placeholder|placeholder"
+		},
+		"searchField": {
+			"page": "searchField",
+			"geometry": "outer pad 14px 16px; well 269x44 radius 12 padding 8px 10px gap 8px"
+		},
+		"listRow": {
+			"page": "listRow",
+			"geometry": "row padding 12px 24px, hover radius 12, content gap 16px, accessory margin-left 12px, min 44px",
+			"hoverFill": "--surface-hover",
+			"title": "17/22.95/500",
+			"accessoryInk": "--grey-700"
+		},
+		"listHeader": {
+			"page": "listHeader",
+			"geometry": "padding 24px 0 8px, inset 24px, support 13/19.5, title 20px, accessory margin-left 24px, title row margin-top 4px",
+			"supportInk": "--grey-600"
+		},
+		"listFooter": {
+			"page": "listFooter",
+			"geometry": "row 301x59, inset 24px, 1px top hairline, label 17/21.284/500",
+			"active": "--blue-500",
+			"idle": "--grey-600",
+			"attr": "role=button"
+		},
+		"gridList": {
+			"page": "gridList",
+			"geometry": "gap 8px, padding 0 24px 8px, cell radius 9, cell padding 12px 8px gap 6px, label 14/21/500",
+			"cellFill": "--surface-well"
+		},
+		"segmentedControl": {
+			"page": "segmentedControl",
+			"geometry": "track 253x48 radius 14, inner padding 4px 5px, container pad 0 24px, item 17/25.5",
+			"track": "--surface-hover",
+			"selected": "600 --grey-800",
+			"idle": "--grey-600",
+			"attr": "role=radiogroup",
+			"idleWeight": 500,
+			"selectedWeight": 600
+		},
+		"tab": {
+			"page": "tab",
+			"geometry": "bar 49h, inset 20px (14px small), tab 87x47 padding 0 8px, indicator 87x2 padding 0 10px",
+			"bar": "--surface-float",
+			"selected": "--foreground",
+			"idle": "--grey-600",
+			"attr": "role=tablist|role=tab|aria-selected|aria-orientation"
+		},
+		"stepper": {
+			"page": "stepper",
+			"geometry": "row padding 3px 24px, icon 30x30 (36 large), icon column padding-right 14px, connector 2x32 radius 1px margin-top 6px, body padding 0 0 16px 0, right slot padding 4px 0 0 12px"
+		},
+		"boardRow": {
+			"page": "boardRow",
+			"geometry": "header padding 16px 16px 16px 24px, hover radius 12 margin 4px 6px, title 17/22.95, chevron 24x24, body padding 16px 0 with inset 24px",
+			"attr": "role=button|aria-expanded|aria-controls"
+		},
+		"paragraph": {
+			"page": "paragraph",
+			"geometry": "17/25.5; display 30/40; link padding 0 4px margin 0 -4px radius 4px, underline 0.8px",
+			"ink": "--grey-900",
+			"link": "--blue-500"
+		},
+		"bottomCTA": {
+			"page": "bottomCTASingle",
+			"geometry": "bar padding 0 20px 20px, background white",
+			"fill": "--surface-float"
+		},
+		"bottomSheet": {
+			"page": "bottomSheet",
+			"geometry": "sheet padding 16px, white surface",
+			"overlay": "--overlay-dimmed"
+		},
+		"agreementRow": {
+			"page": "agreementV3",
+			"geometry": "well radius 12 fill --surface-hover, row padding 10px 20px, text 15/22.5"
+		},
+		"agreementToggle": {
+			"page": "agreementV4",
+			"geometry": "28x28 padding 2px radius 6px",
+			"attr": "role=button|aria-expanded"
+		},
+		"assetCheck": {
+			"page": "assetCheckFirst",
+			"geometry": "40x40 radius 12 fill --grey-100, check-first shadow blue500 7px 7px 0 -1px"
+		},
+		"switchDisabled": {
+			"page": "switch",
+			"geometry": "track 50x30 kept, opacity lowered",
+			"attr": "aria-disabled=true"
+		}
+	},
+	"colorRoles": {
+		"adaptiveGrey": {
+			"source": "foundation/colors + resolved adaptive-grey custom properties",
+			"light": {
+				"50": "--grey-50",
+				"100": "--grey-100",
+				"200": "--grey-200",
+				"300": "--grey-300",
+				"400": "--grey-400",
+				"500": "--grey-500",
+				"600": "--grey-600",
+				"700": "--grey-700",
+				"800": "--grey-800",
+				"900": "--grey-900"
+			},
+			"dark": {
+				"50": "--card",
+				"100": "--surface-float",
+				"200": "--border",
+				"300": "--grey-300",
+				"400": "--grey-400",
+				"500": "--grey-500",
+				"600": "--muted-foreground",
+				"700": "--grey-700",
+				"800": "--grey-800",
+				"900": "--foreground"
+			},
+			"darkNote": "다크 ramp 전문은 layout.css 두 번째 .dark 블록과 SOURCE.md 표 참조."
+		},
+		"adaptiveGreyOpacity": {
+			"source": "기록된 4개 값만 토큰화했고, 전문 ramp은 SOURCE.md 표 참조.",
+			"light": {
+				"50": "--surface-well",
+				"100": "--surface-hover",
+				"200": "--hairline"
+			},
+			"dark": {
+				"50": "--surface-well",
+				"100": "--surface-hover"
+			},
+			"unused": "200 이상은 실측한 컨트롤이 없어 토큰으로 승격하지 않았다."
+		},
+		"adaptiveHues": {
+			"note": "파운데이션/컬러스가 50..900 전체 램프를 문서로 정의한다. layout.css에는 컴포넌트와 chart 스케일이 실제로 쓰는 색만 토큰화했고, 전문은 SOURCE.md 표 참조.",
+			"blue": [
+				"--blue-50",
+				"--blue-100",
+				"--blue-200",
+				"--blue-300",
+				"--blue-400",
+				"--blue-500",
+				"--blue-600",
+				"--blue-700"
+			],
+			"red": [
+				"--red-400",
+				"--red-500",
+				"--red-600"
+			],
+			"green": [
+				"--green-400",
+				"--green-500",
+				"--green-600"
+			],
+			"orange": [
+				"--orange-500"
+			],
+			"teal": [
+				"--teal-500"
+			],
+			"yellow": [
+				"--yellow-500"
+			],
+			"purple": [
+				"--purple-500"
+			]
+		},
+		"adaptiveSurfaces": {
+			"background": [
+				"--card",
+				"--background"
+			],
+			"greyBackground": [
+				"--surface-grey",
+				"--sidebar"
+			],
+			"layeredBackground": [
+				"--card",
+				"--card"
+			],
+			"floatedBackground": [
+				"--surface-float",
+				"--popover"
+			],
+			"hairlineBorder": [
+				"--hairline",
+				"--border"
+			],
+			"dimmedBackground": [
+				"--overlay-dimmed",
+				"--overlay-dimmed"
+			],
+			"disabledBlue500": [
+				"--blue-100",
+				"--weak-info"
+			],
+			"note": "라이트/다크 두 칸 순서. 다크 값은 layout.css 두 번째 .dark 블록."
+		}
+	},
+	"typography": {
+		"source": "foundation/typography + resolved tds-t custom properties (alias to f-scale)",
+		"fScale": {
+			"min": 11,
+			"max": 42,
+			"lineHeight": "fontSize x 1.5 for 11..29, x 4/3 for 30..42"
+		},
+		"alias": {
+			"t1": 30,
+			"t2": 26,
+			"t3": 22,
+			"t4": 20,
+			"t5": 17,
+			"t6": 15,
+			"t7": 13,
+			"st1": 29,
+			"st2": 28,
+			"st3": 27,
+			"st4": 25,
+			"st5": 24,
+			"st6": 23,
+			"st7": 21,
+			"st8": 19,
+			"st9": 18,
+			"st10": 16,
+			"st11": 14,
+			"st12": 12,
+			"st13": 11
+		},
+		"usage": {
+			"t1": "매우 큰 제목",
+			"t2": "큰 제목",
+			"t3": "일반 제목",
+			"t4": "작은 제목",
+			"t5": "일반 본문",
+			"t6": "작은 본문",
+			"t7": "안 읽어도 됨",
+			"st5": "조금 큰 제목",
+			"st8": "조금 큰 본문",
+			"st13": "아예 안읽어도 됨"
+		},
+		"iconHeight": {
+			"11": "12px",
+			"14": "15px",
+			"17": "19px",
+			"20": "22px",
+			"24": "27px",
+			"29": "33px",
+			"34": "39px"
+		},
+		"badgePadding": {
+			"11": "3px 6px",
+			"14": "3px 7px",
+			"19": "3px 7px",
+			"30": "4px 8px",
+			"39": "5px 10px"
+		},
+		"linkThickness": {
+			"11": "0.7px",
+			"16": "1px",
+			"19": "1.3px",
+			"23": "1.5px",
+			"29": "1.8px",
+			"35": "2px"
+		},
+		"largerText": "iOS/Android의 더 큰 텍스트는 1.01~1.4배로 확대된다. 토큰으로 추상화하고 값을 하드코딩하지 않는다."
+	},
+	"docsShell": {
+		"note": "Nextra 문서 사이트 크롬. TDS 모바일 제품 화면이 아니며 theme-ref 셸 재현에만 쓴다. 값은 1440x900 실측.",
+		"navHeight": "64px",
+		"navInset": "24px",
+		"sidebarWidth": "256px",
+		"contentInset": "48px",
+		"contentColumn": "832px",
+		"tocWidth": "256px",
+		"h1": "36px/54px/700",
+		"h2": "30px/45px/600 with 0.8px bottom rule",
+		"body": "16px/28px/400",
+		"preview": "white, radius 12, 0.8px border, padding 20px",
+		"inlineCode": "14.4px/28px, radius 6, padding 2px 3.6px, border 0.8px",
+		"font": "Toss Product Sans 400/700 only",
+		"colorMarks": "다음 잉크는 Nextra 팔레트라 토큰이 아니다. 값은 ref/chrome.ts의 measured 마크에 있다: docLink, docInk, docBodyInk, docCodeBg."
+	},
+	"notMeasured": [
+		"hover/pressed 프레임의 실제 페인트 오너(버튼 press 레이어는 1.05~2x 크기의 오버레이 div이나 트리거가 확인되지 않았다)",
+		"모달/시트 그림자(opacity 0.56 딤드에 실측했고, elevation shadow는 캡처하지 못했다)",
+		"Keypad · Chart · Top · Result · Rating · Bubble · Menu · Toast · Tooltip · Slider · Progress · Skeleton · Loader · NumericSpinner · TableRow · Post · Highlight · Border의 상자 수치는 전수 목록과 prop 표까지만 확인했다"
+	]
+}

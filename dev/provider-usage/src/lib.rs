@@ -1,6 +1,7 @@
 mod args;
 mod auth;
 mod cache;
+mod claude;
 mod color;
 mod commandcode;
 mod core;

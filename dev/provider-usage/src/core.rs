@@ -5,6 +5,7 @@ use crate::auth::{self, cache_key};
 use crate::cache::{
     CacheFile, FileStore, ProviderSnapshot, ProviderState, Store, DEFAULT_CACHE_PATH,
 };
+use crate::claude;
 use crate::commandcode;
 use crate::grok;
 use crate::http::{Http, ReqwestHttp};
@@ -300,6 +301,8 @@ pub struct LiveProbes<H> {
     pub grok_team_id: Option<String>,
     pub lithosai_api_key: Option<String>,
     pub lithosai_console_cookie: Option<String>,
+    pub claude: Option<auth::ClaudeSession>,
+    pub claude_base: String,
 }
 
 impl LiveProbes<ReqwestHttp> {
@@ -317,11 +320,14 @@ impl LiveProbes<ReqwestHttp> {
             grok_team_id: auth::grok_team_id(&auth::env_lookup),
             lithosai_api_key: auth::lithosai_api_key(&auth::env_lookup, None),
             lithosai_console_cookie: auth::lithosai_console_cookie(&auth::env_lookup, None),
+            claude: auth::claude_credential(&auth::env_lookup),
+            claude_base: DEFAULT_CLAUDE_BASE.to_string(),
         })
     }
 }
 
 const DEFAULT_COMMANDCODE_BASE: &str = commandcode::DEFAULT_API_BASE;
+const DEFAULT_CLAUDE_BASE: &str = claude::DEFAULT_API_BASE;
 
 impl<H: Http> Probes for LiveProbes<H> {
     fn cache_key(&self, provider: &str) -> String {
@@ -346,6 +352,10 @@ impl<H: Http> Probes for LiveProbes<H> {
             "lithosai" => lithosai::cache_key(
                 self.lithosai_api_key.as_deref(),
                 self.lithosai_console_cookie.as_deref(),
+            ),
+            "claude" => cache_key(
+                provider,
+                self.claude.as_ref().map(|s| s.access_token.as_str()),
             ),
             other => cache_key(other, None),
         }
@@ -502,6 +512,18 @@ impl<H: Http> Probes for LiveProbes<H> {
                 &self.http,
                 self.lithosai_api_key.as_deref(),
                 self.lithosai_console_cookie.as_deref(),
+            ),
+            "claude" => claude::probe(
+                &self.http,
+                self.claude
+                    .as_ref()
+                    .map(|session| claude::Session {
+                        access_token: session.access_token.clone(),
+                        expires_at_ms: session.expires_at_ms,
+                    })
+                    .as_ref(),
+                &self.claude_base,
+                now,
             ),
             _ => ProbeOutcome {
                 plan: None,

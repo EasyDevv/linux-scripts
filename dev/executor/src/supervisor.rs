@@ -199,8 +199,13 @@ pub async fn run_supervisor(proxy_port: u16) -> Result<(), CliError> {
                                         instance,
                                         spec_key,
                                     } => {
-                                        if let Some(current) = managed.lock().unwrap().remove(&name)
-                                        {
+                                        // Take the entry out first: a guard in the `if let`
+                                        // scrutinee lives through the block, so holding it
+                                        // across `stop().await` starves the proxy's restart
+                                        // hook (it locks `managed` on a runtime thread) until
+                                        // every worker blocks and nothing is accepted.
+                                        let current = managed.lock().unwrap().remove(&name);
+                                        if let Some(current) = current {
                                             let _ = current.process.stop().await;
                                         }
                                         let process = pm.start(&instance);
@@ -210,8 +215,13 @@ pub async fn run_supervisor(proxy_port: u16) -> Result<(), CliError> {
                                         );
                                     }
                                     ReconcileAction::Stop { name } => {
-                                        if let Some(current) = managed.lock().unwrap().remove(&name)
-                                        {
+                                        // Take the entry out first: a guard in the `if let`
+                                        // scrutinee lives through the block, so holding it
+                                        // across `stop().await` starves the proxy's restart
+                                        // hook (it locks `managed` on a runtime thread) until
+                                        // every worker blocks and nothing is accepted.
+                                        let current = managed.lock().unwrap().remove(&name);
+                                        if let Some(current) = current {
                                             let _ = current.process.stop().await;
                                         }
                                     }
@@ -248,7 +258,8 @@ pub async fn run_supervisor(proxy_port: u16) -> Result<(), CliError> {
     let _ = proxy.stop(None).await;
     let names: Vec<_> = managed.lock().unwrap().keys().cloned().collect();
     for name in names {
-        if let Some(entry) = managed.lock().unwrap().remove(&name) {
+        let entry = managed.lock().unwrap().remove(&name);
+        if let Some(entry) = entry {
             let _ = entry.process.stop().await;
         }
     }

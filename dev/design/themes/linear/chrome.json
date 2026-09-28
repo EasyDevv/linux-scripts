@@ -34,7 +34,9 @@
         "heroIdentity",
         "subtitle",
         "propertyChip",
-        "emptyUpdate"
+        "emptyUpdate",
+        "sectioning.codeBox",
+        "sectioning.inspectorStack"
       ]
     },
     {
@@ -155,7 +157,9 @@
       "taught": [
         "settingsSection",
         "settingsGhost",
-        "switch"
+        "switch",
+        "settingsGroupHeader",
+        "settingRow"
       ]
     },
     {
@@ -629,6 +633,87 @@
         "Low 4"
       ],
       "motion": "same inline-surface spring as popoverMotion (transform-origin = cell left edge / cell bottom), resting inline opacity: 2"
+    },
+    "settingsGroupHeader": {
+      "font": "--text-heading-sm",
+      "weight": 500,
+      "color": "--ink-soft",
+      "insetX": 16,
+      "h": 16,
+      "ledeGap": 4,
+      "lede": {
+        "font": "--text-body-base",
+        "lineHeight": 22,
+        "weight": 450,
+        "color": "--muted-foreground"
+      },
+      "toWell": 12,
+      "betweenGroups": 48,
+      "source": "settings-security 2026-09-28 cdp 9201, 1408x903 @1.25"
+    },
+    "settingRow": {
+      "pad": 16,
+      "gap": 12,
+      "h": {
+        "titleOnly": 60,
+        "withDescription": 66
+      },
+      "title": {
+        "font": "--text-heading-sm",
+        "weight": 500,
+        "color": "--foreground",
+        "h": 16
+      },
+      "description": {
+        "font": "--text-body-sm",
+        "weight": 450,
+        "color": "--muted-foreground",
+        "gap": 3,
+        "h": 15
+      },
+      "select": {
+        "h": 30,
+        "radius": "--radius-sm",
+        "pad": "1px 28px 1px 10px",
+        "bg": "--accent",
+        "weight": 400
+      },
+      "switch": {
+        "w": 30,
+        "h": 20,
+        "knob": 14,
+        "on": "--primary"
+      },
+      "wellRadius": "--radius-md",
+      "source": "settings-security 2026-09-28"
+    },
+    "sectioning": {
+      "source": "ref/linear.app/desktop/project-overview.png, team-all.png, team-all-board.png",
+      "gap": "--panel-inset",
+      "gapPx": 8,
+      "codeBox": {
+        "bg": "--background",
+        "border": "--inspector-border",
+        "radius": "--radius-md",
+        "headerHeight": 32
+      },
+      "inspectorCard": {
+        "bg": "--inspector",
+        "border": "--inspector-border",
+        "radius": "--radius-md",
+        "gapPx": 8
+      },
+      "fold": {
+        "duration": "--panel-fold-duration",
+        "ease": "--panel-fold-ease",
+        "ms": 200
+      },
+      "asideSlide": {
+        "duration": "--sidebar-collapse-duration",
+        "ease": "--sidebar-collapse-ease",
+        "ms": 300
+      },
+      "acceptedIn": "dashboard .product/surfaces/05-projects (2026-09-28)"
     }
   },
   "agentChat": {

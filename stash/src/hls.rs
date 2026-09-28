@@ -297,7 +297,7 @@ pub async fn download_segments(
             async move {
                 if cancel.load(Ordering::Relaxed) { return Err("cancelled".to_string()); }
                 let path = dest_dir.join(format!("segment-{i:06}.ts"));
-                let size = match existing_file_size(&path).await {
+                let size = match existing_valid_segment(&path).await {
                     Some(size) => size,
                     None => {
                         let (data, size) = download_data_with_timeout(
@@ -331,6 +331,27 @@ async fn existing_file_size(path: &Path) -> Option<u64> {
         .ok()
         .map(|metadata| metadata.len())
         .filter(|size| *size > 0)
+}
+
+/// A cached `.ts` segment is only trustworthy if it looks like MPEG-TS: a
+/// size that is a whole number of 188-byte packets, starting with the sync
+/// byte. A segment that failed a prior remux (truncated mid-transfer, or a
+/// non-TS error body saved as if it were video) still has `size > 0`, so
+/// without this check a retry would keep re-muxing the same bad bytes and
+/// fail identically every time instead of ever re-fetching the segment.
+async fn existing_valid_segment(path: &Path) -> Option<u64> {
+    let size = existing_file_size(path).await?;
+    if size % 188 != 0 {
+        return None;
+    }
+    let mut file = tokio::fs::File::open(path).await.ok()?;
+    let mut sync = [0u8; 1];
+    use tokio::io::AsyncReadExt;
+    file.read_exact(&mut sync).await.ok()?;
+    if sync[0] != 0x47 {
+        return None;
+    }
+    Some(size)
 }
 
 async fn fetch_text(
@@ -633,10 +654,12 @@ mod tests {
     async fn queues_existing_segments_in_playlist_order() {
         let dir = std::env::temp_dir().join(format!("stash-hls-stream-{}", uuid::Uuid::new_v4()));
         tokio::fs::create_dir_all(&dir).await.unwrap();
-        tokio::fs::write(dir.join("segment-000000.ts"), b"first")
+        let mut fake_packet = [0xffu8; 188];
+        fake_packet[0] = 0x47;
+        tokio::fs::write(dir.join("segment-000000.ts"), fake_packet)
             .await
             .unwrap();
-        tokio::fs::write(dir.join("segment-000001.ts"), b"second")
+        tokio::fs::write(dir.join("segment-000001.ts"), fake_packet)
             .await
             .unwrap();
         let resolved = ResolvedPlaylist {

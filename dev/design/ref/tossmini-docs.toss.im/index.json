@@ -1,0 +1,333 @@
+{
+  "pages": [
+    {
+      "id": "button",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/button/"
+    },
+    {
+      "id": "badge",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/badge/"
+    },
+    {
+      "id": "checkbox",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/checkbox/"
+    },
+    {
+      "id": "switch",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/switch/"
+    },
+    {
+      "id": "text-field",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/text-field/"
+    },
+    {
+      "id": "list-row",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-overview/"
+    },
+    {
+      "id": "segmented-control",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/segmented-control/"
+    },
+    {
+      "id": "tab",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/tab/"
+    },
+    {
+      "id": "modal",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/modal/"
+    },
+    {
+      "id": "bottom-sheet",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/bottom-sheet/"
+    },
+    {
+      "id": "stepper",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/stepper/"
+    },
+    {
+      "id": "list-header",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/list-header/"
+    },
+    {
+      "id": "text-button",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/text-button/"
+    },
+    {
+      "id": "icon-button",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/icon-button/"
+    },
+    {
+      "id": "search-field",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/search-field/"
+    },
+    {
+      "id": "grid-list",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/grid-list/"
+    },
+    {
+      "id": "paragraph",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/paragraph/"
+    },
+    {
+      "id": "foundation-colors",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/foundation/colors/"
+    },
+    {
+      "id": "foundation-typography",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/foundation/typography/"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844,
+      "mobile": true
+    }
+  ],
+  "files": [
+    {
+      "page": "button",
+      "viewport": "desktop",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/button/",
+      "file": "desktop/button.png"
+    },
+    {
+      "page": "button",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/button/",
+      "file": "mobile/button.png"
+    },
+    {
+      "page": "badge",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/badge/",
+      "file": "mobile/badge.png"
+    },
+    {
+      "page": "checkbox",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/checkbox/",
+      "file": "mobile/checkbox.png"
+    },
+    {
+      "page": "switch",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/switch/",
+      "file": "mobile/switch.png"
+    },
+    {
+      "page": "text-field",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/text-field/",
+      "file": "mobile/text-field.png"
+    },
+    {
+      "page": "list-row",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-overview/",
+      "file": "mobile/list-row.png"
+    },
+    {
+      "page": "segmented-control",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/segmented-control/",
+      "file": "mobile/segmented-control.png"
+    },
+    {
+      "page": "tab",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/tab/",
+      "file": "mobile/tab.png"
+    },
+    {
+      "page": "modal",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/modal/",
+      "file": "mobile/modal.png"
+    },
+    {
+      "page": "bottom-sheet",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/bottom-sheet/",
+      "file": "mobile/bottom-sheet.png"
+    },
+    {
+      "page": "stepper",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/stepper/",
+      "file": "mobile/stepper.png"
+    },
+    {
+      "page": "list-header",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/list-header/",
+      "file": "mobile/list-header.png"
+    },
+    {
+      "page": "text-button",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/text-button/",
+      "file": "mobile/text-button.png"
+    },
+    {
+      "page": "icon-button",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/icon-button/",
+      "file": "mobile/icon-button.png"
+    },
+    {
+      "page": "search-field",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/search-field/",
+      "file": "mobile/search-field.png"
+    },
+    {
+      "page": "grid-list",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/grid-list/",
+      "file": "mobile/grid-list.png"
+    },
+    {
+      "page": "paragraph",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/paragraph/",
+      "file": "mobile/paragraph.png"
+    },
+    {
+      "page": "foundation-colors",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/foundation/colors/",
+      "file": "mobile/foundation-colors.png"
+    },
+    {
+      "page": "foundation-typography",
+      "viewport": "mobile",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/foundation/typography/",
+      "file": "mobile/foundation-typography.png"
+    }
+  ],
+  "snapshots": [
+    {
+      "page": "button",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/button/",
+      "file": "pages/button.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "badge",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/badge/",
+      "file": "pages/badge.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "checkbox",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/checkbox/",
+      "file": "pages/checkbox.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "switch",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/switch/",
+      "file": "pages/switch.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "text-field",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/TextField/text-field/",
+      "file": "pages/text-field.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "list-row",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-overview/",
+      "file": "pages/list-row.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "segmented-control",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/segmented-control/",
+      "file": "pages/segmented-control.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "tab",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/tab/",
+      "file": "pages/tab.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "modal",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/modal/",
+      "file": "pages/modal.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "bottom-sheet",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/bottom-sheet/",
+      "file": "pages/bottom-sheet.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "stepper",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/stepper/",
+      "file": "pages/stepper.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "list-header",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/list-header/",
+      "file": "pages/list-header.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "text-button",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/text-button/",
+      "file": "pages/text-button.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "icon-button",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/icon-button/",
+      "file": "pages/icon-button.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "search-field",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/search-field/",
+      "file": "pages/search-field.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "grid-list",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/grid-list/",
+      "file": "pages/grid-list.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "paragraph",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/components/paragraph/",
+      "file": "pages/paragraph.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "foundation-colors",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/foundation/colors/",
+      "file": "pages/foundation-colors.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "foundation-typography",
+      "url": "https://tossmini-docs.toss.im/tds-mobile/foundation/typography/",
+      "file": "pages/foundation-typography.mhtml",
+      "format": "mhtml"
+    }
+  ],
+  "capturedAt": "2026-09-28T13:54:28.399Z"
+}

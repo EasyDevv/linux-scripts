@@ -8,7 +8,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 use futures_util::StreamExt;
 use rusqlite::Connection;
-use tokio::io::{AsyncSeekExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::process::{Child, Command};
 use tokio::sync::{Mutex, RwLock};
 use tracing::{error, info, warn};
@@ -108,7 +108,17 @@ static VPN_ENSURE_LOCK: Mutex<()> = Mutex::const_new(());
 const MUX_POLL_INTERVAL: Duration = Duration::from_secs(1);
 const MUX_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(15);
 const MUX_STALL_TIMEOUT: Duration = Duration::from_secs(120);
-const MUX_PIPE_TIMEOUT: Duration = Duration::from_secs(120);
+pub(crate) const MUX_PIPE_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// Streaming HLS mux's named pipes live on local disk, not under `temp_root`
+/// (which is the NFS4 mount at /mnt/shared over Tailscale). Measured on this
+/// host: 200 sequential `mkfifo` calls take ~1.56s over NFS vs ~0.13s local
+/// (~12x) — for a 1,900-segment video that is the difference between a
+/// ~15s setup stall and a sub-2s one. The pipes are pure IPC (never read
+/// back after the mux finishes), so nothing is lost by keeping them off the
+/// durable share; only the downloaded `segment-*.ts` files (under
+/// `temp_dir`, still on NFS) need to survive a restart.
+pub(crate) const MUX_PIPE_LOCAL_ROOT: &str = "/var/tmp/stash-mux-pipes";
 
 pub async fn finalize_staged_output(
     staged_path: &Path,
@@ -164,32 +174,45 @@ pub async fn run_ffmpeg_mux(
     monitor_ffmpeg_mux(child, staged_path, job_id, jobs, cancel).await
 }
 
-async fn monitor_ffmpeg_mux(
+/// Bounded tail of ffmpeg's stderr, captured for diagnostics. Without this, a
+/// mux failure is reported only as an exit status with no indication of which
+/// segment or codec issue caused it.
+const MUX_STDERR_TAIL_BYTES: usize = 2000;
+
+pub(crate) async fn monitor_ffmpeg_mux(
     mut child: Child,
     staged_path: &Path,
     job_id: &str,
     jobs: &JobManager,
     cancel: Option<&AtomicBool>,
 ) -> Result<(), String> {
+    let stderr_task = child.stderr.take().map(|mut stderr| {
+        tokio::spawn(async move {
+            let mut buf = Vec::new();
+            let _ = stderr.read_to_end(&mut buf).await;
+            buf
+        })
+    });
+
     let mut last_size = std::fs::metadata(staged_path)
         .map(|metadata| metadata.len())
         .unwrap_or(0);
     let mut last_growth = Instant::now();
     let mut last_heartbeat = Instant::now();
 
-    loop {
+    let outcome = loop {
         if cancel.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
             let _ = child.kill().await;
             let _ = child.wait().await;
-            return Err("cancelled".into());
+            break Err("cancelled".to_string());
         }
 
         match child
             .try_wait()
             .map_err(|error| format!("wait ffmpeg: {error}"))?
         {
-            Some(status) if status.success() => return Ok(()),
-            Some(status) => return Err(format!("HLS remux failed: {status}")),
+            Some(status) if status.success() => break Ok(()),
+            Some(status) => break Err(format!("HLS remux failed: {status}")),
             None => {}
         }
 
@@ -202,7 +225,7 @@ async fn monitor_ffmpeg_mux(
         } else if last_growth.elapsed() >= MUX_STALL_TIMEOUT {
             let _ = child.kill().await;
             let _ = child.wait().await;
-            return Err(format!(
+            break Err(format!(
                 "HLS remux stalled: output did not grow for {} seconds",
                 MUX_STALL_TIMEOUT.as_secs()
             ));
@@ -218,16 +241,39 @@ async fn monitor_ffmpeg_mux(
             if !still_finalizing {
                 let _ = child.kill().await;
                 let _ = child.wait().await;
-                return Err("cancelled".into());
+                break Err("cancelled".to_string());
             }
             jobs.set_job_phase(job_id, "mux").await;
             last_heartbeat = Instant::now();
         }
         tokio::time::sleep(MUX_POLL_INTERVAL).await;
+    };
+
+    match outcome {
+        Ok(()) => Ok(()),
+        Err(message) if message == "cancelled" => Err(message),
+        Err(message) => Err(format!("{message}{}", mux_stderr_tail(stderr_task).await)),
     }
 }
 
-fn create_named_pipe(path: &Path) -> Result<(), String> {
+/// Waits briefly for the stderr-draining task to finish (it should already be
+/// done, since the child has exited by the time this is called) and returns a
+/// bounded, UTF-8-safe suffix suitable for appending to an error message.
+async fn mux_stderr_tail(task: Option<tokio::task::JoinHandle<Vec<u8>>>) -> String {
+    let Some(task) = task else { return String::new() };
+    let Ok(Ok(buf)) = tokio::time::timeout(Duration::from_secs(5), task).await else {
+        return String::new();
+    };
+    let start = buf.len().saturating_sub(MUX_STDERR_TAIL_BYTES);
+    let trimmed = String::from_utf8_lossy(&buf[start..]).trim().to_string();
+    if trimmed.is_empty() {
+        String::new()
+    } else {
+        format!("; ffmpeg stderr: {trimmed}")
+    }
+}
+
+pub(crate) fn create_named_pipe(path: &Path) -> Result<(), String> {
     let path_bytes = path.as_os_str().as_bytes();
     let path_c = CString::new(path_bytes)
         .map_err(|_| format!("named pipe path contains NUL: {}", path.display()))?;
@@ -243,7 +289,7 @@ fn create_named_pipe(path: &Path) -> Result<(), String> {
     }
 }
 
-async fn feed_segment_pipes(
+pub(crate) async fn feed_segment_pipes(
     mut segments: tokio::sync::mpsc::UnboundedReceiver<PathBuf>,
     pipes: Vec<PathBuf>,
 ) -> Result<(), String> {
@@ -291,6 +337,7 @@ pub struct JobManager {
     active: CancelMap,
     resource_paused: Arc<AtomicBool>,
     available_space: Arc<AtomicU64>,
+    shutting_down: Arc<AtomicBool>,
 }
 
 impl JobManager {
@@ -301,7 +348,19 @@ impl JobManager {
             active: Arc::new(Mutex::new(HashMap::new())),
             resource_paused: Arc::new(AtomicBool::new(resource_paused)),
             available_space: Arc::new(AtomicU64::new(u64::MAX)),
+            shutting_down: Arc::new(AtomicBool::new(false)),
         }
+    }
+
+    /// Marks the process as intentionally terminating. A signal delivered to
+    /// stash's process group (systemd/executor restart, redeploy, ...) also
+    /// reaches any in-flight ffmpeg mux child, which then exits on its own
+    /// with a plain nonzero status — indistinguishable from a real mux bug
+    /// once caught by [`fail_or_retry`]. Once this flag is set, that method
+    /// stops spending retry budget on failures and leaves job rows alone so
+    /// `recover_pending_jobs` resumes them for free on the next start.
+    pub fn begin_shutdown(&self) {
+        self.shutting_down.store(true, Ordering::Relaxed);
     }
 
     pub async fn create_job(
@@ -615,6 +674,9 @@ impl JobManager {
         max_retries: u32,
         retry_interval: u64,
     ) -> bool {
+        if self.shutting_down.load(Ordering::Relaxed) {
+            return true;
+        }
         if classify_failure(error_msg) == FailureKind::DiskFull {
             self.pause_for_disk(0).await;
             return false;
@@ -1168,6 +1230,38 @@ fn is_hop_by_hop(name: &str) -> bool {
     )
 }
 
+/// Filesystems here cap a path component at 255 bytes (`NAME_MAX`, verified on
+/// both ext4 and the NFS4 mount at /mnt/shared). The staged file adds a
+/// `.{uuid36}.` prefix and a `.staged` suffix (45 bytes) around this name, so
+/// 200 bytes leaves headroom under the 210-byte worst-case budget. Without a
+/// cap, long CJK titles (3 bytes/char in UTF-8) blow past NAME_MAX and ffmpeg
+/// fails every retry identically with "File name too long".
+pub(crate) const MAX_FILENAME_BYTES: usize = 200;
+
+/// Truncates `name` to at most `max_bytes` UTF-8 bytes, cutting at a char
+/// boundary and preserving a short trailing extension (e.g. `.mp4`) when
+/// present, instead of chopping it off mid-truncation.
+pub(crate) fn truncate_filename_bytes(name: &str, max_bytes: usize) -> String {
+    if name.len() <= max_bytes {
+        return name.to_string();
+    }
+    let (stem, ext) = match name.rfind('.') {
+        Some(idx) if idx > 0 && name.len() - idx <= 10 => (&name[..idx], &name[idx..]),
+        _ => (name, ""),
+    };
+    let budget = max_bytes.saturating_sub(ext.len());
+    let mut cut = budget.min(stem.len());
+    while cut > 0 && !stem.is_char_boundary(cut) {
+        cut -= 1;
+    }
+    let truncated = stem[..cut].trim_end();
+    if truncated.is_empty() {
+        format!("download{ext}")
+    } else {
+        format!("{truncated}{ext}")
+    }
+}
+
 fn sanitize_filename(name: &str) -> String {
     let safe: String = name
         .chars()
@@ -1179,11 +1273,12 @@ fn sanitize_filename(name: &str) -> String {
             }
         })
         .collect();
-    if safe.trim().is_empty() {
-        "download".into()
+    let safe = if safe.trim().is_empty() {
+        "download".to_string()
     } else {
         safe
-    }
+    };
+    truncate_filename_bytes(&safe, MAX_FILENAME_BYTES)
 }
 
 fn headers_from_json(json: &str) -> Vec<(String, String)> {
@@ -1209,7 +1304,15 @@ fn is_hls_url(url: &str) -> bool {
     store::is_hls_url(url)
 }
 
-const STREAMING_MUX_MAX_SEGMENTS: usize = 128;
+/// A generous ceiling, not a "short clips only" cutoff: it exists to bound a
+/// malformed/hostile playlist (e.g. a bogus EXTINF count), not to fall back
+/// to batch muxing for real long-form video. At ~6s/segment this covers
+/// videos past 13 hours; the previous 128-segment cap (~13 minutes) excluded
+/// essentially every real download and was the reason large jobs (the
+/// 1,600-1,900-segment failures this was written to fix) never streamed at
+/// all. Now that pipe setup is on local disk (see `MUX_PIPE_LOCAL_ROOT`),
+/// there's no NFS-latency reason to keep it low.
+pub(crate) const STREAMING_MUX_MAX_SEGMENTS: usize = 8192;
 
 fn should_stream_hls_mux(resolved: &crate::hls::ResolvedPlaylist) -> bool {
     resolved.map_uri.is_none()
@@ -1659,7 +1762,7 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
             tokio::fs::create_dir_all(&segment_dir).await
                 .map_err(|error| format!("create segment cache: {error}"))?;
             let mut streaming_mux = if should_stream_hls_mux(&resolved) {
-                let pipe_dir = temp_dir.join("mux-pipes");
+                let pipe_dir = Path::new(MUX_PIPE_LOCAL_ROOT).join(&job_id);
                 let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
                 tokio::fs::create_dir_all(&pipe_dir)
                     .await
@@ -1692,6 +1795,10 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                     .arg("concat")
                     .arg("-safe")
                     .arg("0")
+                    .arg("-analyzeduration")
+                    .arg("20M")
+                    .arg("-probesize")
+                    .arg("20M")
                     .arg("-i")
                     .arg(&concat_list_path)
                     .arg("-c")
@@ -1703,7 +1810,7 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                     .arg(&staged_path)
                     .stdin(std::process::Stdio::null())
                     .stdout(std::process::Stdio::null())
-                    .stderr(std::process::Stdio::null())
+                    .stderr(std::process::Stdio::piped())
                     .kill_on_drop(true);
                 let child = command
                     .spawn()
@@ -1813,6 +1920,10 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                     .arg("concat")
                     .arg("-safe")
                     .arg("0")
+                    .arg("-analyzeduration")
+                    .arg("20M")
+                    .arg("-probesize")
+                    .arg("20M")
                     .arg("-i")
                     .arg(&concat_list_path)
                     .arg("-c")
@@ -1822,7 +1933,7 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
                     .arg(&staged_path)
                     .stdin(std::process::Stdio::null())
                     .stdout(std::process::Stdio::null())
-                    .stderr(std::process::Stdio::null());
+                    .stderr(std::process::Stdio::piped());
                 run_ffmpeg_mux(&mut command, &staged_path, &job_id, &jobs, Some(&cancel)).await?;
             }
 
@@ -2272,10 +2383,11 @@ mod tests {
     use std::sync::atomic::AtomicBool;
 
     use super::{
-        DiskSpaceAction, FailureKind, JobManager, classify_failure,
+        DiskSpaceAction, FailureKind, JobManager, MAX_FILENAME_BYTES, classify_failure,
         classify_failure_for, config_for_location, disk_space_action, is_hls_url,
         is_ip_block_error, migrate_staged_files, parse_status_info,
-        parse_vpn_locations, retry_delay, should_stream_hls_mux,
+        parse_vpn_locations, retry_delay, sanitize_filename, should_stream_hls_mux,
+        truncate_filename_bytes,
     };
     use crate::config::VpnConfig;
 
@@ -2303,6 +2415,39 @@ mod tests {
 
         jobs.unregister_active("job").await;
         assert!(!jobs.is_active("job").await);
+    }
+
+    #[tokio::test]
+    async fn shutdown_leaves_job_untouched_instead_of_spending_a_retry() {
+        // A signal delivered to this process also reaches an in-flight ffmpeg
+        // mux child, which then fails with a plain nonzero exit status
+        // indistinguishable from a real mux bug. Once shutdown is signaled,
+        // fail_or_retry must not touch the job row at all, so the existing
+        // `recover_pending_jobs` path resumes it for free on next start
+        // instead of burning one of its limited retries.
+        let db_path = std::env::temp_dir()
+            .join(format!("stash-downloads-test-{}.db", uuid::Uuid::new_v4()));
+        let db = crate::store::open_db(&db_path).unwrap();
+        let jobs = JobManager::new(db);
+        jobs.create_job(
+            "shutdown-job", "page", "source", "video.mp4", "[]", "/tmp/shutdown-job", 5, 30,
+        )
+        .await;
+        jobs.set_job_running("shutdown-job").await;
+        let before = jobs.get_job("shutdown-job").await.unwrap();
+
+        jobs.begin_shutdown();
+        let will_retry = jobs
+            .fail_or_retry("shutdown-job", "HLS remux failed: exit status: 255", 5, 30)
+            .await;
+
+        let after = jobs.get_job("shutdown-job").await.unwrap();
+        assert!(will_retry);
+        assert_eq!(after.status, before.status);
+        assert_eq!(after.retry_count, before.retry_count);
+        assert_eq!(after.last_error, before.last_error);
+
+        let _ = std::fs::remove_file(&db_path);
     }
 
     #[test]
@@ -2419,6 +2564,31 @@ mod tests {
     }
 
     #[test]
+    fn truncate_filename_bytes_preserves_short_names() {
+        assert_eq!(truncate_filename_bytes("video.mp4", 200), "video.mp4");
+    }
+
+    #[test]
+    fn truncate_filename_bytes_keeps_extension_and_char_boundary() {
+        // Each 銷 is 3 UTF-8 bytes; 100 of them is 300 bytes, over the 50-byte budget.
+        let long_title: String = "銷".repeat(100) + ".mp4";
+        let truncated = truncate_filename_bytes(&long_title, 50);
+        assert!(truncated.len() <= 50);
+        assert!(truncated.ends_with(".mp4"));
+        assert!(truncated.is_char_boundary(truncated.len() - 4));
+    }
+
+    #[test]
+    fn sanitize_filename_output_never_exceeds_staging_budget() {
+        let long_title: String = "菊".repeat(200) + ".mp4";
+        let sanitized = sanitize_filename(&long_title);
+        assert!(sanitized.len() <= MAX_FILENAME_BYTES);
+        // ".{uuid36}." (38 bytes) + name + ".staged" (7 bytes) must fit in NAME_MAX (255).
+        let staged_overhead = 1 + 36 + 1 + 7;
+        assert!(sanitized.len() + staged_overhead <= 255);
+    }
+
+    #[test]
     fn disk_space_policy_uses_hysteresis() {
         const GIB: u64 = 1024 * 1024 * 1024;
         assert_eq!(
@@ -2478,7 +2648,7 @@ mod tests {
     }
 
     #[test]
-    fn streams_short_ts_playlists_and_file_muxes_long_vod() {
+    fn streams_ts_playlists_of_realistic_length_and_file_muxes_pathological_or_mapped() {
         let short = crate::hls::ResolvedPlaylist {
             segments: vec![crate::hls::HlsSegment {
                 uri: "https://cdn.example/seg.ts".into(),
@@ -2487,8 +2657,23 @@ mod tests {
             has_encryption: false,
             map_uri: None,
         };
-        let long = crate::hls::ResolvedPlaylist {
-            segments: (0..200)
+        // A real long-form download (e.g. ~3h at 6s/segment): must still stream,
+        // not silently fall back to batch muxing like it did under the old
+        // 128-segment cap.
+        let realistic_long = crate::hls::ResolvedPlaylist {
+            segments: (0..1_900)
+                .map(|index| crate::hls::HlsSegment {
+                    uri: format!("https://cdn.example/video{index}.ts"),
+                    duration: Some(6.0),
+                })
+                .collect(),
+            has_encryption: false,
+            map_uri: None,
+        };
+        // Only a pathological/hostile playlist (past the sanity ceiling) should
+        // fall back to batch muxing.
+        let pathological = crate::hls::ResolvedPlaylist {
+            segments: (0..=super::STREAMING_MUX_MAX_SEGMENTS)
                 .map(|index| crate::hls::HlsSegment {
                     uri: format!("https://cdn.example/video{index}.jpeg"),
                     duration: None,
@@ -2506,7 +2691,8 @@ mod tests {
             map_uri: Some("https://cdn.example/init.mp4".into()),
         };
         assert!(should_stream_hls_mux(&short));
-        assert!(!should_stream_hls_mux(&long));
+        assert!(should_stream_hls_mux(&realistic_long));
+        assert!(!should_stream_hls_mux(&pathological));
         assert!(!should_stream_hls_mux(&mapped));
     }
 }

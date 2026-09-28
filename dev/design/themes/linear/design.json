@@ -286,6 +286,15 @@
       "toolChrome": {
         "kind": "circular outline icon",
         "size": "icon-sm"
+      },
+      "iconToggle": {
+        "where": "one-off on/off icon among ghost icon actions in a tool row (accepted in dashboard 05-projects draft, 2026-09-28)",
+        "kind": "ghost circular icon",
+        "off": "--muted-foreground",
+        "on": "--foreground",
+        "notFilled": true,
+        "notBordered": true,
+        "state": "aria-pressed; disabled while the toggled work is running"
       }
     }
   },
@@ -342,7 +351,13 @@
         "height",
         "opacity"
       ],
-      "where": "in-panel collapsible (milestone description)"
+      "where": "in-panel collapsible (milestone description); also dashboard 05-projects terminal, prompt, and file sections (accepted 2026-09-28)",
+      "implementation": {
+        "contentHeight": "grid-template-rows 0fr ↔ 1fr on a wrapper whose child is min-h-0 overflow-hidden (moves exactly the content height; not a fixed max-height)",
+        "fillPanel": "a panel that fills the column animates flex-grow 1 → 0 plus min-height to its header height; header stays in place, only the body folds",
+        "chevron": "rotate on the same --panel-fold-duration / --panel-fold-ease",
+        "closedBody": "inert"
+      }
     },
     "status": "dot or one-word chip",
     "inspector": {
@@ -464,7 +479,7 @@
         "font": "--text-body-base",
         "weight": 450,
         "color": "--muted-foreground",
-        "where": "one line under a section heading, never per field"
+        "where": "one line under a group heading (Invite links, Workspace login). A setting row may carry its own one-line description when its title alone does not say what it changes (security toggles)"
       },
       "section": {
         "font": "--text-heading",
@@ -518,6 +533,47 @@
       "groupLabel": {
         "font": "--text-heading-sm",
         "color": "--ink-soft"
+      },
+      "groupHeader": {
+        "where": "settings/security group above each well (AI & Agents, MCP connectors, Invite links)",
+        "font": "--text-heading-sm",
+        "weight": 500,
+        "color": "--ink-soft",
+        "insetX": "--well-row-inset",
+        "lede": {
+          "font": "--text-body-base",
+          "lineHeight": "22px",
+          "weight": 450,
+          "color": "--muted-foreground",
+          "gapFromHeading": 4,
+          "optional": true
+        },
+        "toWell": 12,
+        "betweenGroups": 48,
+        "betweenGroupsInDialog": 24
+      },
+      "settingRow": {
+        "where": "one row inside a --secondary well (settings/security)",
+        "pad": 16,
+        "gap": 12,
+        "align": "center, space-between",
+        "title": {
+          "font": "--text-heading-sm",
+          "weight": 500,
+          "color": "--foreground"
+        },
+        "description": {
+          "font": "--text-body-sm",
+          "weight": 450,
+          "color": "--muted-foreground",
+          "gapFromTitle": 3,
+          "optional": true,
+          "length": "one short line"
+        },
+        "control": "end-aligned: switch, select (--select-trigger-height), input, --accent pill button, or chevron for a drill-in row",
+        "divider": "wellRowHairline between rows",
+        "unavailable": "text block opacity 0.5 with an end label (Available on Enterprise)",
+        "dialog": "a settings dialog reuses groupHeader + well + settingRow at --dialog-cap; put the explanation on the group lede and keep rows title-only when every row in the group shares that purpose"
       }
     },
     "nestedTeam": {
@@ -605,7 +661,8 @@
     "reserve semantic color for state or identity; action states use --status-info, --status-highlight, --status-danger, and --status-neutral at 0.15 tint",
     "dialog width is min(--dialog-cap, 100% - 2rem); no header/footer rule",
     "well rows use --hairline-width inset --well-row-inset at --foreground 0.1, not --border",
-    "refresh: keep last numbers; pulse --muted --radius-md bars only on empty slots or explicit Refresh"
+    "refresh: keep last numbers; pulse --muted --radius-md bars only on empty slots or explicit Refresh",
+    "areas split by filled boxes + --panel-inset gaps (sectioning), not hairline stacks; code/terminal panes use sectioning.codeBox; folds use lists.fold.implementation"
   ],
   "listSurfaces": {
     "displayOptions": {
@@ -677,6 +734,34 @@
       "enter": "58ms, scale 0.98 → 1 from 100% 100% (the footer chip's corner), opacity 0 → 2 (clamped to 1 when painted)",
       "exit": "207ms, the same measured curve as displayOptions (scale → 0.98 at 49ms, exponential opacity tail)",
       "states": "chip visible while a chat with content is minimized; `Close chat` / the chip's ✕ removes the chip; the launcher opens the panel (title `New chat` when the session is empty)"
+    }
+  },
+  "sectioning": {
+    "source": "ref/linear.app/desktop (project-overview, team-all, team-all-board)",
+    "between": "filled boxes separated by --panel-inset gaps; do not stack hairline dividers between areas",
+    "columnSeam": "no hairline between the main column and the inspector column; a resize handle shows only on hover/focus",
+    "codeBox": {
+      "where": "code block in project overview; terminal and prompt panes",
+      "bg": "--background",
+      "border": "--inspector-border",
+      "radius": "--radius-md",
+      "header": "h-8 tab row, --hairline-width --border under it only while open"
+    },
+    "inspectorStack": {
+      "gap": "--panel-inset",
+      "card": "lists.inspector",
+      "fileListsInside": "plain: no fill, no border; header `label count ▾` + trailing actions"
+    },
+    "tabsGrid": {
+      "fill": "--tab-idle",
+      "selected": "--tab-selected + --hairline-width --board-card-ring inset ring",
+      "radius": "--radius-sm",
+      "gap": "4px",
+      "noAccentBar": true
+    },
+    "asideToggle": {
+      "slide": "--sidebar-collapse-duration / --sidebar-collapse-ease",
+      "how": "grid column width → 0; the aside keeps its own width and slides out clipped, inert while closed"
     }
   }
 }

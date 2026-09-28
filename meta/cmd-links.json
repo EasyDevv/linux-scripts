@@ -123,11 +123,11 @@
       "description": "현재 로컬 프로젝트를 GitHub 저장소와 연결하거나 새 저장소 생성을 도와준다."
     },
     {
-      "name": "git-commit-push",
+      "name": "ship",
       "mode": "symlink",
       "category": "git",
-      "target": "git/git-commit-push.ts",
-      "description": "git add . → 변경 많은 파일 순 5개로 커밋메시지 생성 → push 자동 실행"
+      "target": "git/ship.ts",
+      "description": "git add . → 변경 많은 파일 순 5개로 커밋메시지 생성 → commit → push까지 한 번에"
     },
     {
       "name": "git-delete",

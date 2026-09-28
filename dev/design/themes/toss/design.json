@@ -1,0 +1,382 @@
+{
+	"slug": "toss",
+	"source": "https://tossmini-docs.toss.im/tds-mobile/",
+	"designSystem": "TDS Mobile (토스 디자인 시스템 모바일)",
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"mobile": 390
+	},
+	"canvas": {
+		"background": "--background",
+		"surface": "--card",
+		"surfaceGrey": "--surface-grey",
+		"surfaceFloat": "--surface-float",
+		"surfaceWell": "--surface-well",
+		"radius": "--radius",
+		"hairline": "--hairline",
+		"hairlineWidth": "--hairline-width",
+		"overlay": "--overlay-dimmed",
+		"note": "TDS의 화면 배경은 adaptiveBackground = 흰색이다. shadcn의 --background은 캔버스이므로 그룹 표면용 adaptiveGreyBackground(--grey-100)을 매핑하고, 흰색 종이 표면은 --card로 남겼다. --background/--card 동일값은 토큰 스킴 게이트가 거부한다."
+	},
+	"type": {
+		"family": "--font-sans",
+		"display": "--text-display",
+		"title": "--text-title",
+		"heading": "--text-heading",
+		"headingSm": "--text-heading-sm",
+		"body": "--text-body",
+		"bodySm": "--text-body-sm",
+		"label": "--text-label",
+		"labelSm": "--text-label-sm",
+		"caption": "--text-caption",
+		"control": "--text-control",
+		"controlSm": "--text-control-sm",
+		"scale": [
+			{
+				"token": "--text-display",
+				"size": "30px",
+				"lineHeight": "40px",
+				"weight": 700,
+				"tdsToken": "Typography 1",
+				"usage": "매우 큰 제목"
+			},
+			{
+				"token": "--text-title",
+				"size": "26px",
+				"lineHeight": "35px",
+				"weight": 600,
+				"tdsToken": "Typography 2",
+				"usage": "큰 제목"
+			},
+			{
+				"token": "--text-heading",
+				"size": "22px",
+				"lineHeight": "31px",
+				"weight": 600,
+				"tdsToken": "Typography 3",
+				"usage": "일반 제목"
+			},
+			{
+				"token": "--text-heading-sm",
+				"size": "17px",
+				"lineHeight": "25.5px",
+				"weight": 600,
+				"tdsToken": "Typography 5",
+				"usage": "작은 제목"
+			},
+			{
+				"token": "--text-body",
+				"size": "17px",
+				"lineHeight": "25.5px",
+				"weight": 400,
+				"tdsToken": "Typography 5",
+				"usage": "일반 본문"
+			},
+			{
+				"token": "--text-body-sm",
+				"size": "15px",
+				"lineHeight": "22.5px",
+				"weight": 400,
+				"tdsToken": "Typography 6",
+				"usage": "작은 본문"
+			},
+			{
+				"token": "--text-label",
+				"size": "13px",
+				"lineHeight": "19.5px",
+				"weight": 400,
+				"tdsToken": "Typography 7",
+				"usage": "안 읽어도 됨"
+			},
+			{
+				"token": "--text-label-sm",
+				"size": "12px",
+				"lineHeight": "18px",
+				"weight": 400,
+				"tdsToken": "sub Typography 12",
+				"usage": "sub"
+			},
+			{
+				"token": "--text-caption",
+				"size": "11px",
+				"lineHeight": "16.5px",
+				"weight": 400,
+				"tdsToken": "sub Typography 13",
+				"usage": "아예 안읽어도 됨"
+			}
+		],
+		"labelLeading": {
+			"token": "--control-label-leading",
+			"value": 1.252,
+			"note": "버튼/텍스트버튼 레이블은 토큰 lineHeight가 아니라 fontSize × 1.252 (13→16.276, 15→18.78, 17→21.284, 20→25.04, 22→27.544, 28→35.056). 세 크기에서 동일 비율로 실측."
+		}
+	},
+	"controls": {
+		"button": {
+			"height": "--control-height",
+			"heightNav": "--control-height-nav",
+			"heightLg": "--control-height-lg",
+			"heightXl": "--control-height-xl",
+			"radius": "--control-radius",
+			"paddingInline": "--control-padding-inline",
+			"fill": "--blue-500",
+			"fillWeak": "--surface-hover",
+			"inkWeak": "--grey-700",
+			"danger": "--red-500",
+			"dangerWeakInk": "--red-600",
+			"sizes": [
+				{
+					"name": "small",
+					"height": "32px",
+					"radius": "8px",
+					"paddingInline": "10px",
+					"font": "13px",
+					"weight": 600
+				},
+				{
+					"name": "medium",
+					"height": "38px",
+					"radius": "10px",
+					"paddingInline": "16px",
+					"font": "15px",
+					"weight": 600
+				},
+				{
+					"name": "large",
+					"height": "48px",
+					"radius": "14px",
+					"paddingInline": "16px",
+					"font": "17px",
+					"weight": 600
+				},
+				{
+					"name": "default",
+					"height": "56px",
+					"radius": "16px",
+					"paddingInline": "28px",
+					"font": "17px",
+					"weight": 600
+				}
+			]
+		},
+		"textButton": {
+			"radius": "--control-radius-nav",
+			"pressRadius": "--control-radius",
+			"idle": "--grey-600",
+			"active": "--blue-500",
+			"weights": [
+				500,
+				500,
+				500,
+				600,
+				700,
+				700
+			]
+		},
+		"iconButton": {
+			"box": "--icon-size",
+			"hit": "48px",
+			"padding": "12px",
+			"radius": "--field-well-radius",
+			"borderedHit": "50px",
+			"borderedBorder": "--hairline-width"
+		},
+		"checkbox": {
+			"size": "--checkbox-size",
+			"labelGap": "--checkbox-label-gap",
+			"stroke": "--hairline-width",
+			"graphics": [
+				"circle",
+				"line",
+				"circle-disabled",
+				"line-disabled"
+			]
+		},
+		"switch": {
+			"width": "--switch-width",
+			"height": "--switch-height",
+			"radius": "15px",
+			"thumbOn": "--switch-thumb-on",
+			"thumbOff": "--switch-thumb-off",
+			"on": "--blue-500",
+			"off": "--grey-200",
+			"thumb": "--surface-float"
+		},
+		"segmentedControl": {
+			"radius": "--segment-radius",
+			"padding": "--segment-padding",
+			"inset": "--segment-inset",
+			"track": "--surface-hover",
+			"selected": "--grey-800",
+			"idle": "--grey-600"
+		},
+		"tab": {
+			"height": "--tab-height",
+			"inset": "--tab-inset",
+			"itemPadding": "--tab-item-padding",
+			"indicator": "--tab-indicator-height",
+			"indicatorInset": "--tab-indicator-inset",
+			"bar": "--surface-float",
+			"selected": "--foreground",
+			"idle": "--grey-600"
+		},
+		"badge": {
+			"padding": "--badge-padding",
+			"paddingLg": "--badge-padding-lg",
+			"radius": "--badge-radius",
+			"sizes": [
+				{
+					"name": "xsmall",
+					"height": "21px",
+					"radius": "9px",
+					"font": "10px",
+					"lineHeight": "15px",
+					"weight": 600
+				},
+				{
+					"name": "small",
+					"height": "24px",
+					"radius": "11px",
+					"font": "12px",
+					"lineHeight": "18px",
+					"weight": 700
+				},
+				{
+					"name": "medium",
+					"height": "26px",
+					"radius": "12px",
+					"font": "13px",
+					"lineHeight": "19.5px",
+					"weight": 700
+				},
+				{
+					"name": "large",
+					"height": "29px",
+					"radius": "13px",
+					"font": "14px",
+					"lineHeight": "21px",
+					"weight": 700
+				}
+			],
+			"weakAlpha": "0.16"
+		},
+		"textField": {
+			"boxHeight": "--field-box-height",
+			"boxPadding": "--field-box-padding",
+			"boxRadius": "--field-box-radius",
+			"labelGap": "--field-label-gap",
+			"underlineWidth": "--field-underline-width",
+			"wellRadius": "--field-well-radius",
+			"wellPadding": "--field-well-padding",
+			"inset": "--field-inset",
+			"label": "--text-label",
+			"help": "--text-label",
+			"helpInk": "--grey-600",
+			"placeholder": "--grey-400"
+		},
+		"searchField": {
+			"outerPadding": "14px 16px",
+			"wellRadius": "--field-well-radius",
+			"wellPadding": "--field-well-padding",
+			"gap": "8px"
+		}
+	},
+	"lists": {
+		"row": {
+			"paddingBlock": "--list-row-padding-block",
+			"inset": "--row-inset",
+			"gap": "--list-row-gap",
+			"radius": "--list-row-radius",
+			"hoverInset": "--list-row-hover-inset",
+			"hoverFill": "--surface-hover",
+			"title": "--text-heading-sm",
+			"support": "--text-body-sm",
+			"accessoryInk": "--grey-700",
+			"accessoryOffset": "12px",
+			"minHeight": "44px"
+		},
+		"header": {
+			"padding": "--list-header-padding",
+			"inset": "--row-inset",
+			"title": "--text-heading-sm",
+			"support": "--text-label",
+			"supportInk": "--grey-600",
+			"accessory": "--text-label",
+			"accessoryOffset": "24px",
+			"titleOffset": "4px"
+		},
+		"footer": {
+			"rowHeight": "--list-footer-row-height",
+			"inset": "--row-inset",
+			"hairline": "--divider-width",
+			"label": "--text-heading-sm",
+			"active": "--blue-500",
+			"idle": "--grey-600"
+		},
+		"grid": {
+			"gap": "--grid-gap",
+			"cellRadius": "--grid-cell-radius",
+			"cellPadding": "--grid-cell-padding",
+			"cellFill": "--surface-well",
+			"label": "--text-label",
+			"labelWeight": 500
+		},
+		"stepper": {
+			"inset": "--stepper-inset",
+			"icon": "--stepper-icon",
+			"iconOffset": "--stepper-icon-offset",
+			"connector": "--stepper-connector-width",
+			"connectorOffset": "--stepper-connector-offset",
+			"bodyPadding": "0 0 16px 0"
+		},
+		"boardRow": {
+			"headerPadding": "16px 16px 16px 24px",
+			"radius": "--list-row-radius",
+			"hoverInset": "--list-row-hover-inset",
+			"bodyPadding": "16px 0 16px 0",
+			"bodyInset": "--row-inset",
+			"title": "--text-heading-sm",
+			"chevron": "--icon-size"
+		},
+		"bottomCTA": {
+			"inset": "--cta-inset",
+			"fill": "--surface-float"
+		},
+		"bottomSheet": {
+			"padding": "16px",
+			"fill": "--surface-float",
+			"overlay": "--overlay-dimmed"
+		}
+	},
+	"notLinear": {
+		"edges": "대부분의 경계는 --hairline-width(0.8px) 헤어라인이다. 카드가 두꺼운 box-shadow로 떠 있지 않다.",
+		"elevation": "그림자는 거의 쓰지 않고, 계층은 --surface-hover 5% 오버레이와 --overlay-dimmed으로 만든다.",
+		"primaryAction": "주 버튼은 --blue-500 솔리드 + 흰 글자. weak 변형은 --surface-hover 배경 + --grey-700 글자.",
+		"font": "Toss Product Sans(상용). 대체 스택은 Pretendard → 시스템. weight 600이 버튼·제목 기본이다.",
+		"copy": "한국어 UI 문구를 전제로 한다. 라벨은 13px/19.5px 계층을 많다.",
+		"density": "행 높이가 크다(44~58px). 32px 행을 쓰는 리스트는 없다.",
+		"radius": "TDS는 8/10/12/14/16px를 크기별로 오르며 쓴다. 선형적 4단계 scale이 아니다."
+	},
+	"doNotCopy": [
+		"Nextra 문서 사이트 자체의 잉크와 코드블록 팔레트는 TDS 토큰이 아니다. chrome.json의 docsShell 마크와 ref/chrome.ts로만 유지한다.",
+		"문서 사이트의 nav blur 배경과 256px 사이드바는 TDS 모바일 제품 화면이 아니라 theme-ref 셸 재현용이다."
+	],
+	"shell": {
+		"sidebar": {
+			"width": "--sidebar-width",
+			"borderAgainstCanvas": true,
+			"hideBelow": null
+		},
+		"footer": {
+			"insideMain": false,
+			"hairline": true,
+			"height": "--shell-footer-height"
+		},
+		"panel": {
+			"inset": "--panel-inset",
+			"radius": "--radius",
+			"contentNarrow": "--content-narrow"
+		}
+	}
+}

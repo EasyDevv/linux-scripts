@@ -9,6 +9,7 @@ use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{MaybeTlsStream, WebSocketStream, connect_async};
 use tracing::{info, warn};
 
+use crate::browser_hls_stream;
 use crate::config::AppConfig;
 use crate::downloads::JobManager;
 use crate::store::JobRow;
@@ -27,7 +28,11 @@ struct BrowserTarget {
     target_type: String,
 }
 
-pub async fn run_browser_hls_worker(jobs: Arc<JobManager>, cfg: AppConfig) {
+pub async fn run_browser_hls_worker(
+    jobs: Arc<JobManager>,
+    cfg: AppConfig,
+    streaming: browser_hls_stream::Registry,
+) {
     let poll = Duration::from_secs(cfg.browser_hls.stale_check_interval_secs);
     let mut ws: Option<(Ws, Arc<AtomicU64>)> = None;
     let mut tabs: HashMap<String, WorkerTab> = HashMap::new();
@@ -45,6 +50,12 @@ pub async fn run_browser_hls_worker(jobs: Arc<JobManager>, cfg: AppConfig) {
         if stale > 0 {
             info!("browser-hls stale cleanup: {stale} jobs marked stale");
         }
+        // Same cadence as the DB-level staleness sweep above: tear down any
+        // streaming mux whose job just got marked stale/failed/requeued (or
+        // that stopped uploading without stale_browser_hls_cleanup noticing
+        // yet, e.g. it's still under max_restart_attempts).
+        browser_hls_stream::sweep_stale(&streaming, &jobs, cfg.browser_hls.stale_timeout_secs)
+            .await;
 
         let desired_urls: Vec<String> = jobs
             .list_jobs(None)

@@ -284,14 +284,20 @@ impl ManagedProcess {
 
     pub async fn stop(&self) -> Result<(), CliError> {
         let _guard = self.ops.lock().await;
-        {
+        let pid = {
             let mut inner = self.inner.lock().unwrap();
             inner.stop = true;
             inner.snapshot.state = ManagedProcessState::Stopping;
             inner.notify.notify_waiters();
-            if let Some(pid) = inner.current_pid {
-                terminate_tree(pid, 5_000, Path::new("/bin/ps"));
-            }
+            inner.current_pid
+        };
+        // `terminate_tree` polls with `thread::sleep` for up to the grace period: run it off the
+        // runtime and without `inner` held, so snapshots, the run loop and the proxy keep going.
+        if let Some(pid) = pid {
+            let _ = tokio::task::spawn_blocking(move || {
+                terminate_tree(pid, 5_000, Path::new("/bin/ps"))
+            })
+            .await;
         }
         self.notify.notify_waiters();
         for _ in 0..200 {

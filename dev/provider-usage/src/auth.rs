@@ -97,6 +97,30 @@ pub struct GrokSession {
     pub team_id: Option<String>,
 }
 
+/// The Claude CLI's own OAuth token, read from its config dir. Claude is not
+/// a Pi provider: there is no `auth.json` entry and no dashboard-stored copy,
+/// and the CLI owns refreshing the token.
+#[derive(Clone, Debug)]
+pub struct ClaudeSession {
+    pub access_token: String,
+    /// Expiry in epoch milliseconds, the unit the CLI writes.
+    pub expires_at_ms: Option<i64>,
+}
+
+pub fn claude_credential(env: &dyn Fn(&str) -> Option<String>) -> Option<ClaudeSession> {
+    let config_dir = env("CLAUDE_CONFIG_DIR")
+        .filter(|value| !value.trim().is_empty())
+        .map(PathBuf::from)
+        .unwrap_or_else(|| home_dir(env).join(".claude"));
+    let parsed = load_json(&config_dir.join(".credentials.json"))?;
+    let oauth = parsed.get("claudeAiOauth")?;
+    let access_token = string_field(oauth.get("accessToken"))?;
+    Some(ClaudeSession {
+        access_token,
+        expires_at_ms: oauth.get("expiresAt").and_then(|value| value.as_i64()),
+    })
+}
+
 pub fn openai_session(env: &dyn Fn(&str) -> Option<String>) -> Option<OpenaiSession> {
     let agent = agent_auth_path(env);
     if let Some(session) = openai_from_agent(&agent) {
@@ -497,6 +521,39 @@ mod tests {
             lithosai_console_cookie(&env, None).as_deref(),
             Some("KEYCLOAK_SESSION=abc")
         );
+    }
+
+    #[test]
+    fn reads_the_claude_cli_credential_not_pi_auth() {
+        let dir = tempdir().unwrap();
+        let home = dir.path();
+        let claude = home.join(".claude");
+        fs::create_dir(&claude).unwrap();
+        fs::write(
+            claude.join(".credentials.json"),
+            r#"{"claudeAiOauth":{"accessToken":"sk-ant-oat01-cli","refreshToken":"r","expiresAt":1790528819625,"scopes":["user:inference"],"subscriptionType":"pro"}}"#,
+        )
+        .unwrap();
+        let home_s = home.to_string_lossy().to_string();
+        let env = |key: &str| (key == "HOME").then(|| home_s.clone());
+        let session = claude_credential(&env).unwrap();
+        assert_eq!(session.access_token, "sk-ant-oat01-cli");
+        assert_eq!(session.expires_at_ms, Some(1_790_528_819_625));
+    }
+
+    #[test]
+    fn a_claude_credential_without_a_token_is_absent() {
+        let dir = tempdir().unwrap();
+        let home = dir.path();
+        fs::create_dir(home.join(".claude")).unwrap();
+        fs::write(
+            home.join(".claude").join(".credentials.json"),
+            r#"{"claudeAiOauth":{"refreshToken":"r"}}"#,
+        )
+        .unwrap();
+        let home_s = home.to_string_lossy().to_string();
+        let env = |key: &str| (key == "HOME").then(|| home_s.clone());
+        assert!(claude_credential(&env).is_none());
     }
 
     #[test]

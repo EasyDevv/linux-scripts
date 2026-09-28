@@ -44,6 +44,9 @@ Thumbs.db
 *.pid
 *.lock
 
+# ─── Browser profile clones (chrome-stash, etc.) ─────
+.user-data/
+
 # ─── Serena: 전역 안전망 ────────────────────────────
 .serena/cache/
 .serena/project.local.yml
@@ -66,3 +69,4 @@ dev/design/.cache/
 
 *.exe
 *.msi
+.claude/

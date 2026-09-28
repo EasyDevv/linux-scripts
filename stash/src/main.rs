@@ -1,3 +1,4 @@
+mod browser_hls_stream;
 mod browser_tls;
 mod media_route;
 mod config;
@@ -23,10 +24,12 @@ use rusqlite::Connection;
 use serde::Deserialize;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
+use tokio::sync::Mutex as AsyncMutex;
 use tokio::sync::RwLock;
 use tracing::{info, warn};
 use uuid::Uuid;
 
+use browser_hls_stream::StreamingMux;
 use config::AppConfig;
 use downloads::JobManager;
 use job_sources::{JobSource, normalize_sources, original_size_for};
@@ -40,6 +43,24 @@ struct AppState {
     browser_hls_level: AtomicU8,
     max_concurrent_jobs: Arc<AtomicUsize>,
     concurrency_mode: Arc<AtomicU8>,
+    browser_hls_streaming: browser_hls_stream::Registry,
+}
+
+/// Counts how many `segment-{000000..}.ts` files exist on disk starting from
+/// index 0 with no gap. Segments upload out of order over HTTP, so this is
+/// how completion time tells "all N segments are here" from "we have N files
+/// but one in the middle never arrived" — the latter used to silently mux
+/// whatever existed (sorted by name) with no gap check at all.
+fn contiguous_segment_prefix_count(temp_dir: &std::path::Path) -> u64 {
+    let mut index = 0u64;
+    loop {
+        let path = temp_dir.join(format!("segment-{index:06}.ts"));
+        match std::fs::metadata(&path) {
+            Ok(meta) if meta.len() > 0 => index += 1,
+            _ => break,
+        }
+    }
+    index
 }
 
 const DEFAULT_BROWSER_HLS_LEVEL: u8 = 1;
@@ -384,16 +405,139 @@ fn sanitize_browser_filename(name: &str) -> String {
             }
         })
         .collect();
-    if safe.trim().is_empty() {
-        "download.mp4".into()
+    let safe = if safe.trim().is_empty() {
+        "download.mp4".to_string()
     } else {
         safe
-    }
+    };
+    downloads::truncate_filename_bytes(&safe, downloads::MAX_FILENAME_BYTES)
 }
 
+/// Build one ffmpeg concat-demuxer entry line. Shared with `hls::ffmpeg_concat_entry`,
+/// used by the reqwest-HLS mux paths (browser-HLS no longer needs a concat list;
+/// see `assemble.rs`).
 fn ffmpeg_concat_entry(path: &std::path::Path) -> String {
     let escaped = path.display().to_string().replace('\'', "'\\''");
     format!("file '{}'\n", escaped)
+}
+
+/// Starts a named-pipe + concat-demuxer ffmpeg mux for this browser-HLS job
+/// so segments already on disk (and any that land afterward, fed by
+/// `upload_browser_hls_segment`) mux concurrently with the upload instead of
+/// waiting for `complete` to run one batch mux over everything. No-ops
+/// (leaving the job on the batch path) when total_segments is 0, exceeds
+/// `STREAMING_MUX_MAX_SEGMENTS`, streaming is already running for this job,
+/// or any setup step fails — all of those are safe fallbacks, never a lost
+/// segment, since segment files are written to `temp_dir` either way.
+async fn try_start_browser_hls_streaming(state: &aw::Data<AppState>, job_id: &str, total_segments: u64) {
+    if total_segments == 0 || total_segments as usize > downloads::STREAMING_MUX_MAX_SEGMENTS {
+        return;
+    }
+    {
+        let map = state.browser_hls_streaming.lock().unwrap();
+        if map.contains_key(job_id) {
+            return;
+        }
+    }
+    let Some(job) = state.jobs.get_job(job_id).await else {
+        return;
+    };
+    let temp_dir = std::path::PathBuf::from(&job.temp_dir);
+    if temp_dir.as_os_str().is_empty() {
+        return;
+    }
+
+    let pipe_dir = std::path::Path::new(downloads::MUX_PIPE_LOCAL_ROOT).join(job_id);
+    let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
+    if tokio::fs::create_dir_all(&pipe_dir).await.is_err() {
+        return;
+    }
+    let pipes: Vec<std::path::PathBuf> = (0..total_segments)
+        .map(|index| pipe_dir.join(format!("segment-{index:06}.ts")))
+        .collect();
+    for pipe in &pipes {
+        if let Err(error) = downloads::create_named_pipe(pipe) {
+            warn!(
+                "job {job_id}: streaming browser HLS pipe setup failed, staying on batch mux: {error}"
+            );
+            let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
+            return;
+        }
+    }
+    let concat_list_path = pipe_dir.join("segments.ffconcat");
+    let concat_list: String = pipes.iter().map(|p| ffmpeg_concat_entry(p)).collect();
+    if tokio::fs::write(&concat_list_path, concat_list)
+        .await
+        .is_err()
+    {
+        let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
+        return;
+    }
+
+    let final_dir = state.config.download_root.clone();
+    if tokio::fs::create_dir_all(&final_dir).await.is_err() {
+        let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
+        return;
+    }
+    let staged_path = final_dir.join(format!(
+        ".{}.{}",
+        job_id,
+        sanitize_browser_filename(&job.filename)
+    ));
+
+    let mut command = Command::new("ffmpeg");
+    command
+        .arg("-y")
+        .arg("-nostdin")
+        .arg("-loglevel")
+        .arg("error")
+        .arg("-f")
+        .arg("concat")
+        .arg("-safe")
+        .arg("0")
+        .arg("-analyzeduration")
+        .arg("20M")
+        .arg("-probesize")
+        .arg("20M")
+        .arg("-i")
+        .arg(&concat_list_path)
+        .arg("-c")
+        .arg("copy")
+        .arg(&staged_path)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
+        .kill_on_drop(true);
+    let child = match command.spawn() {
+        Ok(child) => child,
+        Err(error) => {
+            warn!(
+                "job {job_id}: spawn streaming browser HLS mux failed, staying on batch mux: {error}"
+            );
+            let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
+            return;
+        }
+    };
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+    let feeder = tokio::spawn(downloads::feed_segment_pipes(rx, pipes));
+
+    let mut mux = StreamingMux {
+        child: Some(child),
+        feeder: Some(feeder),
+        tx: Some(tx),
+        pipe_dir: pipe_dir.clone(),
+        staged_path,
+        next_feed_index: 0,
+    };
+    // Catch up on any segments uploaded before total_segments became known.
+    browser_hls_stream::feed_ready_segments(&mut mux, &temp_dir).await;
+
+    state
+        .browser_hls_streaming
+        .lock()
+        .unwrap()
+        .insert(job_id.to_string(), Arc::new(AsyncMutex::new(mux)));
+    info!("job {job_id}: streaming browser HLS segments through concat pipes ({total_segments} segments)");
 }
 
 async fn create_browser_hls_job(
@@ -457,6 +601,9 @@ async fn create_browser_hls_job(
     }
     state.jobs.set_job_running(&job_id).await;
     let job = state.jobs.get_job(&job_id).await.unwrap_or(job);
+    if let Some(sc) = body.segment_count {
+        try_start_browser_hls_streaming(&state, &job_id, sc as u64).await;
+    }
     info!(
         "browser HLS job created: id={job_id}, filename={filename}, url={}",
         body.url
@@ -528,6 +675,13 @@ async fn upload_browser_hls_segment(
     file.flush()
         .await
         .map_err(|e| bad_request(&format!("flush segment: {e}")))?;
+    drop(file);
+
+    let streaming_mux = { state.browser_hls_streaming.lock().unwrap().get(&job_id).cloned() };
+    if let Some(mux_arc) = streaming_mux {
+        let mut mux = mux_arc.lock().await;
+        browser_hls_stream::feed_ready_segments(&mut mux, &temp_dir).await;
+    }
 
     let (_, downloaded, uploaded_segments) = state
         .jobs
@@ -559,6 +713,7 @@ async fn set_browser_hls_total_segments(
         .and_then(|v| v.as_u64())
         .ok_or_else(|| bad_request("total_segments required"))?;
     state.jobs.set_total_segments(&job_id, total as u32).await;
+    try_start_browser_hls_streaming(&state, &job_id, total).await;
     Ok(HttpResponse::Ok().json(serde_json::json!({ "id": job_id, "total_segments": total })))
 }
 
@@ -582,79 +737,167 @@ async fn complete_browser_hls_job(
     if let Some(total) = query.segment_total {
         state.jobs.set_total_segments(&job_id, total as u32).await;
     }
-
-    let mut segments: Vec<std::path::PathBuf> = std::fs::read_dir(&temp_dir)
-        .map_err(|e| bad_request(&format!("read temp dir: {e}")))?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .map(|name| name.starts_with("segment-"))
-                .unwrap_or(false)
-        })
-        .collect();
-    segments.sort();
-    if segments.is_empty() {
-        return Err(bad_request("no segments uploaded"));
-    }
-
-    // ── Finalizing: prepare concat manifest ──
-    state.jobs.set_job_phase(&job_id, "prepare").await;
+    let job = state.jobs.get_job(&job_id).await.unwrap_or(job);
 
     let finalize_started = std::time::SystemTime::now();
-    let concat_list_path = temp_dir.join("segments.ffconcat");
-    let concat_list = segments
-        .iter()
-        .map(|segment| ffmpeg_concat_entry(segment))
-        .collect::<String>();
-    tokio::fs::write(&concat_list_path, concat_list)
-        .await
-        .map_err(|e| bad_request(&format!("write concat list: {e}")))?;
 
-    let prepare_elapsed = finalize_started.elapsed().unwrap_or_default();
+    // Segment files can land out of order over HTTP, so both paths below
+    // require a gap-free 0..N prefix before muxing — the old code just
+    // read_dir'd and sorted whatever existed, so a segment that never
+    // uploaded (network blip, worker restart) silently produced a truncated
+    // video instead of an error.
+    //
+    // NOTE: both paths deliberately concat-demux each segment as a separate
+    // ffmpeg input (`-f concat`) rather than byte-concatenating them into one
+    // raw .ts first. MissAV/surrit TS segments reset PTS near 0 at each
+    // segment boundary; byte-concatenating them into a single continuous
+    // stream was tried for the reqwest-HLS path and destroys duration/seek
+    // (see docs/study/hls-streaming-mux.md, "1차 시도"). The concat demuxer
+    // treats each file as its own input and corrects for this.
+    let streaming_entry = { state.browser_hls_streaming.lock().unwrap().remove(&job_id) };
+    let (staged_path, mux_elapsed, prepare_elapsed, segment_count) =
+        if let Some(entry) = streaming_entry {
+            // ── Streaming path: the mux has been running concurrently with
+            // uploads (see try_start_browser_hls_streaming), so all that's
+            // left is a final catch-up, a completeness check, and closing
+            // the pipes' input to let ffmpeg write its trailer. ──
+            let mut mux = entry.lock().await;
+            browser_hls_stream::feed_ready_segments(&mut mux, &temp_dir).await;
+            let contiguous = mux.next_feed_index;
+            if contiguous == 0 {
+                drop(mux);
+                state
+                    .browser_hls_streaming
+                    .lock()
+                    .unwrap()
+                    .insert(job_id.clone(), entry);
+                return Err(bad_request("no segments uploaded"));
+            }
+            if job.total_segments > 0 && contiguous < job.total_segments as u64 {
+                let want = job.total_segments;
+                drop(mux);
+                state
+                    .browser_hls_streaming
+                    .lock()
+                    .unwrap()
+                    .insert(job_id.clone(), entry);
+                return Err(bad_request(&format!(
+                    "incomplete: {contiguous}/{want} contiguous segments uploaded (a middle segment is still missing)"
+                )));
+            }
 
-    // ── Finalizing: mux container ──
-    state.jobs.set_job_phase(&job_id, "mux").await;
+            state.jobs.set_job_phase(&job_id, "mux").await;
+            let prepare_elapsed = finalize_started.elapsed().unwrap_or_default();
+            let mux_started = std::time::SystemTime::now();
+            let staged_path = mux.staged_path.clone();
+            let pipe_dir = mux.pipe_dir.clone();
+            mux.tx.take(); // drop the sender: signals EOF to the feeder
+            let feeder = mux.feeder.take();
+            let child = mux.child.take();
+            drop(mux);
+            drop(entry);
 
-    let final_dir = state.config.download_root.clone();
-    tokio::fs::create_dir_all(&final_dir)
-        .await
-        .map_err(|e| bad_request(&format!("create final dir: {e}")))?;
+            let mux_result: Result<(), String> = async {
+                if let Some(feeder) = feeder {
+                    feeder
+                        .await
+                        .map_err(|e| format!("join streaming browser HLS feeder: {e}"))??;
+                }
+                let child = child
+                    .ok_or_else(|| "streaming browser HLS mux already torn down".to_string())?;
+                downloads::monitor_ffmpeg_mux(child, &staged_path, &job_id, &state.jobs, None)
+                    .await
+            }
+            .await;
+            let _ = tokio::fs::remove_dir_all(&pipe_dir).await;
+            if let Err(error) = mux_result {
+                let msg = format!("browser HLS remux failed: {error}");
+                state.jobs.fail_or_retry(&job_id, &msg, 1, 0).await;
+                return Err(bad_request(&msg));
+            }
+            let mux_elapsed = mux_started.elapsed().unwrap_or_default();
+            (staged_path, mux_elapsed, prepare_elapsed, contiguous)
+        } else {
+            // ── Batch path: no streaming mux was running for this job
+            // (total_segments unknown early enough, over
+            // STREAMING_MUX_MAX_SEGMENTS, or setup failed) ──
+            state.jobs.set_job_phase(&job_id, "prepare").await;
+            let contiguous = contiguous_segment_prefix_count(&temp_dir);
+            if contiguous == 0 {
+                return Err(bad_request("no segments uploaded"));
+            }
+            if job.total_segments > 0 && contiguous < job.total_segments as u64 {
+                return Err(bad_request(&format!(
+                    "incomplete: {}/{} contiguous segments uploaded (a middle segment is still missing)",
+                    contiguous, job.total_segments
+                )));
+            }
+            let segments: Vec<std::path::PathBuf> = (0..contiguous)
+                .map(|index| temp_dir.join(format!("segment-{index:06}.ts")))
+                .collect();
+
+            let concat_list_path = temp_dir.join("segments.ffconcat");
+            let concat_list = segments
+                .iter()
+                .map(|segment| ffmpeg_concat_entry(segment))
+                .collect::<String>();
+            tokio::fs::write(&concat_list_path, concat_list)
+                .await
+                .map_err(|e| bad_request(&format!("write concat list: {e}")))?;
+            let prepare_elapsed = finalize_started.elapsed().unwrap_or_default();
+
+            state.jobs.set_job_phase(&job_id, "mux").await;
+            let final_dir = state.config.download_root.clone();
+            tokio::fs::create_dir_all(&final_dir)
+                .await
+                .map_err(|e| bad_request(&format!("create final dir: {e}")))?;
+            let staged_path = final_dir.join(format!(
+                ".{}.{}",
+                job_id,
+                sanitize_browser_filename(&job.filename)
+            ));
+            let mux_started = std::time::SystemTime::now();
+            let mut command = Command::new("ffmpeg");
+            command
+                .arg("-y")
+                .arg("-nostdin")
+                .arg("-loglevel")
+                .arg("error")
+                .arg("-f")
+                .arg("concat")
+                .arg("-safe")
+                .arg("0")
+                .arg("-analyzeduration")
+                .arg("20M")
+                .arg("-probesize")
+                .arg("20M")
+                .arg("-i")
+                .arg(&concat_list_path)
+                .arg("-c")
+                .arg("copy")
+                .arg(&staged_path)
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::piped());
+            if let Err(error) = downloads::run_ffmpeg_mux(
+                &mut command,
+                &staged_path,
+                &job_id,
+                &state.jobs,
+                None,
+            )
+            .await
+            {
+                let msg = format!("browser HLS remux failed: {error}");
+                state.jobs.fail_or_retry(&job_id, &msg, 1, 0).await;
+                return Err(bad_request(&msg));
+            }
+            let mux_elapsed = mux_started.elapsed().unwrap_or_default();
+            (staged_path, mux_elapsed, prepare_elapsed, contiguous)
+        };
+
     let final_path =
         config::final_download_path(&state.config, &sanitize_browser_filename(&job.filename));
-    let staged_path = final_dir.join(format!(
-        ".{}.{}",
-        job_id,
-        sanitize_browser_filename(&job.filename)
-    ));
-    let mux_started = std::time::SystemTime::now();
-    let mut command = Command::new("ffmpeg");
-    command
-        .arg("-y")
-        .arg("-nostdin")
-        .arg("-loglevel")
-        .arg("error")
-        .arg("-f")
-        .arg("concat")
-        .arg("-safe")
-        .arg("0")
-        .arg("-i")
-        .arg(&concat_list_path)
-        .arg("-c")
-        .arg("copy")
-        .arg(&staged_path)
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null());
-    if let Err(error) =
-        downloads::run_ffmpeg_mux(&mut command, &staged_path, &job_id, &state.jobs, None).await
-    {
-        let msg = format!("browser HLS remux failed: {error}");
-        state.jobs.fail_or_retry(&job_id, &msg, 1, 0).await;
-        return Err(bad_request(&msg));
-    }
-    let mux_elapsed = mux_started.elapsed().unwrap_or_default();
 
     let staged_size = std::fs::metadata(&staged_path)
         .map_err(|e| bad_request(&format!("stat staged browser HLS file: {e}")))?
@@ -687,10 +930,10 @@ async fn complete_browser_hls_job(
         .map_err(|error| bad_request(&error))?;
     state.jobs.unregister_active(&job_id).await;
     info!(
-        "browser HLS job completed: id={job_id}, file={}, bytes={}, segments={}, prepare_wall={prepare_elapsed:.2?}, mux_wall={mux_elapsed:.2?}, commit_wall={commit_elapsed:.2?}, finalize_wall={finalize_elapsed:.2?}, saved_full_file_passes=2",
+        "browser HLS job completed: id={job_id}, file={}, bytes={}, segments={}, prepare_wall={prepare_elapsed:.2?}, mux_wall={mux_elapsed:.2?}, commit_wall={commit_elapsed:.2?}, finalize_wall={finalize_elapsed:.2?}",
         final_path.display(),
         size,
-        segments.len(),
+        segment_count,
     );
     let _ = tokio::fs::remove_dir_all(&temp_dir).await;
 
@@ -1042,6 +1285,27 @@ async fn main() -> std::io::Result<()> {
     let job_manager = Arc::new(JobManager::new(job_db));
     let vpn_config = Arc::new(RwLock::new(cfg.vpn.clone()));
 
+    // A signal delivered to this process (redeploy, systemd/executor
+    // restart, ...) also reaches any in-flight ffmpeg mux child, which then
+    // exits with a plain nonzero status. Mark shutdown intent as early as
+    // possible so `fail_or_retry` recognizes the resulting failure as an
+    // artifact of shutdown rather than spending retry budget on it.
+    for kind in [
+        tokio::signal::unix::SignalKind::terminate(),
+        tokio::signal::unix::SignalKind::interrupt(),
+    ] {
+        match tokio::signal::unix::signal(kind) {
+            Ok(mut stream) => {
+                let shutdown_jobs = job_manager.clone();
+                tokio::spawn(async move {
+                    stream.recv().await;
+                    shutdown_jobs.begin_shutdown();
+                });
+            }
+            Err(error) => warn!("failed to install shutdown signal handler: {error}"),
+        }
+    }
+
     match downloads::migrate_staged_files(&cfg.download_root).await {
         Ok(moved) if moved > 0 => info!("migrated {moved} legacy staged output(s)"),
         Ok(_) => {}
@@ -1069,10 +1333,12 @@ async fn main() -> std::io::Result<()> {
     });
 
     // CDP-driven browser-HLS worker
+    let browser_hls_streaming = browser_hls_stream::new_registry();
     let worker_jobs = job_manager.clone();
     let worker_cfg = cfg.clone();
+    let worker_streaming = browser_hls_streaming.clone();
     actix_web::rt::spawn(async move {
-        worker::run_browser_hls_worker(worker_jobs, worker_cfg).await;
+        worker::run_browser_hls_worker(worker_jobs, worker_cfg, worker_streaming).await;
     });
 
     let web_assets = web::load_web_assets();
@@ -1085,6 +1351,7 @@ async fn main() -> std::io::Result<()> {
         browser_hls_level: AtomicU8::new(browser_hls_level),
         max_concurrent_jobs: scheduler_limit,
         concurrency_mode: scheduler_mode,
+        browser_hls_streaming,
     });
     let bind = cfg.bind.clone();
 
@@ -1202,4 +1469,51 @@ async fn main() -> std::io::Result<()> {
     .bind(&bind)?
     .run()
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{contiguous_segment_prefix_count, sanitize_browser_filename};
+
+    fn scratch_dir(name: &str) -> std::path::PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("stash-main-{name}-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn contiguous_prefix_count_stops_at_gap() {
+        let dir = scratch_dir("gap");
+        std::fs::write(dir.join("segment-000000.ts"), b"a").unwrap();
+        std::fs::write(dir.join("segment-000001.ts"), b"a").unwrap();
+        std::fs::write(dir.join("segment-000003.ts"), b"a").unwrap(); // index 2 missing
+
+        assert_eq!(contiguous_segment_prefix_count(&dir), 2);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn contiguous_prefix_count_ignores_empty_placeholder_files() {
+        let dir = scratch_dir("empty");
+        std::fs::write(dir.join("segment-000000.ts"), b"a").unwrap();
+        std::fs::write(dir.join("segment-000001.ts"), b"").unwrap(); // empty: not a real segment
+
+        assert_eq!(contiguous_segment_prefix_count(&dir), 1);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn contiguous_prefix_count_is_zero_for_empty_dir() {
+        let dir = scratch_dir("none");
+        assert_eq!(contiguous_segment_prefix_count(&dir), 0);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn sanitize_browser_filename_output_never_exceeds_staging_budget() {
+        let long_title: String = "菊".repeat(200) + ".mp4";
+        let sanitized = sanitize_browser_filename(&long_title);
+        assert!(sanitized.len() <= crate::downloads::MAX_FILENAME_BYTES);
+    }
 }
