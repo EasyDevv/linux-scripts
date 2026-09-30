@@ -1,0 +1,227 @@
+{
+	"slug": "daangn",
+	"measuredAt": "2026-09-29",
+	"source": "https://github.com/daangn/seed-design",
+	"designSystem": "SEED Design (당근 디자인 시스템) — rootage tokens + component specs",
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"mobile": 390,
+		"scheme": "light"
+	},
+	"thesis": "White layers on a grey basement, 16px gutters, bold short labels, and one carrot-orange solid action. layout.css holds values in the same layers as linear / toss — SEED palette (palette-*) → SEED roles (fg-* / bg-* / stroke-*, kept under SEED's own names) → shadcn slots → component geometry (control-*, field-*, chip-*, list-row-* …) → type scale t1 … t14 and roles. Every value is a rootage token, not a pixel measurement.",
+	"applyOnto": "mobile-first product screens (390 wide, max content 480); desktop as a centred column or a 16px-gutter list",
+	"doNotCopy": [
+		"the carrot / 당근 logo, Daangn brand marks, and the SEED icon set (@karrotmarket/react-monochrome-icon) — use the product's own icons",
+		"manner-temp and banner tints outside a Daangn-like marketplace; they are domain tokens, not general status colours",
+		"seed-design docs site chrome (Next.js docs shell) — never captured, not part of the theme",
+		"--gradient-highlight-magic for ordinary actions; SEED keeps it for AI (magic) features only"
+	],
+	"families": ["mobile-screen", "feed-list", "form", "sheet-flow"],
+	"color": {
+		"model": "adaptive",
+		"palette": "--palette-gray-00 … --palette-gray-1000, carrot / blue / red / green / yellow / purple 100 … 1000 (redefined under .dark), --palette-static-black / --palette-static-white and their alpha steps (fixed)",
+		"note": "SEED ships theme-light and theme-dark as first-class modes. Roles are palette var() references redeclared in .dark (some roles also change step there, e.g. --fg-brand carrot-600 → 700), so components never branch on scheme.",
+		"surfaces": {
+			"basement": "--bg-layer-basement",
+			"screen": "--bg-layer-default",
+			"screenPressed": "--bg-layer-default-pressed",
+			"fill": "--bg-layer-fill",
+			"floating": "--bg-layer-floating",
+			"pressed": "--bg-transparent-pressed",
+			"selected": "--bg-transparent-selected",
+			"weak": "--bg-neutral-weak",
+			"inverted": "--bg-neutral-inverted",
+			"disabled": "--bg-disabled",
+			"dim": "--overlay-dim"
+		},
+		"ink": {
+			"default": "--fg-neutral",
+			"muted": "--fg-neutral-muted",
+			"subtle": "--fg-neutral-subtle",
+			"placeholder": "--fg-placeholder",
+			"disabled": "--fg-disabled",
+			"inverted": "--fg-neutral-inverted",
+			"brand": "--fg-brand",
+			"onFill": "--palette-static-white"
+		},
+		"stroke": {
+			"hairline": "--stroke-neutral-muted",
+			"subtle": "--stroke-neutral-subtle",
+			"field": "--stroke-neutral-weak",
+			"fieldFocus": "--stroke-neutral-contrast",
+			"focusRing": "--stroke-focus-ring"
+		},
+		"status": {
+			"brand": ["--bg-brand-solid", "--bg-brand-weak", "--fg-brand", "--stroke-brand-weak"],
+			"informative": ["--bg-informative-solid", "--bg-informative-weak", "--fg-informative"],
+			"positive": ["--bg-positive-solid", "--bg-positive-weak", "--fg-positive"],
+			"warning": ["--bg-warning-solid", "--bg-warning-weak", "--fg-warning"],
+			"critical": ["--bg-critical-solid", "--bg-critical-weak", "--fg-critical"],
+			"contrast": "every tone has an fg-{tone}-contrast role for text on its weak fill"
+		},
+		"shadcn": {
+			"canvas": "--background",
+			"paper": "--card",
+			"note": "--background is --bg-layer-basement (grey, black in dark) and --card is --bg-layer-default (white, gray-100 in dark). A single white screen puts its content on --card or bg-bg-layer-default; equal values would fail validate-layout-scheme."
+		},
+		"darkMode": {
+			"status": "official",
+			"source": "rootage color.yaml theme-dark values; nothing derived"
+		},
+		"domain": {
+			"mannerTemp": "--manner-temp-l1-bg … --manner-temp-l10-text (매너온도 badge levels)",
+			"banner": "--banner-blue … --banner-yellow",
+			"magic": ["--bg-magic-weak", "--gradient-highlight-magic", "--gradient-glow-magic", "--gradient-shimmer-magic"]
+		}
+	},
+	"type": {
+		"family": "--font-sans",
+		"scale": "--text-t1 … --text-t14 (11 → 48px, rem so it follows font scaling; SEED clamps 0.8 … 1.5x)",
+		"weights": ["--font-weight-regular", "--font-weight-medium", "--font-weight-bold"],
+		"roles": {
+			"title": "--text-title",
+			"headingLg": "--text-heading-lg",
+			"heading": "--text-heading",
+			"headingSm": "--text-heading-sm",
+			"article": "--text-article",
+			"body": "--text-body",
+			"note": "--text-note",
+			"bodySm": "--text-body-sm",
+			"label": "--text-label",
+			"caption": "--text-caption",
+			"captionSm": "--text-caption-sm",
+			"micro": "--text-micro"
+		},
+		"controlLabels": {
+			"xsmall": "--text-control-xs",
+			"smallMedium": "--text-control",
+			"large": "--text-control-lg"
+		},
+		"note": "SEED has no semibold: text is 400, labels 500, titles and every button / tab label 700. There is no letter-spacing token; keep 0."
+	},
+	"controls": {
+		"button": {
+			"sizes": {
+				"xsmall": ["--control-height-xs", "--control-radius-xs", "--control-padding-inline-sm", "--text-control-xs"],
+				"small": ["--control-height-sm", "--control-radius-sm", "--control-padding-inline-sm", "--text-control"],
+				"medium": ["--control-height", "--control-radius", "--control-padding-inline", "--text-control"],
+				"large": ["--control-height-lg", "--control-radius-lg", "--control-padding-inline-lg", "--text-control-lg"]
+			},
+			"variants": {
+				"brandSolid": ["--bg-brand-solid", "--bg-brand-solid-pressed", "--palette-static-white"],
+				"neutralSolid": ["--bg-neutral-inverted", "--bg-neutral-inverted-pressed", "--fg-neutral-inverted"],
+				"neutralWeak": ["--bg-neutral-weak", "--bg-neutral-weak-pressed", "--fg-neutral"],
+				"criticalSolid": ["--bg-critical-solid", "--bg-critical-solid-pressed", "--palette-static-white"],
+				"neutralOutline": ["--stroke-neutral-weak", "--bg-transparent-pressed", "--fg-neutral"],
+				"ghost": ["--bg-transparent", "--bg-transparent-pressed", "--fg-neutral"]
+			},
+			"disabled": ["--bg-disabled", "--fg-disabled"],
+			"pressed": "fill steps to the *-pressed role and the button scales to --scale-s97 over --duration-pressed-scale / --ease-pressed-scale",
+			"shadcnMap": "default → brandSolid, secondary → neutralWeak, outline → neutralOutline, ghost → ghost, destructive → criticalSolid; data-size xs / sm / default / lg → xsmall / small / medium / large"
+		},
+		"field": {
+			"sizes": {
+				"medium": ["--field-height", "--field-radius", "--field-padding-inline", "--text-body-sm"],
+				"large": ["--field-height-lg", "--field-radius-lg", "--field-padding-inline-lg", "--text-body"]
+			},
+			"stroke": ["--field-stroke-width", "--field-stroke", "--field-stroke-width-focus", "--field-stroke-focus", "--field-stroke-invalid"],
+			"placeholder": "--field-placeholder",
+			"fill": "--bg-transparent (outline) · --bg-disabled when readonly / disabled",
+			"note": "Outline fields have no well; focus thickens the stroke to 2px neutral-contrast (black), not a blue ring."
+		},
+		"chip": {
+			"sizes": ["--chip-height-sm", "--chip-height", "--chip-height-lg"],
+			"radius": "--radius-full",
+			"fill": ["--chip-fill", "--chip-fill-pressed"],
+			"selected": ["--chip-fill-selected", "--chip-ink-selected"],
+			"gap": "--chip-gap",
+			"type": "--text-label"
+		},
+		"selection": {
+			"switch": ["--switch-width", "--switch-height", "--switch-thumb", "--switch-inset", "--switch-track", "--bg-brand-solid"],
+			"checkbox": ["--checkbox-size", "--checkbox-radius", "--stroke-neutral-weak", "--bg-brand-solid"],
+			"radio": ["--checkbox-size", "--radius-full"]
+		},
+		"badge": {
+			"medium": ["--badge-height", "--badge-radius", "--badge-padding-inline", "--text-micro"],
+			"large": ["--badge-height-lg", "--badge-radius-lg", "--badge-padding-inline-lg", "--text-caption-sm"],
+			"tones": "weak = bg-{tone}-weak + fg-{tone}-contrast, solid = bg-{tone}-solid + static white, outline = stroke-{tone}-weak + fg-{tone}"
+		}
+	},
+	"navigation": {
+		"topNav": ["--top-nav-height", "--top-nav-padding-inline", "--text-heading"],
+		"tabs": ["--tab-height", "--tab-padding-inline", "--tab-indicator-height", "--tab-ink", "--tab-ink-selected", "--tab-indicator", "--text-heading-sm"],
+		"segmented": ["--segmented-padding", "--segmented-item-height", "--segmented-item-padding-inline", "--segmented-track", "--segmented-thumb"]
+	},
+	"lists": {
+		"row": {
+			"padding": ["--list-row-padding-y", "--list-row-padding-x"],
+			"gap": "--list-row-gap",
+			"title": ["--text-body", "--fg-neutral"],
+			"detail": ["--text-caption", "--fg-neutral-subtle"],
+			"pressed": ["--list-row-pressed", "--list-row-pressed-inset", "--list-row-pressed-radius"],
+			"highlighted": "--list-row-highlight",
+			"divider": "--stroke-neutral-muted"
+		},
+		"header": ["--list-header-padding-y", "--list-row-padding-x", "--text-label", "--fg-neutral-subtle"]
+	},
+	"overlays": {
+		"dim": "--overlay-dim",
+		"dialog": ["--dialog-width", "--dialog-radius", "--dialog-padding", "--bg-layer-floating", "--text-heading-lg"],
+		"alertDialog": ["--alert-dialog-width", "--dialog-radius", "--alert-dialog-padding", "--text-t7"],
+		"sheet": ["--sheet-width", "--sheet-radius", "--bg-layer-floating"],
+		"menu": ["--menu-width", "--menu-radius", "--menu-padding-y", "--menu-item-padding-x", "--shadow-s3"],
+		"snackbar": ["--snackbar-height", "--snackbar-radius", "--snackbar-fill", "--snackbar-ink", "--snackbar-action"],
+		"callout": ["--callout-radius", "--callout-padding"]
+	},
+	"spacing": {
+		"gutter": "--spacing-global-gutter",
+		"betweenChips": "--spacing-between-chips",
+		"componentGap": "--spacing-component-default",
+		"navToTitle": "--spacing-nav-to-title",
+		"screenBottom": "--spacing-screen-bottom",
+		"betweenText": "--spacing-between-text",
+		"contentMax": "--content-narrow"
+	},
+	"motion": {
+		"durations": "--duration-d1 … --duration-d6 (50 … 300ms), --duration-color-transition",
+		"easing": ["--ease-easing", "--ease-enter", "--ease-exit", "--ease-enter-expressive", "--ease-exit-expressive"],
+		"pressed": ["--scale-s97", "--duration-pressed-scale", "--ease-pressed-scale"]
+	},
+	"notLinear": {
+		"edges": "Layers separate by fill (basement grey under white screens), 1px --stroke-neutral-muted hairlines between rows. Cards carry no shadow and no border.",
+		"elevation": "Only floating layers (menu, popover, snackbar) take --shadow-s1 … s3.",
+		"primaryAction": "One --bg-brand-solid (carrot) button per screen, often large (52h, r12) and full-width at the bottom; secondary actions are neutral-weak grey, not outline.",
+		"density": "Mobile density: 40px controls, 16px body text, 12px row padding. No 28-32px desktop rows.",
+		"radius": "Radius grows with the control (8 → 12), chips / segmented / switch are pills, overlays are 20-24.",
+		"focus": "Fields focus by a 2px black (neutral-contrast) stroke; the blue --stroke-focus-ring is for keyboard focus only.",
+		"font": "System stack led by -apple-system / Apple SD Gothic Neo → Pretendard; weights 400 / 500 / 700 only.",
+		"copy": "Korean 해요체, short verbs on buttons (예: 확인, 채팅하기)."
+	},
+	"shell": {
+		"model": "mobile screen: --top-nav-height app bar, --spacing-global-gutter inset content, bottom CTA; on desktop centre a --content-narrow column",
+		"canvas": "--background",
+		"sidebar": {
+			"width": null,
+			"fill": "--sidebar",
+			"active": "--sidebar-accent",
+			"activeInk": "--sidebar-accent-foreground",
+			"borderAgainstCanvas": true,
+			"hideBelow": null
+		},
+		"panel": {
+			"fill": "--card",
+			"radius": "--radius",
+			"contentNarrow": "--content-narrow"
+		}
+	},
+	"checklist": [
+		"Screen on --bg-layer-default; grouped sections sit on --bg-layer-basement",
+		"Content inset --spacing-global-gutter (16) on both sides",
+		"Every colour through a SEED role (fg / bg / stroke) so .dark works; palette only when a component spec names a step",
+		"Buttons bold, pressed = *-pressed fill + --scale-s97",
+		"Field focus = 2px --field-stroke-focus, not a ring",
+		"Dim overlays with --overlay-dim (black 45%)"
+	]
+}

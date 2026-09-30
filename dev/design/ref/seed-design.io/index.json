@@ -1,0 +1,458 @@
+{
+	"host": "seed-design.io",
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"dpr": 1
+	},
+	"pages": [
+		{
+			"id": "accordion",
+			"url": "https://seed-design.io/react/components/accordion",
+			"previews": {
+				"light": 14,
+				"dark": 14
+			}
+		},
+		{
+			"id": "action-button",
+			"url": "https://seed-design.io/react/components/action-button",
+			"previews": {
+				"light": 14,
+				"dark": 14
+			}
+		},
+		{
+			"id": "alert-dialog",
+			"url": "https://seed-design.io/react/components/alert-dialog",
+			"previews": {
+				"light": 12,
+				"dark": 12
+			}
+		},
+		{
+			"id": "app-bar",
+			"url": "https://seed-design.io/react/stackflow/app-bar",
+			"previews": {
+				"light": 0,
+				"dark": 0
+			}
+		},
+		{
+			"id": "article",
+			"url": "https://seed-design.io/react/components/article",
+			"previews": {
+				"light": 5,
+				"dark": 5
+			}
+		},
+		{
+			"id": "aspect-ratio",
+			"url": "https://seed-design.io/react/components/aspect-ratio",
+			"previews": {
+				"light": 2,
+				"dark": 2
+			}
+		},
+		{
+			"id": "attachment-display-field",
+			"url": "https://seed-design.io/react/components/attachment-display-field",
+			"previews": {
+				"light": 11,
+				"dark": 11
+			}
+		},
+		{
+			"id": "attachment-field",
+			"url": "https://seed-design.io/react/components/attachment-field",
+			"previews": {
+				"light": 19,
+				"dark": 19
+			}
+		},
+		{
+			"id": "avatar",
+			"url": "https://seed-design.io/react/components/avatar",
+			"previews": {
+				"light": 5,
+				"dark": 5
+			}
+		},
+		{
+			"id": "badge",
+			"url": "https://seed-design.io/react/components/badge",
+			"previews": {
+				"light": 8,
+				"dark": 8
+			}
+		},
+		{
+			"id": "bottom-sheet",
+			"url": "https://seed-design.io/react/components/bottom-sheet",
+			"previews": {
+				"light": 14,
+				"dark": 14
+			}
+		},
+		{
+			"id": "callout",
+			"url": "https://seed-design.io/react/components/callout",
+			"previews": {
+				"light": 13,
+				"dark": 13
+			}
+		},
+		{
+			"id": "checkbox",
+			"url": "https://seed-design.io/react/components/checkbox",
+			"previews": {
+				"light": 12,
+				"dark": 12
+			}
+		},
+		{
+			"id": "chip",
+			"url": "https://seed-design.io/react/components/chip",
+			"previews": {
+				"light": 12,
+				"dark": 12
+			}
+		},
+		{
+			"id": "chip-tabs",
+			"url": "https://seed-design.io/react/components/chip-tabs",
+			"previews": {
+				"light": 7,
+				"dark": 7
+			}
+		},
+		{
+			"id": "content-placeholder",
+			"url": "https://seed-design.io/react/components/content-placeholder",
+			"previews": {
+				"light": 4,
+				"dark": 4
+			}
+		},
+		{
+			"id": "contextual-floating-button",
+			"url": "https://seed-design.io/react/components/contextual-floating-button",
+			"previews": {
+				"light": 6,
+				"dark": 6
+			}
+		},
+		{
+			"id": "date-picker",
+			"url": "https://seed-design.io/react/components/date-picker",
+			"previews": {
+				"light": 9,
+				"dark": 9
+			}
+		},
+		{
+			"id": "dialog",
+			"url": "https://seed-design.io/react/components/dialog",
+			"previews": {
+				"light": 13,
+				"dark": 13
+			}
+		},
+		{
+			"id": "divider",
+			"url": "https://seed-design.io/react/components/divider",
+			"previews": {
+				"light": 3,
+				"dark": 3
+			}
+		},
+		{
+			"id": "field-button",
+			"url": "https://seed-design.io/react/components/field-button",
+			"previews": {
+				"light": 17,
+				"dark": 17
+			}
+		},
+		{
+			"id": "floating-action-button",
+			"url": "https://seed-design.io/react/components/floating-action-button",
+			"previews": {
+				"light": 3,
+				"dark": 3
+			}
+		},
+		{
+			"id": "help-bubble",
+			"url": "https://seed-design.io/react/components/help-bubble",
+			"previews": {
+				"light": 12,
+				"dark": 12
+			}
+		},
+		{
+			"id": "help-bubble-tooltip",
+			"url": "https://seed-design.io/react/components/help-bubble-tooltip",
+			"previews": {
+				"light": 13,
+				"dark": 13
+			}
+		},
+		{
+			"id": "identity-placeholder",
+			"url": "https://seed-design.io/react/components/identity-placeholder",
+			"previews": {
+				"light": 2,
+				"dark": 2
+			}
+		},
+		{
+			"id": "image-frame",
+			"url": "https://seed-design.io/react/components/image-frame",
+			"previews": {
+				"light": 9,
+				"dark": 9
+			}
+		},
+		{
+			"id": "list",
+			"url": "https://seed-design.io/react/components/list",
+			"previews": {
+				"light": 12,
+				"dark": 12
+			}
+		},
+		{
+			"id": "manner-temp",
+			"url": "https://seed-design.io/react/components/manner-temp",
+			"previews": {
+				"light": 1,
+				"dark": 1
+			}
+		},
+		{
+			"id": "manner-temp-badge",
+			"url": "https://seed-design.io/react/components/manner-temp-badge",
+			"previews": {
+				"light": 1,
+				"dark": 1
+			}
+		},
+		{
+			"id": "menu",
+			"url": "https://seed-design.io/react/components/menu",
+			"previews": {
+				"light": 10,
+				"dark": 10
+			}
+		},
+		{
+			"id": "page-banner",
+			"url": "https://seed-design.io/react/components/page-banner",
+			"previews": {
+				"light": 9,
+				"dark": 9
+			}
+		},
+		{
+			"id": "pagination",
+			"url": "https://seed-design.io/react/components/pagination",
+			"previews": {
+				"light": 2,
+				"dark": 2
+			}
+		},
+		{
+			"id": "progress-circle",
+			"url": "https://seed-design.io/react/components/progress-circle",
+			"previews": {
+				"light": 8,
+				"dark": 8
+			}
+		},
+		{
+			"id": "pull-to-refresh",
+			"url": "https://seed-design.io/react/components/pull-to-refresh",
+			"previews": {
+				"light": 1,
+				"dark": 1
+			}
+		},
+		{
+			"id": "quantity-picker",
+			"url": "https://seed-design.io/react/components/quantity-picker",
+			"previews": {
+				"light": 7,
+				"dark": 7
+			}
+		},
+		{
+			"id": "radio-group",
+			"url": "https://seed-design.io/react/components/radio-group",
+			"previews": {
+				"light": 11,
+				"dark": 0
+			}
+		},
+		{
+			"id": "reaction-button",
+			"url": "https://seed-design.io/react/components/reaction-button",
+			"previews": {
+				"light": 5,
+				"dark": 5
+			}
+		},
+		{
+			"id": "result-section",
+			"url": "https://seed-design.io/react/components/result-section",
+			"previews": {
+				"light": 4,
+				"dark": 4
+			}
+		},
+		{
+			"id": "scroll-fog",
+			"url": "https://seed-design.io/react/components/scroll-fog",
+			"previews": {
+				"light": 6,
+				"dark": 6
+			}
+		},
+		{
+			"id": "segmented-control",
+			"url": "https://seed-design.io/react/components/segmented-control",
+			"previews": {
+				"light": 6,
+				"dark": 6
+			}
+		},
+		{
+			"id": "select",
+			"url": "https://seed-design.io/react/components/select",
+			"previews": {
+				"light": 17,
+				"dark": 17
+			}
+		},
+		{
+			"id": "select-box",
+			"url": "https://seed-design.io/react/components/select-box",
+			"previews": {
+				"light": 8,
+				"dark": 8
+			}
+		},
+		{
+			"id": "side-panel",
+			"url": "https://seed-design.io/react/components/side-panel",
+			"previews": {
+				"light": 11,
+				"dark": 11
+			}
+		},
+		{
+			"id": "skeleton",
+			"url": "https://seed-design.io/react/components/skeleton",
+			"previews": {
+				"light": 4,
+				"dark": 4
+			}
+		},
+		{
+			"id": "slider",
+			"url": "https://seed-design.io/react/components/slider",
+			"previews": {
+				"light": 22,
+				"dark": 22
+			}
+		},
+		{
+			"id": "snackbar",
+			"url": "https://seed-design.io/react/components/snackbar",
+			"previews": {
+				"light": 6,
+				"dark": 6
+			}
+		},
+		{
+			"id": "swipeable-menu-sheet",
+			"url": "https://seed-design.io/react/components/swipeable-menu-sheet",
+			"previews": {
+				"light": 11,
+				"dark": 11
+			}
+		},
+		{
+			"id": "switch",
+			"url": "https://seed-design.io/react/components/switch",
+			"previews": {
+				"light": 8,
+				"dark": 8
+			}
+		},
+		{
+			"id": "table-pagination",
+			"url": "https://seed-design.io/react/components/table-pagination",
+			"previews": {
+				"light": 4,
+				"dark": 4
+			}
+		},
+		{
+			"id": "tabs",
+			"url": "https://seed-design.io/react/components/tabs",
+			"previews": {
+				"light": 14,
+				"dark": 14
+			}
+		},
+		{
+			"id": "tag-group",
+			"url": "https://seed-design.io/react/components/tag-group",
+			"previews": {
+				"light": 8,
+				"dark": 8
+			}
+		},
+		{
+			"id": "text-field-input",
+			"url": "https://seed-design.io/react/components/text-field-input",
+			"previews": {
+				"light": 15,
+				"dark": 15
+			}
+		},
+		{
+			"id": "text-field-textarea",
+			"url": "https://seed-design.io/react/components/text-field-textarea",
+			"previews": {
+				"light": 14,
+				"dark": 14
+			}
+		},
+		{
+			"id": "time-picker",
+			"url": "https://seed-design.io/react/components/time-picker",
+			"previews": {
+				"light": 8,
+				"dark": 8
+			}
+		},
+		{
+			"id": "toggle-button",
+			"url": "https://seed-design.io/react/components/toggle-button",
+			"previews": {
+				"light": 8,
+				"dark": 8
+			}
+		},
+		{
+			"id": "wheel-picker",
+			"url": "https://seed-design.io/react/components/wheel-picker",
+			"previews": {
+				"light": 4,
+				"dark": 4
+			}
+		}
+	]
+}

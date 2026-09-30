@@ -338,6 +338,28 @@
 		"loader": "--loader-stroke",
 		"skeleton": "--skeleton-fill"
 	},
+	"motion": {
+		"source": "toss-docs MCP (apps_in_toss, tds_mobile, tds_react_native), 2026-09-30. No doc states a page-transition duration, easing or keyframe.",
+		"pageTransition": {
+			"owner": "platform: React Native screens use React Navigation (Granite) stack defaults; WebView screens follow the app's own web router unchanged (documentation/react-native/screen-navigation/navigation.md)",
+			"backGesture": "iOS WebView swipe back/forward is on by default (webView.allowsBackForwardNavigationGestures = true); Android system back must go back or close the mini-app",
+			"budget": "Scroll, touch and screen-transition response must not lag 2s or more (checklist/app-*.md)",
+			"doNot": [
+				"force a user action with a bottom sheet on a screen transition",
+				"auto-open a bottom sheet (login, consent) on entry",
+				"show a loading animation when nothing is being waited on",
+				"add decorative effects (particles, heavy gradients); 3D graphics or animation only from Toss-provided modules"
+			],
+			"interstitialAd": "full-screen ads appear only at step boundaries of a transition (level done, booking done), never on intro/loading/cutscene/modal screens"
+		},
+		"enter": {
+			"bottomCta": "showAfterDelay { animation: slide | fade | scale, delay: seconds }; show toggles an animated hide/show separate from the first entrance; hideOnScroll + hideOnScrollDistanceThreshold (px, default 1). Avoid animating opacity or bottom while the keyboard is up.",
+			"bottomSheet": "slide-up on open, default on (animation = true); animationDelay in ms",
+			"toast": "visible 3000ms (fixed in app); web default 5000ms when it carries a button; duration prop is web-only",
+			"progressBar": "withAnimation eases progress changes (default off)"
+		},
+		"snippets": "components/bottom-sheet.svelte (0.3s) and toast.svelte (0.25s) borrow --panel-fold-ease; those timings are not TDS values"
+	},
 	"notLinear": {
 		"edges": "Boundaries are 1px hairlines between rows or a 0.8px greyOpacity100 rule on wells. Cards do not float on shadows.",
 		"elevation": "Only floating layers (toast, tooltip, menu, segmented thumb) carry shadows; screens stack by surface-grey vs surface-base.",
@@ -376,6 +398,7 @@
 		"Rows inset --row-inset (24), fields inset --field-inset (20), CTA bar --cta-inset (20)",
 		"Button labels leading --control-label-leading, list texts --text-row*",
 		"Every colour through a role or ramp token — never a hex — so .dark works",
-		"Dim overlays with --overlay-dimmed (20% light / 56% dark)"
+		"Dim overlays with --overlay-dimmed (20% light / 56% dark)",
+		"Page transitions use the platform stack or web router default; no custom page animation, no bottom sheet forced on transition (motion)"
 	]
 }

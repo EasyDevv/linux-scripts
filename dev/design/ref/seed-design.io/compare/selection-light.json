@@ -1,0 +1,50 @@
+[
+	{
+		"id": "checkbox-neutral",
+		"live": "checkbox:3",
+		"heading": "Tones and Variants",
+		"diffs": []
+	},
+	{
+		"id": "checkbox-indeterminate",
+		"live": "checkbox:4",
+		"heading": "Indeterminate",
+		"diffs": []
+	},
+	{
+		"id": "select-box-preview",
+		"live": "select-box:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "select-box-collapsible-footer",
+		"live": "select-box:6",
+		"heading": "Collapsible Footer",
+		"diffs": []
+	},
+	{
+		"id": "chip-prefix-icon",
+		"live": "chip:7",
+		"heading": "Prefix Icon",
+		"diffs": []
+	},
+	{
+		"id": "chip-suffix-icon",
+		"live": "chip:8",
+		"heading": "Suffix Icon",
+		"diffs": []
+	},
+	{
+		"id": "tag-group-preview",
+		"live": "tag-group:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "tag-group-wrapping",
+		"live": "tag-group:7",
+		"heading": "Wrapping Behavior",
+		"diffs": []
+	}
+]

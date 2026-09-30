@@ -1,0 +1,412 @@
+[
+	{
+		"id": "callout-preview",
+		"live": "callout:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "callout-text-only",
+		"live": "callout:1",
+		"heading": "콘텐츠 구성",
+		"diffs": []
+	},
+	{
+		"id": "callout-with-icon",
+		"live": "callout:2",
+		"heading": "콘텐츠 구성",
+		"diffs": []
+	},
+	{
+		"id": "callout-with-title",
+		"live": "callout:3",
+		"heading": "콘텐츠 구성",
+		"diffs": [
+			"callout__content#0 size live 563.9x19 draft 564.7x19",
+			"callout__content#1 size live 563.9x19 draft 564.7x19",
+			"callout__content#2 size live 563.9x19 draft 564.7x19",
+			"callout__title#0 \"타이틀\" size live 42.8x16.8 draft 39.5x16.8",
+			"callout__title#1 \"타이틀\" size live 42.8x16.8 draft 39.5x16.8",
+			"callout__title#2 \"타이틀\" size live 42.8x16.8 draft 39.5x16.8"
+		]
+	},
+	{
+		"id": "callout-with-link",
+		"live": "callout:4",
+		"heading": "콘텐츠 구성",
+		"diffs": [
+			"callout__description#0 \"기능에 대한 안내 또는 유익한 내용을 전달해요. 콜아웃은 꼭 필요한 경우\" size live 528.2x16.8 draft 524.7x16.8",
+			"callout__description#1 \"기능에 대한 안내 또는 유익한 내용을 전달해요. 콜아웃은 꼭 필요한 경우\" size live 528.2x16.8 draft 524.7x16.8"
+		]
+	},
+	{
+		"id": "callout-with-all",
+		"live": "callout:5",
+		"heading": "콘텐츠 구성",
+		"diffs": [
+			"callout__content#0 size live 635x19 draft 636.3x19",
+			"callout__content#1 size live 635x19 draft 636.3x19",
+			"callout__title#0 \"타이틀\" size live 42.8x16.8 draft 39.5x16.8",
+			"callout__title#1 \"타이틀\" size live 42.8x16.8 draft 39.5x16.8",
+			"callout__description#0 \"기능에 대한 안내 또는 유익한 내용을 전달해요. 콜아웃은 꼭 필요한 경우\" size live 528.2x16.8 draft 524.7x16.8",
+			"callout__description#1 \"기능에 대한 안내 또는 유익한 내용을 전달해요. 콜아웃은 꼭 필요한 경우\" size live 528.2x16.8 draft 524.7x16.8"
+		]
+	},
+	{
+		"id": "callout-link-as-child",
+		"live": "callout:6",
+		"heading": "커스터마이징 가능한 요소",
+		"diffs": [
+			"callout__description#0 \"기능에 대한 안내 또는 유익한 내용을 전달해요. 콜아웃은 꼭 필요한 경우\" size live 528.2x16.8 draft 524.7x16.8",
+			"callout__description#1 \"기능에 대한 안내 또는 유익한 내용을 전달해요. 콜아웃은 꼭 필요한 경우\" size live 528.2x16.8 draft 524.7x16.8"
+		]
+	},
+	{
+		"id": "callout-neutral",
+		"live": "callout:7",
+		"heading": "톤",
+		"diffs": []
+	},
+	{
+		"id": "callout-informative",
+		"live": "callout:8",
+		"heading": "톤",
+		"diffs": []
+	},
+	{
+		"id": "callout-positive",
+		"live": "callout:9",
+		"heading": "톤",
+		"diffs": []
+	},
+	{
+		"id": "callout-warning",
+		"live": "callout:10",
+		"heading": "톤",
+		"diffs": []
+	},
+	{
+		"id": "callout-critical",
+		"live": "callout:11",
+		"heading": "톤",
+		"diffs": []
+	},
+	{
+		"id": "callout-magic",
+		"live": "callout:12",
+		"heading": "톤",
+		"diffs": []
+	},
+	{
+		"id": "page-banner-preview",
+		"live": "page-banner:0",
+		"heading": "",
+		"diffs": [
+			"seed-page-banner__closeButton seed-scale-feedback: live 1 node(s), draft 0",
+			"seed-page-banner__closeButton: draft-only ×1"
+		]
+	},
+	{
+		"id": "page-banner-with-button",
+		"live": "page-banner:1",
+		"heading": "With Button",
+		"diffs": [
+			"seed-page-banner__button seed-scale-feedback: live 1 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×1"
+		]
+	},
+	{
+		"id": "page-banner-button-as-child",
+		"live": "page-banner:2",
+		"heading": "Rendering PageBannerButton as a Child",
+		"diffs": [
+			"seed-page-banner__button seed-scale-feedback: live 1 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×1"
+		]
+	},
+	{
+		"id": "page-banner-neutral",
+		"live": "page-banner:3",
+		"heading": "Tones and Variants",
+		"diffs": [
+			"page-banner__title#0 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#1 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#2 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#3 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#4 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#5 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"seed-page-banner__button seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__closeButton seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×2",
+			"seed-page-banner__closeButton: draft-only ×2"
+		]
+	},
+	{
+		"id": "page-banner-informative",
+		"live": "page-banner:4",
+		"heading": "Tones and Variants",
+		"diffs": [
+			"page-banner__root#0 bg live \"rgb(237, 250, 246)\" draft \"rgb(239, 246, 255)\"",
+			"page-banner__root#1 bg live \"rgb(7, 145, 113)\" draft \"rgb(33, 124, 249)\"",
+			"page-banner__root#2 bg live \"rgb(237, 250, 246)\" draft \"rgb(239, 246, 255)\"",
+			"page-banner__root#3 bg live \"rgb(7, 145, 113)\" draft \"rgb(33, 124, 249)\"",
+			"page-banner__root#4 bg live \"rgb(237, 250, 246)\" draft \"rgb(239, 246, 255)\"",
+			"page-banner__root#5 bg live \"rgb(7, 145, 113)\" draft \"rgb(33, 124, 249)\"",
+			"prefix-icon#0 color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"prefix-icon#2 color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"prefix-icon#4 color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"page-banner__title#0 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#0 \"미노출\" color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"page-banner__title#1 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#2 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#2 \"미노출\" color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"page-banner__title#3 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#4 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#4 \"미노출\" color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"page-banner__title#5 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__description#0 \"사업자 정보를 등록해주세요.\" color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"page-banner__description#2 \"사업자 정보를 등록해주세요.\" color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"page-banner__description#4 \"사업자 정보를 등록해주세요.\" color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"seed-page-banner__button seed-scale-feedback: live 2 node(s), draft 0",
+			"suffix-icon#0 color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"suffix-icon#2 color live \"rgb(7, 84, 69)\" draft \"rgb(11, 69, 150)\"",
+			"seed-page-banner__closeButton seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×2",
+			"seed-page-banner__closeButton: draft-only ×2"
+		]
+	},
+	{
+		"id": "page-banner-positive",
+		"live": "page-banner:5",
+		"heading": "Tones and Variants",
+		"diffs": [
+			"page-banner__root#0 bg live \"rgb(239, 246, 255)\" draft \"rgb(237, 250, 246)\"",
+			"page-banner__root#1 bg live \"rgb(33, 124, 249)\" draft \"rgb(7, 145, 113)\"",
+			"page-banner__root#2 bg live \"rgb(239, 246, 255)\" draft \"rgb(237, 250, 246)\"",
+			"page-banner__root#3 bg live \"rgb(33, 124, 249)\" draft \"rgb(7, 145, 113)\"",
+			"page-banner__root#4 bg live \"rgb(239, 246, 255)\" draft \"rgb(237, 250, 246)\"",
+			"page-banner__root#5 bg live \"rgb(33, 124, 249)\" draft \"rgb(7, 145, 113)\"",
+			"prefix-icon#0 color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"prefix-icon#2 color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"prefix-icon#4 color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"page-banner__title#0 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#0 \"미노출\" color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"page-banner__title#1 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#2 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#2 \"미노출\" color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"page-banner__title#3 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#4 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#4 \"미노출\" color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"page-banner__title#5 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__description#0 \"사업자 정보를 등록해주세요.\" color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"page-banner__description#2 \"사업자 정보를 등록해주세요.\" color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"page-banner__description#4 \"사업자 정보를 등록해주세요.\" color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"seed-page-banner__button seed-scale-feedback: live 2 node(s), draft 0",
+			"suffix-icon#0 color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"suffix-icon#2 color live \"rgb(11, 69, 150)\" draft \"rgb(7, 84, 69)\"",
+			"seed-page-banner__closeButton seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×2",
+			"seed-page-banner__closeButton: draft-only ×2"
+		]
+	},
+	{
+		"id": "page-banner-warning",
+		"live": "page-banner:6",
+		"heading": "Tones and Variants",
+		"diffs": [
+			"page-banner__title#0 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#1 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#2 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#3 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#4 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#5 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"seed-page-banner__button seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__closeButton seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×2",
+			"seed-page-banner__closeButton: draft-only ×2"
+		]
+	},
+	{
+		"id": "page-banner-critical",
+		"live": "page-banner:7",
+		"heading": "Tones and Variants",
+		"diffs": [
+			"page-banner__title#0 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#1 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#2 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#3 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#4 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"page-banner__title#5 \"미노출\" size live 42.8x16.8 draft 39.5x16.8",
+			"seed-page-banner__button seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__closeButton seed-scale-feedback: live 2 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×2",
+			"seed-page-banner__closeButton: draft-only ×2"
+		]
+	},
+	{
+		"id": "page-banner-magic",
+		"live": "page-banner:8",
+		"heading": "Tones and Variants",
+		"diffs": [
+			"page-banner__title#0 \"새로운 기능\" size live 70.2x16.8 draft 67x16.8",
+			"page-banner__title#1 \"새로운 기능\" size live 70.2x16.8 draft 67x16.8",
+			"page-banner__title#2 \"새로운 기능\" size live 70.2x16.8 draft 67x16.8",
+			"seed-page-banner__button seed-scale-feedback: live 1 node(s), draft 0",
+			"seed-page-banner__closeButton seed-scale-feedback: live 1 node(s), draft 0",
+			"seed-page-banner__button: draft-only ×1",
+			"seed-page-banner__closeButton: draft-only ×1"
+		]
+	},
+	{
+		"id": "progress-circle-preview",
+		"live": "progress-circle:0",
+		"heading": "",
+		"diffs": [
+			"progress-circle__root#0 size live 43.7x43.7 draft 54.3x54.3",
+			"progress-circle__track#0 size live 38.2x38.2 draft 47.5x47.5",
+			"progress-circle__range#0 size live 38.2x38.2 draft 47.5x47.5"
+		]
+	},
+	{
+		"id": "progress-circle-neutral",
+		"live": "progress-circle:1",
+		"heading": "Neutral",
+		"diffs": [
+			"progress-circle__root#0 size live 50.1x50.1 draft 54.3x54.3",
+			"progress-circle__track#0 size live 43.8x43.8 draft 47.5x47.5",
+			"progress-circle__range#0 size live 43.8x43.8 draft 47.5x47.5"
+		]
+	},
+	{
+		"id": "progress-circle-brand",
+		"live": "progress-circle:2",
+		"heading": "Brand",
+		"diffs": [
+			"progress-circle__root#0 size live 50.1x50.1 draft 54.3x54.3",
+			"progress-circle__track#0 size live 43.8x43.8 draft 47.5x47.5",
+			"progress-circle__range#0 size live 43.8x43.8 draft 47.5x47.5"
+		]
+	},
+	{
+		"id": "progress-circle-static-white",
+		"live": "progress-circle:3",
+		"heading": "Static White",
+		"diffs": [
+			"progress-circle__root#0 size live 50.1x50.1 draft 54.3x54.3",
+			"progress-circle__track#0 size live 43.8x43.8 draft 47.5x47.5",
+			"progress-circle__range#0 size live 43.8x43.8 draft 47.5x47.5"
+		]
+	},
+	{
+		"id": "progress-circle-40",
+		"live": "progress-circle:4",
+		"heading": "Size=40",
+		"diffs": [
+			"progress-circle__root#0 size live 50.1x50.1 draft 54.3x54.3",
+			"progress-circle__track#0 size live 43.8x43.8 draft 47.5x47.5",
+			"progress-circle__range#0 size live 43.8x43.8 draft 47.5x47.5"
+		]
+	},
+	{
+		"id": "progress-circle-24",
+		"live": "progress-circle:5",
+		"heading": "Size=24",
+		"diffs": [
+			"progress-circle__root#0 size live 30x30 draft 32.6x32.6",
+			"progress-circle__track#0 size live 26.3x26.3 draft 28.5x28.5",
+			"progress-circle__range#0 size live 26.3x26.3 draft 28.5x28.5"
+		]
+	},
+	{
+		"id": "progress-circle-determinate",
+		"live": "progress-circle:6",
+		"heading": "Determinate",
+		"diffs": []
+	},
+	{
+		"id": "progress-circle-indeterminate",
+		"live": "progress-circle:7",
+		"heading": "Indeterminate",
+		"diffs": [
+			"progress-circle__root#0 size live 50.1x50.1 draft 54.3x54.3",
+			"progress-circle__track#0 size live 43.8x43.8 draft 47.5x47.5",
+			"progress-circle__range#0 size live 43.8x43.8 draft 47.5x47.5"
+		]
+	},
+	{
+		"id": "skeleton-preview",
+		"live": "skeleton:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "skeleton-line-height",
+		"live": "skeleton:1",
+		"heading": "Line Height",
+		"diffs": []
+	},
+	{
+		"id": "skeleton-radius",
+		"live": "skeleton:2",
+		"heading": "Radius",
+		"diffs": []
+	},
+	{
+		"id": "skeleton-tone",
+		"live": "skeleton:3",
+		"heading": "Tone",
+		"diffs": []
+	},
+	{
+		"id": "help-bubble-preview",
+		"live": "help-bubble:0",
+		"heading": "",
+		"diffs": [
+			"help-bubble__positioner#0 size live 267.4x38 draft 83.8x118",
+			"help-bubble__positioner#0 pad live \"0\" draft \"0 0 8\"",
+			"help-bubble__content#0 size live 267.4x38 draft 83.8x110",
+			"help-bubble__body#0 size live 243.4x18 draft 59.9x90",
+			"help-bubble__title#0 \"아래 버튼이나 바깥 영역을 클릭해서 닫아보세요.\" size live 243.4x18 draft 59.9x90"
+		]
+	},
+	{
+		"id": "help-bubble-close-button",
+		"live": "help-bubble:6",
+		"heading": "Close Button",
+		"diffs": [
+			"help-bubble__positioner#0 size live 280x76 draft 167x102",
+			"help-bubble__positioner#0 pad live \"0\" draft \"0 0 8\"",
+			"help-bubble__content#0 size live 280x76 draft 167x94",
+			"help-bubble__body#0 size live 238x56 draft 125x74",
+			"help-bubble__title#0 \"Close Button\" size live 238x18 draft 125x18",
+			"help-bubble__description#0 \"showCloseButton으로 닫기 버튼을 추가할 수 있어요.\" size live 238x36 draft 125x54",
+			"seed-help-bubble__closeButton seed-scale-feedback: live 1 node(s), draft 0",
+			"seed-help-bubble__closeButton: draft-only ×1"
+		]
+	},
+	{
+		"id": "help-bubble-description",
+		"live": "help-bubble:7",
+		"heading": "Description",
+		"diffs": [
+			"help-bubble__positioner#0 size live 237.9x58 draft 61x174",
+			"help-bubble__positioner#0 pad live \"0\" draft \"0 0 8\"",
+			"help-bubble__content#0 size live 237.9x58 draft 61x166",
+			"help-bubble__body#0 size live 213.9x38 draft 37x146",
+			"help-bubble__title#0 \"제목\" size live 213.9x18 draft 37x18",
+			"help-bubble__description#0 \"제목 아래에 부연 설명을 덧붙일 수 있어요.\" size live 213.9x18 draft 37x126"
+		]
+	},
+	{
+		"id": "help-bubble-title-only",
+		"live": "help-bubble:8",
+		"heading": "Title Only",
+		"diffs": [
+			"help-bubble__positioner#0 size live 82.7x38 draft 52.2x64",
+			"help-bubble__positioner#0 pad live \"0\" draft \"0 0 8\"",
+			"help-bubble__content#0 size live 82.7x38 draft 52.2x56",
+			"help-bubble__body#0 size live 58.7x18 draft 28.2x36",
+			"help-bubble__title#0 \"Title Only\" size live 58.7x18 draft 28.2x36"
+		]
+	}
+]

@@ -197,6 +197,27 @@ Token layers (linear's structure): palette ramps → roles (`--surface-*`, `--in
 and `@theme inline` only points at them: Tailwind v4 emits `@theme` variables only when CSS it
 compiles references them, so a snippet's scoped `var(--text-t5)` would otherwise be undefined.
 
+## Motion / page transitions
+
+Searched with the toss-docs MCP (`apps_in_toss`, `tds_mobile`, `tds_react_native`, examples) on 2026-09-30
+for 화면 전환 / 애니메이션 / transition / navigation. **No page-transition duration, easing or keyframe
+is documented.** Only these rules and component entrances exist (recorded in `design.json` `motion`):
+
+- `documentation/react-native/screen-navigation/navigation.md` — Granite routing runs on React Navigation;
+  "WebView 환경에서는 프로젝트에 설정한 웹 라우터(예: React Router)의 규칙을 수정 없이 그대로 따릅니다."
+- `documentation/integration/props.md` — `allowsBackForwardNavigationGestures` (iOS, default `true`): swipe back/forward.
+- `checklist/app-nongame.md`, `app-game.md` — "스크롤, 터치, 화면 전환 등 인터랙션 반응이 2초 이상 지연되지 않아요.";
+  "특정 화면 전환 시 바텀시트로 사용자의 행동을 강제로 유도하지 않아요."; Android back goes back or closes.
+- `design/consumer-ux-guide.md` — no decorative effects; no loading animation when nothing is awaited;
+  "3D 그래픽이나 애니메이션은 토스에서 제공한 모듈에 포함된 리소스만 사용할 수 있어요."
+- `guide/monetization/in-app-ad.md` — interstitial ads show "화면 전환 시점", at step boundaries.
+- TDS Mobile BottomCTA `showAfterDelay { animation: 'slide' | 'fade' | 'scale', delay }` (seconds), `show`,
+  `hideOnScroll`; BottomSheet `animation` (slide-up, default `true`) + `animationDelay` (ms);
+  Toast 3000ms in app, 5s on web with a button; RN ProgressBar `withAnimation`.
+
+No `layout.css` token was added: the docs give no number to promote. The sheet (0.3s) and toast (0.25s)
+snippet timings reuse `--panel-fold-ease` and remain unmeasured.
+
 ## Not measured
 
 - **Dark rendering of components.** The docs force `.light`; dark values come from the adaptive

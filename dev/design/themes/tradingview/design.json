@@ -1,0 +1,80 @@
+{
+	"slug": "tradingview",
+	"measuredAt": "2026-09-29",
+	"viewport": {"width": 1440, "height": 900, "scheme": "dark"},
+	"thesis": "Black canvas, top header, flush content, and a right widget bar (panel + icon toolbar). Density comes from 41px table rows and hairline dividers, not from cards. Numbers carry the color: up and down are the only saturated inks besides the brand blue.",
+	"applyOnto": "existing draft skeleton",
+	"doNotCopy": ["TV wordmark and logo", "gradient 업그레이드 CTA", "broker/partner promos (TradeStation)", "Copilot and onboarding popovers", "chart canvas internals (candles, drawing tools)", "live ticker data", "ads"],
+	"families": ["product-table", "overview-cards", "chart-tool"],
+	"shell": {
+		"model": "top-header-plus-right-widgetbar",
+		"canvas": "--background",
+		"header": {"height": "--header-height", "fill": "--background", "hairline": false, "left": ["logo 34px", "search pill", "nav links"], "right": ["avatar", "primary CTA"], "navLink": {"height": "--header-control-height", "radius": "--radius-pill", "font": "--text-heading-sm", "color": "--foreground", "active": "--brand-link", "pad": "8px 12px"}},
+		"main": {"fill": "--background", "flush": true, "gutter": "--page-gutter", "noFloatingPanel": true, "inset": "--panel-inset", "shadow": "--panel-shadow"},
+		"sidebar": {"side": "right", "primitive": "Sidebar", "fill": "--sidebar", "width": "--sidebar-width", "collapsible": "offcanvas", "hideBelow": "--sidebar-hide-below", "collapse": {"mode": "slide-end", "duration": "--sidebar-collapse-duration", "ease": "--sidebar-collapse-ease"}, "borderAgainstCanvas": false, "seamToToolbar": "1px canvas gap", "widgetHeader": {"height": "--widget-header-height", "pad": "0 16px", "title": "--text-body-base", "weight": 600}, "rows": {"height": "--row-height-compact", "divider": "--border"}},
+		"toolbar": {"side": "right", "width": "--toolbar-width", "fill": "--sidebar", "button": "--toolbar-button", "active": "--accent", "foldRule": "the active widget icon toggles the widget panel; clicking it again closes the panel"},
+		"footer": "none"
+	},
+	"type": {
+		"font": "--font-sans",
+		"notDocumentBody": true,
+		"roles": [
+			{"id": "pageTitle", "font": "--text-title", "weight": 600, "color": "--foreground", "where": "포트폴리오, 모든 주식, 달력 h1; optional chevron when it opens a switcher"},
+			{"id": "pageKicker", "font": "--text-body-base", "weight": 400, "color": "--foreground", "where": "스탁 스크리너 above the h1"},
+			{"id": "kpiValue", "font": "--text-display", "weight": 700, "color": "--foreground", "where": "portfolio value −28,062.41"},
+			{"id": "kpiUnit", "font": "--text-micro", "weight": 400, "color": "--foreground", "transform": "uppercase", "where": "USD, KRW beside a value"},
+			{"id": "kpiDelta", "font": "--text-heading-sm", "weight": 500, "color": "--positive | --negative", "where": "−23.33% beside the value"},
+			{"id": "cardTitle", "font": "--text-card-title", "weight": 400, "color": "--foreground", "where": "1_주식 포트폴리오"},
+			{"id": "sectionHeading", "font": "--text-heading", "weight": 600, "color": "--foreground", "where": "CSV 파일 업로드, 수익률 비교"},
+			{"id": "statLabel", "font": "--text-body-sm", "weight": 400, "color": "--muted-foreground", "where": "수익, 홀딩스, 업데이트됨"},
+			{"id": "statValue", "font": "--text-heading-sm", "weight": 500, "color": "--foreground", "where": "−23.28%, 20"},
+			{"id": "columnHeader", "font": "--text-body-base", "weight": 400, "color": "--muted-foreground", "where": "심볼, 가격, 발표, 예측, 이전"},
+			{"id": "cell", "font": "--text-body-base", "weight": 400, "color": "--foreground", "align": "numbers right", "where": "table cells"},
+			{"id": "cellDelta", "font": "--text-body-base", "weight": 400, "color": "--positive | --negative", "where": "+0.93%, −3.16%"},
+			{"id": "cellUnit", "font": "--text-micro", "weight": 500, "color": "--foreground", "transform": "uppercase", "where": "KRW after a price"},
+			{"id": "symbolBadge", "font": "--text-label-sm", "weight": 600, "color": "--foreground", "fill": "--badge", "radius": "--radius-badge", "height": "24px", "pad": "0 8px", "where": "005930"},
+			{"id": "groupBarLabel", "font": "--text-body-base", "weight": 600, "color": "--foreground", "where": "9월 29일 화요일"},
+			{"id": "tab", "font": "--text-body-lg", "weight": 400, "where": "chip tabs, square tabs, filter pills"},
+			{"id": "caption", "font": "--text-label-sm", "weight": 400, "color": "--muted-foreground", "where": "day-card labels, axis ticks"},
+			{"id": "readingNote", "font": "--text-body-sm", "weight": 400, "color": "--muted-foreground", "where": "one-line 읽는 법 under a chart (project addition, same role as statLabel)"}
+		]
+	},
+	"controls": {
+		"chipTabs": {"height": "--control-height-nav", "radius": "--radius-pill", "pad": "0 15px", "font": "--text-body-lg", "selected": {"fill": "--tab-selected", "color": "--tab-selected-foreground"}, "idle": {"fill": "--tab-idle", "color": "--foreground"}, "gap": "8px", "where": "이코노믹/어닝/배당/IPO, 차트/맵, 체인/전략 빌더"},
+		"squareTabs": {"height": "--control-height-nav", "radius": "--radius-md", "pad": "0 12px", "font": "--text-body-lg", "selected": {"fill": "--secondary", "color": "--foreground", "weight": 600}, "idle": {"transparent": true, "color": "--foreground"}, "where": "screener column sets 오버뷰/성과/테크니컬즈"},
+		"filterPill": {"height": "--control-height", "radius": "--radius", "border": "--input", "hairline": "--hairline-width", "transparent": true, "font": "--text-body-lg", "color": "--foreground", "trailing": "chevron-down", "where": "screener filters 지수, 가격, P/E"},
+		"outlineButton": {"height": "--control-height", "radius": "--radius", "border": "--input", "transparent": true, "pad": "0 11px", "font": "--text-body-lg", "where": "오늘, + 넣기"},
+		"ghostButton": {"height": "--control-height", "radius": "--radius", "transparent": true, "pad": "0 7px", "font": "--text-body-lg", "where": "모든 카테고리, time zone"},
+		"iconButton": {"size": "--icon-button", "radius": "--radius", "border": "--input", "transparent": true, "where": "settings, share, fullscreen, collapse"},
+		"commit": {"kind": "filled", "fill": "--primary", "color": "--primary-foreground", "radius": "--radius", "height": "--control-height", "font": "--text-body-lg", "note": "the live 업그레이드 gradient is brand marketing; product commits use --primary"},
+		"search": {"height": "--header-control-height", "radius": "--radius-pill", "fill": "--search-fill", "color": "--search-foreground", "pad": "6px", "where": "header 찾기 (Ctrl+K)"},
+		"dateNav": {"kind": "outline today + calendar icon + prev/next chevrons + range title", "title": "--text-card-title", "weight": 600}
+	},
+	"lists": {
+		"kind": "full-width table with hairline row dividers, no zebra, no cards",
+		"row": {"height": "--row-height", "divider": "--border", "hairline": "--hairline-width", "cellPad": "0 12px", "hover": "--accent"},
+		"header": {"height": "50px", "divider": "--input", "font": "--text-body-base", "color": "--muted-foreground", "sortIndicator": "arrow before the active column label"},
+		"groupBar": {"height": "--group-bar-height", "fill": "--group-bar", "pad": "0 20px", "accent": "4px start bar --foreground on the current group", "label": "groupBarLabel"},
+		"compactRow": {"height": "--row-height-compact", "where": "widget bar watchlist"},
+		"numbers": "right aligned; delta ink --positive/--negative; no +/- color on neutral values"
+	},
+	"cards": {
+		"summary": {"fill": "--inspector", "border": "--inspector-border", "hairline": "--hairline-width", "radius": "--radius-card", "pad": "16px", "where": "portfolio card"},
+		"action": {"fill": "--inspector", "border": "--inspector-border", "radius": "--radius-card", "pad": "41px 16px", "align": "center", "title": "sectionHeading", "body": "--text-body-base muted", "where": "CSV 파일 업로드, 수동으로 생성"},
+		"tile": {"fill": "--card", "radius": "--radius", "pad": "12px", "selected": "--secondary", "where": "calendar day cards, perf tiles in widget"},
+		"gridGap": "32px"
+	},
+	"charts": {
+		"canvas": "--background",
+		"series": ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"],
+		"up": "--positive",
+		"down": "--negative",
+		"grid": "--border",
+		"axis": "caption",
+		"watermark": false,
+		"heat": {"from": "--negative-strong", "mid": "--secondary", "to": "--positive-strong"}
+	},
+	"header": {"shared": true, "height": "--header-height", "title": {"font": "--text-title", "from": "nav item", "row": "below the header, not in it"}, "pageTools": {"row": "sibling row under the title", "height": "--control-height-nav", "commit": "ml-auto"}},
+	"notLinear": ["no floating inset panel: main is flush on the canvas", "no left rail: navigation is the top header; the rail is the right widget bar", "idle chip tabs are filled --tab-idle, selected is inverted --tab-selected", "page titles are 24px/600, not 13px panel labels"],
+	"checklist": ["numbers right aligned", "every delta colored by sign with a leading sign glyph (+, −)", "units in --text-micro uppercase after the value", "tables flush to --page-gutter", "one --primary commit per page"]
+}

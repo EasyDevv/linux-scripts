@@ -1,0 +1,385 @@
+{
+  "pages": [
+    {
+      "id": "chart",
+      "url": "https://kr.tradingview.com/chart/UUHUqxQe/"
+    },
+    {
+      "id": "screener-stock",
+      "url": "https://kr.tradingview.com/screener/"
+    },
+    {
+      "id": "screener-etf",
+      "url": "https://kr.tradingview.com/etf-screener/"
+    },
+    {
+      "id": "screener-bond",
+      "url": "https://kr.tradingview.com/bond-screener/"
+    },
+    {
+      "id": "screener-crypto",
+      "url": "https://kr.tradingview.com/crypto-coins-screener/"
+    },
+    {
+      "id": "screener-cex",
+      "url": "https://kr.tradingview.com/cex-screener/"
+    },
+    {
+      "id": "screener-dex",
+      "url": "https://kr.tradingview.com/dex-screener/"
+    },
+    {
+      "id": "screener-pine",
+      "url": "https://kr.tradingview.com/pine-screener/"
+    },
+    {
+      "id": "heatmap-stock",
+      "url": "https://kr.tradingview.com/heatmap/stock/#%7B%22dataSource%22%3A%22SPX500%22%2C%22blockColor%22%3A%22change%22%2C%22blockSize%22%3A%22market_cap_basic%22%2C%22grouping%22%3A%22sector%22%7D"
+    },
+    {
+      "id": "heatmap-etf",
+      "url": "https://kr.tradingview.com/heatmap/etf/#%7B%22dataSource%22%3A%22AllUSEtf%22%2C%22blockColor%22%3A%22change%22%2C%22blockSize%22%3A%22aum%22%2C%22grouping%22%3A%22asset_class%22%7D"
+    },
+    {
+      "id": "heatmap-crypto",
+      "url": "https://kr.tradingview.com/heatmap/crypto/#%7B%22dataSource%22%3A%22Crypto%22%2C%22blockColor%22%3A%2224h_close_change%7C5%22%2C%22blockSize%22%3A%22market_cap_calc%22%2C%22grouping%22%3A%22no_group%22%7D"
+    },
+    {
+      "id": "calendar-economic",
+      "url": "https://kr.tradingview.com/economic-calendar/"
+    },
+    {
+      "id": "calendar-earnings",
+      "url": "https://kr.tradingview.com/earnings-calendar/"
+    },
+    {
+      "id": "calendar-dividend",
+      "url": "https://kr.tradingview.com/dividend-calendar/"
+    },
+    {
+      "id": "calendar-ipo",
+      "url": "https://kr.tradingview.com/ipo-calendar/"
+    },
+    {
+      "id": "portfolios",
+      "url": "https://kr.tradingview.com/portfolios/"
+    },
+    {
+      "id": "yield-curves",
+      "url": "https://kr.tradingview.com/yield-curves/"
+    },
+    {
+      "id": "options",
+      "url": "https://kr.tradingview.com/options/chain/?symbol=CME_MINI%3AES1%21"
+    },
+    {
+      "id": "macro-maps",
+      "url": "https://kr.tradingview.com/macro-maps/"
+    },
+    {
+      "id": "pricing",
+      "url": "https://kr.tradingview.com/pricing/"
+    },
+    {
+      "id": "features",
+      "url": "https://kr.tradingview.com/features/"
+    },
+    {
+      "id": "whats-new",
+      "url": "https://kr.tradingview.com/support/whats-new/"
+    },
+    {
+      "id": "data-coverage",
+      "url": "https://kr.tradingview.com/data-coverage/"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    }
+  ],
+  "files": [
+    {
+      "page": "chart",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/chart/UUHUqxQe/",
+      "file": "desktop/chart.png"
+    },
+    {
+      "page": "screener-stock",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/screener/",
+      "file": "desktop/screener-stock.png"
+    },
+    {
+      "page": "screener-etf",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/etf-screener/",
+      "file": "desktop/screener-etf.png"
+    },
+    {
+      "page": "screener-bond",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/bond-screener/",
+      "file": "desktop/screener-bond.png"
+    },
+    {
+      "page": "screener-crypto",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/crypto-coins-screener/",
+      "file": "desktop/screener-crypto.png"
+    },
+    {
+      "page": "screener-cex",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/cex-screener/",
+      "file": "desktop/screener-cex.png"
+    },
+    {
+      "page": "screener-dex",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/dex-screener/",
+      "file": "desktop/screener-dex.png"
+    },
+    {
+      "page": "screener-pine",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/pine-screener/",
+      "file": "desktop/screener-pine.png"
+    },
+    {
+      "page": "heatmap-stock",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/heatmap/stock/#%7B%22dataSource%22%3A%22SPX500%22%2C%22blockColor%22%3A%22change%22%2C%22blockSize%22%3A%22market_cap_basic%22%2C%22grouping%22%3A%22sector%22%7D",
+      "file": "desktop/heatmap-stock.png"
+    },
+    {
+      "page": "heatmap-etf",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/heatmap/etf/#%7B%22dataSource%22%3A%22AllUSEtf%22%2C%22blockColor%22%3A%22change%22%2C%22blockSize%22%3A%22aum%22%2C%22grouping%22%3A%22asset_class%22%7D",
+      "file": "desktop/heatmap-etf.png"
+    },
+    {
+      "page": "heatmap-crypto",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/heatmap/crypto/#%7B%22dataSource%22%3A%22Crypto%22%2C%22blockColor%22%3A%2224h_close_change%7C5%22%2C%22blockSize%22%3A%22market_cap_calc%22%2C%22grouping%22%3A%22no_group%22%7D",
+      "file": "desktop/heatmap-crypto.png"
+    },
+    {
+      "page": "calendar-economic",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/economic-calendar/",
+      "file": "desktop/calendar-economic.png"
+    },
+    {
+      "page": "calendar-earnings",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/earnings-calendar/",
+      "file": "desktop/calendar-earnings.png"
+    },
+    {
+      "page": "calendar-dividend",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/dividend-calendar/",
+      "file": "desktop/calendar-dividend.png"
+    },
+    {
+      "page": "calendar-ipo",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/ipo-calendar/",
+      "file": "desktop/calendar-ipo.png"
+    },
+    {
+      "page": "portfolios",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/portfolios/",
+      "file": "desktop/portfolios.png"
+    },
+    {
+      "page": "yield-curves",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/yield-curves/",
+      "file": "desktop/yield-curves.png"
+    },
+    {
+      "page": "options",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/options/chain/?symbol=CME_MINI%3AES1%21",
+      "file": "desktop/options.png"
+    },
+    {
+      "page": "macro-maps",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/macro-maps/",
+      "file": "desktop/macro-maps.png"
+    },
+    {
+      "page": "pricing",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/pricing/",
+      "file": "desktop/pricing.png"
+    },
+    {
+      "page": "features",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/features/",
+      "file": "desktop/features.png"
+    },
+    {
+      "page": "whats-new",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/support/whats-new/",
+      "file": "desktop/whats-new.png"
+    },
+    {
+      "page": "data-coverage",
+      "viewport": "desktop",
+      "url": "https://kr.tradingview.com/data-coverage/",
+      "file": "desktop/data-coverage.png"
+    }
+  ],
+  "snapshots": [
+    {
+      "page": "chart",
+      "url": "https://kr.tradingview.com/chart/UUHUqxQe/",
+      "file": "pages/chart.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "screener-stock",
+      "url": "https://kr.tradingview.com/screener/",
+      "file": "pages/screener-stock.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "screener-etf",
+      "url": "https://kr.tradingview.com/etf-screener/",
+      "file": "pages/screener-etf.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "screener-bond",
+      "url": "https://kr.tradingview.com/bond-screener/",
+      "file": "pages/screener-bond.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "screener-crypto",
+      "url": "https://kr.tradingview.com/crypto-coins-screener/",
+      "file": "pages/screener-crypto.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "screener-cex",
+      "url": "https://kr.tradingview.com/cex-screener/",
+      "file": "pages/screener-cex.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "screener-dex",
+      "url": "https://kr.tradingview.com/dex-screener/",
+      "file": "pages/screener-dex.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "screener-pine",
+      "url": "https://kr.tradingview.com/pine-screener/",
+      "file": "pages/screener-pine.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "heatmap-stock",
+      "url": "https://kr.tradingview.com/heatmap/stock/#%7B%22dataSource%22%3A%22SPX500%22%2C%22blockColor%22%3A%22change%22%2C%22blockSize%22%3A%22market_cap_basic%22%2C%22grouping%22%3A%22sector%22%7D",
+      "file": "pages/heatmap-stock.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "heatmap-etf",
+      "url": "https://kr.tradingview.com/heatmap/etf/#%7B%22dataSource%22%3A%22AllUSEtf%22%2C%22blockColor%22%3A%22change%22%2C%22blockSize%22%3A%22aum%22%2C%22grouping%22%3A%22asset_class%22%7D",
+      "file": "pages/heatmap-etf.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "heatmap-crypto",
+      "url": "https://kr.tradingview.com/heatmap/crypto/#%7B%22dataSource%22%3A%22Crypto%22%2C%22blockColor%22%3A%2224h_close_change%7C5%22%2C%22blockSize%22%3A%22market_cap_calc%22%2C%22grouping%22%3A%22no_group%22%7D",
+      "file": "pages/heatmap-crypto.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "calendar-economic",
+      "url": "https://kr.tradingview.com/economic-calendar/",
+      "file": "pages/calendar-economic.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "calendar-earnings",
+      "url": "https://kr.tradingview.com/earnings-calendar/",
+      "file": "pages/calendar-earnings.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "calendar-dividend",
+      "url": "https://kr.tradingview.com/dividend-calendar/",
+      "file": "pages/calendar-dividend.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "calendar-ipo",
+      "url": "https://kr.tradingview.com/ipo-calendar/",
+      "file": "pages/calendar-ipo.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "portfolios",
+      "url": "https://kr.tradingview.com/portfolios/",
+      "file": "pages/portfolios.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "yield-curves",
+      "url": "https://kr.tradingview.com/yield-curves/",
+      "file": "pages/yield-curves.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "options",
+      "url": "https://kr.tradingview.com/options/chain/?symbol=CME_MINI%3AES1%21",
+      "file": "pages/options.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "macro-maps",
+      "url": "https://kr.tradingview.com/macro-maps/",
+      "file": "pages/macro-maps.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "pricing",
+      "url": "https://kr.tradingview.com/pricing/",
+      "file": "pages/pricing.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "features",
+      "url": "https://kr.tradingview.com/features/",
+      "file": "pages/features.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "whats-new",
+      "url": "https://kr.tradingview.com/support/whats-new/",
+      "file": "pages/whats-new.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "data-coverage",
+      "url": "https://kr.tradingview.com/data-coverage/",
+      "file": "pages/data-coverage.mhtml",
+      "format": "mhtml"
+    }
+  ],
+  "capturedAt": "2026-09-29T11:41:12.413Z"
+}

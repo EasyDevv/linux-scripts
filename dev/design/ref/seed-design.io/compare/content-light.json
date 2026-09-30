@@ -1,0 +1,302 @@
+[
+	{
+		"id": "list-preview",
+		"live": "list:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "list-header",
+		"live": "list:1",
+		"heading": "Using ListHeader",
+		"diffs": []
+	},
+	{
+		"id": "list-affixes",
+		"live": "list:2",
+		"heading": "Affixes (Prefix/Suffix)",
+		"diffs": []
+	},
+	{
+		"id": "list-switch",
+		"live": "list:4",
+		"heading": "inputs in List Items",
+		"diffs": []
+	},
+	{
+		"id": "list-check",
+		"live": "list:5",
+		"heading": "inputs in List Items",
+		"diffs": []
+	},
+	{
+		"id": "list-radio",
+		"live": "list:6",
+		"heading": "inputs in List Items",
+		"diffs": []
+	},
+	{
+		"id": "list-highlighted",
+		"live": "list:8",
+		"heading": "Variants",
+		"diffs": []
+	},
+	{
+		"id": "list-alignment",
+		"live": "list:10",
+		"heading": "Alignment",
+		"diffs": []
+	},
+	{
+		"id": "accordion-preview",
+		"live": "accordion:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "accordion-inline",
+		"live": "accordion:1",
+		"heading": "Inline Variant",
+		"diffs": []
+	},
+	{
+		"id": "accordion-separated",
+		"live": "accordion:2",
+		"heading": "Separated",
+		"diffs": []
+	},
+	{
+		"id": "accordion-size",
+		"live": "accordion:5",
+		"heading": "Size",
+		"diffs": []
+	},
+	{
+		"id": "accordion-prefix",
+		"live": "accordion:6",
+		"heading": "Prefix",
+		"diffs": []
+	},
+	{
+		"id": "accordion-description",
+		"live": "accordion:7",
+		"heading": "Description",
+		"diffs": []
+	},
+	{
+		"id": "accordion-disabled",
+		"live": "accordion:8",
+		"heading": "Disabled",
+		"diffs": []
+	},
+	{
+		"id": "accordion-default-expanded",
+		"live": "accordion:11",
+		"heading": "Default Expanded",
+		"diffs": []
+	},
+	{
+		"id": "avatar-preview",
+		"live": "avatar:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "avatar-size",
+		"live": "avatar:1",
+		"heading": "Size",
+		"diffs": []
+	},
+	{
+		"id": "avatar-badge",
+		"live": "avatar:2",
+		"heading": "Badge & Badge Mask",
+		"diffs": [
+			"seed-avatar__badge seed-box: live 1 node(s), draft 0",
+			"seed-avatar__badge: live 2 node(s), draft 3",
+			"avatar__badge#0 radius live \"0\" draft \"9999\""
+		]
+	},
+	{
+		"id": "avatar-stack",
+		"live": "avatar:3",
+		"heading": "Stack",
+		"diffs": []
+	},
+	{
+		"id": "avatar-fallback",
+		"live": "avatar:4",
+		"heading": "Fallback Image",
+		"diffs": []
+	},
+	{
+		"id": "identity-placeholder",
+		"live": "identity-placeholder:1",
+		"heading": "Identity",
+		"diffs": []
+	},
+	{
+		"id": "badge-preview",
+		"live": "badge:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "badge-truncating",
+		"live": "badge:1",
+		"heading": "Truncating Behavior",
+		"diffs": []
+	},
+	{
+		"id": "badge-neutral",
+		"live": "badge:2",
+		"heading": "Tones and Variants",
+		"diffs": []
+	},
+	{
+		"id": "badge-brand",
+		"live": "badge:3",
+		"heading": "Tones and Variants",
+		"diffs": []
+	},
+	{
+		"id": "badge-informative",
+		"live": "badge:4",
+		"heading": "Tones and Variants",
+		"diffs": []
+	},
+	{
+		"id": "badge-positive",
+		"live": "badge:5",
+		"heading": "Tones and Variants",
+		"diffs": []
+	},
+	{
+		"id": "badge-warning",
+		"live": "badge:6",
+		"heading": "Tones and Variants",
+		"diffs": []
+	},
+	{
+		"id": "badge-critical",
+		"live": "badge:7",
+		"heading": "Tones and Variants",
+		"diffs": []
+	},
+	{
+		"id": "divider-preview",
+		"live": "divider:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "divider-orientation",
+		"live": "divider:1",
+		"heading": "Orientation",
+		"diffs": []
+	},
+	{
+		"id": "divider-inset",
+		"live": "divider:2",
+		"heading": "Inset",
+		"diffs": []
+	},
+	{
+		"id": "article-preview",
+		"live": "article:0",
+		"heading": "",
+		"diffs": [
+			"article box#0 gap live \"8\" draft \"0\""
+		]
+	},
+	{
+		"id": "aspect-ratio-preview",
+		"live": "aspect-ratio:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "aspect-ratio-ratio",
+		"live": "aspect-ratio:1",
+		"heading": "Ratio",
+		"diffs": []
+	},
+	{
+		"id": "content-placeholder-type",
+		"live": "content-placeholder:1",
+		"heading": "Type Preset",
+		"diffs": []
+	},
+	{
+		"id": "image-frame-preview",
+		"live": "image-frame:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "image-frame-ratio",
+		"live": "image-frame:1",
+		"heading": "Ratio",
+		"diffs": []
+	},
+	{
+		"id": "image-frame-radius",
+		"live": "image-frame:2",
+		"heading": "Border Radius",
+		"diffs": []
+	},
+	{
+		"id": "image-frame-stroke",
+		"live": "image-frame:3",
+		"heading": "Stroke",
+		"diffs": []
+	},
+	{
+		"id": "image-frame-fallback",
+		"live": "image-frame:4",
+		"heading": "Fallback Image",
+		"diffs": []
+	},
+	{
+		"id": "image-frame-overlay",
+		"live": "image-frame:5",
+		"heading": "Overlay",
+		"diffs": []
+	},
+	{
+		"id": "image-frame-overlay-multiple",
+		"live": "image-frame:6",
+		"heading": "Overlay",
+		"diffs": []
+	},
+	{
+		"id": "manner-temp-preview",
+		"live": "manner-temp:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "manner-temp-badge-preview",
+		"live": "manner-temp-badge:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "result-section-preview",
+		"live": "result-section:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "result-section-large",
+		"live": "result-section:1",
+		"heading": "Sizes",
+		"diffs": []
+	},
+	{
+		"id": "result-section-medium",
+		"live": "result-section:2",
+		"heading": "Sizes",
+		"diffs": []
+	}
+]

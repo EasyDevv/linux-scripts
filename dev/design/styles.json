@@ -38,5 +38,15 @@
 		"slug": "toss",
 		"label": "Toss",
 		"scheme": "light"
+	},
+	{
+		"slug": "daangn",
+		"label": "당근",
+		"scheme": "light"
+	},
+	{
+		"slug": "tradingview",
+		"label": "TradingView",
+		"scheme": "dark"
 	}
 ]

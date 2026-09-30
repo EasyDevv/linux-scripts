@@ -1,0 +1,212 @@
+[
+	{
+		"id": "action-button",
+		"live": "action-button:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "action-button-brand-solid",
+		"live": "action-button:1",
+		"heading": "Brand Solid",
+		"diffs": []
+	},
+	{
+		"id": "action-button-neutral-solid",
+		"live": "action-button:2",
+		"heading": "Neutral Solid",
+		"diffs": []
+	},
+	{
+		"id": "action-button-neutral-weak",
+		"live": "action-button:3",
+		"heading": "Neutral Weak",
+		"diffs": []
+	},
+	{
+		"id": "action-button-critical-solid",
+		"live": "action-button:4",
+		"heading": "Critical Solid",
+		"diffs": []
+	},
+	{
+		"id": "action-button-brand-outline",
+		"live": "action-button:5",
+		"heading": "Brand Outline",
+		"diffs": []
+	},
+	{
+		"id": "action-button-neutral-outline",
+		"live": "action-button:6",
+		"heading": "Neutral Outline",
+		"diffs": []
+	},
+	{
+		"id": "action-button-ghost",
+		"live": "action-button:7",
+		"heading": "Ghost",
+		"diffs": []
+	},
+	{
+		"id": "action-button-icon-only",
+		"live": "action-button:8",
+		"heading": "Icon Only",
+		"diffs": []
+	},
+	{
+		"id": "action-button-prefix-icon",
+		"live": "action-button:9",
+		"heading": "Prefix Icon",
+		"diffs": []
+	},
+	{
+		"id": "action-button-suffix-icon",
+		"live": "action-button:10",
+		"heading": "Suffix Icon",
+		"diffs": []
+	},
+	{
+		"id": "action-button-disabled",
+		"live": "action-button:11",
+		"heading": "Disabled",
+		"diffs": []
+	},
+	{
+		"id": "action-button-loading",
+		"live": "action-button:12",
+		"heading": "Loading",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-preview",
+		"live": "toggle-button:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-brand-solid",
+		"live": "toggle-button:1",
+		"heading": "Brand Solid",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-neutral-weak",
+		"live": "toggle-button:2",
+		"heading": "Neutral Weak",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-small",
+		"live": "toggle-button:3",
+		"heading": "Small",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-xsmall",
+		"live": "toggle-button:4",
+		"heading": "Xsmall",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-prefix-icon",
+		"live": "toggle-button:5",
+		"heading": "Prefix Icon",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-disabled",
+		"live": "toggle-button:6",
+		"heading": "Disabled",
+		"diffs": []
+	},
+	{
+		"id": "toggle-button-loading",
+		"live": "toggle-button:7",
+		"heading": "Loading",
+		"diffs": []
+	},
+	{
+		"id": "reaction-button-preview",
+		"live": "reaction-button:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "reaction-button-small",
+		"live": "reaction-button:1",
+		"heading": "Small",
+		"diffs": []
+	},
+	{
+		"id": "reaction-button-xsmall",
+		"live": "reaction-button:2",
+		"heading": "Xsmall",
+		"diffs": []
+	},
+	{
+		"id": "reaction-button-disabled",
+		"live": "reaction-button:3",
+		"heading": "Disabled",
+		"diffs": []
+	},
+	{
+		"id": "reaction-button-loading",
+		"live": "reaction-button:4",
+		"heading": "Loading",
+		"diffs": []
+	},
+	{
+		"id": "floating-action-button-preview",
+		"live": "floating-action-button:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "floating-action-button-extended",
+		"live": "floating-action-button:1",
+		"heading": "Extended",
+		"diffs": []
+	},
+	{
+		"id": "floating-action-button-float",
+		"live": "floating-action-button:2",
+		"heading": "Float Composition",
+		"diffs": []
+	},
+	{
+		"id": "contextual-floating-button-preview",
+		"live": "contextual-floating-button:0",
+		"heading": "",
+		"diffs": []
+	},
+	{
+		"id": "contextual-floating-button-float",
+		"live": "contextual-floating-button:1",
+		"heading": "Float Composition",
+		"diffs": []
+	},
+	{
+		"id": "contextual-floating-button-solid",
+		"live": "contextual-floating-button:2",
+		"heading": "Solid Variant",
+		"diffs": []
+	},
+	{
+		"id": "contextual-floating-button-layer",
+		"live": "contextual-floating-button:3",
+		"heading": "Layer Variant",
+		"diffs": []
+	},
+	{
+		"id": "contextual-floating-button-icon-only",
+		"live": "contextual-floating-button:4",
+		"heading": "Icon Only",
+		"diffs": []
+	},
+	{
+		"id": "contextual-floating-button-loading",
+		"live": "contextual-floating-button:5",
+		"heading": "Loading",
+		"diffs": []
+	}
+]
