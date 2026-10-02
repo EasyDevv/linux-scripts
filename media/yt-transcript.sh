@@ -115,6 +115,50 @@ with open(out, "w", encoding="utf-8") as f:
 EOF
 }
 
+# STT 청크 길이(초). SenseVoice 피크 메모리는 입력 길이에 초선형(60s≈0.8GB, 300s≈2GB,
+# 600s≈6GB)이라 통째로 넣으면 수십 분 영상에서 OOM 셧다운된다. 무음 구간에서 잘라 순차 처리.
+CHUNK_MIN=30
+CHUNK_MAX=60
+
+# vox.wav → 청크 경계 "시작 끝" 목록. 청크마다 [MIN,MAX] 안의 가장 긴 무음 중앙에서 자르고,
+# 무음이 없으면 MAX에서 자른다.
+plan_chunks() { # $1=wav
+    ffmpeg -nostats -i "$1" -af silencedetect=noise=-35dB:d=0.3 -f null - 2>&1 \
+        | python3 -c '
+import re, sys
+cmin, cmax = float(sys.argv[1]), float(sys.argv[2])
+sil, start, total = [], None, 0.0
+for line in sys.stdin:
+    if m := re.search(r"silence_start: ([\d.]+)", line):
+        start = float(m[1])
+    elif (m := re.search(r"silence_end: ([\d.]+) \| silence_duration: ([\d.]+)", line)) and start is not None:
+        sil.append(((start + float(m[1])) / 2, float(m[2]))); start = None
+    if m := re.search(r"time=(\d+):(\d+):([\d.]+)", line):
+        total = int(m[1]) * 3600 + int(m[2]) * 60 + float(m[3])
+pos = 0.0
+while total - pos > cmax:
+    cand = [s for s in sil if pos + cmin < s[0] <= pos + cmax]
+    cut = max(cand, key=lambda s: s[1])[0] if cand else pos + cmax
+    print(f"{pos:.3f} {cut:.3f}"); pos = cut
+print(f"{pos:.3f} {total:.3f}")
+' "$CHUNK_MIN" "$CHUNK_MAX"
+}
+
+# 청크별 순차 전사, 대사를 청크당 한 줄씩 stdout. 전체 로그는 $1/stt.log. 실패 시 0이 아님.
+transcribe_chunks() { # $1=OUT $2=STT바이너리 $3=엔진
+    local out="$1" bin="$2" engine="$3" dir="$1/chunks" s e wav log text
+    mkdir -p "$dir"; : > "$out/stt.log"
+    while read -r s e; do
+        wav="$dir/chunk.wav"; log="$dir/chunk.log"
+        ffmpeg -nostdin -y -loglevel error -ss "$s" -to "$e" -i "$out/vox.wav" -c copy "$wav" || return 1
+        "$bin" -c "$out/stt-config.toml" transcribe --engine "$engine" "$wav" \
+            < /dev/null > "$log" 2>&1 || { cat "$log" >> "$out/stt.log"; return 1; }
+        { echo "# chunk $s-$e"; cat "$log"; } >> "$out/stt.log"
+        sed -n 's/.*transcription completed in .*:[[:space:]]*"\(.*\)"[[:space:]]*$/\1/Ip' "$log" | tail -n 1
+    done < <(plan_chunks "$out/vox.wav")
+    rm -rf "$dir"
+}
+
 OK_LIST=()
 FAIL_LIST=()
 
@@ -172,17 +216,11 @@ process_video() { # $1=영상URL
         stt_bin="$ONNX_BIN"; stt_engine="sensevoice"
         stt_source="STT 전사 (sensevoice)"
     fi
-    "$stt_bin" -c "$out/stt-config.toml" transcribe --engine "$stt_engine" \
-        "$out/vox.wav" > "$out/stt.log" 2>&1 || return 1
-
-    local text
-    text=$(sed -n 's/.*Transcription completed in .*:[[:space:]]*"\(.*\)"[[:space:]]*$/\1/p' \
-        "$out/stt.log" | tail -n 1)
-    if [[ -z "$text" ]]; then
+    transcribe_chunks "$out" "$stt_bin" "$stt_engine" > "$out/dialogue.txt" || return 1
+    if [[ ! -s "$out/dialogue.txt" ]]; then
         echo "경고: 전사문 추출 실패 ($vid, $out/stt.log 확인)"
         return 1
     fi
-    echo "$text" > "$out/dialogue.txt"
     write_meta "$out" "$title" "$watch_url" "$vid" "$date_fmt" \
         "$stt_source" "$profile" "$chan_dir/channel.json"
     echo "STT완료: $out/meta.json"
