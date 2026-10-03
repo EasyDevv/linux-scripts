@@ -2,14 +2,11 @@
 //!
 //! LithosAI is prepaid: every request debits an organization credit balance,
 //! there is no subscription to renew and no rate window to reset. The
-//! OpenAI-compatible API has no balance read (`GET /v1/models` is the only
-//! key-authorized endpoint; `/v1/usage`, `/v1/credits`, `/v1/balance` and
-//! `/v1/key/info` all answer 404, and the per-minute rate-limit headers are
-//! buckets, not credit). The console does expose `GET /api/billing`
-//! `balanceNanos`, but only to a signed-in console session, so a pasted console
-//! cookie (`LITHOSAI_CONSOLE_COOKIE`) is the only path to the remaining
-//! balance. Without that cookie the probe still verifies the Pi API key against
-//! `/v1/models` and reports state without credits.
+//! OpenAI-compatible API has no balance read, but the console does expose
+//! `GET /api/billing` `balanceNanos` to a signed-in console session. The pasted
+//! console cookie (`LITHOSAI_COOKIE`) is therefore the only credential: it
+//! names the account and reads the balance. A missing cookie is `config`, a
+//! rejected one is `cookie`; the API key is not consulted.
 //!
 //! Credit is topped up by hand, so the percentage anchor is the newest positive
 //! `GET /api/billing/history` entry (top-up, promotion or bonus): the `Credit`
@@ -23,15 +20,14 @@ use crate::core::ProbeOutcome;
 use crate::http::Http;
 use crate::iso::parse_iso_unix;
 
-pub const API_BASE: &str = "https://api.lithosai.cloud";
 pub const CONSOLE_BASE: &str = "https://console.lithosai.cloud";
 
 /// `balanceNanos` are 1e-9 dollars; the cache carries credits in cents.
 const NANOS_PER_CENT: i64 = 10_000_000;
 
-/// The Pi credential names the account; the console cookie only reads it.
-pub fn cache_key(api_key: Option<&str>, console_cookie: Option<&str>) -> String {
-    crate::auth::cache_key("lithosai", api_key.or(console_cookie))
+/// The cookie names the account, so a re-login keys a fresh snapshot.
+pub fn cache_key(cookie: Option<&str>) -> String {
+    crate::auth::cache_key("lithosai", trimmed(cookie))
 }
 
 fn trimmed(value: Option<&str>) -> Option<&str> {
@@ -157,45 +153,23 @@ fn balance_outcome(cache_key: String, nanos: i64, windows: Vec<UsageWindow>) -> 
     )
 }
 
-pub fn probe(http: &dyn Http, api_key: Option<&str>, console_cookie: Option<&str>) -> ProbeOutcome {
-    let key = cache_key(api_key, console_cookie);
-    let mut cookie_expired = false;
-    if let Some(cookie) = trimmed(console_cookie) {
-        match read_console(http, cookie) {
-            ConsoleRead::Balance(nanos) => {
-                let windows = read_latest_credit(http, cookie)
-                    .and_then(|credit| credit_window(nanos, credit))
-                    .into_iter()
-                    .collect();
-                return balance_outcome(key, nanos, windows);
-            }
-            ConsoleRead::Unreadable => return unknown(key, "billing"),
-            ConsoleRead::Expired => cookie_expired = true,
-            ConsoleRead::Network => return unknown(key, "network"),
-            ConsoleRead::Failed(status) => return unknown(key, &format!("http:{status}")),
-        }
-    }
-    let Some(api_key) = trimmed(api_key) else {
+pub fn probe(http: &dyn Http, cookie: Option<&str>) -> ProbeOutcome {
+    let key = cache_key(cookie);
+    let Some(cookie) = trimmed(cookie) else {
         return unknown(key, "config");
     };
-    match http.get(
-        &format!("{API_BASE}/v1/models"),
-        &[
-            ("accept", "application/json"),
-            ("Authorization", &format!("Bearer {api_key}")),
-        ],
-    ) {
-        // The key answers, so the account is usable; a rejected console cookie
-        // is reported as the reason the balance is missing.
-        Ok(response) if response.status == 200 => outcome(
-            key,
-            ProviderState::Available,
-            cookie_expired.then(|| "cookie".to_string()),
-            None,
-            Vec::new(),
-        ),
-        Ok(response) => unknown(key, &format!("http:{}", response.status)),
-        Err(_) => unknown(key, "network"),
+    match read_console(http, cookie) {
+        ConsoleRead::Balance(nanos) => {
+            let windows = read_latest_credit(http, cookie)
+                .and_then(|credit| credit_window(nanos, credit))
+                .into_iter()
+                .collect();
+            balance_outcome(key, nanos, windows)
+        }
+        ConsoleRead::Unreadable => unknown(key, "billing"),
+        ConsoleRead::Expired => unknown(key, "cookie"),
+        ConsoleRead::Network => unknown(key, "network"),
+        ConsoleRead::Failed(status) => unknown(key, &format!("http:{status}")),
     }
 }
 
@@ -261,14 +235,14 @@ mod tests {
             200,
             r#"{"balanceNanos":12340000000,"floorNanos":0,"billed":true,"hasCard":true,"onHold":false,"publishableKey":"pk"}"#,
         )]);
-        let outcome = probe(&http, Some("lith_key"), Some("session=abc"));
+        let outcome = probe(&http, Some("session=abc"));
         assert_eq!(outcome.state, ProviderState::Available);
         assert_eq!(outcome.remaining_credits, Some(1234));
         assert_eq!(outcome.reason, None);
         assert!(outcome.windows.is_empty());
         assert_eq!(
             outcome.cache_key,
-            crate::auth::cache_key("lithosai", Some("lith_key"))
+            crate::auth::cache_key("lithosai", Some("session=abc"))
         );
     }
 
@@ -286,7 +260,7 @@ mod tests {
                 r#"{"balanceNanos":0,"billed":true}"#,
             ),
         ]);
-        let outcome = probe(&http, Some("lith_key"), Some("session=abc"));
+        let outcome = probe(&http, Some("session=abc"));
         assert_eq!(outcome.state, ProviderState::Exhausted);
         assert_eq!(outcome.reason.as_deref(), Some("balance"));
         assert_eq!(outcome.remaining_credits, Some(0));
@@ -310,7 +284,7 @@ mod tests {
                 r#"{"balanceNanos":6200000000,"billed":true,"reload":{"enabled":false}}"#,
             ),
         ]);
-        let outcome = probe(&http, Some("lith_key"), Some("session=abc"));
+        let outcome = probe(&http, Some("session=abc"));
         // $10.00 bought on 2026-09-20, $6.20 left -> 38% spent.
         assert_eq!(outcome.remaining_credits, Some(620));
         assert_eq!(outcome.windows.len(), 1);
@@ -332,7 +306,7 @@ mod tests {
                 r#"{"balanceNanos":29150000000,"billed":true}"#,
             ),
         ]);
-        let outcome = probe(&http, Some("lith_key"), Some("session=abc"));
+        let outcome = probe(&http, Some("session=abc"));
         assert_eq!(outcome.remaining_credits, Some(2915));
         assert_eq!(outcome.windows.len(), 1);
         // $30.00 bought, $29.15 left -> 2.83% spent.
@@ -354,7 +328,7 @@ mod tests {
                 r#"{"balanceNanos":15000000000,"billed":true}"#,
             ),
         ]);
-        let outcome = probe(&http, Some("lith_key"), Some("session=abc"));
+        let outcome = probe(&http, Some("session=abc"));
         assert_eq!(outcome.state, ProviderState::Available);
         assert_eq!(outcome.windows[0].used_percent, 0.0);
     }
@@ -387,7 +361,7 @@ mod tests {
                     r#"{"balanceNanos":6200000000,"billed":true}"#,
                 ),
             ]);
-            let outcome = probe(&http, Some("lith_key"), Some("session=abc"));
+            let outcome = probe(&http, Some("session=abc"));
             assert_eq!(outcome.state, ProviderState::Available);
             assert_eq!(outcome.remaining_credits, Some(620));
             assert!(outcome.windows.is_empty());
@@ -437,65 +411,41 @@ mod tests {
             200,
             r#"{"balance":"12.34"}"#,
         )]);
-        let outcome = probe(&http, Some("lith_key"), Some("session=abc"));
+        let outcome = probe(&http, Some("session=abc"));
         assert_eq!(outcome.state, ProviderState::Unknown);
         assert_eq!(outcome.reason.as_deref(), Some("billing"));
     }
 
     #[test]
-    fn expired_console_cookie_falls_back_to_the_api_key() {
-        let http = http(vec![
-            (
-                "console.lithosai.cloud/api/billing",
-                401,
-                r#"{"error":"unauthenticated"}"#,
-            ),
-            (
-                "api.lithosai.cloud/v1/models",
-                200,
-                r#"{"object":"list","data":[]}"#,
-            ),
-        ]);
-        let outcome = probe(&http, Some("lith_key"), Some("session=stale"));
-        assert_eq!(outcome.state, ProviderState::Available);
-        assert_eq!(outcome.reason.as_deref(), Some("cookie"));
-        assert_eq!(outcome.remaining_credits, None);
-    }
-
-    #[test]
-    fn key_only_probe_reports_state_without_credits() {
+    fn rejected_console_cookie_is_unknown_with_the_cookie_reason() {
         let http = http(vec![(
-            "api.lithosai.cloud/v1/models",
-            200,
-            r#"{"object":"list","data":[{"id":"moonshotai/Kimi-K3"}]}"#,
+            "console.lithosai.cloud/api/billing",
+            401,
+            r#"{"error":"unauthenticated"}"#,
         )]);
-        let outcome = probe(&http, None, Some("   "));
+        let outcome = probe(&http, Some("session=stale"));
         assert_eq!(outcome.state, ProviderState::Unknown);
-        assert_eq!(outcome.reason.as_deref(), Some("config"));
-
-        let outcome = probe(&http, Some("lith_key"), None);
-        assert_eq!(outcome.state, ProviderState::Available);
-        assert_eq!(outcome.reason, None);
+        assert_eq!(outcome.reason.as_deref(), Some("cookie"));
         assert_eq!(outcome.remaining_credits, None);
         assert!(outcome.windows.is_empty());
     }
 
     #[test]
-    fn rejected_api_key_is_unknown_with_status() {
-        let http = http(vec![(
-            "api.lithosai.cloud/v1/models",
-            401,
-            r#"{"error":"invalid_api_key"}"#,
-        )]);
-        let outcome = probe(&http, Some("lith_key"), None);
-        assert_eq!(outcome.state, ProviderState::Unknown);
-        assert_eq!(outcome.reason.as_deref(), Some("http:401"));
+    fn a_missing_or_blank_cookie_never_reaches_the_network() {
+        // No routes: any request would answer 404, not `config`.
+        let http = http(Vec::new());
+        for cookie in [None, Some("   ")] {
+            let outcome = probe(&http, cookie);
+            assert_eq!(outcome.state, ProviderState::Unknown);
+            assert_eq!(outcome.reason.as_deref(), Some("config"));
+            assert_eq!(outcome.cache_key, "lithosai:anon");
+        }
     }
 
     #[test]
-    fn console_outage_without_api_key_is_unknown() {
+    fn console_outage_is_unknown_with_status() {
         let http = http(vec![("console.lithosai.cloud/api/billing", 500, "")]);
-        let outcome = probe(&http, None, Some("session=abc"));
+        let outcome = probe(&http, Some("session=abc"));
         assert_eq!(outcome.state, ProviderState::Unknown);
         assert_eq!(outcome.reason.as_deref(), Some("http:500"));
     }

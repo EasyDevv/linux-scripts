@@ -240,7 +240,9 @@
       "height": "--control-height-nav",
       "unselected": "filled capsule",
       "idle": "--tab-idle",
-      "ink": "--muted-foreground"
+      "ink": "--muted-foreground",
+      "motion": "no measured tab motion in the live reference; dashboard reuses lists.fold tokens (--panel-fold-duration / --panel-fold-ease) for the selected fill and text colour (accepted in dashboard 01-providers Usage share, 2026-10-03)",
+      "notSegmented": "each tab is its own capsule with gap 4px; no shared track/background group around them (dashboard Usage share 7d|30d first shipped as a segmented control, corrected 2026-10-03)"
     },
     "productCta": {
       "kind": "ghost",
@@ -357,7 +359,8 @@
         "fillPanel": "a panel that fills the column animates flex-grow 1 → 0 plus min-height to its header height; header stays in place, only the body folds",
         "chevron": "rotate on the same --panel-fold-duration / --panel-fold-ease",
         "closedBody": "inert"
-      }
+      },
+      "alsoUsedFor": "data changes in place: bar width transitions and keyed row reorder (svelte flip, cubicOut ≈ --panel-fold-ease, 200ms) on the same tokens; every transition is off under prefers-reduced-motion (dashboard 01-providers card history and Usage share, 2026-10-03)"
     },
     "status": "dot or one-word chip",
     "inspector": {
@@ -367,7 +370,16 @@
       "radius": "--radius-md",
       "shadow": "--panel-shadow"
     },
-    "rowGrid": "8px 18px 16px 42px 16px minmax(0,1fr) 16px 60px 18px, 8px column gap"
+    "rowGrid": "8px 18px 16px 42px 16px minmax(0,1fr) 16px 60px 18px, 8px column gap",
+    "bars": {
+      "height": "4px",
+      "track": "--muted",
+      "fill": "muted-foreground at 60% (share) / 40% (quota under 60%)",
+      "accent": "--primary only for a status threshold (quota 60-80%), --destructive at 80%+; never for neutral share bars",
+      "radius": "--radius-pill",
+      "motion": "width on --panel-fold-duration / --panel-fold-ease",
+      "where": "dashboard provider cards and Usage share (accepted 2026-10-03)"
+    }
   },
   "header": {
     "shared": true,

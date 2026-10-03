@@ -97,30 +97,6 @@ pub struct GrokSession {
     pub team_id: Option<String>,
 }
 
-/// The Claude CLI's own OAuth token, read from its config dir. Claude is not
-/// a Pi provider: there is no `auth.json` entry and no dashboard-stored copy,
-/// and the CLI owns refreshing the token.
-#[derive(Clone, Debug)]
-pub struct ClaudeSession {
-    pub access_token: String,
-    /// Expiry in epoch milliseconds, the unit the CLI writes.
-    pub expires_at_ms: Option<i64>,
-}
-
-pub fn claude_credential(env: &dyn Fn(&str) -> Option<String>) -> Option<ClaudeSession> {
-    let config_dir = env("CLAUDE_CONFIG_DIR")
-        .filter(|value| !value.trim().is_empty())
-        .map(PathBuf::from)
-        .unwrap_or_else(|| home_dir(env).join(".claude"));
-    let parsed = load_json(&config_dir.join(".credentials.json"))?;
-    let oauth = parsed.get("claudeAiOauth")?;
-    let access_token = string_field(oauth.get("accessToken"))?;
-    Some(ClaudeSession {
-        access_token,
-        expires_at_ms: oauth.get("expiresAt").and_then(|value| value.as_i64()),
-    })
-}
-
 pub fn openai_session(env: &dyn Fn(&str) -> Option<String>) -> Option<OpenaiSession> {
     let agent = agent_auth_path(env);
     if let Some(session) = openai_from_agent(&agent) {
@@ -266,19 +242,22 @@ fn grok_session_from_cli(env: &dyn Fn(&str) -> Option<String>) -> Option<GrokSes
     preferred.or(fallback)
 }
 
-pub fn lithosai_api_key(
+/// Console `Cookie:` header for `console.lithosai.cloud`. The cookie is the only
+/// LithosAI credential: it names the account and reads the balance.
+pub fn lithosai_cookie(
     env: &dyn Fn(&str) -> Option<String>,
     env_file: Option<&Path>,
 ) -> Option<String> {
-    env_override(env, env_file, &["LITHOSAI_API_KEY"])
-        .or_else(|| agent_credential(env, &["lithosai"]))
+    env_override(env, env_file, &["LITHOSAI_COOKIE"])
 }
 
-pub fn lithosai_console_cookie(
+/// Browser `Cookie:` header for `claude.ai` (`sessionKey` plus the Cloudflare
+/// `cf_clearance`). The `claude` CLI's OAuth file is not read.
+pub fn claude_cookie(
     env: &dyn Fn(&str) -> Option<String>,
     env_file: Option<&Path>,
 ) -> Option<String> {
-    env_override(env, env_file, &["LITHOSAI_CONSOLE_COOKIE"])
+    env_override(env, env_file, &["CLAUDE_COOKIE"])
 }
 
 pub fn opencode_cookie(
@@ -490,70 +469,56 @@ mod tests {
     }
 
     #[test]
-    fn reads_lithosai_key_and_console_cookie() {
+    fn reads_the_lithosai_and_claude_cookies_from_the_agent_env() {
         let dir = tempdir().unwrap();
         let home = dir.path();
         let agent = home.join(".pi").join("agent");
         fs::create_dir_all(&agent).unwrap();
+        // A pasted header carries `;`, which the file reader must keep whole.
+        fs::write(
+            agent.join(".env"),
+            "LITHOSAI_COOKIE=\"__Host-console_session=abc; __Host-console_csrf=def\"\nCLAUDE_COOKIE=sessionKey=sk-1; cf_clearance=cf-2\n",
+        )
+        .unwrap();
+        // Neither the old cookie names, a Pi key, nor the CLI file is a source.
         fs::write(
             agent.join("auth.json"),
             r#"{"lithosai":{"type":"api_key","key":"pi-lithos-key"}}"#,
         )
         .unwrap();
-        fs::write(
-            agent.join(".env"),
-            "LITHOSAI_CONSOLE_COOKIE=\"KEYCLOAK_SESSION=abc\"\n",
-        )
-        .unwrap();
-        let home_s = home.to_string_lossy().to_string();
-        let env = |key: &str| {
-            if key == "HOME" {
-                Some(home_s.clone())
-            } else {
-                None
-            }
-        };
-        assert_eq!(
-            lithosai_api_key(&env, None).as_deref(),
-            Some("pi-lithos-key")
-        );
-        assert_eq!(
-            lithosai_console_cookie(&env, None).as_deref(),
-            Some("KEYCLOAK_SESSION=abc")
-        );
-    }
-
-    #[test]
-    fn reads_the_claude_cli_credential_not_pi_auth() {
-        let dir = tempdir().unwrap();
-        let home = dir.path();
-        let claude = home.join(".claude");
-        fs::create_dir(&claude).unwrap();
-        fs::write(
-            claude.join(".credentials.json"),
-            r#"{"claudeAiOauth":{"accessToken":"sk-ant-oat01-cli","refreshToken":"r","expiresAt":1790528819625,"scopes":["user:inference"],"subscriptionType":"pro"}}"#,
-        )
-        .unwrap();
-        let home_s = home.to_string_lossy().to_string();
-        let env = |key: &str| (key == "HOME").then(|| home_s.clone());
-        let session = claude_credential(&env).unwrap();
-        assert_eq!(session.access_token, "sk-ant-oat01-cli");
-        assert_eq!(session.expires_at_ms, Some(1_790_528_819_625));
-    }
-
-    #[test]
-    fn a_claude_credential_without_a_token_is_absent() {
-        let dir = tempdir().unwrap();
-        let home = dir.path();
         fs::create_dir(home.join(".claude")).unwrap();
         fs::write(
             home.join(".claude").join(".credentials.json"),
-            r#"{"claudeAiOauth":{"refreshToken":"r"}}"#,
+            r#"{"claudeAiOauth":{"accessToken":"sk-ant-oat01-cli"}}"#,
         )
         .unwrap();
         let home_s = home.to_string_lossy().to_string();
         let env = |key: &str| (key == "HOME").then(|| home_s.clone());
-        assert!(claude_credential(&env).is_none());
+        assert_eq!(
+            lithosai_cookie(&env, None).as_deref(),
+            Some("__Host-console_session=abc; __Host-console_csrf=def")
+        );
+        assert_eq!(
+            claude_cookie(&env, None).as_deref(),
+            Some("sessionKey=sk-1; cf_clearance=cf-2")
+        );
+    }
+
+    #[test]
+    fn the_old_cookie_names_are_not_read() {
+        let dir = tempdir().unwrap();
+        let home = dir.path();
+        let agent = home.join(".pi").join("agent");
+        fs::create_dir_all(&agent).unwrap();
+        fs::write(
+            agent.join(".env"),
+            "LITHOSAI_CONSOLE_COOKIE=old\nLITHOSAI_API_KEY=old-key\n",
+        )
+        .unwrap();
+        let home_s = home.to_string_lossy().to_string();
+        let env = |key: &str| (key == "HOME").then(|| home_s.clone());
+        assert_eq!(lithosai_cookie(&env, None), None);
+        assert_eq!(claude_cookie(&env, None), None);
     }
 
     #[test]

@@ -1,10 +1,17 @@
-//! Claude Code quota windows from the Claude CLI's own OAuth token.
+//! Claude Code quota windows from the signed-in claude.ai web session.
 //!
-//! The credential is the one the `claude` CLI already holds in
-//! `~/.claude/.credentials.json`; Pi auth is not involved and the dashboard
-//! stores no Claude secret. Both endpoints below are the ones the CLI's
-//! `/usage` screen reads, so an expired token is a "run claude" state rather
-//! than a board error.
+//! The only credential is the browser `Cookie:` header pasted into
+//! `CLAUDE_COOKIE` (`sessionKey` plus the Cloudflare `cf_clearance`). The
+//! `claude` CLI's OAuth file is not read. Three claude.ai endpoints carry
+//! everything the card shows:
+//!
+//! - `GET /api/organizations` names the org and its plan (`capabilities`).
+//! - `GET /api/organizations/{uuid}/usage` has the same `limits[]` the CLI's
+//!   `/usage` screen reads: the 5h session and the weekly window.
+//! - `GET /api/organizations/{uuid}/subscription_details` has the next charge.
+//!
+//! Cloudflare answers a stale `cf_clearance` with a 403 challenge page, which
+//! is its own `challenge` reason rather than a board error.
 
 use anyhow::Result;
 use serde_json::Value;
@@ -14,11 +21,10 @@ use crate::core::ProbeOutcome;
 use crate::http::Http;
 use crate::iso::parse_iso_unix;
 
-pub const DEFAULT_API_BASE: &str = "https://api.anthropic.com";
-/// The Claude CLI sends this beta to authenticate an OAuth access token.
-pub const OAUTH_BETA: &str = "oauth-2025-04-20";
-pub const USAGE_PATH: &str = "/api/oauth/usage";
-pub const PROFILE_PATH: &str = "/api/oauth/profile";
+pub const DEFAULT_BASE: &str = "https://claude.ai";
+/// `cf_clearance` is minted for a browser; the endpoints answer a bare client
+/// with the challenge page, so the probe presents as one.
+const USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
 /// `limits[].kind` mapped to the board's window names, shortest window first.
 /// The per-model weekly kinds (`weekly_opus`, `weekly_sonnet`) are deliberately
@@ -26,37 +32,28 @@ pub const PROFILE_PATH: &str = "/api/oauth/profile";
 /// has no letter.
 const WINDOW_KINDS: [(&str, &str); 2] = [("session", "5h"), ("weekly_all", "weekly")];
 
-#[derive(Clone, Debug)]
-pub struct Session {
-    pub access_token: String,
-    /// OAuth expiry in epoch **milliseconds**, the unit the CLI writes.
-    pub expires_at_ms: Option<i64>,
-}
-
-pub fn probe(
-    http: &dyn Http,
-    session: Option<&Session>,
-    base_url: &str,
-    now: i64,
-) -> ProbeOutcome {
-    let Some(session) = session else {
-        return unknown(crate::auth::cache_key("claude", None), Some("config".into()));
+pub fn probe(http: &dyn Http, cookie: Option<&str>, base_url: &str) -> ProbeOutcome {
+    let cookie = cookie.map(str::trim).filter(|value| !value.is_empty());
+    let cache_key = crate::auth::cache_key("claude", cookie);
+    let Some(cookie) = cookie else {
+        return unknown(cache_key, Some("config".into()));
     };
-    let cache_key = crate::auth::cache_key("claude", Some(&session.access_token));
-    if is_expired(session, now) {
-        return unknown(cache_key, Some("expired".into()));
-    }
-    let usage = match authed_get(http, session, &format!("{base_url}{USAGE_PATH}")) {
-        Ok(response) => response,
-        Err(_) => return unknown(cache_key, Some("network".into())),
+    let orgs = match get_json(http, cookie, &format!("{base_url}/api/organizations")) {
+        Ok(json) => json,
+        Err(reason) => return unknown(cache_key, Some(reason)),
     };
-    if usage.status >= 400 {
-        return unknown(cache_key, Some(format!("http:{}", usage.status)));
-    }
-    let Ok(json) = serde_json::from_str::<Value>(&usage.body) else {
-        return unknown(cache_key, Some("usage".into()));
+    let Some(org) = pick_org(&orgs, cookie) else {
+        return unknown(cache_key, Some("org".into()));
     };
-    let windows = parse_windows(&json);
+    let Some(uuid) = org.get("uuid").and_then(Value::as_str) else {
+        return unknown(cache_key, Some("org".into()));
+    };
+    let org_url = format!("{base_url}/api/organizations/{uuid}");
+    let usage = match get_json(http, cookie, &format!("{org_url}/usage")) {
+        Ok(json) => json,
+        Err(reason) => return unknown(cache_key, Some(reason)),
+    };
+    let windows = parse_windows(&usage);
     if windows.is_empty() {
         return unknown(cache_key, Some("usage".into()));
     }
@@ -69,8 +66,11 @@ pub fn probe(
         .filter_map(|window| window.reset_at)
         .min()
         .or_else(|| windows.iter().filter_map(|window| window.reset_at).min());
+    // Best effort: an unreadable subscription leaves the plan and no bill line
+    // instead of failing a probe that already holds its windows.
+    let subscription = get_json(http, cookie, &format!("{org_url}/subscription_details")).ok();
     ProbeOutcome {
-        plan: plan_state(http, session, base_url),
+        plan: parse_plan(org, subscription.as_ref()),
         cache_key,
         state: if exhausted {
             ProviderState::Exhausted
@@ -86,39 +86,90 @@ pub fn probe(
         // A subscription quota, never a balance: nothing to render as a metric.
         remaining_credits: None,
         windows,
-        // Neither endpoint exposes a billing period end, so the card carries no
-        // next-bill line rather than a guessed one.
-        renews_at: None,
+        renews_at: subscription.as_ref().and_then(parse_renews_at),
     }
-}
-/// Best effort: a profile that cannot be read leaves the catalog copy standing
-/// instead of failing a probe that already holds its windows.
-fn plan_state(http: &dyn Http, session: &Session, base_url: &str) -> Option<PlanState> {
-    let response = authed_get(http, session, &format!("{base_url}{PROFILE_PATH}")).ok()?;
-    if response.status >= 400 {
-        return None;
-    }
-    let json: Value = serde_json::from_str(&response.body).ok()?;
-    parse_plan(&json)
 }
 
-pub fn parse_plan(json: &Value) -> Option<PlanState> {
-    let organization = json.get("organization")?;
-    let name = organization
-        .get("organization_type")
+/// One GET with the session cookie; the `Err` is the probe's `reason`.
+fn get_json(http: &dyn Http, cookie: &str, url: &str) -> std::result::Result<Value, String> {
+    let response = authed_get(http, cookie, url).map_err(|_| "network".to_string())?;
+    match response.status {
+        401 => return Err("cookie".into()),
+        403 if response.body.contains("Just a moment") => return Err("challenge".into()),
+        status if status >= 400 => return Err(format!("http:{status}")),
+        _ => {}
+    }
+    serde_json::from_str(&response.body).map_err(|_| "usage".to_string())
+}
+
+/// The cookie's `lastActiveOrg` is the org the web app has open, so it wins; an
+/// account with several orgs otherwise falls to the first one that carries a
+/// paid plan, then to the first at all.
+pub fn pick_org<'a>(orgs: &'a Value, cookie: &str) -> Option<&'a Value> {
+    let list = orgs.as_array()?;
+    if let Some(active) = cookie_value(cookie, "lastActiveOrg") {
+        if let Some(found) = list
+            .iter()
+            .find(|org| org.get("uuid").and_then(Value::as_str) == Some(active))
+        {
+            return Some(found);
+        }
+    }
+    list.iter()
+        .find(|org| plan_key(org).is_some())
+        .or_else(|| list.first())
+}
+
+fn cookie_value<'a>(cookie: &'a str, name: &str) -> Option<&'a str> {
+    cookie.split(';').find_map(|part| {
+        let (key, value) = part.trim().split_once('=')?;
+        (key.trim() == name)
+            .then(|| value.trim())
+            .filter(|value| !value.is_empty())
+    })
+}
+
+/// `capabilities` lists `claude_pro` / `claude_max` next to the generic `chat`.
+fn plan_key(org: &Value) -> Option<&str> {
+    org.get("capabilities")
+        .and_then(Value::as_array)?
+        .iter()
+        .filter_map(Value::as_str)
+        .find(|capability| capability.starts_with("claude_"))
+}
+
+pub fn parse_plan(org: &Value, subscription: Option<&Value>) -> Option<PlanState> {
+    let name = plan_key(org)?;
+    let ends_at = subscription
+        .and_then(|value| value.get("plan_ending_at"))
         .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|name| !name.is_empty())?;
+        .and_then(parse_iso_unix);
+    let status_active = subscription
+        .and_then(|value| value.get("status"))
+        .and_then(Value::as_str)
+        .map(|status| status == "active")
+        .unwrap_or(true);
     Some(PlanState {
         name: name.to_string(),
         display: plan_display(name),
-        active: organization
-            .get("subscription_status")
-            .and_then(Value::as_str)
-            .map(|status| status == "active")
-            .unwrap_or(true),
-        ends_at: None,
+        // A scheduled cancellation keeps the plan live until `plan_ending_at`.
+        active: status_active && ends_at.is_none(),
+        ends_at,
     })
+}
+
+/// Next charge instant; the date-only field covers a response without `_at`.
+pub fn parse_renews_at(subscription: &Value) -> Option<i64> {
+    subscription
+        .get("next_charge_at")
+        .and_then(Value::as_str)
+        .and_then(parse_iso_unix)
+        .or_else(|| {
+            subscription
+                .get("next_charge_date")
+                .and_then(Value::as_str)
+                .and_then(|date| parse_iso_unix(&format!("{date}T00:00:00Z")))
+        })
 }
 
 /// `claude_pro` → `Pro`, `claude_max` → `Max`. A plan key the board cannot
@@ -162,19 +213,13 @@ pub fn parse_windows(json: &Value) -> Vec<UsageWindow> {
     windows
 }
 
-fn is_expired(session: &Session, now: i64) -> bool {
-    session
-        .expires_at_ms
-        .is_some_and(|expires_at_ms| expires_at_ms <= now.saturating_mul(1000))
-}
-
-fn authed_get(http: &dyn Http, session: &Session, url: &str) -> Result<crate::http::HttpResponse> {
+fn authed_get(http: &dyn Http, cookie: &str, url: &str) -> Result<crate::http::HttpResponse> {
     http.get(
         url,
         &[
             ("accept", "application/json"),
-            ("Authorization", &format!("Bearer {}", session.access_token)),
-            ("anthropic-beta", OAUTH_BETA),
+            ("user-agent", USER_AGENT),
+            ("cookie", cookie),
         ],
     )
 }
@@ -198,108 +243,113 @@ mod tests {
     use crate::http::MapHttp;
     use serde_json::json;
 
-    fn session() -> Session {
-        Session {
-            access_token: "oauth-token".into(),
-            expires_at_ms: Some(1_800_000_000_000),
-        }
+    const COOKIE: &str = "sessionKey=sk-1; lastActiveOrg=org-pro; cf_clearance=cf-2";
+    const SESSION_RESET_ISO: &str = "2026-09-27T14:00:00+00:00";
+    const WEEKLY_RESET_ISO: &str = "2026-09-29T15:00:00+00:00";
+    const NEXT_CHARGE_ISO: &str = "2026-10-27T08:48:49Z";
+
+    fn org(uuid: &str, capabilities: &[&str]) -> Value {
+        json!({ "uuid": uuid, "name": "EasyDev", "capabilities": capabilities })
     }
 
-    /// Trimmed from a real 202 call to `/api/oauth/usage`.
+    fn orgs_body(orgs: Vec<Value>) -> String {
+        Value::Array(orgs).to_string()
+    }
+
+    /// Trimmed from a real `GET /api/organizations/{uuid}/usage`.
     fn usage_body(session_percent: f64, weekly_percent: f64) -> String {
         json!({
-            "five_hour": { "utilization": session_percent, "resets_at": "2026-09-27T14:00:00.311373+00:00" },
-            "seven_day": { "utilization": weekly_percent, "resets_at": "2026-09-29T15:00:00.311395+00:00" },
+            "five_hour": { "utilization": session_percent, "resets_at": SESSION_RESET_ISO },
+            "seven_day": { "utilization": weekly_percent, "resets_at": WEEKLY_RESET_ISO },
             "seven_day_opus": null,
             "limits": [
-                {
-                    "kind": "session",
-                    "group": "session",
-                    "percent": session_percent,
-                    "resets_at": "2026-09-27T14:00:00.311373+00:00",
-                    "is_active": true
-                },
-                {
-                    "kind": "weekly_all",
-                    "group": "weekly",
-                    "percent": weekly_percent,
-                    "resets_at": "2026-09-29T15:00:00.311395+00:00",
-                    "is_active": false
-                }
+                { "kind": "session", "group": "session", "percent": session_percent,
+                  "resets_at": SESSION_RESET_ISO, "is_active": false },
+                { "kind": "weekly_all", "group": "weekly", "percent": weekly_percent,
+                  "resets_at": WEEKLY_RESET_ISO, "is_active": true }
             ],
             "extra_usage": { "is_enabled": false }
         })
         .to_string()
     }
 
-    fn profile_body(organization_type: &str, status: &str) -> String {
+    fn subscription_body(status: &str, ending_at: Option<&str>) -> String {
         json!({
-            "account": { "uuid": "acct-1", "has_claude_max": false, "has_claude_pro": true },
-            "organization": {
-                "organization_type": organization_type,
-                "rate_limit_tier": "default_claude_ai",
-                "subscription_status": status
-            },
-            "application": { "slug": "claude-code" }
+            "status": status,
+            "billing_interval": "monthly",
+            "next_charge_date": "2026-10-27",
+            "next_charge_at": NEXT_CHARGE_ISO,
+            "plan_ending_at": ending_at,
         })
         .to_string()
     }
 
-    fn routes(usage: (u16, String), profile: (u16, String)) -> MapHttp {
+    /// Most specific pattern first: `contains` would let `/api/organizations`
+    /// swallow the per-org paths.
+    fn routes(
+        orgs: (u16, String),
+        usage: (u16, String),
+        subscription: (u16, String),
+    ) -> MapHttp {
         MapHttp {
             routes: vec![
-                (USAGE_PATH.into(), usage.0, usage.1),
-                (PROFILE_PATH.into(), profile.0, profile.1),
+                ("/subscription_details".into(), subscription.0, subscription.1),
+                ("/usage".into(), usage.0, usage.1),
+                ("/api/organizations".into(), orgs.0, orgs.1),
             ],
         }
     }
 
+    fn pro_routes(session_percent: f64, weekly_percent: f64) -> MapHttp {
+        routes(
+            (200, orgs_body(vec![org("org-pro", &["claude_pro", "chat"])])),
+            (200, usage_body(session_percent, weekly_percent)),
+            (200, subscription_body("active", None)),
+        )
+    }
+
     #[test]
-    fn probe_maps_session_and_weekly_from_the_limits_list() {
-        let http = routes(
-            (200, usage_body(33.0, 5.0)),
-            (200, profile_body("claude_pro", "active")),
-        );
-        let outcome = probe(&http, Some(&session()), DEFAULT_API_BASE, 1_790_000_000);
+    fn probe_maps_session_weekly_plan_and_next_charge() {
+        let outcome = probe(&pro_routes(33.0, 5.0), Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Available);
         assert_eq!(outcome.reason, None);
         assert_eq!(outcome.windows.len(), 2);
         assert_eq!(outcome.windows[0].name, "5h");
         assert_eq!(outcome.windows[0].used_percent, 33.0);
-        assert_eq!(outcome.windows[0].reset_at, Some(1_790_517_600));
+        assert_eq!(
+            outcome.windows[0].reset_at,
+            Some(parse_iso_unix(SESSION_RESET_ISO).unwrap())
+        );
         assert_eq!(outcome.windows[1].name, "weekly");
         assert_eq!(outcome.windows[1].used_percent, 5.0);
-        // A subscription quota has no balance and no bill date to show.
+        // A subscription quota has no balance; the bill date is the card's.
         assert_eq!(outcome.remaining_credits, None);
-        assert_eq!(outcome.renews_at, None);
-        let plan = outcome.plan.expect("plan from the profile");
+        assert_eq!(
+            outcome.renews_at,
+            Some(parse_iso_unix(NEXT_CHARGE_ISO).unwrap())
+        );
+        let plan = outcome.plan.expect("plan from the org");
         assert_eq!(plan.name, "claude_pro");
         assert_eq!(plan.display.as_deref(), Some("Pro"));
         assert!(plan.active);
+        assert_eq!(plan.ends_at, None);
+        assert_eq!(outcome.cache_key, crate::auth::cache_key("claude", Some(COOKIE)));
     }
 
     #[test]
     fn a_full_session_window_is_exhausted_at_its_reset() {
-        let http = routes(
-            (200, usage_body(100.0, 12.0)),
-            (200, profile_body("claude_pro", "active")),
-        );
-        let outcome = probe(&http, Some(&session()), DEFAULT_API_BASE, 1_790_000_000);
+        let outcome = probe(&pro_routes(100.0, 12.0), Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Exhausted);
         assert_eq!(outcome.reason.as_deref(), Some("window"));
-        assert_eq!(outcome.reset_at, Some(1_790_517_600));
+        assert_eq!(outcome.reset_at, Some(parse_iso_unix(SESSION_RESET_ISO).unwrap()));
         assert_eq!(outcome.windows.len(), 2);
     }
 
     #[test]
     fn a_full_weekly_window_reports_the_weekly_reset() {
-        let http = routes(
-            (200, usage_body(10.0, 100.0)),
-            (200, profile_body("claude_pro", "active")),
-        );
-        let outcome = probe(&http, Some(&session()), DEFAULT_API_BASE, 1_790_000_000);
+        let outcome = probe(&pro_routes(10.0, 100.0), Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Exhausted);
-        assert_eq!(outcome.reset_at, Some(1_790_694_000));
+        assert_eq!(outcome.reset_at, Some(parse_iso_unix(WEEKLY_RESET_ISO).unwrap()));
     }
 
     #[test]
@@ -327,61 +377,107 @@ mod tests {
     }
 
     #[test]
-    fn a_refused_token_is_unknown_with_its_status() {
+    fn a_rejected_cookie_is_unknown_with_the_cookie_reason() {
         let http = MapHttp {
-            routes: vec![(USAGE_PATH.into(), 401, r#"{"error":"expired"}"#.into())],
+            routes: vec![("/api/organizations".into(), 401, r#"{"error":"auth"}"#.into())],
         };
-        let outcome = probe(&http, Some(&session()), DEFAULT_API_BASE, 1_790_000_000);
+        let outcome = probe(&http, Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Unknown);
-        assert_eq!(outcome.reason.as_deref(), Some("http:401"));
+        assert_eq!(outcome.reason.as_deref(), Some("cookie"));
         assert!(outcome.windows.is_empty());
         assert_eq!(outcome.plan, None);
     }
 
     #[test]
-    fn an_expired_token_never_reaches_the_api() {
-        // No routes: any request would answer 404, not `expired`.
-        let http = MapHttp { routes: Vec::new() };
-        let mut stale = session();
-        stale.expires_at_ms = Some(1_700_000_000_000);
-        let outcome = probe(&http, Some(&stale), DEFAULT_API_BASE, 1_790_000_000);
-        assert_eq!(outcome.state, ProviderState::Unknown);
-        assert_eq!(outcome.reason.as_deref(), Some("expired"));
+    fn a_cloudflare_challenge_is_its_own_reason() {
+        let http = MapHttp {
+            routes: vec![(
+                "/api/organizations".into(),
+                403,
+                "<!DOCTYPE html><title>Just a moment...</title>".into(),
+            )],
+        };
+        let outcome = probe(&http, Some(COOKIE), DEFAULT_BASE);
+        assert_eq!(outcome.reason.as_deref(), Some("challenge"));
+        // Any other 403 keeps its status.
+        let http = MapHttp {
+            routes: vec![("/api/organizations".into(), 403, "{}".into())],
+        };
+        let outcome = probe(&http, Some(COOKIE), DEFAULT_BASE);
+        assert_eq!(outcome.reason.as_deref(), Some("http:403"));
     }
 
     #[test]
-    fn a_missing_credential_is_config() {
+    fn a_missing_cookie_never_reaches_the_network() {
+        // No routes: any request would answer 404, not `config`.
         let http = MapHttp { routes: Vec::new() };
-        let outcome = probe(&http, None, DEFAULT_API_BASE, 1_790_000_000);
-        assert_eq!(outcome.reason.as_deref(), Some("config"));
-        assert_eq!(outcome.cache_key, "claude:anon");
+        for cookie in [None, Some("  ")] {
+            let outcome = probe(&http, cookie, DEFAULT_BASE);
+            assert_eq!(outcome.reason.as_deref(), Some("config"));
+            assert_eq!(outcome.cache_key, "claude:anon");
+        }
     }
 
     #[test]
-    fn a_dead_profile_keeps_the_windows() {
-        let http = routes((200, usage_body(33.0, 5.0)), (403, String::new()));
-        let outcome = probe(&http, Some(&session()), DEFAULT_API_BASE, 1_790_000_000);
+    fn a_dead_subscription_keeps_the_windows_and_the_plan() {
+        let http = routes(
+            (200, orgs_body(vec![org("org-pro", &["claude_pro", "chat"])])),
+            (200, usage_body(33.0, 5.0)),
+            (500, String::new()),
+        );
+        let outcome = probe(&http, Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Available);
         assert_eq!(outcome.windows.len(), 2);
-        // Catalog copy stands when the account cannot be read.
-        assert_eq!(outcome.plan, None);
+        assert_eq!(outcome.renews_at, None);
+        assert_eq!(outcome.plan.expect("plan").name, "claude_pro");
     }
 
     #[test]
     fn a_usage_body_without_limits_is_unknown() {
         let http = routes(
+            (200, orgs_body(vec![org("org-pro", &["claude_pro"])])),
             (200, json!({ "spend": { "enabled": false } }).to_string()),
-            (200, profile_body("claude_pro", "active")),
+            (200, subscription_body("active", None)),
         );
-        let outcome = probe(&http, Some(&session()), DEFAULT_API_BASE, 1_790_000_000);
+        let outcome = probe(&http, Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Unknown);
         assert_eq!(outcome.reason.as_deref(), Some("usage"));
     }
 
     #[test]
+    fn an_empty_org_list_is_unknown() {
+        let http = routes(
+            (200, "[]".into()),
+            (200, usage_body(1.0, 2.0)),
+            (200, subscription_body("active", None)),
+        );
+        let outcome = probe(&http, Some(COOKIE), DEFAULT_BASE);
+        assert_eq!(outcome.reason.as_deref(), Some("org"));
+    }
+
+    #[test]
+    fn the_org_the_web_app_has_open_wins() {
+        let orgs = json!([
+            org("org-team", &["claude_max", "chat"]),
+            org("org-pro", &["claude_pro", "chat"]),
+        ]);
+        let picked = pick_org(&orgs, COOKIE).expect("org");
+        assert_eq!(picked["uuid"], "org-pro");
+        // No `lastActiveOrg`: the first org carrying a Claude plan.
+        let orgs = json!([org("org-api", &["api"]), org("org-pro", &["claude_pro"])]);
+        assert_eq!(pick_org(&orgs, "sessionKey=sk-1").expect("org")["uuid"], "org-pro");
+        // A `lastActiveOrg` the account no longer has falls back, never fails.
+        let orgs = json!([org("org-api", &["api"])]);
+        assert_eq!(
+            pick_org(&orgs, "lastActiveOrg=gone").expect("org")["uuid"],
+            "org-api"
+        );
+    }
+
+    #[test]
     fn an_unpriced_plan_keeps_its_label_and_loses_its_price() {
-        let json: Value = serde_json::from_str(&profile_body("claude_max", "active")).unwrap();
-        let plan = parse_plan(&json).expect("plan");
+        let max = org("org-max", &["claude_max", "chat"]);
+        let plan = parse_plan(&max, None).expect("plan");
         assert_eq!(plan.name, "claude_max");
         // The label is derived; the price is the board's decision, not the
         // probe's, because Max tiers share one key and two prices.
@@ -389,13 +485,30 @@ mod tests {
         assert_eq!(plan_display("claude_pro").as_deref(), Some("Pro"));
         assert_eq!(plan_display("claude_enterprise").as_deref(), Some("Enterprise"));
         assert_eq!(plan_display(""), None);
+        assert_eq!(parse_plan(&org("org-api", &["api"]), None), None);
     }
 
     #[test]
-    fn a_canceled_subscription_is_not_active() {
-        let json: Value = serde_json::from_str(&profile_body("claude_pro", "canceled")).unwrap();
-        assert!(!parse_plan(&json).expect("plan").active);
-        let json: Value = serde_json::from_str(&profile_body("claude_pro", "active")).unwrap();
-        assert!(parse_plan(&json).expect("plan").active);
+    fn a_canceled_or_ending_subscription_is_not_active() {
+        let pro = org("org-pro", &["claude_pro"]);
+        let canceled: Value = serde_json::from_str(&subscription_body("canceled", None)).unwrap();
+        assert!(!parse_plan(&pro, Some(&canceled)).expect("plan").active);
+        let ending: Value =
+            serde_json::from_str(&subscription_body("active", Some("2026-11-01T00:00:00Z"))).unwrap();
+        let plan = parse_plan(&pro, Some(&ending)).expect("plan");
+        assert!(!plan.active);
+        assert_eq!(plan.ends_at, Some(parse_iso_unix("2026-11-01T00:00:00Z").unwrap()));
+        let active: Value = serde_json::from_str(&subscription_body("active", None)).unwrap();
+        assert!(parse_plan(&pro, Some(&active)).expect("plan").active);
+    }
+
+    #[test]
+    fn next_charge_falls_back_to_the_date_only_field() {
+        let date_only = json!({ "next_charge_date": "2026-10-27" });
+        assert_eq!(
+            parse_renews_at(&date_only),
+            Some(parse_iso_unix("2026-10-27T00:00:00Z").unwrap())
+        );
+        assert_eq!(parse_renews_at(&json!({})), None);
     }
 }
