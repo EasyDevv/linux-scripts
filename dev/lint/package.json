@@ -1,0 +1,7 @@
+{
+	"name": "shared-lint",
+	"private": true,
+	"dependencies": {
+		"@biomejs/biome": "2.5.12"
+	}
+}

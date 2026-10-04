@@ -1,0 +1,2 @@
+# Central Clippy option SSOT. Lint allow/deny lives in clippy-args.json.
+avoid-breaking-exported-api = false

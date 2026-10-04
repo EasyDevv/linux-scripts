@@ -493,6 +493,16 @@
       "category": "git",
       "target": "git/repo-watch.sh",
       "description": "지정한 폴더 아래 Git 저장소의 커밋·upstream·파일 변경 상태를 TUI로 모니터링한다."
+    },
+    {
+      "name": "dlint",
+      "mode": "symlink",
+      "category": "dev",
+      "target": "dev/lint/dlint",
+      "ownedPaths": [
+        "dev/lint/dlint"
+      ],
+      "description": "공유 Biome 설정(dev/lint/biome.jsonc)으로 경로를 검사한다. --write를 붙이면 수정까지 적용한다."
     }
   ]
 }

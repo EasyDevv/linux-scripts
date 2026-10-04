@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Shared Biome check with the central config. `dlint <paths>` checks; `dlint --write <paths>` also fixes.
+set -eu
+DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+BIOME="$DIR/node_modules/.bin/biome"
+[ -x "$BIOME" ] || { echo "dlint: biome is not installed; run 'bun install' in $DIR" >&2; exit 127; }
+exec "$BIOME" check --config-path="$DIR/biome.jsonc" --files-ignore-unknown=true "$@"
