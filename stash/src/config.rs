@@ -25,6 +25,8 @@ pub struct DownloadConfig {
     pub user_agent: String,
     pub media_proxy_file: Option<PathBuf>,
     pub media_proxy_referer_hosts: Vec<String>,
+    /// Command that refreshes `media_proxy_file` after the proxy answers 407.
+    pub media_proxy_sync_command: Vec<String>,
 }
 
 impl DownloadConfig {
@@ -101,6 +103,7 @@ struct RawDownload {
     user_agent: Option<String>,
     media_proxy_file: Option<String>,
     media_proxy_referer_hosts: Option<Vec<String>>,
+    media_proxy_sync_command: Option<Vec<String>>,
 }
 
 #[derive(serde::Deserialize)]
@@ -179,6 +182,7 @@ mod tests {
                 user_agent: String::new(),
                 media_proxy_file: None,
                 media_proxy_referer_hosts: Vec::new(),
+                media_proxy_sync_command: Vec::new(),
             },
             vpn: VpnConfig {
                 command: PathBuf::new(),
@@ -263,6 +267,7 @@ pub fn load_config(path: Option<&str>) -> io::Result<AppConfig> {
         user_agent: None,
         media_proxy_file: None,
         media_proxy_referer_hosts: None,
+        media_proxy_sync_command: None,
     });
     let scheduler = raw.scheduler.unwrap_or(RawScheduler {
         poll_interval_secs: None,
@@ -310,6 +315,7 @@ pub fn load_config(path: Option<&str>) -> io::Result<AppConfig> {
             chunk_size_bytes: download.chunk_size_bytes.unwrap_or(8_388_608),
             media_proxy_file: download.media_proxy_file.map(PathBuf::from),
             media_proxy_referer_hosts: download.media_proxy_referer_hosts.unwrap_or_default(),
+            media_proxy_sync_command: download.media_proxy_sync_command.unwrap_or_default(),
             user_agent: download
                 .user_agent
                 .unwrap_or_else(|| "stash/0.1".to_string()),
@@ -372,7 +378,8 @@ mod media_proxy_scope_tests {
         let download = DownloadConfig { default_concurrency: 1, max_concurrency: 4,
             chunk_size_bytes: 1024, user_agent: "test".into(),
             media_proxy_file: Some(PathBuf::from("/private/proxy.json")),
-            media_proxy_referer_hosts: vec!["recordplay.biz".into()] };
+            media_proxy_referer_hosts: vec!["recordplay.biz".into()],
+            media_proxy_sync_command: Vec::new() };
         assert!(download.media_proxy_for("https://recordplay.biz/e/video").is_some());
         assert!(download.media_proxy_for("https://missav01.com/video").is_none());
         assert!(download.media_proxy_for("https://recordplay.biz.evil.test/video").is_none());

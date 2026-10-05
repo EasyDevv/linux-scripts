@@ -40,6 +40,7 @@ fn manager(options: ProcessManagerOptions) -> ProcessManager {
 fn defaults() -> ProcessManagerOptions {
     ProcessManagerOptions {
         systemd_cat_path: "/executor-test/missing-systemd-cat".into(),
+        systemd_run_path: "/executor-test/missing-systemd-run".into(),
         backoff_delays_ms: vec![10, 20, 40],
         backoff_jitter: 0.0,
         normal_runtime_ms: 1_000,
@@ -277,7 +278,7 @@ async fn corrupt_identity_is_unowned() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn lsof_failure_blocks() {
+async fn lsof_failure_backs_off() {
     let _g = lock();
     let dir = setup();
     let helper = helper(dir.path(), "exit 2");
@@ -286,7 +287,7 @@ async fn lsof_failure_blocks() {
         ..defaults()
     });
     let proc = pm.start(&instance("lsof", "sleep 5 # --port 43123", "/tmp"));
-    wait_state(&proc, ManagedProcessState::Blocked, 2_000).await;
+    wait_state(&proc, ManagedProcessState::Backoff, 2_000).await;
     assert!(proc
         .snapshot()
         .last_error
@@ -296,26 +297,33 @@ async fn lsof_failure_blocks() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn lsof_timeout_blocks() {
+async fn lsof_timeout_backs_off() {
     let _g = lock();
     let dir = setup();
-    let helper = helper(dir.path(), "sleep 3");
+    let helper = helper(dir.path(), "exec sleep 7");
     let pm = manager(ProcessManagerOptions {
         lsof_path: helper,
         ..defaults()
     });
     let proc = pm.start(&instance("lto", "sleep 5 # --port 43124", "/tmp"));
-    wait_state(&proc, ManagedProcessState::Blocked, 3_500).await;
+    let deadline = std::time::Instant::now() + Duration::from_millis(7_000);
+    while std::time::Instant::now() < deadline
+        && !proc.snapshot().last_error.unwrap_or_default().contains("timed out")
+    {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
     assert!(proc
         .snapshot()
         .last_error
         .unwrap_or_default()
         .contains("timed out"));
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    assert_ne!(proc.state(), ManagedProcessState::Blocked);
     let _ = proc.stop().await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn lsof_overflow_blocks() {
+async fn lsof_overflow_backs_off() {
     let _g = lock();
     let dir = setup();
     let helper = helper(dir.path(), "head -c 2000000 /dev/zero");
@@ -324,7 +332,7 @@ async fn lsof_overflow_blocks() {
         ..defaults()
     });
     let proc = pm.start(&instance("lov", "sleep 5 # --port 43125", "/tmp"));
-    wait_state(&proc, ManagedProcessState::Blocked, 8_000).await;
+    wait_state(&proc, ManagedProcessState::Backoff, 8_000).await;
     assert!(proc
         .snapshot()
         .last_error
@@ -388,4 +396,37 @@ async fn established_not_listen() {
     }
     assert_eq!(state, ManagedProcessState::Running);
     let _ = proc.stop().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn runs_in_own_scope() {
+    let _g = lock();
+    let _dir = setup();
+    let probe = std::process::Command::new("/usr/bin/systemd-run")
+        .args(["--user", "--scope", "--quiet", "--collect", "/bin/true"])
+        .status();
+    if !probe.map(|status| status.success()).unwrap_or(false) {
+        eprintln!("skipping: no user systemd manager");
+        return;
+    }
+    let pm = manager(ProcessManagerOptions {
+        systemd_run_path: "/usr/bin/systemd-run".into(),
+        ..defaults()
+    });
+    let proc = pm.start(&instance("scope-test", "exec sleep 30", "/tmp"));
+    wait_state(&proc, ManagedProcessState::Running, 5_000).await;
+    let pid = proc.pid();
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    let mut cgroup = String::new();
+    while std::time::Instant::now() < deadline {
+        cgroup = fs::read_to_string(format!("/proc/{pid}/cgroup")).unwrap_or_default();
+        if cgroup.contains("/executor-scope-test-") {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(20)).await;
+    }
+    assert!(cgroup.contains("/executor-scope-test-"), "cgroup: {cgroup}");
+    let _ = proc.stop().await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    assert!(!alive(pid));
 }

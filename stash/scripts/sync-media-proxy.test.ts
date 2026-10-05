@@ -11,6 +11,7 @@ import {
 	maskHost,
 	parseArgs,
 	parseMediaProxy,
+	cdpPortCandidates,
 	portFromCdpUrl,
 	proxyUrlWithAuth,
 	sameMediaProxy,
@@ -64,6 +65,15 @@ describe("extractStashSettings", () => {
 	test("tolerates a missing or malformed config", () => {
 		expect(extractStashSettings(null).mediaProxyFile).toBeNull();
 		expect(extractStashSettings({ download: "nope" }).workerCdpUrl).toBeNull();
+	});
+});
+
+describe("cdpPortCandidates", () => {
+	test("falls back to the Brave port unless a port is explicit", () => {
+		expect(cdpPortCandidates(null, "http://127.0.0.1:12345")).toEqual([12345, 12346]);
+		expect(cdpPortCandidates(null, null)).toEqual([12345, 12346]);
+		expect(cdpPortCandidates(null, "http://127.0.0.1:12346")).toEqual([12346]);
+		expect(cdpPortCandidates(9222, "http://127.0.0.1:12345")).toEqual([9222]);
 	});
 });
 

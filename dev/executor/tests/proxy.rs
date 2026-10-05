@@ -221,7 +221,7 @@ async fn restarts_after_start_budget() {
 }
 
 #[tokio::test]
-async fn restarts_after_healthy_stall() {
+async fn healthy_stall_does_not_restart() {
     let stall = Arc::new(AtomicBool::new(false));
     let app = Router::new().fallback(any({
         let stall = stall.clone();
@@ -282,7 +282,7 @@ async fn restarts_after_healthy_stall() {
         .send()
         .await
         .unwrap();
-    assert_eq!(timed_out.lock().unwrap().as_slice(), ["sample"]);
+    assert!(timed_out.lock().unwrap().is_empty());
     let _ = proxy.stop(None).await;
     let _ = stop.send(());
 }
@@ -349,7 +349,7 @@ async fn slow_first_html_keeps_running() {
 }
 
 #[tokio::test]
-async fn refused_html_restarts() {
+async fn refused_first_boot_restarts_after_start_budget() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
     drop(listener);
@@ -361,7 +361,7 @@ async fn refused_html_restarts() {
             let failed = failed.clone();
             Arc::new(move |name| failed.lock().unwrap().push(name))
         }),
-        5_000,
+        45,
         LocalProxyOptions::default(),
     )
     .await
@@ -384,7 +384,7 @@ async fn refused_html_restarts() {
     };
     let _ = navigate().await;
     assert!(failed.lock().unwrap().is_empty());
-    tokio::time::sleep(Duration::from_millis(30)).await;
+    tokio::time::sleep(Duration::from_millis(60)).await;
     let _ = navigate().await;
     assert_eq!(failed.lock().unwrap().as_slice(), ["sample"]);
     let _ = proxy.stop(None).await;
@@ -638,4 +638,58 @@ async fn websocket_queue_is_bounded() {
     wait_until(|| proxy.snapshot().pending_websockets == 0, 800).await;
     let _ = proxy.stop(None).await;
     let _ = stop.send(());
+}
+
+#[tokio::test]
+async fn healthy_refusal_restarts_after_failure_budget() {
+    let app = Router::new().fallback(any(|| async { "ok" }));
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (stop, stopped) = oneshot::channel::<()>();
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app)
+            .with_graceful_shutdown(async move {
+                let _ = stopped.await;
+            })
+            .await
+            .ok();
+    });
+    let failed = Arc::new(Mutex::new(Vec::new()));
+    let proxy = LocalProxy::bind(
+        0,
+        25,
+        Some({
+            let failed = failed.clone();
+            Arc::new(move |name| failed.lock().unwrap().push(name))
+        }),
+        10_000,
+        LocalProxyOptions {
+            failure_budget_ms: 60,
+            ..LocalProxyOptions::default()
+        },
+    )
+    .await
+    .unwrap();
+    proxy.update(&config_for(port, "sample"));
+    let client = reqwest::Client::new();
+    let url = format!("http://127.0.0.1:{}/page", proxy.port());
+    let host = format!("sample.localhost:{}", proxy.port());
+    let navigate = || {
+        client
+            .get(&url)
+            .header("host", &host)
+            .header("accept", "text/html")
+            .send()
+    };
+    assert_eq!(navigate().await.unwrap().text().await.unwrap(), "ok");
+    let _ = stop.send(());
+    let _ = server.await;
+    let _ = navigate().await.unwrap();
+    tokio::time::sleep(Duration::from_millis(30)).await;
+    let _ = navigate().await.unwrap();
+    assert!(failed.lock().unwrap().is_empty());
+    tokio::time::sleep(Duration::from_millis(50)).await;
+    let _ = navigate().await.unwrap();
+    assert_eq!(failed.lock().unwrap().as_slice(), ["sample"]);
+    let _ = proxy.stop(None).await;
 }

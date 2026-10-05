@@ -82,6 +82,8 @@ fn classify_failure_for(message: &str, src_url: Option<&str>) -> FailureKind {
         .any(|status| lower.contains(status))
         || lower.contains("encrypted hls")
         || lower.contains("playlist has no segments")
+        || lower.contains("file is too small")
+        || lower.contains("output is too small")
     {
         FailureKind::Permanent
     } else {
@@ -1707,7 +1709,11 @@ pub async fn run_job(job_id: String, config: AppConfig, jobs: Arc<JobManager>) {
 
             let hls_headers = headers_from_json(&job.headers_json);
             let referer = referer_from_headers(&hls_headers);
-            let route = match MediaRoute::from_file(config.download.media_proxy_for(&referer), &config.download.user_agent)? {
+            let route = match MediaRoute::from_file(
+                config.download.media_proxy_for(&referer),
+                &config.download.user_agent,
+                &config.download.media_proxy_sync_command,
+            )? {
                 Some(route) => Some(route),
                 None => MediaRoute::for_browser_tls(&job.src_url, &config.vpn.socks_url)?,
             };
@@ -2549,6 +2555,18 @@ mod tests {
         assert_eq!(
             classify_failure("encrypted HLS is not supported"),
             FailureKind::Permanent
+        );
+        assert_eq!(
+            classify_failure("downloaded file is too small: 139528 bytes (minimum 1048576 bytes)"),
+            FailureKind::Permanent
+        );
+        assert_eq!(
+            classify_failure("browser HLS output is too small: 100 bytes (minimum 1048576 bytes)"),
+            FailureKind::Permanent
+        );
+        assert_eq!(
+            classify_failure("download failed: media route proxy auth rejected"),
+            FailureKind::Transient
         );
     }
 

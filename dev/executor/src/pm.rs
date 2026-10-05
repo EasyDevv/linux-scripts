@@ -19,6 +19,8 @@ const DEFAULT_BACKOFF: [u64; 6] = [1_000, 2_000, 4_000, 8_000, 16_000, 30_000];
 const DEFAULT_BACKOFF_JITTER: f64 = 0.2;
 const DEFAULT_NORMAL_RUNTIME_MS: u64 = 60_000;
 const DEFAULT_TERMINATION_GRACE_MS: u64 = 5_000;
+/// `lsof` walks every process; under a CPU-saturating build the 2s helper default times out.
+const PORT_INSPECTION_TIMEOUT_MS: u64 = 5_000;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -57,6 +59,9 @@ pub struct ProcessManagerOptions {
     pub systemd_cat_path: PathBuf,
     pub lsof_path: PathBuf,
     pub ps_path: PathBuf,
+    /// Each instance runs in its own transient user scope so the kernel shares CPU and IO per
+    /// instance, not per thread: one instance's parallel build cannot starve the others.
+    pub systemd_run_path: PathBuf,
     pub backoff_delays_ms: Vec<u64>,
     pub backoff_jitter: f64,
     pub normal_runtime_ms: u64,
@@ -70,6 +75,7 @@ impl Default for ProcessManagerOptions {
             systemd_cat_path: PathBuf::from("/usr/bin/systemd-cat"),
             lsof_path: PathBuf::from("/usr/bin/lsof"),
             ps_path: PathBuf::from("/bin/ps"),
+            systemd_run_path: PathBuf::from("/usr/bin/systemd-run"),
             backoff_delays_ms: DEFAULT_BACKOFF.to_vec(),
             backoff_jitter: DEFAULT_BACKOFF_JITTER,
             normal_runtime_ms: DEFAULT_NORMAL_RUNTIME_MS,
@@ -341,7 +347,9 @@ async fn run_loop(
         }
         if let Some(issue) = preflight(&instance, &options) {
             set_error(&inner, &options, &issue);
-            if issue.contains("already in use by an external process") {
+            if issue.contains("already in use by an external process")
+                || issue.contains("inspection failed")
+            {
                 failure_attempts += 1;
                 set_backoff(&inner, &options, failure_attempts);
                 wait_backoff(&inner, &notify, &options, failure_attempts).await;
@@ -509,7 +517,13 @@ fn port_has_foreign_occupant(
         format!("-tiTCP:{port}"),
         "-sTCP:LISTEN".into(),
     ];
-    let result = run_text_timed(&args, RunOptions::default());
+    let result = run_text_timed(
+        &args,
+        RunOptions {
+            timeout_ms: PORT_INSPECTION_TIMEOUT_MS,
+            ..RunOptions::default()
+        },
+    );
     if let Some(failure) = control_helper_failure("lsof", &result, true) {
         return Some(format!("port {port} inspection failed: {failure}"));
     }
@@ -590,6 +604,37 @@ fn logger_usable(path: &Path, tag: &str) -> bool {
     control_helper_failure("systemd-cat", &result, false).is_none()
 }
 
+fn scope_usable(path: &Path) -> bool {
+    if !executable_exists(path) {
+        return false;
+    }
+    let args = vec![
+        path.display().to_string(),
+        "--user".into(),
+        "--scope".into(),
+        "--quiet".into(),
+        "--collect".into(),
+        "/bin/true".into(),
+    ];
+    let result = run_text_timed(
+        &args,
+        RunOptions {
+            timeout_ms: PORT_INSPECTION_TIMEOUT_MS,
+            ..RunOptions::default()
+        },
+    );
+    control_helper_failure("systemd-run", &result, false).is_none()
+}
+
+fn scope_unit(name: &str) -> String {
+    let safe: String = name
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .collect();
+    let id = uuid::Uuid::now_v7().simple().to_string();
+    format!("executor-{safe}-{}", &id[id.len() - 8..])
+}
+
 fn spawn_instance(
     instance: &NormalizedInstance,
     env: &BTreeMap<String, String>,
@@ -597,7 +642,8 @@ fn spawn_instance(
     tag: &str,
 ) -> Result<std::process::Child, String> {
     let journaled = logger_usable(&options.systemd_cat_path, tag);
-    let mut args = command_args(instance, options, journaled, tag);
+    let scoped = scope_usable(&options.systemd_run_path);
+    let mut args = command_args(instance, options, journaled, scoped, tag);
     let mut cmd = Command::new(&args[0]);
     cmd.args(&args[1..]);
     cmd.current_dir(&instance.dir);
@@ -622,7 +668,7 @@ fn spawn_instance(
     match cmd.spawn() {
         Ok(child) => Ok(child),
         Err(error) if journaled => {
-            args = command_args(instance, options, false, tag);
+            args = command_args(instance, options, false, scoped, tag);
             let mut fallback = Command::new(&args[0]);
             fallback.args(&args[1..]);
             fallback.current_dir(&instance.dir);
@@ -646,6 +692,7 @@ fn command_args(
     instance: &NormalizedInstance,
     options: &ProcessManagerOptions,
     journaled: bool,
+    scoped: bool,
     tag: &str,
 ) -> Vec<String> {
     let mut args = vec!["/bin/sh".into(), "-lc".into(), instance.cmd.clone()];
@@ -659,6 +706,29 @@ fn command_args(
             "/usr/bin/stdbuf".into(),
             "-oL".into(),
             "-eL".into(),
+        ];
+        prefixed.extend(args);
+        args = prefixed;
+    }
+    // `systemd-run --scope` execs the command in place, so the spawned PID stays the tracked root.
+    // `PartOf` stops the scope with executor.service even when the supervisor dies uncleanly.
+    if scoped {
+        let mut prefixed = vec![
+            options.systemd_run_path.display().to_string(),
+            "--user".into(),
+            "--scope".into(),
+            "--quiet".into(),
+            "--collect".into(),
+            format!("--unit={}", scope_unit(&instance.name)),
+            "-p".into(),
+            "PartOf=executor.service".into(),
+            "-p".into(),
+            "CPUWeight=100".into(),
+            "-p".into(),
+            "IOWeight=100".into(),
+            "-p".into(),
+            format!("TimeoutStopSec={}ms", options.termination_grace_ms.max(1)),
+            "--".into(),
         ];
         prefixed.extend(args);
         args = prefixed;

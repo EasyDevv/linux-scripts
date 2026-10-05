@@ -21,6 +21,7 @@ use tokio_tungstenite::tungstenite;
 
 const DEFAULT_NAV_TIMEOUT_MS: u64 = 5_000;
 const DEFAULT_START_BUDGET_MS: u64 = 120_000;
+const DEFAULT_FAILURE_BUDGET_MS: u64 = 60_000;
 const HOP_BY_HOP: &[&str] = &[
     "connection",
     "keep-alive",
@@ -39,6 +40,10 @@ pub struct LocalProxyOptions {
     pub websocket_queue_bytes: usize,
     pub websocket_queue_messages: usize,
     pub websocket_connect_timeout_ms: u64,
+    /// A ready instance is restarted only after its navigations keep failing to connect this long.
+    /// Slow (timed-out) navigations never restart a ready instance: under machine-wide load that
+    /// restart rebuilds the instance and deepens the load on every other one.
+    pub failure_budget_ms: u64,
 }
 
 impl Default for LocalProxyOptions {
@@ -48,6 +53,7 @@ impl Default for LocalProxyOptions {
             websocket_queue_bytes: 1024 * 1024,
             websocket_queue_messages: 256,
             websocket_connect_timeout_ms: 5_000,
+            failure_budget_ms: DEFAULT_FAILURE_BUDGET_MS,
         }
     }
 }
@@ -619,17 +625,18 @@ fn record_nav(state: &ProxyState, name: &str, succeeded: bool, timed_out: bool) 
         state.navigation_failure_started.lock().unwrap().remove(name);
         return;
     }
+    let ready = state.navigation_succeeded.lock().unwrap().contains(name);
+    if ready && timed_out {
+        return;
+    }
     let now = std::time::Instant::now();
     let mut started = state.navigation_failure_started.lock().unwrap();
     let start = *started.entry(name.to_string()).or_insert(now);
     let elapsed = now.saturating_duration_since(start);
-    let ready = state.navigation_succeeded.lock().unwrap().contains(name);
     let restart_after = if ready {
-        state.navigation_timeout
-    } else if timed_out {
-        state.start_budget
+        Duration::from_millis(state.options.failure_budget_ms)
     } else {
-        state.navigation_timeout
+        state.start_budget
     };
     if elapsed < restart_after {
         return;

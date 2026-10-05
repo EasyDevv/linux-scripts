@@ -5,7 +5,9 @@
 //! - `BrowserTls`: Chrome-compatible TLS via the `curl_chrome131` helper,
 //!   restricted to the exact `surrit.com` origin (see [`browser_tls`]).
 use serde::Deserialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::RwLock;
+use std::time::{Duration, Instant};
 
 use crate::browser_tls::{self, BrowserTls};
 
@@ -17,10 +19,26 @@ struct ProxyConfig {
     password: String,
 }
 
+/// The AdGuard proxy password rotates while stash runs. A stale password makes
+/// the CONNECT answer 407; the route then runs the configured sync command,
+/// re-reads `media_proxy_file`, and retries the request once.
+struct ProxyRoute {
+    client: RwLock<reqwest::Client>,
+    path: PathBuf,
+    user_agent: String,
+    sync_command: Vec<String>,
+}
+
 enum Transport {
-    Proxy(reqwest::Client),
+    Proxy(ProxyRoute),
     BrowserTls(BrowserTls),
 }
+
+const PROXY_AUTH_REJECTED: &str = "media route proxy auth rejected";
+const SYNC_MIN_INTERVAL: Duration = Duration::from_secs(60);
+const SYNC_TIMEOUT: Duration = Duration::from_secs(40);
+/// Serializes credential syncs process-wide; holds the last run time.
+static SYNC_STATE: tokio::sync::Mutex<Option<Instant>> = tokio::sync::Mutex::const_new(None);
 
 pub struct MediaRoute {
     transport: Transport,
@@ -42,52 +60,21 @@ pub(crate) fn blocked_request_header(name: &str) -> bool {
 }
 
 impl MediaRoute {
-    pub fn from_file(path: Option<&Path>, user_agent: &str) -> Result<Option<Self>, String> {
+    pub fn from_file(
+        path: Option<&Path>,
+        user_agent: &str,
+        sync_command: &[String],
+    ) -> Result<Option<Self>, String> {
         let Some(path) = path else { return Ok(None) };
-        let metadata = std::fs::symlink_metadata(path)
-            .map_err(|_| "media proxy configuration unavailable".to_string())?;
-        if !metadata.is_file() || metadata.len() > 65536 {
-            return Err("invalid media proxy configuration file".into());
-        }
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            if metadata.permissions().mode() & 0o077 != 0 {
-                return Err("media proxy configuration must be owner-only (0600)".into());
-            }
-        }
-        let text = std::fs::read_to_string(path)
-            .map_err(|_| "media proxy configuration unreadable".to_string())?;
-        let config: ProxyConfig = serde_json::from_str(&text)
-            .map_err(|_| "invalid media proxy configuration".to_string())?;
-        Self::from_config(config, user_agent).map(Some)
-    }
-
-    fn from_config(config: ProxyConfig, user_agent: &str) -> Result<Self, String> {
-        let url = url::Url::parse(&config.url).map_err(|_| "invalid media proxy endpoint")?;
-        if url.scheme() != "https"
-            || url.host_str().is_none()
-            || !url.username().is_empty()
-            || url.password().is_some()
-            || config.username.is_empty()
-            || config.password.is_empty()
-        {
-            return Err("media proxy requires HTTPS and separate credentials".into());
-        }
-        let proxy = reqwest::Proxy::all(url.as_str())
-            .map_err(|_| "invalid media proxy endpoint")?
-            .basic_auth(&config.username, &config.password);
-        let client = reqwest::Client::builder()
-            .no_proxy()
-            .proxy(proxy)
-            .user_agent(user_agent)
-            .connect_timeout(std::time::Duration::from_secs(15))
-            .timeout(std::time::Duration::from_secs(150))
-            .build()
-            .map_err(|_| "media proxy client initialization failed")?;
-        Ok(Self {
-            transport: Transport::Proxy(client),
-        })
+        let client = proxy_client_from_file(path, user_agent)?;
+        Ok(Some(Self {
+            transport: Transport::Proxy(ProxyRoute {
+                client: RwLock::new(client),
+                path: path.to_path_buf(),
+                user_agent: user_agent.to_string(),
+                sync_command: sync_command.to_vec(),
+            }),
+        }))
     }
 
     /// Chrome-TLS route for the exact HTTPS origin `surrit.com`, pinned to the
@@ -123,9 +110,103 @@ impl MediaRoute {
         headers: &[(String, String)],
     ) -> Result<Vec<u8>, String> {
         match &self.transport {
-            Transport::Proxy(client) => fetch_via_proxy(client, referer, url, headers).await,
+            Transport::Proxy(route) => route.fetch_bytes(referer, url, headers).await,
             Transport::BrowserTls(route) => route.fetch_bytes(referer, url, headers).await,
         }
+    }
+}
+
+fn proxy_client_from_file(path: &Path, user_agent: &str) -> Result<reqwest::Client, String> {
+    let metadata = std::fs::symlink_metadata(path)
+        .map_err(|_| "media proxy configuration unavailable".to_string())?;
+    if !metadata.is_file() || metadata.len() > 65536 {
+        return Err("invalid media proxy configuration file".into());
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o077 != 0 {
+            return Err("media proxy configuration must be owner-only (0600)".into());
+        }
+    }
+    let text = std::fs::read_to_string(path)
+        .map_err(|_| "media proxy configuration unreadable".to_string())?;
+    let config: ProxyConfig = serde_json::from_str(&text)
+        .map_err(|_| "invalid media proxy configuration".to_string())?;
+    proxy_client(config, user_agent)
+}
+
+fn proxy_client(config: ProxyConfig, user_agent: &str) -> Result<reqwest::Client, String> {
+    let url = url::Url::parse(&config.url).map_err(|_| "invalid media proxy endpoint")?;
+    if url.scheme() != "https"
+        || url.host_str().is_none()
+        || !url.username().is_empty()
+        || url.password().is_some()
+        || config.username.is_empty()
+        || config.password.is_empty()
+    {
+        return Err("media proxy requires HTTPS and separate credentials".into());
+    }
+    let proxy = reqwest::Proxy::all(url.as_str())
+        .map_err(|_| "invalid media proxy endpoint")?
+        .basic_auth(&config.username, &config.password);
+    let client = reqwest::Client::builder()
+        .no_proxy()
+        .proxy(proxy)
+        .user_agent(user_agent)
+        .connect_timeout(std::time::Duration::from_secs(15))
+        .timeout(std::time::Duration::from_secs(150))
+        .build()
+        .map_err(|_| "media proxy client initialization failed")?;
+    Ok(client)
+}
+
+impl ProxyRoute {
+    async fn fetch_bytes(
+        &self,
+        referer: &str,
+        url: &str,
+        headers: &[(String, String)],
+    ) -> Result<Vec<u8>, String> {
+        let client = self.client.read().unwrap().clone();
+        match fetch_via_proxy(&client, referer, url, headers).await {
+            Err(error) if error == PROXY_AUTH_REJECTED => {
+                self.refresh().await?;
+                let client = self.client.read().unwrap().clone();
+                fetch_via_proxy(&client, referer, url, headers).await
+            }
+            result => result,
+        }
+    }
+
+    /// Runs the sync command at most once per [`SYNC_MIN_INTERVAL`] across all
+    /// jobs, then always reloads the file: another job may have synced already.
+    async fn refresh(&self) -> Result<(), String> {
+        {
+            let mut last_run = SYNC_STATE.lock().await;
+            let due = last_run.is_none_or(|at| at.elapsed() >= SYNC_MIN_INTERVAL);
+            if due && let Some((program, args)) = self.sync_command.split_first() {
+                *last_run = Some(Instant::now());
+                let status = tokio::time::timeout(
+                    SYNC_TIMEOUT,
+                    tokio::process::Command::new(program)
+                        .args(args)
+                        .stdin(std::process::Stdio::null())
+                        .stdout(std::process::Stdio::null())
+                        .stderr(std::process::Stdio::null())
+                        .kill_on_drop(true)
+                        .status(),
+                )
+                .await;
+                if !matches!(status, Ok(Ok(status)) if status.success()) {
+                    tracing::warn!("media proxy credential sync failed");
+                }
+            }
+        }
+        let client = proxy_client_from_file(&self.path, &self.user_agent)
+            .map_err(|_| PROXY_AUTH_REJECTED.to_string())?;
+        *self.client.write().unwrap() = client;
+        Ok(())
     }
 }
 
@@ -145,7 +226,9 @@ async fn fetch_via_proxy(
         request = request.header(reqwest::header::REFERER, referer);
     }
     let response = request.send().await.map_err(|error| {
-        if error.is_timeout() {
+        if is_proxy_auth_error(&error) {
+            PROXY_AUTH_REJECTED
+        } else if error.is_timeout() {
             "media route timed out"
         } else {
             "media route connection failed"
@@ -167,6 +250,20 @@ async fn fetch_via_proxy(
     Ok(body.to_vec())
 }
 
+/// hyper-util reports a 407 CONNECT answer as `TunnelError::ProxyAuthRequired`
+/// somewhere in the source chain. Only matched, never returned: the outer
+/// reqwest message may contain a signed URL.
+fn is_proxy_auth_error(error: &reqwest::Error) -> bool {
+    let mut source: Option<&dyn std::error::Error> = Some(error);
+    while let Some(current) = source {
+        if current.to_string().contains("proxy authorization required") {
+            return true;
+        }
+        source = current.source();
+    }
+    false
+}
+
 pub fn referer_from_headers(headers: &[(String, String)]) -> String {
     headers
         .iter()
@@ -180,8 +277,8 @@ mod tests {
     use super::*;
     #[test]
     fn optional_route_is_disabled_and_bad_credentials_are_not_disclosed() {
-        assert!(MediaRoute::from_file(None, "test").unwrap().is_none());
-        let error = MediaRoute::from_config(
+        assert!(MediaRoute::from_file(None, "test", &[]).unwrap().is_none());
+        let error = proxy_client(
             ProxyConfig {
                 url: "http://proxy.example".into(),
                 username: "private-user".into(),
@@ -195,13 +292,36 @@ mod tests {
         assert!(!error.contains("private-pass"));
         assert!(error.contains("HTTPS"));
     }
+    #[tokio::test]
+    async fn proxy_407_is_reported_as_auth_rejected_without_url() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut buffer = [0_u8; 1024];
+            let _ = socket.read(&mut buffer).await;
+            let _ = socket
+                .write_all(b"HTTP/1.1 407 Proxy Authentication Required\r\n\r\n")
+                .await;
+        });
+        let client = reqwest::Client::builder()
+            .no_proxy()
+            .proxy(reqwest::Proxy::all(format!("http://127.0.0.1:{port}")).unwrap())
+            .build()
+            .unwrap();
+        let error = fetch_via_proxy(&client, "", "https://cdn.example/a.m3u8?t=secret", &[])
+            .await
+            .unwrap_err();
+        assert_eq!(error, PROXY_AUTH_REJECTED);
+    }
     #[test]
     fn refuses_world_readable_secret_files() {
         use std::os::unix::fs::PermissionsExt;
         let path = std::env::temp_dir().join(format!("stash-proxy-test-{}", uuid::Uuid::new_v4()));
         std::fs::write(&path, "{}").unwrap();
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
-        let result = MediaRoute::from_file(Some(&path), "test");
+        let result = MediaRoute::from_file(Some(&path), "test", &[]);
         std::fs::remove_file(&path).unwrap();
         assert!(result.err().unwrap().contains("owner-only"));
     }

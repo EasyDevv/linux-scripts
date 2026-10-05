@@ -27,7 +27,8 @@
  * -------
  *   --config <path>       stash config (default ~/.config/stash/config.toml)
  *   --target <path>       media proxy json (default from config)
- *   --cdp-port <n>        Chrome CDP port (default from browser_hls.worker_cdp_url)
+ *   --cdp-port <n>        Chrome CDP port (default from browser_hls.worker_cdp_url,
+ *                         then 12346 when that one is unreachable)
  *   --profile <dir>       Chrome user-data-dir used for extension discovery
  *   --extension-id <id>   skip extension discovery
  *   --keep-host           keep the existing host, update credentials only
@@ -48,6 +49,8 @@ export const DEFAULT_CONFIG_PATH = join(homedir(), ".config", "stash", "config.t
 export const DEFAULT_MEDIA_PROXY_PATH = join(homedir(), ".config", "stash", "media-proxy.json");
 export const DEFAULT_PROFILE_DIR = join(homedir(), "dev", "tampermonkey", ".user-data", "chrome-tampermonkey");
 export const DEFAULT_CDP_PORT = 12345;
+/** Brave-Origin profile used by `bun run update:all`; tried when Chrome is down. */
+export const FALLBACK_CDP_PORT = 12346;
 export const EXTENSION_NAME_PATTERN = /adguard\s*vpn/i;
 export const VERIFY_URL = "https://ifconfig.me/ip";
 
@@ -574,7 +577,7 @@ export function usage(): string {
 		"",
 		"  --config <path>      stash config.toml (default ~/.config/stash/config.toml)",
 		"  --target <path>      media proxy json (default from config, else ~/.config/stash/media-proxy.json)",
-		"  --cdp-port <n>       Chrome CDP port (default from browser_hls.worker_cdp_url)",
+		"  --cdp-port <n>       Chrome CDP port (default from browser_hls.worker_cdp_url, then 12346)",
 		"  --profile <dir>      Chrome user-data-dir for extension discovery",
 		"  --extension-id <id>  skip discovery",
 		"  --keep-host          keep the current host, refresh credentials only",
@@ -585,17 +588,31 @@ export function usage(): string {
 	].join("\n");
 }
 
+/** An explicit `--cdp-port` is the only port tried; otherwise fall back to Brave. */
+export function cdpPortCandidates(explicit: number | null, workerCdpUrl: string | null): number[] {
+	if (explicit != null) return [explicit];
+	return [...new Set([portFromCdpUrl(workerCdpUrl) ?? DEFAULT_CDP_PORT, FALLBACK_CDP_PORT])];
+}
+
+async function firstReachableTargets(ports: number[]): Promise<{ port: number; targets: CdpTarget[] }> {
+	const errors: string[] = [];
+	for (const port of ports) {
+		try {
+			return { port, targets: await listTargets(port) };
+		} catch (error) {
+			errors.push(`${port}: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	throw new Error(`Chrome CDP not reachable on 127.0.0.1 (${errors.join("; ")})`);
+}
+
 export async function run(argv: string[]): Promise<{ summary: SyncSummary; output: string }> {
 	const args = parseArgs(argv);
 	const settings = await readStashSettings(args.config);
 	const target = args.target ?? settings.mediaProxyFile ?? DEFAULT_MEDIA_PROXY_PATH;
-	const port = args.cdpPort ?? portFromCdpUrl(settings.workerCdpUrl) ?? DEFAULT_CDP_PORT;
 
 	const existing = await readExistingProxy(target);
-	const targets = await listTargets(port).catch((error: unknown) => {
-		const detail = error instanceof Error ? error.message : String(error);
-		throw new Error(`Chrome CDP not reachable on 127.0.0.1:${port} (${detail})`);
-	});
+	const { port, targets } = await firstReachableTargets(cdpPortCandidates(args.cdpPort, settings.workerCdpUrl));
 	const candidates = args.extensionId
 		? [args.extensionId]
 		: [...extensionIdsFromTargets(targets), ...(await discoverExtensionIds(args.profile))];

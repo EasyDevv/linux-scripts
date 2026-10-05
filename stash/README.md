@@ -73,7 +73,7 @@ GET  /stash/test/userscript.user.js
 기본 경로는 `~/.config/stash/config.toml`. 필드와 기본값은 `src/config.rs`.
 
 최상위: `bind`, `sqlite_path`, `allowed_roots`, `max_results`, `download_root`, `temp_root`.
-`[download]`: `default_concurrency`, `max_concurrency`, `chunk_size_bytes`, `user_agent`, `media_proxy_file`, `media_proxy_referer_hosts`.
+`[download]`: `default_concurrency`, `max_concurrency`, `chunk_size_bytes`, `user_agent`, `media_proxy_file`, `media_proxy_referer_hosts`, `media_proxy_sync_command`.
 `[scheduler]`: `poll_interval_secs`, `resume_on_start`, `progress_flush_interval_ms`.
 `[retry]`: `max_retries`, `retry_interval_secs`.
 `[vpn]`: `command`, `socks_url`, `auto_connect`, `connect_command`, `connect_timeout_secs`, `verify_before_each_job`, `required_location`, `required_mode`, `auto_rotate_on_ip_block`, `excluded_locations`.
@@ -107,11 +107,12 @@ GET  /stash/test/userscript.user.js
 [download]
 media_proxy_file = "/absolute/private/path/media-proxy.json"
 media_proxy_referer_hosts = ["recordplay.biz", "playrecord.biz"]
+media_proxy_sync_command = ["/home/<user>/.bun/bin/bun", "/abs/stash/scripts/sync-media-proxy.ts", "--quiet"]
 ```
 
-별도 JSON 파일 형식은 `{"url":"https://proxy.example:443","username":"...","password":"..."}`. 일반 파일·소유자 전용 권한(`chmod 600`)만 허용한다. 실제 인증 정보는 저장소, 잡의 `headers_json`, 로그에 넣지 않는다. 프록시 인증이 만료되어 HTTP 407이 나오면 이 파일의 인증 정보를 갱신해야 한다. 자동으로 브라우저의 자격 증명을 읽거나 VPN 위치를 변경하지 않는다.
+별도 JSON 파일 형식은 `{"url":"https://proxy.example:443","username":"...","password":"..."}`. 일반 파일·소유자 전용 권한(`chmod 600`)만 허용한다. 실제 인증 정보는 저장소, 잡의 `headers_json`, 로그에 넣지 않는다. 프록시 인증이 만료되어 CONNECT가 HTTP 407을 돌려주면 잡 오류는 `media route proxy auth rejected`(일시 오류)이다. `media_proxy_sync_command`가 있으면 프로세스 전체에서 60초에 한 번만 실행해 파일을 다시 읽고 같은 요청을 한 번 재시도한다. 없으면 이 파일을 손으로 갱신해야 한다. VPN 위치는 바꾸지 않는다.
 
-자격 증명은 AdGuard VPN 확장 프로그램이 세션마다 교체하므로 손으로 복사하면 다시 낡는다. `scripts/sync-media-proxy.ts`가 CDP로 확장의 `chrome.storage.local.proxy_config`를 읽어 `media_proxy_file`을 갱신한다(`bun test scripts` 18건, `--check`로 쓰기 없이 비교, `--verify`로 프록시 CONNECT 확인, 비밀 값은 sha256 앞 12자만 출력).
+자격 증명은 AdGuard VPN 확장 프로그램이 세션마다 교체하므로 손으로 복사하면 다시 낡는다. `scripts/sync-media-proxy.ts`가 CDP로 확장의 `chrome.storage.local.proxy_config`를 읽어 `media_proxy_file`을 갱신한다(`bun test scripts` 18건, `--check`로 쓰기 없이 비교, `--verify`로 프록시 CONNECT 확인, 비밀 값은 sha256 앞 12자만 출력). `--cdp-port`를 주지 않으면 `worker_cdp_url` 포트(12345)가 닫혀 있을 때 Brave-Origin 12346으로 넘어간다.
 
 ```bash
 bun scripts/sync-media-proxy.ts --check          # 갱신 필요 여부만 확인
