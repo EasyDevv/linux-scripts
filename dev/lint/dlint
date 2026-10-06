@@ -1,7 +1,107 @@
 #!/usr/bin/env bash
-# Shared Biome check with the central config. `dlint <paths>` checks; `dlint --write <paths>` also fixes.
-set -eu
+# Shared format + lint with the central config: Prettier formats code files, then ESLint checks JS/TS/Svelte and the
+# shadcn design-system rules. JSON is never formatted: compact JSON keeps what agents read small.
+#   dlint [paths]           check only (default: .)
+#   dlint --write [paths]   format, apply safe fixes, and prune fixed entries from eslint-suppressions.json
+#   dlint --quiet ...       report ESLint errors only (hooks)
+#   dlint --baseline        record every current ESLint error under . in eslint-suppressions.json
+set -u
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-BIOME="$DIR/node_modules/.bin/biome"
-[ -x "$BIOME" ] || { echo "dlint: biome is not installed; run 'bun install' in $DIR" >&2; exit 127; }
-exec "$BIOME" check --config-path="$DIR/biome.jsonc" --files-ignore-unknown=true "$@"
+BIN="$DIR/node_modules/.bin"
+SUPPRESSIONS=eslint-suppressions.json
+[ -x "$BIN/prettier" ] && [ -x "$BIN/eslint" ] || {
+	echo "dlint: prettier/eslint are not installed; run 'bun install' in $DIR" >&2
+	exit 127
+}
+
+write=0
+quiet=0
+baseline=0
+paths=()
+for arg in "$@"; do
+	case "$arg" in
+	--write) write=1 ;;
+	--quiet) quiet=1 ;;
+	--baseline) baseline=1 ;;
+	-*)
+		echo "dlint: unknown option $arg (use --write, --quiet, --baseline)" >&2
+		exit 2
+		;;
+	*) paths+=("$arg") ;;
+	esac
+done
+[ ${#paths[@]} -eq 0 ] && paths=(.)
+
+eslint=("$BIN/eslint" --config "$DIR/eslint.config.js" --no-error-on-unmatched-pattern --no-warn-ignored)
+
+# ESLint writes the suppressions file indented; keep it on one line like the other JSON agents read.
+compact_suppressions() {
+	[ -f "$SUPPRESSIONS" ] || return 0
+	bun -e 'const p = process.argv[1]; const t = await Bun.file(p).text(); const c = JSON.stringify(JSON.parse(t));
+if (t.trim() !== c) await Bun.write(p, `${c}\n`);' "$SUPPRESSIONS"
+}
+
+if [ $baseline -eq 1 ] && [ "${paths[*]}" != "." ]; then
+	echo "dlint: --baseline records the whole project; run it without paths from the package directory" >&2
+	exit 2
+fi
+
+CODE_EXT="js,mjs,cjs,ts,mts,cts,jsx,tsx,svelte,css"
+format_targets=()
+lint_targets=()
+add_file() {
+	case ".${1##*.}" in
+	.js | .mjs | .cjs | .ts | .mts | .cts | .svelte) format_targets+=("$1") lint_targets+=("$1") ;;
+	.jsx | .tsx | .css) format_targets+=("$1") ;;
+	esac
+}
+# Inside git, a directory expands to its tracked and untracked files minus every .gitignore level, so generated code
+# (paraglide output, browser profiles) stays out of both tools. ESLint alone would not read .gitignore.
+in_git=0
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 && in_git=1
+for path in "${paths[@]}"; do
+	if [ ! -d "$path" ]; then
+		add_file "$path"
+	elif [ $in_git -eq 1 ]; then
+		while IFS= read -r -d '' file; do
+			[ -f "$file" ] && add_file "$file"
+		done < <(git ls-files -z -co --exclude-standard -- "$path")
+	else
+		format_targets+=("${path%/}/**/*.{$CODE_EXT}")
+		lint_targets+=("$path")
+	fi
+done
+
+if [ $baseline -eq 1 ]; then
+	rm -f "$SUPPRESSIONS"
+	[ ${#lint_targets[@]} -eq 0 ] && exit 0
+	"${eslint[@]}" --quiet --suppress-all "${lint_targets[@]}" >/dev/null
+	status=$?
+	compact_suppressions
+	# A clean project needs no baseline file.
+	[ "$(cat "$SUPPRESSIONS" 2>/dev/null)" = "{}" ] && rm -f "$SUPPRESSIONS"
+	[ -f "$SUPPRESSIONS" ] && echo "dlint: baseline written to $SUPPRESSIONS" || echo "dlint: no ESLint errors, no baseline needed"
+	exit $status
+fi
+
+status=0
+if [ ${#format_targets[@]} -gt 0 ]; then
+	ignore=(--ignore-path "$DIR/prettierignore")
+	[ -f .gitignore ] && ignore+=(--ignore-path .gitignore)
+	mode=--check
+	[ $write -eq 1 ] && mode=--write
+	"$BIN/prettier" "$mode" --log-level warn --config "$DIR/prettier.config.js" "${ignore[@]}" \
+		--no-error-on-unmatched-pattern "${format_targets[@]}" || status=1
+fi
+if [ ${#lint_targets[@]} -gt 0 ]; then
+	flags=()
+	[ $quiet -eq 1 ] && flags+=(--quiet)
+	if [ $write -eq 1 ]; then
+		flags+=(--fix)
+		# Pruning without a baseline would create an empty file in every project.
+		[ -f "$SUPPRESSIONS" ] && flags+=(--prune-suppressions)
+	fi
+	"${eslint[@]}" "${flags[@]}" "${lint_targets[@]}" || status=1
+	[ $write -eq 1 ] && compact_suppressions
+fi
+exit $status

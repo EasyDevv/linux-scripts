@@ -1,0 +1,10 @@
+node_modules/
+dist/
+target/
+.svelte-kit/
+build/
+.output/
+.wxt/
+coverage/
+# components/ui is the design-system anchor: never formatted.
+**/components/ui/

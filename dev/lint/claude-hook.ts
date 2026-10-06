@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
 // Claude Code hooks for the shared lint config; the counterpart of pi's `auto-lint` extension.
 //   collect  PostToolUse: remember the file an Edit/Write touched.
-//   run      Stop: `dlint --write` those files and `cargo clippy` their crates, then hand the diagnostics that
-//            remain back to Claude once (exit 2); a second stop in a row never blocks.
+//   run      Stop: `dlint --write --quiet` those files from their package directory and `cargo clippy` their crates,
+//            then hand the diagnostics that remain back to Claude once (exit 2); a second stop in a row never blocks.
+// JSON is left alone: compact JSON keeps what agents read small.
 import { appendFileSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, relative, resolve, sep } from "node:path";
@@ -10,22 +11,11 @@ import { dirname, extname, join, relative, resolve, sep } from "node:path";
 const DIR = import.meta.dir;
 const MAX_FILES = 200;
 const MAX_CHARS = 8_000;
-const BIOME_TIMEOUT_MS = 60_000;
+const DLINT_TIMEOUT_MS = 120_000;
 const CLIPPY_TIMEOUT_MS = 180_000;
 
-const JS_SOURCE = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts"]);
-const JSON_SOURCE = new Set([".json", ".jsonc"]);
-const JSON_EXCLUDE = new Set(["package-lock.json", "npm-shrinkwrap.json"]);
-const IGNORED_DIR = new Set(["node_modules", "target", "dist", ".git", "vendor"]);
-const JS_MARKERS = [
-	"package.json",
-	"bun.lock",
-	"bun.lockb",
-	"pnpm-lock.yaml",
-	"yarn.lock",
-	"deno.json",
-	"tsconfig.json",
-];
+const CODE_SOURCE = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".mts", ".cts", ".svelte", ".css"]);
+const IGNORED_DIR = new Set(["node_modules", "target", "dist", ".git", "vendor", ".svelte-kit", "build", ".output", ".wxt"]);
 
 type HookInput = {
 	session_id?: string;
@@ -52,8 +42,15 @@ const cwd = input.cwd ?? process.cwd();
 const touched = existsSync(listPath) ? [...new Set(readFileSync(listPath, "utf8").split("\n").filter(Boolean))] : [];
 rmSync(listPath, { force: true });
 
-const jsProject = JS_MARKERS.some((name) => existsSync(join(cwd, name)));
-const biomeTargets: string[] = [];
+/** dlint runs from the nearest package.json directory, where `eslint-suppressions.json` and `.gitignore` live. */
+const nearestPackageDir = (file: string): string => {
+	for (let dir = dirname(file); ; dir = dirname(dir)) {
+		if (existsSync(join(dir, "package.json"))) return dir;
+		if (dir === cwd || dirname(dir) === dir) return cwd;
+	}
+};
+
+const dlintGroups = new Map<string, string[]>();
 const crates = new Set<string>();
 for (const raw of touched) {
 	const file = resolve(cwd, raw);
@@ -61,8 +58,10 @@ for (const raw of touched) {
 	if (rel === ".." || rel.startsWith(`..${sep}`) || !existsSync(file)) continue;
 	if (file.split(/[\\/]/).some((part) => IGNORED_DIR.has(part))) continue;
 	const ext = extname(file).toLowerCase();
-	const base = file.split(/[\\/]/).pop() ?? "";
-	if (JS_SOURCE.has(ext) || (jsProject && JSON_SOURCE.has(ext) && !JSON_EXCLUDE.has(base))) biomeTargets.push(file);
+	if (CODE_SOURCE.has(ext)) {
+		const pkg = nearestPackageDir(file);
+		dlintGroups.set(pkg, [...(dlintGroups.get(pkg) ?? []), relative(pkg, file)]);
+	}
 	if (ext === ".rs") {
 		for (let dir = dirname(file); ; dir = dirname(dir)) {
 			const manifest = join(dir, "Cargo.toml");
@@ -84,14 +83,13 @@ const run = (cmd: string[], cwd: string, timeout: number) => {
 	};
 };
 
-if (biomeTargets.length > 0) {
-	const files = biomeTargets.slice(0, MAX_FILES);
+for (const [pkg, files] of dlintGroups) {
 	const { code, text } = run(
-		[join(DIR, "dlint"), "--write", "--colors=off", "--no-errors-on-unmatched", ...files],
-		cwd,
-		BIOME_TIMEOUT_MS,
+		[join(DIR, "dlint"), "--write", "--quiet", ...files.slice(0, MAX_FILES)],
+		pkg,
+		DLINT_TIMEOUT_MS,
 	);
-	if (code !== 0) diagnostics.push(`biome: ${text || `exit ${code}`}`);
+	if (code !== 0) diagnostics.push(`dlint (${pkg}): ${text || `exit ${code}`}`);
 }
 
 const clippyArgs: string[] = existsSync(join(DIR, "clippy-args.json"))
@@ -114,7 +112,7 @@ if (diagnostics.length === 0 || input.stop_hook_active) process.exit(0);
 const body = diagnostics.join("\n\n");
 console.error(
 	[
-		"auto-lint remaining: biome --write / clippy left diagnostics. Fix them in the listed files. Do not start unrelated work.",
+		"auto-lint remaining: dlint (prettier/eslint) / clippy left diagnostics. Fix the ones you introduced in the listed files; baselined legacy findings of the same rule in a file can be listed with them. Do not start unrelated work.",
 		body.length > MAX_CHARS ? `${body.slice(0, MAX_CHARS)}\n…truncated` : body,
 	].join("\n\n"),
 );

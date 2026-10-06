@@ -1,7 +1,18 @@
 {
 	"name": "shared-lint",
 	"private": true,
+	"type": "module",
 	"dependencies": {
-		"@biomejs/biome": "2.5.12"
+		"@eslint/js": "10.0.1",
+		"@shadcn/lint": "0.2.0",
+		"@typescript-eslint/parser": "8.71.0",
+		"eslint": "10.12.0",
+		"eslint-plugin-svelte": "3.23.0",
+		"globals": "17.13.0",
+		"prettier": "3.9.9",
+		"prettier-plugin-svelte": "4.1.1",
+		"svelte": "5.57.1",
+		"svelte-eslint-parser": "1.8.1",
+		"typescript-eslint": "8.71.0"
 	}
 }

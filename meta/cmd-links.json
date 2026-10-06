@@ -502,7 +502,7 @@
       "ownedPaths": [
         "dev/lint/dlint"
       ],
-      "description": "공유 Biome 설정(dev/lint/biome.jsonc)으로 경로를 검사한다. --write를 붙이면 수정까지 적용한다."
+      "description": "공유 Prettier/ESLint(shadcn 규칙 포함) 설정으로 경로를 검사한다. --write는 포맷·안전 수정, --baseline은 eslint-suppressions.json 기준선을 기록한다. JSON은 포맷하지 않는다."
     }
   ]
 }
