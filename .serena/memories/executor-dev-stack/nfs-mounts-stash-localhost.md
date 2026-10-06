@@ -12,7 +12,7 @@ systemctl status mnt-shared.mount mnt-shared.automount              # start-limi
 findmnt /mnt/shared; ls /mnt/shared/.stash                          # 마운트/경로 확인
 ```
 executor 설정: `~/.config/systemd/user/executor.json`
-stash cmd: `~/.local/share/scripts/stash/scripts/stash-run.sh --port 45122 --config ~/.config/stash/config.toml`
+stash cmd (2026-10-06~): `~/dev/tools/stash`에서 `dev-stack` — web 45122(Vite, `stash.localhost`) + api 45129(`scripts/stash-run.sh`). 소스와 문서는 `~/dev/tools/stash` (`docs/backlog/260920-nfs-automount-stash-localhost.md`).
 stash 설정: `~/.config/stash/config.toml` (`sqlite_path`, `download_root` = `/mnt/shared` 하위)
 
 ## 근본 원인 (증거)
@@ -48,7 +48,7 @@ StartLimitIntervalSec=0
 ```bash
 sudo systemctl reset-failed mnt-shared.mount mnt-shared.automount
 sudo systemctl start mnt-shared.automount
-cd ~/.local/share/scripts/dev/executor && ./executor.sh start stash
+executor start stash
 ```
 executor CLI: `run|list|log <name>|status [name]|start|stop|reload <name>|service`.
 
