@@ -1,61 +1,574 @@
 {
 	"slug": "tradingview",
 	"measuredAt": "2026-09-29",
-	"viewport": {"width": 1440, "height": 900, "scheme": "dark", "devicePixelRatio": 1.25},
+	"viewport": {
+		"width": 1440,
+		"height": 900,
+		"scheme": "dark",
+		"devicePixelRatio": 1.25
+	},
 	"live": "https://kr.tradingview.com/screener/",
 	"sitemap": "헤더 프로덕트 메뉴: 슈퍼차트 · 스크리너(주식, ETF, 채권, 암호화폐, CEX 페어, DEX 페어, 파인; 히트맵 주식/ETF/암호화폐) · 캘린더(경제, 수익, 배당, IPO) · 포트폴리오 · 수익률 곡선 · 옵션 · 거시경제 지도 · 정보(가격, 특징, 새소식, 마켓 데이터)",
 	"pages": [
-		{"id": "chart", "url": "https://kr.tradingview.com/chart/", "taught": ["family.chart-tool", "toolbar"]},
-		{"id": "screener-stock", "url": "https://kr.tradingview.com/screener/", "taught": ["shell.header", "shell.sidebar", "pageKicker", "pageTitle", "filterPill", "squareTabs", "columnHeader", "cell", "cellDelta", "symbolBadge", "palette"]},
-		{"id": "screener-etf", "url": "https://kr.tradingview.com/etf-screener/", "taught": ["same template as screener-stock"]},
-		{"id": "screener-bond", "url": "https://kr.tradingview.com/bond-screener/", "taught": ["same template as screener-stock"]},
-		{"id": "screener-crypto", "url": "https://kr.tradingview.com/crypto-coins-screener/", "taught": ["same template as screener-stock"]},
-		{"id": "screener-cex", "url": "https://kr.tradingview.com/cex-screener/", "taught": ["same template as screener-stock"]},
-		{"id": "screener-dex", "url": "https://kr.tradingview.com/dex-screener/", "taught": ["same template as screener-stock"]},
-		{"id": "screener-pine", "url": "https://kr.tradingview.com/pine-screener/", "taught": ["same template as screener-stock"]},
-		{"id": "heatmap-stock", "url": "https://kr.tradingview.com/heatmap/stock/", "taught": ["charts.heat"]},
-		{"id": "heatmap-etf", "url": "https://kr.tradingview.com/heatmap/etf/", "taught": ["same template as heatmap-stock"]},
-		{"id": "heatmap-crypto", "url": "https://kr.tradingview.com/heatmap/crypto/", "taught": ["same template as heatmap-stock"]},
-		{"id": "calendar-economic", "url": "https://kr.tradingview.com/economic-calendar/", "taught": ["chipTabs", "outlineButton", "ghostButton", "dateNav", "cards.tile", "lists.groupBar", "lists.row"]},
-		{"id": "calendar-earnings", "url": "https://kr.tradingview.com/earnings-calendar/", "taught": ["same template as calendar-economic"]},
-		{"id": "calendar-dividend", "url": "https://kr.tradingview.com/dividend-calendar/", "taught": ["same template as calendar-economic"]},
-		{"id": "calendar-ipo", "url": "https://kr.tradingview.com/ipo-calendar/", "taught": ["same template as calendar-economic"]},
-		{"id": "portfolios", "url": "https://kr.tradingview.com/portfolios/", "taught": ["pageTitle", "kpiValue", "kpiUnit", "kpiDelta", "cardTitle", "statLabel", "statValue", "sectionHeading", "cards.summary", "cards.action"]},
-		{"id": "yield-curves", "url": "https://kr.tradingview.com/yield-curves/", "taught": ["chipTabs", "iconButton", "charts.series", "shell.sidebar geometry"]},
-		{"id": "options", "url": "https://kr.tradingview.com/options/", "taught": ["chipTabs", "filterPill", "lists.row"]},
-		{"id": "macro-maps", "url": "https://kr.tradingview.com/macro-maps/", "taught": ["charts.heat"]},
-		{"id": "pricing", "url": "https://kr.tradingview.com/pricing/", "taught": ["marketing, not product chrome"]},
-		{"id": "features", "url": "https://kr.tradingview.com/features/", "taught": ["marketing, not product chrome"]},
-		{"id": "whats-new", "url": "https://kr.tradingview.com/support/whats-new/", "taught": ["marketing, not product chrome"]},
-		{"id": "data-coverage", "url": "https://kr.tradingview.com/data-coverage/", "taught": ["marketing, not product chrome"]}
+		{
+			"id": "chart",
+			"url": "https://kr.tradingview.com/chart/",
+			"taught": [
+				"family.chart-tool",
+				"toolbar"
+			]
+		},
+		{
+			"id": "screener-stock",
+			"url": "https://kr.tradingview.com/screener/",
+			"taught": [
+				"shell.header",
+				"shell.sidebar",
+				"pageKicker",
+				"pageTitle",
+				"filterPill",
+				"squareTabs",
+				"columnHeader",
+				"cell",
+				"cellDelta",
+				"symbolBadge",
+				"palette"
+			]
+		},
+		{
+			"id": "screener-etf",
+			"url": "https://kr.tradingview.com/etf-screener/",
+			"taught": [
+				"same template as screener-stock"
+			]
+		},
+		{
+			"id": "screener-bond",
+			"url": "https://kr.tradingview.com/bond-screener/",
+			"taught": [
+				"same template as screener-stock"
+			]
+		},
+		{
+			"id": "screener-crypto",
+			"url": "https://kr.tradingview.com/crypto-coins-screener/",
+			"taught": [
+				"same template as screener-stock"
+			]
+		},
+		{
+			"id": "screener-cex",
+			"url": "https://kr.tradingview.com/cex-screener/",
+			"taught": [
+				"same template as screener-stock"
+			]
+		},
+		{
+			"id": "screener-dex",
+			"url": "https://kr.tradingview.com/dex-screener/",
+			"taught": [
+				"same template as screener-stock"
+			]
+		},
+		{
+			"id": "screener-pine",
+			"url": "https://kr.tradingview.com/pine-screener/",
+			"taught": [
+				"same template as screener-stock"
+			]
+		},
+		{
+			"id": "heatmap-stock",
+			"url": "https://kr.tradingview.com/heatmap/stock/",
+			"taught": [
+				"charts.heat"
+			]
+		},
+		{
+			"id": "heatmap-etf",
+			"url": "https://kr.tradingview.com/heatmap/etf/",
+			"taught": [
+				"same template as heatmap-stock"
+			]
+		},
+		{
+			"id": "heatmap-crypto",
+			"url": "https://kr.tradingview.com/heatmap/crypto/",
+			"taught": [
+				"same template as heatmap-stock"
+			]
+		},
+		{
+			"id": "calendar-economic",
+			"url": "https://kr.tradingview.com/economic-calendar/",
+			"taught": [
+				"chipTabs",
+				"outlineButton",
+				"ghostButton",
+				"dateNav",
+				"cards.tile",
+				"lists.groupBar",
+				"lists.row"
+			]
+		},
+		{
+			"id": "calendar-earnings",
+			"url": "https://kr.tradingview.com/earnings-calendar/",
+			"taught": [
+				"same template as calendar-economic"
+			]
+		},
+		{
+			"id": "calendar-dividend",
+			"url": "https://kr.tradingview.com/dividend-calendar/",
+			"taught": [
+				"same template as calendar-economic"
+			]
+		},
+		{
+			"id": "calendar-ipo",
+			"url": "https://kr.tradingview.com/ipo-calendar/",
+			"taught": [
+				"same template as calendar-economic"
+			]
+		},
+		{
+			"id": "portfolios",
+			"url": "https://kr.tradingview.com/portfolios/",
+			"taught": [
+				"pageTitle",
+				"kpiValue",
+				"kpiUnit",
+				"kpiDelta",
+				"cardTitle",
+				"statLabel",
+				"statValue",
+				"sectionHeading",
+				"cards.summary",
+				"cards.action"
+			]
+		},
+		{
+			"id": "yield-curves",
+			"url": "https://kr.tradingview.com/yield-curves/",
+			"taught": [
+				"chipTabs",
+				"iconButton",
+				"charts.series",
+				"shell.sidebar geometry"
+			]
+		},
+		{
+			"id": "options",
+			"url": "https://kr.tradingview.com/options/",
+			"taught": [
+				"chipTabs",
+				"filterPill",
+				"lists.row"
+			]
+		},
+		{
+			"id": "macro-maps",
+			"url": "https://kr.tradingview.com/macro-maps/",
+			"taught": [
+				"charts.heat"
+			]
+		},
+		{
+			"id": "pricing",
+			"url": "https://kr.tradingview.com/pricing/",
+			"taught": [
+				"marketing, not product chrome"
+			]
+		},
+		{
+			"id": "features",
+			"url": "https://kr.tradingview.com/features/",
+			"taught": [
+				"marketing, not product chrome"
+			]
+		},
+		{
+			"id": "whats-new",
+			"url": "https://kr.tradingview.com/support/whats-new/",
+			"taught": [
+				"marketing, not product chrome"
+			]
+		},
+		{
+			"id": "data-coverage",
+			"url": "https://kr.tradingview.com/data-coverage/",
+			"taught": [
+				"marketing, not product chrome"
+			]
+		},
+		{
+			"id": "symbol",
+			"url": "https://kr.tradingview.com/symbols/NASDAQ-QQQ/",
+			"taught": [
+				"family.symbol-page",
+				"tooltip",
+				"rangeButtons",
+				"card.outlined",
+				"card.notice",
+				"hero",
+				"statGrid"
+			]
+		},
+		{
+			"id": "symbol-technicals",
+			"url": "https://kr.tradingview.com/symbols/NASDAQ-QQQ/technicals/",
+			"taught": [
+				"intervalTabs",
+				"counters",
+				"charts.rating",
+				"lead"
+			]
+		}
 	],
 	"shell": {
-		"header": {"height": 64, "fill": "--background", "navLink": {"height": 40, "padX": 12, "padY": 8, "radius": "--radius-pill", "fontPx": 16, "weight": 500, "color": "--foreground", "active": "--brand-link"}, "search": {"height": 40, "radius": "--radius-pill", "fill": "--search-fill", "color": "--search-foreground", "pad": 6, "x": 211}},
-		"widgetbar": {"x": 1079, "width": 346, "panel": {"width": 300, "fill": "--sidebar"}, "gapToToolbar": 1, "toolbar": {"x": 1380, "width": 45, "fill": "--sidebar", "button": 44, "pad": "2px 0"}, "widgetHeader": {"height": 48, "padX": 16}, "watchlistRow": {"height": 31, "divider": "--border"}},
-		"main": {"gutterX": 20, "titleY": 104, "contentRight": 1059, "fill": "--background"}
+		"header": {
+			"height": 64,
+			"fill": "--background",
+			"navLink": {
+				"height": 40,
+				"padX": 12,
+				"padY": 8,
+				"radius": "--radius-pill",
+				"fontPx": 16,
+				"weight": 500,
+				"color": "--foreground",
+				"active": "--brand-link"
+			},
+			"search": {
+				"height": 40,
+				"radius": "--radius-pill",
+				"fill": "--search-fill",
+				"color": "--search-foreground",
+				"pad": 6,
+				"x": 211
+			}
+		},
+		"widgetbar": {
+			"x": 1079,
+			"width": 346,
+			"panel": {
+				"width": 300,
+				"fill": "--sidebar"
+			},
+			"gapToToolbar": 1,
+			"toolbar": {
+				"x": 1380,
+				"width": 45,
+				"fill": "--sidebar",
+				"button": 44,
+				"pad": "2px 0"
+			},
+			"widgetHeader": {
+				"height": 48,
+				"padX": 16
+			},
+			"watchlistRow": {
+				"height": 31,
+				"divider": "--border"
+			}
+		},
+		"main": {
+			"gutterX": 20,
+			"titleY": 104,
+			"contentRight": 1059,
+			"fill": "--background"
+		}
 	},
 	"roles": {
-		"pageTitle": {"fontPx": 24, "lineHeight": 28, "weight": 600, "color": "--foreground"},
-		"pageKicker": {"fontPx": 14, "lineHeight": 18, "weight": 400, "color": "--foreground"},
-		"kpiValue": {"fontPx": 28, "lineHeight": 36, "weight": 700, "color": "--foreground"},
-		"kpiUnit": {"fontPx": 11, "lineHeight": 16, "weight": 400, "color": "--foreground"},
-		"kpiDelta": {"fontPx": 16, "lineHeight": 24, "weight": 500},
-		"cardTitle": {"fontPx": 20, "lineHeight": 30, "weight": 400, "color": "--foreground"},
-		"sectionHeading": {"fontPx": 18, "lineHeight": 24, "weight": 600, "color": "--foreground"},
-		"statLabel": {"fontPx": 13, "lineHeight": 18, "weight": 400, "color": "--muted-foreground"},
-		"statValue": {"fontPx": 16, "lineHeight": 24, "weight": 500, "color": "--foreground"},
-		"columnHeader": {"fontPx": 14, "lineHeight": 18, "weight": 400, "color": "--muted-foreground", "rowHeight": 50, "divider": "--input"},
-		"cell": {"fontPx": 14, "lineHeight": 18, "weight": 400, "rowHeight": 41, "padX": 12, "divider": "--border"},
-		"cellUnit": {"fontPx": 10, "lineHeight": 14, "weight": 500, "transform": "uppercase"},
-		"symbolBadge": {"height": 24, "radius": 6, "padX": 8, "fontPx": 12, "weight": 600, "fill": "--badge"},
-		"groupBar": {"height": 40, "padX": 20, "fill": "--group-bar", "labelPx": 14, "labelWeight": 600},
-		"chipTab": {"height": 34, "radius": 17, "padX": 15, "fontPx": 16, "weight": 400, "selectedFill": "--tab-selected", "selectedInk": "--tab-selected-foreground", "idleFill": "--tab-idle", "idleInk": "--foreground"},
-		"squareTab": {"height": 34, "radius": 6, "padX": 12, "fontPx": 16, "selectedFill": "--secondary", "selectedWeight": 600},
-		"filterPill": {"height": 34, "radius": 8, "border": "--input", "hairlinePx": 0.8, "fontPx": 16, "ink": "--foreground"},
-		"outlineButton": {"height": 34, "radius": 8, "padX": 11, "border": "--input"},
-		"iconButton": {"size": 34, "radius": 8, "border": "--input"},
-		"summaryCard": {"radius": 16, "pad": 16, "border": "--inspector-border", "fill": "--inspector"},
-		"actionCard": {"radius": 16, "padY": 41, "padX": 16, "border": "--inspector-border"},
-		"dayTile": {"radius": 8, "fill": "--card", "selectedFill": "--secondary", "labelPx": 12}
+		"pageTitle": {
+			"fontPx": 24,
+			"lineHeight": 28,
+			"weight": 600,
+			"color": "--foreground"
+		},
+		"pageKicker": {
+			"fontPx": 14,
+			"lineHeight": 18,
+			"weight": 400,
+			"color": "--foreground"
+		},
+		"kpiValue": {
+			"fontPx": 28,
+			"lineHeight": 36,
+			"weight": 700,
+			"color": "--foreground"
+		},
+		"kpiUnit": {
+			"fontPx": 11,
+			"lineHeight": 16,
+			"weight": 400,
+			"color": "--foreground"
+		},
+		"kpiDelta": {
+			"fontPx": 16,
+			"lineHeight": 24,
+			"weight": 500
+		},
+		"cardTitle": {
+			"fontPx": 20,
+			"lineHeight": 30,
+			"weight": 400,
+			"color": "--foreground"
+		},
+		"sectionHeading": {
+			"fontPx": 18,
+			"lineHeight": 24,
+			"weight": 600,
+			"color": "--foreground"
+		},
+		"statLabel": {
+			"fontPx": 13,
+			"lineHeight": 18,
+			"weight": 400,
+			"color": "--muted-foreground"
+		},
+		"statValue": {
+			"fontPx": 16,
+			"lineHeight": 24,
+			"weight": 500,
+			"color": "--foreground"
+		},
+		"columnHeader": {
+			"fontPx": 14,
+			"lineHeight": 18,
+			"weight": 400,
+			"color": "--muted-foreground",
+			"rowHeight": 50,
+			"divider": "--input"
+		},
+		"cell": {
+			"fontPx": 14,
+			"lineHeight": 18,
+			"weight": 400,
+			"rowHeight": 41,
+			"padX": 12,
+			"divider": "--border"
+		},
+		"cellUnit": {
+			"fontPx": 10,
+			"lineHeight": 14,
+			"weight": 500,
+			"transform": "uppercase"
+		},
+		"symbolBadge": {
+			"height": 24,
+			"radius": 6,
+			"padX": 8,
+			"fontPx": 12,
+			"weight": 600,
+			"fill": "--badge"
+		},
+		"groupBar": {
+			"height": 40,
+			"padX": 20,
+			"fill": "--group-bar",
+			"labelPx": 14,
+			"labelWeight": 600
+		},
+		"chipTab": {
+			"height": 34,
+			"radius": 17,
+			"padX": 15,
+			"fontPx": 16,
+			"weight": 400,
+			"selectedFill": "--tab-selected",
+			"selectedInk": "--tab-selected-foreground",
+			"idleFill": "--tab-idle",
+			"idleInk": "--foreground"
+		},
+		"squareTab": {
+			"height": 34,
+			"radius": 6,
+			"padX": 12,
+			"fontPx": 16,
+			"selectedFill": "--secondary",
+			"selectedWeight": 600
+		},
+		"filterPill": {
+			"height": 34,
+			"radius": 8,
+			"border": "--input",
+			"hairlinePx": 0.8,
+			"fontPx": 16,
+			"ink": "--foreground"
+		},
+		"outlineButton": {
+			"height": 34,
+			"radius": 8,
+			"padX": 11,
+			"border": "--input"
+		},
+		"iconButton": {
+			"size": 34,
+			"radius": 8,
+			"border": "--input"
+		},
+		"summaryCard": {
+			"radius": 16,
+			"pad": 16,
+			"border": "--inspector-border",
+			"fill": "--inspector"
+		},
+		"actionCard": {
+			"radius": 16,
+			"padY": 41,
+			"padX": 16,
+			"border": "--inspector-border"
+		},
+		"dayTile": {
+			"radius": 8,
+			"fill": "--card",
+			"selectedFill": "--secondary",
+			"labelPx": 12
+		},
+		"tooltip": {
+			"fill": "--tooltip",
+			"ink": "--tooltip-foreground",
+			"fontPx": 13,
+			"lineHeight": 18,
+			"weight": 400,
+			"radius": 4,
+			"pad": "6px 8px",
+			"maxWidth": 400,
+			"arrow": false,
+			"side": "top",
+			"offset": 6
+		},
+		"term": {
+			"decoration": "underline dotted",
+			"decorationColor": "--muted-foreground"
+		},
+		"rangeButton": {
+			"height": 74,
+			"radius": 12,
+			"pad": "8px 18px",
+			"fontPx": 16,
+			"lineHeight": 24,
+			"weight": 500,
+			"selectedFill": "--secondary",
+			"changeInk": "--positive | --negative"
+		},
+		"intervalTab": {
+			"height": 34,
+			"radius": 6,
+			"padX": 12,
+			"fontPx": 16,
+			"selected": {
+				"fill": "--secondary",
+				"ink": "--tooltip-foreground",
+				"weight": 600
+			},
+			"idle": {
+				"ink": "--foreground",
+				"weight": 400
+			}
+		},
+		"underlineTab": {
+			"fontPx": 16,
+			"lineHeight": 24,
+			"weight": 600,
+			"padBottom": 8,
+			"indicator": {
+				"height": 4,
+				"fill": "--tab-selected"
+			}
+		},
+		"tag": {
+			"height": 16,
+			"radius": 4,
+			"fill": "--secondary",
+			"fontPx": 12,
+			"lineHeight": 16
+		},
+		"outlinedCard": {
+			"radius": 16,
+			"border": "--input",
+			"titlePx": 16,
+			"titleWeight": 500,
+			"subtitlePx": 14,
+			"subtitleInk": "--muted-foreground",
+			"hairlinePx": 0.8
+		},
+		"noticeCard": {
+			"fill": "--notice",
+			"radius": 8,
+			"pad": "8px 12px",
+			"fontPx": 12,
+			"lineHeight": 16
+		},
+		"counters": {
+			"fill": "--secondary",
+			"radius": 12,
+			"pad": "4px 0",
+			"labelPx": 16,
+			"valuePx": 18,
+			"valueWeight": 600
+		},
+		"heroValue": {
+			"fontPx": 40,
+			"lineHeight": 48,
+			"weight": 700
+		},
+		"heroUnit": {
+			"fontPx": 16,
+			"lineHeight": 24,
+			"weight": 400
+		},
+		"heroDelta": {
+			"fontPx": 20,
+			"lineHeight": 24,
+			"weight": 600,
+			"color": "--positive | --negative"
+		},
+		"heroAsOf": {
+			"fontPx": 16,
+			"lineHeight": 24,
+			"weight": 400,
+			"color": "--rating-neutral"
+		},
+		"sectionTitle": {
+			"fontPx": 28,
+			"lineHeight": 36,
+			"weight": 600
+		},
+		"sectionTitleSm": {
+			"fontPx": 20,
+			"lineHeight": 24,
+			"weight": 600
+		},
+		"statGridLabel": {
+			"fontPx": 16,
+			"lineHeight": 24,
+			"weight": 400,
+			"color": "--foreground"
+		},
+		"statGridValue": {
+			"fontPx": 18,
+			"lineHeight": 24,
+			"weight": 600
+		},
+		"widgetKpi": {
+			"fontPx": 28,
+			"lineHeight": 36,
+			"weight": 600
+		},
+		"stickySummary": {
+			"height": 64,
+			"borderBottom": "--input",
+			"padX": 40,
+			"pricePx": 18,
+			"priceWeight": 600
+		},
+		"rating": {
+			"buy": "--rating-buy",
+			"neutral": "--rating-neutral",
+			"sell": "--rating-sell"
+		}
 	}
 }

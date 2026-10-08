@@ -11,4 +11,5 @@
 - Font: `-apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, sans-serif` (live) + `"Noto Sans KR"` for Hangul. The `@fontsource-variable/inter` import is kept from `_core` for the compile contract; the family does not use Inter.
 - Shell: top header 64px, flush main with 20px gutter, right widget bar = 300px panel + 1px canvas seam + 45px icon toolbar. No floating inset panel.
 - Tokens: `layout.css` / `spec.json`. Role map: `chrome.json`. Composition: `design.json`.
-- First pass (Site stage). Draft loop in the quant project (`.product/explore/tradingview/`) has not run yet; promote measured corrections after it.
+- 2026-10-07 supplement: `/symbols/NASDAQ-QQQ/` and `/symbols/NASDAQ-QQQ/technicals/` (dark, 1440×900, DPR 1). Adds tooltip (`--color-cold-gray-750` plate, measured on a dotted-underline term), period range buttons, interval tabs, underline tabs, tags, outlined and notice cards, rating counters, hero/section/stat type, rating colors (`--color-buy/neutral/sell`), sticky symbol summary bar. Light values for `--tooltip`, `--notice` mirror dark (not read from a light render). Chart canvas internals (area gradient, last-value tag) are described, not measured.
+- First pass (Site stage). Draft loop ran in the quant project (`~/dev/private/quant/.product`), which drove the 2026-10-07 supplement.

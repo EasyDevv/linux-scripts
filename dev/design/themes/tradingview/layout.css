@@ -81,6 +81,8 @@
 	--radius-pill: 9999px;
 	--radius-card: 16px;
 	--radius-badge: 6px;
+	--radius-tile: 12px;
+	--radius-tag: 4px;
 	--sidebar-collapse-duration: 300ms;
 	--sidebar-collapse-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
 	--sidebar-width: 300px;
@@ -118,6 +120,14 @@
 	--search-foreground: rgb(112, 112, 112);
 	--inspector: rgb(249, 249, 249);
 	--inspector-border: rgb(235, 235, 235);
+	/* Unmeasured in a light render: tooltip and notice mirror the dark reading; ratings are theme-independent TV vars. */
+	--tooltip: rgb(61, 61, 61);
+	--tooltip-foreground: rgb(255, 255, 255);
+	--notice: rgba(179, 136, 255, 0.2);
+	--notice-foreground: rgb(15, 15, 15);
+	--rating-buy: rgb(41, 98, 255);
+	--rating-neutral: rgb(112, 112, 112);
+	--rating-sell: rgb(247, 82, 95);
 }
 
 .dark {
@@ -175,6 +185,14 @@
 	--search-foreground: rgb(184, 184, 184);
 	--inspector: rgb(0, 0, 0);
 	--inspector-border: rgb(74, 74, 74);
+	/* 2026-10-07 /symbols/NASDAQ-QQQ/: tooltip = --color-cold-gray-750, news card tint, technical rating vars. */
+	--tooltip: rgb(61, 61, 61);
+	--tooltip-foreground: rgb(255, 255, 255);
+	--notice: rgba(179, 136, 255, 0.2);
+	--notice-foreground: rgb(219, 219, 219);
+	--rating-buy: rgb(41, 98, 255);
+	--rating-neutral: rgb(112, 112, 112);
+	--rating-sell: rgb(247, 82, 95);
 }
 
 @theme inline {
@@ -252,12 +270,21 @@
 	--color-search-foreground: var(--search-foreground);
 	--color-inspector: var(--inspector);
 	--color-inspector-border: var(--inspector-border);
+	--color-tooltip: var(--tooltip);
+	--color-tooltip-foreground: var(--tooltip-foreground);
+	--color-notice: var(--notice);
+	--color-notice-foreground: var(--notice-foreground);
+	--color-rating-buy: var(--rating-buy);
+	--color-rating-neutral: var(--rating-neutral);
+	--color-rating-sell: var(--rating-sell);
 	--spacing-card: var(--card-spacing);
 	--spacing-card-sm: var(--card-spacing-sm);
 	--spacing-gutter: var(--page-gutter);
 	--radius-pill: var(--radius-pill);
 	--radius-card: var(--radius-card);
 	--radius-badge: var(--radius-badge);
+	--radius-tile: var(--radius-tile);
+	--radius-tag: var(--radius-tag);
 	/* Type scale measured on /portfolios, /screener, /economic-calendar, /yield-curves. */
 	--text-display: 28px;
 	--text-display--line-height: 36px;
@@ -289,6 +316,22 @@
 	--text-micro: 11px;
 	--text-micro--line-height: 16px;
 	--text-micro--font-weight: 400;
+	/* Symbol pages (/symbols/NASDAQ-QQQ/, /technicals/), measured 2026-10-07. */
+	--text-hero: 40px;
+	--text-hero--line-height: 48px;
+	--text-hero--font-weight: 700;
+	--text-section: 28px;
+	--text-section--line-height: 36px;
+	--text-section--font-weight: 600;
+	--text-section-sm: 20px;
+	--text-section-sm--line-height: 24px;
+	--text-section-sm--font-weight: 600;
+	--text-stat: 18px;
+	--text-stat--line-height: 24px;
+	--text-stat--font-weight: 600;
+	--text-lead: 18px;
+	--text-lead--line-height: 28px;
+	--text-lead--font-weight: 400;
 }
 
 @layer base {
@@ -311,3 +354,293 @@
 [data-slot="sidebar-container"] {
 	border-inline-width: 0;
 }
+
+/* Tooltip (live .tooltipBase): dark gray plate, white 13/18 text, 4px radius, 6px 8px padding, no arrow, no
+   shadow, max 400px. Unlayered so it outranks the primitive's bg-foreground/text-xs utilities. */
+[data-slot="tooltip-content"] {
+	max-width: 400px;
+	padding: 6px 8px;
+	border-radius: var(--radius-tag);
+	background: var(--tooltip);
+	color: var(--tooltip-foreground);
+	font-size: var(--text-body-sm);
+	line-height: var(--text-body-sm--line-height);
+	font-weight: 400;
+}
+[data-slot="tooltip-content"] > div:last-child:empty {
+	display: none;
+}
+
+/* data-chrome:start — call-site looks for the read-only components/ui (shadcn/no-restyle).
+   A screen names what it wants (`<Button data-chrome="pill muted">`); this block draws it, so every project on this
+   theme gets the same look from the same words. Values are what the replaced utility classes produced: the rules sit
+   in the utilities layer at one attribute of specificity, so a component's own state classes (hover:, aria-expanded:)
+   still win where they won before. Ink and fill step aside while shadcn's :where() state variants
+   (data-open, data-active, data-checked) hold, as the merged classes did. Keep this block identical in themes/_core, every slug, and each project's
+   layout.css. */
+@layer utilities {
+	/* shape */
+	[data-chrome~="pill"] {
+		border-radius: calc(infinity * 1px);
+	}
+	[data-chrome~="radius-sm"] {
+		border-radius: var(--radius-sm);
+	}
+	/* ink */
+	[data-chrome~="muted"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-muted-foreground);
+	}
+	[data-chrome~="soft"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--ink-soft, var(--color-foreground));
+	}
+	[data-chrome~="ink"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-foreground);
+	}
+	[data-chrome~="danger"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-destructive);
+	}
+	[data-chrome~="on-accent"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-accent-foreground);
+	}
+	@media (hover: hover) {
+		[data-chrome~="hover-ink"]:hover {
+			color: var(--color-foreground);
+		}
+		[data-chrome~="hover-danger"]:hover {
+			color: var(--color-destructive);
+		}
+		[data-chrome~="hover-highlight"]:hover {
+			color: var(--color-status-highlight, var(--color-primary));
+		}
+	}
+	/* fill */
+	[data-chrome~="accent"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		background-color: var(--color-accent);
+	}
+	[data-chrome~="input"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		background-color: var(--color-input);
+	}
+	@media (hover: hover) {
+		[data-chrome~="hover-accent"]:hover {
+			background-color: color-mix(in oklab, var(--color-accent) 80%, transparent);
+		}
+		[data-chrome~="hover-input"]:hover {
+			background-color: color-mix(in oklab, var(--color-input) 80%, transparent);
+		}
+	}
+	[data-chrome~="danger-solid"] {
+		background-color: var(--color-destructive);
+		color: var(--color-white, #fff);
+	}
+	@media (hover: hover) {
+		[data-chrome~="danger-solid"]:hover {
+			background-color: color-mix(in oklab, var(--color-destructive) 90%, transparent);
+		}
+	}
+	/* no frame: transparent, no border, no shadow (each also alone) */
+	[data-chrome~="bare"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))),
+	[data-chrome~="clear"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		background-color: transparent;
+	}
+	[data-chrome~="bare"],
+	[data-chrome~="borderless"] {
+		border-style: var(--tw-border-style);
+		border-width: 0px;
+	}
+	[data-chrome~="bare"],
+	[data-chrome~="unshadowed"] {
+		--tw-shadow: 0 0 #0000;
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	[data-chrome~="flush-x"] {
+		padding-inline: 0;
+	}
+	/* type */
+	/* a size-sm button keeps its own font size; only the label line box applies */
+	[data-chrome~="label-lines"] {
+		line-height: var(--tw-leading, var(--text-label-sm--line-height));
+	}
+	[data-chrome~="label-size"] {
+		font-size: var(--text-label-sm);
+	}
+	[data-chrome~="medium"] {
+		--tw-font-weight: var(--font-weight-medium, 500);
+		font-weight: var(--font-weight-medium, 500);
+	}
+	[data-chrome~="regular"] {
+		--tw-font-weight: var(--font-weight-normal, 400);
+		font-weight: var(--font-weight-normal, 400);
+	}
+	[data-chrome~="mono"] {
+		font-family: var(--font-mono);
+	}
+	[data-chrome~="lines-5"] {
+		--tw-leading: calc(var(--spacing) * 5);
+		line-height: calc(var(--spacing) * 5);
+	}
+	[data-chrome~="gap-sm"] {
+		gap: calc(var(--spacing) * 1.5);
+	}
+	/* compact control: Input / Select trigger in a settings row */
+	[data-chrome~="compact"] {
+		border-radius: var(--radius-sm);
+		padding-inline: calc(var(--spacing) * 2.5);
+	}
+	[data-chrome~="compact"] {
+		--tw-font-weight: var(--font-weight-normal, 400);
+		font-weight: var(--font-weight-normal, 400);
+	}
+	/* a textarea that is the well itself: no frame, no focus ring */
+	[data-chrome~="field-bare"] {
+		border-radius: 0;
+		border-style: var(--tw-border-style);
+		border-width: 0px;
+		background-color: transparent;
+		--tw-shadow: 0 0 #0000;
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	/* the field's own dark:bg-input/30 is one class deeper */
+	[data-chrome~="field-bare"]:is(.dark *),
+	html[data-scheme="dark"] [data-chrome~="field-bare"] {
+		background-color: transparent;
+	}
+	[data-chrome~="field-bare"]:focus-visible {
+		--tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(0px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	[data-chrome~="inset"] {
+		padding: calc(var(--spacing) * 4);
+	}
+	[data-chrome~="inset-under"] {
+		padding: calc(var(--spacing) * 1) calc(var(--spacing) * 4) calc(var(--spacing) * 4);
+	}
+	[data-chrome~="prose"] {
+		min-height: 84px;
+		font-size: var(--text-heading-sm);
+		line-height: var(--text-heading-sm--line-height);
+		font-weight: 450;
+	}
+	/* overlays */
+	[data-chrome~="flat"] {
+		--tw-shadow: 0 0 #0000;
+		--tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(0px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	[data-chrome~="tight"] {
+		padding: calc(var(--spacing) * 3);
+	}
+	[data-chrome~="body-sm"] {
+		font-size: var(--text-body-sm);
+		line-height: var(--text-body-sm--line-height);
+	}
+	/* settings dialog: the body carries its own inset, header and footer sit flush */
+	[data-slot="dialog-content"][data-chrome~="flush"] {
+		gap: 0;
+		padding: 0;
+	}
+	[data-chrome~="wide"] {
+		max-width: none;
+	}
+	[data-slot="dialog-header"][data-chrome~="flush"] {
+		padding: calc(var(--spacing) * 4) calc(var(--spacing) * 4) 0;
+	}
+	[data-slot="dialog-header"][data-chrome~="flush"] > :not(:last-child) {
+		margin-block: 0;
+	}
+	[data-chrome~="bar"] {
+		gap: 12px;
+		min-width: 0;
+	}
+	[data-chrome~="title"] {
+		font-size: var(--text-heading-sm);
+		line-height: var(--text-heading-sm--line-height);
+		font-weight: 450;
+	}
+	[data-slot="dialog-footer"][data-chrome~="flush"],
+	[data-slot="alert-dialog-footer"][data-chrome~="flush"] {
+		border-top-style: var(--tw-border-style);
+		border-top-width: 0px;
+		background-color: transparent;
+	}
+	[data-slot="alert-dialog-footer"][data-chrome~="flush"],
+	[data-slot="dropdown-menu-content"][data-chrome~="flush"],
+	[data-slot="dropdown-menu-sub-content"][data-chrome~="flush"] {
+		padding: 0;
+	}
+	/* popover list (org picker): header row and list rows sit flush, the rows carry their own inset */
+	[data-slot="popover-content"][data-chrome~="flush"] {
+		gap: 0;
+		padding: 0;
+	}
+	[data-chrome~="split"] {
+		justify-content: space-between;
+	}
+	[data-chrome~="end"] {
+		justify-content: flex-end;
+	}
+	/* app shell */
+	[data-slot="sidebar-menu-sub"][data-chrome~="flush"] {
+		border-style: var(--tw-border-style);
+		border-width: 0px;
+		padding-inline: 0;
+		padding-block: 0;
+	}
+	[data-chrome~="railless"][data-chrome~="railless"] {
+		border-inline-end-style: var(--tw-border-style);
+		border-inline-end-width: 0px;
+	}
+	[data-chrome~="app-head"] {
+		gap: calc(var(--spacing) * 1);
+		padding: calc(var(--spacing) * 3) calc(var(--spacing) * 3) calc(var(--spacing) * 1);
+	}
+	[data-chrome~="app-group"] {
+		padding: calc(var(--spacing) * 1) calc(var(--spacing) * 3) 0;
+	}
+	[data-chrome~="nav-row"] {
+		gap: calc(var(--spacing) * 1.5);
+		border-radius: var(--radius-sm);
+		padding-inline: calc(var(--spacing) * 2);
+		padding-block: 0;
+	}
+	[data-chrome~="nav-row"] {
+		--tw-font-weight: var(--font-weight-medium, 500);
+		font-weight: var(--font-weight-medium, 500);
+	}
+	[data-chrome~="nav-row"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--ink-soft, var(--color-foreground));
+	}
+	[data-chrome~="nav-row"] svg {
+		color: var(--color-muted-foreground);
+	}
+	/* chip toggle: pill, muted until pressed */
+	[data-chrome~="chip"] {
+		border-radius: calc(infinity * 1px);
+		padding-inline: calc(var(--spacing) * 2.5);
+	}
+	[data-chrome~="chip"] {
+		--tw-font-weight: var(--font-weight-medium, 500);
+		font-weight: var(--font-weight-medium, 500);
+	}
+	[data-chrome~="chip"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-muted-foreground);
+	}
+	@media (hover: hover) {
+		[data-chrome~="chip"]:hover {
+			background-color: var(--color-accent);
+			color: var(--ink-soft, var(--color-foreground));
+		}
+	}
+	[data-chrome~="chip"]:is([aria-pressed="true"], [data-state="on"]) {
+		background-color: var(--color-accent);
+		color: var(--color-foreground);
+	}
+}
+/* data-chrome:end */

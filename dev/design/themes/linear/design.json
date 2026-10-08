@@ -285,6 +285,16 @@
         "kind": "ghost/outline text pill",
         "radius": "--radius-pill"
       },
+      "toolbarStatus": {
+        "where": "h-9 tool row above a list (dashboard 05-projects portfolio, accepted 2026-10-07)",
+        "kind": "icon + value cells, one left-aligned group",
+        "gap": 12,
+        "iconTextGap": 6,
+        "font": "--text-body-sm",
+        "ink": "--muted-foreground; the to-do count uses --foreground when non-zero",
+        "sentence": "title only, never in the bar",
+        "right": "primary verb pill (ml-auto), then ghost circular tool icons"
+      },
       "toolChrome": {
         "kind": "circular outline icon",
         "size": "icon-sm"
@@ -319,13 +329,26 @@
       "radius": "--radius-sm",
       "fill": "mark rgb(28, 28, 27)",
       "chevron": "28px hit target, ink color-mix(--muted-foreground 28%)",
-      "plus": "24px hit target at the band end"
+      "plus": "24px hit target at the band end",
+      "hit": "whole band toggles the fold; inner buttons (name, +, chips) keep their own action; the chevron stays the keyboard control (accepted in dashboard 05-projects portfolio, 2026-10-07)",
+      "axis": "every band in one list answers the same question (state: Advice · Done | Automation · Paused); never mix entity bands (one per project) with state bands — the entity becomes a row or the row's identifier (dashboard 05-projects portfolio, corrected 2026-10-08)",
+      "rowKind": "one row kind per band: a band of proposal rows holds no project rows and vice versa; an entity listed in another band links by a muted count after its name, not by nesting (accepted 2026-10-08)"
     },
     "rowHover": {
       "fill": "mark rgb(26, 26, 27)",
       "radius": "--radius-sm",
       "insetX": "--list-row-hover-inset",
-      "insetY": 0
+      "insetY": 0,
+      "hit": "whole row edge to edge (chevron, status icon, gutters, empty meta) is the title's hit target; end-cell action buttons sit above it; row text stays above the hover fill (accepted in dashboard 05-projects portfolio, 2026-10-07)"
+    },
+    "rowSelected": {
+      "fill": "--primary",
+      "fillAlpha": 0.14,
+      "edge": "none: no left bar, border or outline; the fill alone marks the row",
+      "run": "adjacent selected rows read as one block: shared edges drop their radius, only the run's outer corners keep --radius-sm",
+      "leading": "a checked checkbox takes the leading cell while selected",
+      "hover": "a selected row under the pointer gets a slightly stronger tint of the same hue",
+      "where": "Linear All issues multi-select (CDP 9201, measured 2026-10-08); dashboard 05-projects Org chat tagged rows follow it at --primary 18% to match the measured hue on that canvas"
     },
     "groupEnvelope": {
       "gapStart": "--list-group-gap",
@@ -379,7 +402,17 @@
       "radius": "--radius-pill",
       "motion": "width on --panel-fold-duration / --panel-fold-ease",
       "where": "dashboard provider cards and Usage share (accepted 2026-10-03)"
-    }
+    },
+    "identifier": {
+      "where": "before the title on the same line, like EAS-5",
+      "ink": "--muted-foreground",
+      "weight": 450,
+      "gapToTitle": "10px",
+      "notColumn": "natural width, not a fixed column (a 9rem column read as two tables)",
+      "action": "opens its owner (project) on click",
+      "accepted": "dashboard 05-projects Advice rows, 2026-10-08"
+    },
+    "siblingSkeleton": "open and closed rows of one item type (Advice ↔ Done) share one skeleton: status icon cell always filled (open = the band icon, done = check), identifier · title / body / chips, end meta = first-seen time or `Applied 12h ago`; no extra status line only on one side (accepted 2026-10-08)"
   },
   "header": {
     "shared": true,
@@ -746,6 +779,15 @@
       "enter": "58ms, scale 0.98 → 1 from 100% 100% (the footer chip's corner), opacity 0 → 2 (clamped to 1 when painted)",
       "exit": "207ms, the same measured curve as displayOptions (scale → 0.98 at 49ms, exponential opacity tail)",
       "states": "chip visible while a chat with content is minimized; `Close chat` / the chip's ✕ removes the chip; the launcher opens the panel (title `New chat` when the session is empty)"
+    },
+    "labelMenu": {
+      "source": "live linear.app issue row > Bug/Feature label chip (CDP 9201, 2026-10-08)",
+      "box": "262 wide (260 + hairline), --radius 12, menu surface",
+      "search": "37px row, padding 0 12 0 14, input 36 (10 0 9) 13px, hairline --border below; placeholder `Change or add labels…` + 18x19 kbd shortcut (radius 4, 12px muted) only when a real shortcut exists",
+      "list": "6px top/bottom inset; rows 32px, padding 0 18 0 14, highlight inset 6px radius 8; multi-select = 14x14 checkbox (radius 3, --primary fill) then 6px, 16px dot slot (9px dot), 8px, label 13px/450",
+      "group": "header 30px, padding 8 14, 12px/500 --muted-foreground; separator 12px (6 0) with a full-width hairline before every header but the first",
+      "singleSelect": "a property with one value (revenue path, role) keeps the same geometry but drops the checkbox: icon/dot slot · label · trailing check; blocked values dim (opacity 0.4) with the reason in title; descriptions go to title, never a truncated second text in the 262 row",
+      "dashboard": "apps/client/src/lib/projects/org-picker.svelte; PopoverContent data-chrome=flush"
     }
   },
   "sectioning": {

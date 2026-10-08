@@ -180,8 +180,8 @@ body {
 	--select-item-highlight: rgb(60, 61, 64);
 	--select-menu-border: rgb(63, 64, 68);
 	--tab-idle: rgb(27, 28, 29);
-	/* measured from the team-all capture: the list band/hover fills are darker than --sidebar-accent */
-	--list-group-fill: rgb(28, 28, 27);
+	/* live DOM lch(9.232 0.85 272) on view and team lists (CDP 9201, 2026-10-07): band = hover = inspector card, one step over --card */
+	--list-group-fill: rgb(26, 26, 27);
 	--list-row-fill: rgb(26, 26, 27);
 	/* measured from the live board view (ref/linear.app/desktop/team-board.png, 2026-09-14) */
 	--board-band: rgb(15, 15, 15);
@@ -418,3 +418,277 @@ html[data-scheme="dark"] [data-slot="select-content"] {
 		pointer-events: auto;
 	}
 }
+
+/* data-chrome:start — call-site looks for the read-only components/ui (shadcn/no-restyle).
+   A screen names what it wants (`<Button data-chrome="pill muted">`); this block draws it, so every project on this
+   theme gets the same look from the same words. Values are what the replaced utility classes produced: the rules sit
+   in the utilities layer at one attribute of specificity, so a component's own state classes (hover:, aria-expanded:)
+   still win where they won before. Ink and fill step aside while shadcn's :where() state variants
+   (data-open, data-active, data-checked) hold, as the merged classes did. Keep this block identical in themes/_core, every slug, and each project's
+   layout.css. */
+@layer utilities {
+	/* shape */
+	[data-chrome~="pill"] {
+		border-radius: calc(infinity * 1px);
+	}
+	[data-chrome~="radius-sm"] {
+		border-radius: var(--radius-sm);
+	}
+	/* ink */
+	[data-chrome~="muted"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-muted-foreground);
+	}
+	[data-chrome~="soft"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--ink-soft, var(--color-foreground));
+	}
+	[data-chrome~="ink"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-foreground);
+	}
+	[data-chrome~="danger"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-destructive);
+	}
+	[data-chrome~="on-accent"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-accent-foreground);
+	}
+	@media (hover: hover) {
+		[data-chrome~="hover-ink"]:hover {
+			color: var(--color-foreground);
+		}
+		[data-chrome~="hover-danger"]:hover {
+			color: var(--color-destructive);
+		}
+		[data-chrome~="hover-highlight"]:hover {
+			color: var(--color-status-highlight, var(--color-primary));
+		}
+	}
+	/* fill */
+	[data-chrome~="accent"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		background-color: var(--color-accent);
+	}
+	[data-chrome~="input"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		background-color: var(--color-input);
+	}
+	@media (hover: hover) {
+		[data-chrome~="hover-accent"]:hover {
+			background-color: color-mix(in oklab, var(--color-accent) 80%, transparent);
+		}
+		[data-chrome~="hover-input"]:hover {
+			background-color: color-mix(in oklab, var(--color-input) 80%, transparent);
+		}
+	}
+	[data-chrome~="danger-solid"] {
+		background-color: var(--color-destructive);
+		color: var(--color-white, #fff);
+	}
+	@media (hover: hover) {
+		[data-chrome~="danger-solid"]:hover {
+			background-color: color-mix(in oklab, var(--color-destructive) 90%, transparent);
+		}
+	}
+	/* no frame: transparent, no border, no shadow (each also alone) */
+	[data-chrome~="bare"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))),
+	[data-chrome~="clear"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		background-color: transparent;
+	}
+	[data-chrome~="bare"],
+	[data-chrome~="borderless"] {
+		border-style: var(--tw-border-style);
+		border-width: 0px;
+	}
+	[data-chrome~="bare"],
+	[data-chrome~="unshadowed"] {
+		--tw-shadow: 0 0 #0000;
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	[data-chrome~="flush-x"] {
+		padding-inline: 0;
+	}
+	/* type */
+	/* a size-sm button keeps its own font size; only the label line box applies */
+	[data-chrome~="label-lines"] {
+		line-height: var(--tw-leading, var(--text-label-sm--line-height));
+	}
+	[data-chrome~="label-size"] {
+		font-size: var(--text-label-sm);
+	}
+	[data-chrome~="medium"] {
+		--tw-font-weight: var(--font-weight-medium, 500);
+		font-weight: var(--font-weight-medium, 500);
+	}
+	[data-chrome~="regular"] {
+		--tw-font-weight: var(--font-weight-normal, 400);
+		font-weight: var(--font-weight-normal, 400);
+	}
+	[data-chrome~="mono"] {
+		font-family: var(--font-mono);
+	}
+	[data-chrome~="lines-5"] {
+		--tw-leading: calc(var(--spacing) * 5);
+		line-height: calc(var(--spacing) * 5);
+	}
+	[data-chrome~="gap-sm"] {
+		gap: calc(var(--spacing) * 1.5);
+	}
+	/* compact control: Input / Select trigger in a settings row */
+	[data-chrome~="compact"] {
+		border-radius: var(--radius-sm);
+		padding-inline: calc(var(--spacing) * 2.5);
+	}
+	[data-chrome~="compact"] {
+		--tw-font-weight: var(--font-weight-normal, 400);
+		font-weight: var(--font-weight-normal, 400);
+	}
+	/* a textarea that is the well itself: no frame, no focus ring */
+	[data-chrome~="field-bare"] {
+		border-radius: 0;
+		border-style: var(--tw-border-style);
+		border-width: 0px;
+		background-color: transparent;
+		--tw-shadow: 0 0 #0000;
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	/* the field's own dark:bg-input/30 is one class deeper */
+	[data-chrome~="field-bare"]:is(.dark *),
+	html[data-scheme="dark"] [data-chrome~="field-bare"] {
+		background-color: transparent;
+	}
+	[data-chrome~="field-bare"]:focus-visible {
+		--tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(0px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	[data-chrome~="inset"] {
+		padding: calc(var(--spacing) * 4);
+	}
+	[data-chrome~="inset-under"] {
+		padding: calc(var(--spacing) * 1) calc(var(--spacing) * 4) calc(var(--spacing) * 4);
+	}
+	[data-chrome~="prose"] {
+		min-height: 84px;
+		font-size: var(--text-heading-sm);
+		line-height: var(--text-heading-sm--line-height);
+		font-weight: 450;
+	}
+	/* overlays */
+	[data-chrome~="flat"] {
+		--tw-shadow: 0 0 #0000;
+		--tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(0px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+		box-shadow:
+			var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+			var(--tw-shadow);
+	}
+	[data-chrome~="tight"] {
+		padding: calc(var(--spacing) * 3);
+	}
+	[data-chrome~="body-sm"] {
+		font-size: var(--text-body-sm);
+		line-height: var(--text-body-sm--line-height);
+	}
+	/* settings dialog: the body carries its own inset, header and footer sit flush */
+	[data-slot="dialog-content"][data-chrome~="flush"] {
+		gap: 0;
+		padding: 0;
+	}
+	[data-chrome~="wide"] {
+		max-width: none;
+	}
+	[data-slot="dialog-header"][data-chrome~="flush"] {
+		padding: calc(var(--spacing) * 4) calc(var(--spacing) * 4) 0;
+	}
+	[data-slot="dialog-header"][data-chrome~="flush"] > :not(:last-child) {
+		margin-block: 0;
+	}
+	[data-chrome~="bar"] {
+		gap: 12px;
+		min-width: 0;
+	}
+	[data-chrome~="title"] {
+		font-size: var(--text-heading-sm);
+		line-height: var(--text-heading-sm--line-height);
+		font-weight: 450;
+	}
+	[data-slot="dialog-footer"][data-chrome~="flush"],
+	[data-slot="alert-dialog-footer"][data-chrome~="flush"] {
+		border-top-style: var(--tw-border-style);
+		border-top-width: 0px;
+		background-color: transparent;
+	}
+	[data-slot="alert-dialog-footer"][data-chrome~="flush"],
+	[data-slot="dropdown-menu-content"][data-chrome~="flush"],
+	[data-slot="dropdown-menu-sub-content"][data-chrome~="flush"] {
+		padding: 0;
+	}
+	/* popover list (org picker): header row and list rows sit flush, the rows carry their own inset */
+	[data-slot="popover-content"][data-chrome~="flush"] {
+		gap: 0;
+		padding: 0;
+	}
+	[data-chrome~="split"] {
+		justify-content: space-between;
+	}
+	[data-chrome~="end"] {
+		justify-content: flex-end;
+	}
+	/* app shell */
+	[data-slot="sidebar-menu-sub"][data-chrome~="flush"] {
+		border-style: var(--tw-border-style);
+		border-width: 0px;
+		padding-inline: 0;
+		padding-block: 0;
+	}
+	[data-chrome~="railless"][data-chrome~="railless"] {
+		border-inline-end-style: var(--tw-border-style);
+		border-inline-end-width: 0px;
+	}
+	[data-chrome~="app-head"] {
+		gap: calc(var(--spacing) * 1);
+		padding: calc(var(--spacing) * 3) calc(var(--spacing) * 3) calc(var(--spacing) * 1);
+	}
+	[data-chrome~="app-group"] {
+		padding: calc(var(--spacing) * 1) calc(var(--spacing) * 3) 0;
+	}
+	[data-chrome~="nav-row"] {
+		gap: calc(var(--spacing) * 1.5);
+		border-radius: var(--radius-sm);
+		padding-inline: calc(var(--spacing) * 2);
+		padding-block: 0;
+	}
+	[data-chrome~="nav-row"] {
+		--tw-font-weight: var(--font-weight-medium, 500);
+		font-weight: var(--font-weight-medium, 500);
+	}
+	[data-chrome~="nav-row"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--ink-soft, var(--color-foreground));
+	}
+	[data-chrome~="nav-row"] svg {
+		color: var(--color-muted-foreground);
+	}
+	/* chip toggle: pill, muted until pressed */
+	[data-chrome~="chip"] {
+		border-radius: calc(infinity * 1px);
+		padding-inline: calc(var(--spacing) * 2.5);
+	}
+	[data-chrome~="chip"] {
+		--tw-font-weight: var(--font-weight-medium, 500);
+		font-weight: var(--font-weight-medium, 500);
+	}
+	[data-chrome~="chip"]:where(:not([data-state="open"], [data-open]:not([data-open="false"]), [data-state="active"], [data-active]:not([data-active="false"]), [data-state="checked"], [data-checked]:not([data-checked="false"]))) {
+		color: var(--color-muted-foreground);
+	}
+	@media (hover: hover) {
+		[data-chrome~="chip"]:hover {
+			background-color: var(--color-accent);
+			color: var(--ink-soft, var(--color-foreground));
+		}
+	}
+	[data-chrome~="chip"]:is([aria-pressed="true"], [data-state="on"]) {
+		background-color: var(--color-accent);
+		color: var(--color-foreground);
+	}
+}
+/* data-chrome:end */

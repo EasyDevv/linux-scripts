@@ -1,11 +1,12 @@
 {
 	"slug": "tradingview",
 	"measuredAt": "2026-09-29",
+	"supplementedAt": {"date": "2026-10-07", "pages": ["/symbols/NASDAQ-QQQ/", "/symbols/NASDAQ-QQQ/technicals/"], "why": "quant research screens use tooltips, KPI heroes, period presets, stat grids, notice cards and verdict tones the product pages did not cover"},
 	"viewport": {"width": 1440, "height": 900, "scheme": "dark"},
 	"thesis": "Black canvas, top header, flush content, and a right widget bar (panel + icon toolbar). Density comes from 41px table rows and hairline dividers, not from cards. Numbers carry the color: up and down are the only saturated inks besides the brand blue.",
 	"applyOnto": "existing draft skeleton",
 	"doNotCopy": ["TV wordmark and logo", "gradient 업그레이드 CTA", "broker/partner promos (TradeStation)", "Copilot and onboarding popovers", "chart canvas internals (candles, drawing tools)", "live ticker data", "ads"],
-	"families": ["product-table", "overview-cards", "chart-tool"],
+	"families": ["product-table", "overview-cards", "chart-tool", "symbol-page"],
 	"shell": {
 		"model": "top-header-plus-right-widgetbar",
 		"canvas": "--background",
@@ -36,6 +37,18 @@
 			{"id": "groupBarLabel", "font": "--text-body-base", "weight": 600, "color": "--foreground", "where": "9월 29일 화요일"},
 			{"id": "tab", "font": "--text-body-lg", "weight": 400, "where": "chip tabs, square tabs, filter pills"},
 			{"id": "caption", "font": "--text-label-sm", "weight": 400, "color": "--muted-foreground", "where": "day-card labels, axis ticks"},
+			{"id": "heroValue", "font": "--text-hero", "weight": 700, "color": "--foreground", "where": "symbol page price 762.12"},
+			{"id": "heroUnit", "font": "--text-heading-sm", "weight": 400, "color": "--foreground", "where": "USD after the hero value (not uppercase micro here)"},
+			{"id": "heroDelta", "font": "--text-section-sm", "weight": 600, "color": "--positive | --negative", "where": "+5.92 +0.78% beside the hero value"},
+			{"id": "heroAsOf", "font": "--text-body-lg", "weight": 400, "color": "--rating-neutral", "where": "오늘 00:51 GMT+9 기준 under the hero"},
+			{"id": "pageHeadline", "font": "36px/44px", "weight": 600, "color": "--foreground", "where": "symbol name h1; product pages keep --text-title"},
+			{"id": "sectionTitle", "font": "--text-section", "weight": 600, "color": "--foreground", "where": "주요 통계, 펀드 정보, 지표 요약"},
+			{"id": "sectionTitleSm", "font": "--text-section-sm", "weight": 600, "color": "--foreground", "where": "인베스코 QQQ 와 비교하세요"},
+			{"id": "statGridLabel", "font": "--text-body-lg", "weight": 400, "color": "--foreground", "where": "관리 자산 (AUM), 복제 방식 (3-column stat grid)"},
+			{"id": "statGridValue", "font": "--text-stat", "weight": 600, "color": "--foreground", "where": "504.03 B, 피지컬"},
+			{"id": "lead", "font": "--text-lead", "weight": 400, "color": "--foreground", "where": "section intro paragraph on /technicals"},
+			{"id": "widgetKpi", "font": "--text-display", "weight": 600, "color": "--foreground", "where": "widget bar details price 762.19 (28/36 600, not 700)"},
+			{"id": "widgetGroupLabel", "font": "--text-micro", "weight": 400, "color": "--muted-foreground", "where": "지수, 선물 group headers in the watchlist"},
 			{"id": "readingNote", "font": "--text-body-sm", "weight": 400, "color": "--muted-foreground", "where": "one-line 읽는 법 under a chart (project addition, same role as statLabel)"}
 		]
 	},
@@ -48,6 +61,13 @@
 		"iconButton": {"size": "--icon-button", "radius": "--radius", "border": "--input", "transparent": true, "where": "settings, share, fullscreen, collapse"},
 		"commit": {"kind": "filled", "fill": "--primary", "color": "--primary-foreground", "radius": "--radius", "height": "--control-height", "font": "--text-body-lg", "note": "the live 업그레이드 gradient is brand marketing; product commits use --primary"},
 		"search": {"height": "--header-control-height", "radius": "--radius-pill", "fill": "--search-fill", "color": "--search-foreground", "pad": "6px", "where": "header 찾기 (Ctrl+K)"},
+		"tooltip": {"fill": "--tooltip", "color": "--tooltip-foreground", "font": "--text-body-sm", "radius": "--radius-tag", "pad": "6px 8px", "maxWidth": "400px", "arrow": false, "side": "top", "offset": "6px", "align": "start", "where": "dotted-underline terms, toolbar icons (apply-common-tooltip)"},
+		"term": {"decoration": "underline dotted", "decorationColor": "--muted-foreground", "where": "CEOJLU code; any label whose meaning sits in a tooltip"},
+		"rangeButtons": {"height": "74px", "radius": "--radius-tile", "pad": "8px 18px", "lines": ["period --text-body-lg 500 --foreground", "change --text-body-lg 500 --positive | --negative"], "selected": {"fill": "--secondary"}, "idle": {"transparent": true}, "where": "1 날 / 5 날 / 1달 / … / 전체기간 under the symbol chart; one preset per window with its return"},
+		"intervalTabs": {"height": "--control-height-nav", "radius": "6px", "pad": "0 12px", "font": "--text-body-lg", "selected": {"fill": "--secondary", "color": "--tooltip-foreground", "weight": 600}, "idle": {"transparent": true, "color": "--foreground", "weight": 400}, "where": "1 분 … 1달 on /technicals"},
+		"underlineTabs": {"font": "--text-body-lg", "weight": 600, "pad": "0 0 8px", "indicator": {"height": "4px", "fill": "--tab-selected", "width": "content-centered"}, "track": "--secondary", "where": "오버뷰 / 프로화일 / 홀딩스 page sections"},
+		"tag": {"fill": "--secondary", "radius": "--radius-tag", "height": "16px", "font": "--text-label-sm", "color": "--foreground", "where": "추가 +2"},
+		"symbolChip": {"height": "--control-height-nav", "radius": "--radius", "border": "--input", "hairline": "--hairline-width", "pad": "0 11px", "font": "--text-body-lg", "where": "QQQ · Nasdaq Stock Market identity chip"},
 		"dateNav": {"kind": "outline today + calendar icon + prev/next chevrons + range title", "title": "--text-card-title", "weight": 600}
 	},
 	"lists": {
@@ -62,6 +82,9 @@
 		"summary": {"fill": "--inspector", "border": "--inspector-border", "hairline": "--hairline-width", "radius": "--radius-card", "pad": "16px", "where": "portfolio card"},
 		"action": {"fill": "--inspector", "border": "--inspector-border", "radius": "--radius-card", "pad": "41px 16px", "align": "center", "title": "sectionHeading", "body": "--text-body-base muted", "where": "CSV 파일 업로드, 수동으로 생성"},
 		"tile": {"fill": "--card", "radius": "--radius", "pad": "12px", "selected": "--secondary", "where": "calendar day cards, perf tiles in widget"},
+		"outlined": {"transparent": true, "border": "--input", "hairline": "--hairline-width", "radius": "--radius-card", "title": "--text-body-lg 500", "subtitle": "--text-body-base muted", "value": "--text-body-lg 500 + --text-micro uppercase unit", "where": "비교 카드 QQQM / TQQQ"},
+		"notice": {"fill": "--notice", "color": "--notice-foreground", "radius": "8px", "pad": "8px 12px", "font": "--text-label-sm", "where": "widget news card; use for one highlighted sentence per panel"},
+		"counters": {"fill": "--secondary", "radius": "--radius-tile", "pad": "4px 0", "label": "--text-body-lg 400", "value": "--text-stat", "where": "셀 2 · 뉴트럴 9 · 바이 15 under the rating gauge"},
 		"gridGap": "32px"
 	},
 	"charts": {
@@ -72,9 +95,11 @@
 		"grid": "--border",
 		"axis": "caption",
 		"watermark": false,
+		"rating": {"buy": "--rating-buy", "neutral": "--rating-neutral", "sell": "--rating-sell", "note": "technical ratings use blue for buy, not --positive; keep --positive/--negative for returns"},
+		"areaLast": {"line": "--positive | --negative by session change", "gradient": "same hue to transparent", "lastTag": "series color plate, --primary-foreground text, on the price axis", "baseline": "dotted --muted-foreground line with a --secondary tag (이전 종가)"},
 		"heat": {"from": "--negative-strong", "mid": "--secondary", "to": "--positive-strong"}
 	},
-	"header": {"shared": true, "height": "--header-height", "title": {"font": "--text-title", "from": "nav item", "row": "below the header, not in it"}, "pageTools": {"row": "sibling row under the title", "height": "--control-height-nav", "commit": "ml-auto"}},
+	"header": {"shared": true, "height": "--header-height", "title": {"font": "--text-title", "from": "nav item", "row": "below the header, not in it"}, "stickySummary": {"height": "--header-height", "hairline": "--input", "pad": "0 40px", "price": "--text-heading 600", "delta": "--text-heading-sm 500", "where": "symbol bar that pins under the header on scroll"}, "pageTools": {"row": "sibling row under the title", "height": "--control-height-nav", "commit": "ml-auto"}},
 	"notLinear": ["no floating inset panel: main is flush on the canvas", "no left rail: navigation is the top header; the rail is the right widget bar", "idle chip tabs are filled --tab-idle, selected is inverted --tab-selected", "page titles are 24px/600, not 13px panel labels"],
 	"checklist": ["numbers right aligned", "every delta colored by sign with a leading sign glyph (+, −)", "units in --text-micro uppercase after the value", "tables flush to --page-gutter", "one --primary commit per page"]
 }

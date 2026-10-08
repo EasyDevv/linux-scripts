@@ -59,7 +59,14 @@
 		"--shadow-xl": "0 4px 16px 0 rgb(0 0 0 / 0.25)",
 		"--shadow-2xl": "0 4px 16px 0 rgb(0 0 0 / 0.25)",
 		"--tracking-normal": "0em",
-		"--spacing": "0.25rem"
+		"--spacing": "0.25rem",
+		"--tooltip": "rgb(61, 61, 61)",
+		"--tooltip-foreground": "rgb(255, 255, 255)",
+		"--notice": "rgba(179, 136, 255, 0.2)",
+		"--notice-foreground": "rgb(15, 15, 15)",
+		"--rating-buy": "rgb(41, 98, 255)",
+		"--rating-neutral": "rgb(112, 112, 112)",
+		"--rating-sell": "rgb(247, 82, 95)"
 	},
 	"dark": {
 		"--background": "rgb(0, 0, 0)",
@@ -93,7 +100,14 @@
 		"--sidebar-accent": "rgb(46, 46, 46)",
 		"--sidebar-accent-foreground": "rgb(219, 219, 219)",
 		"--sidebar-border": "rgb(46, 46, 46)",
-		"--sidebar-ring": "rgb(41, 98, 255)"
+		"--sidebar-ring": "rgb(41, 98, 255)",
+		"--tooltip": "rgb(61, 61, 61)",
+		"--tooltip-foreground": "rgb(255, 255, 255)",
+		"--notice": "rgba(179, 136, 255, 0.2)",
+		"--notice-foreground": "rgb(219, 219, 219)",
+		"--rating-buy": "rgb(41, 98, 255)",
+		"--rating-neutral": "rgb(112, 112, 112)",
+		"--rating-sell": "rgb(247, 82, 95)"
 	},
 	"projectPrimitives": {
 		"--card-spacing": "1rem",
@@ -142,7 +156,9 @@
 		"--search-fill": "rgb(242, 242, 242)",
 		"--search-foreground": "rgb(112, 112, 112)",
 		"--inspector": "rgb(249, 249, 249)",
-		"--inspector-border": "rgb(235, 235, 235)"
+		"--inspector-border": "rgb(235, 235, 235)",
+		"--radius-tile": "12px",
+		"--radius-tag": "4px"
 	},
 	"projectUtilities": {
 		"--font-heading": "var(--font-heading)",
@@ -201,7 +217,16 @@
 		"--text-label-sm--font-weight": "400",
 		"--text-micro": "11px",
 		"--text-micro--line-height": "16px",
-		"--text-micro--font-weight": "400"
+		"--text-micro--font-weight": "400",
+		"--color-tooltip": "var(--tooltip)",
+		"--color-tooltip-foreground": "var(--tooltip-foreground)",
+		"--color-notice": "var(--notice)",
+		"--color-notice-foreground": "var(--notice-foreground)",
+		"--color-rating-buy": "var(--rating-buy)",
+		"--color-rating-neutral": "var(--rating-neutral)",
+		"--color-rating-sell": "var(--rating-sell)",
+		"--radius-tile": "var(--radius-tile)",
+		"--radius-tag": "var(--radius-tag)"
 	},
 	"projectPrimitivesDark": {
 		"--elevated-ring": "rgb(255 255 255 / 8%)",

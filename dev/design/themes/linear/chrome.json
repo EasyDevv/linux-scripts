@@ -396,7 +396,7 @@
         "font": "--text-heading-sm",
         "color": "--ink-soft"
       },
-      "fill": "mark rgb(28, 28, 27)",
+      "fill": "--list-group-fill",
       "envelope": {
         "gapStart": "--list-group-gap",
         "gapEnd": "--list-group-gap",
@@ -404,7 +404,7 @@
         "interRowGap": 0
       },
       "heightPx": 36,
-      "fillNote": "capture band rgb(28,28,27); --sidebar-accent rgb(34,35,37) is the rail item",
+      "fillNote": "live computed lch(9.232 0.85 272) = rgb(26,26,27) (view page, CDP 2026-10-07; the PNG capture read 28,28,27). Sections step canvas 9 -> panel --card 18 -> band/hover/inspector 26; --sidebar-accent rgb(34,35,37) is the rail item",
       "chevron": "28px hit target at band+4, ink color-mix(--muted-foreground 28%)",
       "plus": "24px hit target at the band end, 8px padding-right"
     },
