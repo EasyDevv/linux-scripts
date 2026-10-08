@@ -141,7 +141,6 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
             return providers.iter().map(|item| self.refresh(item)).collect();
         }
         let now = self.clock.now();
-        let before = self.store.load()?;
         let jobs: Vec<(String, String)> =
             providers.iter().map(|item| refresh_target(item)).collect();
         let probes = &self.probes;
@@ -167,8 +166,7 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
         let mut cache = self.store.load()?;
         let mut answers = Vec::with_capacity(jobs.len());
         for ((provider, model), outcome) in jobs.into_iter().zip(outcomes) {
-            let prev = before.providers.get(&outcome.cache_key).cloned();
-            let (key, snapshot) = outcome_snapshot(&provider, now, outcome, prev.as_ref());
+            let (key, snapshot) = outcome_snapshot(now, outcome);
             cache.providers.insert(key, snapshot.clone());
             answers.push(RemainingAnswer::from_snapshot(
                 &model, &provider, &snapshot, false,
@@ -209,8 +207,7 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
     fn probe_provider(&self, provider: &str, now: i64) -> Result<ProviderSnapshot> {
         let outcome = self.probes.probe(provider, now);
         let mut cache = self.store.load()?;
-        let prev = cache.providers.get(&outcome.cache_key).cloned();
-        let (key, snapshot) = outcome_snapshot(provider, now, outcome, prev.as_ref());
+        let (key, snapshot) = outcome_snapshot(now, outcome);
         cache.providers.insert(key, snapshot.clone());
         self.store.save(&cache)?;
         Ok(snapshot)
@@ -234,15 +231,7 @@ fn refresh_target(provider_or_model: &str) -> (String, String) {
     (provider, model)
 }
 
-fn outcome_snapshot(
-    provider: &str,
-    now: i64,
-    mut outcome: ProbeOutcome,
-    prev: Option<&ProviderSnapshot>,
-) -> (String, ProviderSnapshot) {
-    if provider == "grok" {
-        grok::apply_inferred_weekly_reset(&mut outcome, prev, now);
-    }
+fn outcome_snapshot(now: i64, outcome: ProbeOutcome) -> (String, ProviderSnapshot) {
     let key = outcome.cache_key;
     let snapshot = ProviderSnapshot {
         checked_at: now,
@@ -668,60 +657,6 @@ mod tests {
         core.remaining("commandcode/x", false).unwrap();
         core.remaining("commandcode/x", true).unwrap();
         assert_eq!(core.probes.probes.get(), 2);
-    }
-
-    struct GrokProbes {
-        key: String,
-        remaining: Cell<i64>,
-        probes: Cell<u32>,
-    }
-
-    impl Probes for GrokProbes {
-        fn cache_key(&self, _provider: &str) -> String {
-            self.key.clone()
-        }
-
-        fn probe(&self, _provider: &str, _now: i64) -> ProbeOutcome {
-            self.probes.set(self.probes.get() + 1);
-            let remaining = self.remaining.get();
-            ProbeOutcome {
-                plan: None,
-                cache_key: self.key.clone(),
-                state: ProviderState::Available,
-                reason: None,
-                reset_at: None,
-                remaining_credits: Some(remaining),
-                windows: vec![crate::cache::UsageWindow {
-                    name: "weekly".into(),
-                    used_percent: 0.0,
-                    reset_at: None,
-                }],
-                renews_at: None,
-            }
-        }
-    }
-
-    #[test]
-    fn grok_locks_weekly_reset_after_grant_fill() {
-        let core = UsageCore {
-            clock: FakeClock(Cell::new(1_000)),
-            store: MemoryStore::default(),
-            probes: GrokProbes {
-                key: "grok:abc".into(),
-                remaining: Cell::new(4_000),
-                probes: Cell::new(0),
-            },
-        };
-        let first = core.remaining("grok/x", true).unwrap();
-        let expected = crate::grok::next_saturday_utc(1_000);
-        assert_eq!(first.reset_at, Some(expected));
-        core.probes.remaining.set(15_000);
-        core.clock.0.set(1_060);
-        let second = core.remaining("grok/x", true).unwrap();
-        assert_eq!(second.reset_at, Some(expected));
-        let status = core.status().unwrap();
-        let snap = status.providers.get("grok:abc").unwrap();
-        assert_eq!(snap.windows[0].reset_at, Some(expected));
     }
 
     #[test]

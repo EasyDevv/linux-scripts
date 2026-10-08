@@ -13,6 +13,21 @@ Reuse:
 3. Keep `data-role="chip"` and `aria-pressed`.
 4. Do not use `bg-accent` for the selected tab.
 
+## setting-section.svelte + setting-row.svelte
+
+Body of every settings or form dialog: **category heading → `--secondary` well → rows** (Linear Settings › Security, `design.json` `settings.formFamily.groupHeader` / `settingRow`). Dashboard exemplars: `apps/client/src/lib/projects/workflow-dialog.svelte`, `org-goal-dialog.svelte`.
+
+Reuse:
+
+1. Copy both files into `$lib` (they style themselves with scoped CSS + tokens).
+2. Body: `<div class="flex flex-col p-4 gap-6">` of `SettingSection`s (24px between groups in a dialog).
+3. Each row: `<SettingRow id title description>` with one end-aligned control at a fixed width for its values (select `w-16`/`w-28`/`w-36`, input `w-40`) and `aria-describedby="{id}-desc"`. A changing description (name check) passes `live`.
+4. Descriptions are one short line. A wrap is a copy problem: shorten it.
+5. A control that does nothing in the current state stays and is `disabled`, with the description saying why. Do not hide the row (the dialog height would jump).
+6. Header and footer stay the `controls.dialog` chrome below (kind-word title, circle close, pill Cancel / filled verb).
+
+Not this: label-left `Field.Field` rows with a full-width control (`settings-dialog.svelte`, the older Providers form). Their label column and control column drift apart per row.
+
 ## settings-dialog.svelte
 
 Dashboard **Providers** settings (`http://dashboard.localhost/`, source `apps/client/src/routes/+page.svelte`). Same chrome as `/sync` Settings: 480px Dialog, secondary wells, overlay Select, pill Cancel/Save.
@@ -26,7 +41,7 @@ Reuse:
 5. Well rows: `@container overflow-hidden rounded-md bg-secondary`. Divider `mx-4` height `--hairline-width` fill `--foreground` at 0.1 (`data-role="row-divider"`), not `--border`.
 6. Footer: `mx-0 mb-0 border-t-0 bg-transparent`. Cancel `secondary` pill, Save filled pill. Header/footer have no hairline (`design.json` `controls.dialog.noHeaderFooterRule`).
 
-Replace labels, Select options, and `onSave` for the host product. Keep the geometry.
+Replace labels, Select options, and `onSave` for the host product. Keep the geometry. New dialogs compose `setting-section` + `setting-row` instead.
 
 ## prop-picker.svelte
 

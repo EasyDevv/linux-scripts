@@ -1,7 +1,7 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use crate::cache::{ProviderSnapshot, ProviderState, UsageWindow};
+use crate::cache::{ProviderState, UsageWindow};
 use crate::core::ProbeOutcome;
 use crate::http::Http;
 use crate::iso::{parse_iso_unix, unix_from_utc};
@@ -93,13 +93,22 @@ fn remaining_from_preview(
     Some(finish(
         cache_key,
         UsageWindow {
-            name: "weekly".into(),
+            name: "monthly".into(),
             used_percent,
-            reset_at: None,
+            reset_at: cycle_end(json).or_else(|| cycle_end(core)),
         },
         if remaining > 0 { Some(remaining) } else { None },
         renews_at,
     ))
+}
+
+/// Credits reset when the billing cycle rolls over: 00:00 UTC on the 1st of the next month.
+fn cycle_end(json: &Value) -> Option<i64> {
+    let cycle = json.get("billingCycle")?;
+    let year = cycle.get("year")?.as_i64()? as i32;
+    let month = cycle.get("month")?.as_i64()? as i32;
+    let next = month; // 0-based index of the following month
+    unix_from_utc(year + next.div_euclid(12), (next.rem_euclid(12) + 1) as u32, 1, 0, 0, 0)
 }
 
 fn license_renews_from_invoices(json: &Value) -> Option<i64> {
@@ -265,7 +274,7 @@ pub fn probe(http: &dyn Http, session: &Session) -> Result<ProbeOutcome> {
         Err(_) => return Ok(unknown(cache_key, Some("billing".into()))),
     };
     let config = json.get("config").unwrap_or(&json);
-    if let Some(outcome) = weekly_from_config(cache_key.clone(), config) {
+    if let Some(outcome) = credits_from_config(cache_key.clone(), config) {
         return Ok(outcome);
     }
     let fallback = http.get(BILLING_URL, &headers)?;
@@ -286,7 +295,7 @@ pub fn probe(http: &dyn Http, session: &Session) -> Result<ProbeOutcome> {
     Ok(unknown(cache_key, Some("billing".into())))
 }
 
-fn weekly_from_config(cache_key: String, config: &Value) -> Option<ProbeOutcome> {
+fn credits_from_config(cache_key: String, config: &Value) -> Option<ProbeOutcome> {
     let percent = config
         .get("creditUsagePercent")
         .and_then(Value::as_f64)
@@ -295,7 +304,7 @@ fn weekly_from_config(cache_key: String, config: &Value) -> Option<ProbeOutcome>
     Some(finish(
         cache_key,
         UsageWindow {
-            name: "weekly".into(),
+            name: "monthly".into(),
             used_percent: percent.clamp(0.0, 100.0),
             reset_at,
         },
@@ -389,66 +398,6 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
     }
 }
 
-const WEEKLY_PERIOD_SECS: i64 = 7 * 86_400;
-
-pub(crate) fn apply_inferred_weekly_reset(
-    outcome: &mut ProbeOutcome,
-    prev: Option<&ProviderSnapshot>,
-    now: i64,
-) {
-    if outcome.reset_at.is_some() {
-        return;
-    }
-    let Some(reset_at) = infer_weekly_reset(now, outcome.remaining_credits, prev) else {
-        return;
-    };
-    outcome.reset_at = Some(reset_at);
-    if let Some(window) = outcome.windows.iter_mut().find(|w| w.name == "weekly") {
-        if window.reset_at.is_none() {
-            window.reset_at = Some(reset_at);
-        }
-    }
-}
-
-fn infer_weekly_reset(
-    now: i64,
-    _remaining: Option<i64>,
-    prev: Option<&ProviderSnapshot>,
-) -> Option<i64> {
-    let sticky = prev.and_then(|prev| {
-        prev.reset_at.or_else(|| {
-            prev.windows
-                .iter()
-                .find(|window| window.name == "weekly")
-                .and_then(|window| window.reset_at)
-        })
-    });
-    Some(advance_weekly(
-        sticky.unwrap_or_else(|| next_saturday_utc(now)),
-        now,
-    ))
-}
-
-pub(crate) fn next_saturday_utc(now: i64) -> i64 {
-    const DAY: i64 = 86_400;
-    let day = now.div_euclid(DAY);
-    let weekday = (day + 4).rem_euclid(7);
-    let days_until_sat = (6 - weekday).rem_euclid(7);
-    let mut sat = (day + days_until_sat) * DAY;
-    if sat <= now {
-        sat = sat.saturating_add(7 * DAY);
-    }
-    sat
-}
-
-fn advance_weekly(reset_at: i64, now: i64) -> i64 {
-    if reset_at > now {
-        return reset_at;
-    }
-    let periods = now.saturating_sub(reset_at) / WEEKLY_PERIOD_SECS + 1;
-    reset_at.saturating_add(periods.saturating_mul(WEEKLY_PERIOD_SECS))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -464,6 +413,7 @@ mod tests {
                     200,
                     json!({
                         "defaultCredits": "15000",
+                        "billingCycle": { "year": 2026, "month": 9 },
                         "coreInvoice": {
                             "defaultCreditsIssued": "-10933",
                             "prepaidCredits": { "val": "0" }
@@ -498,14 +448,14 @@ mod tests {
         assert_eq!(outcome.state, ProviderState::Available);
         assert_eq!(outcome.remaining_credits, Some(4067));
         assert_eq!(outcome.windows.len(), 1);
-        assert_eq!(outcome.windows[0].name, "weekly");
-        assert_eq!(outcome.windows[0].reset_at, None);
+        assert_eq!(outcome.windows[0].name, "monthly");
+        assert_eq!(outcome.windows[0].reset_at, Some(1_790_812_800));
         assert_eq!(outcome.renews_at, Some(1_818_285_362));
         assert!((outcome.windows[0].used_percent - 72.886).abs() < 0.02);
     }
 
     #[test]
-    fn probe_maps_weekly_credits() {
+    fn probe_maps_cli_credits() {
         let http = MapHttp {
             routes: vec![(
                 "billing?format=credits".into(),
@@ -532,87 +482,9 @@ mod tests {
         )
         .unwrap();
         assert_eq!(outcome.state, ProviderState::Available);
-        assert_eq!(outcome.windows[0].name, "weekly");
+        assert_eq!(outcome.windows[0].name, "monthly");
         assert_eq!(outcome.windows[0].used_percent, 71.0);
         assert_eq!(outcome.remaining_credits, Some(44));
         assert_eq!(outcome.windows[0].reset_at, Some(1_783_449_374));
-    }
-
-    fn snapshot(remaining: Option<i64>, reset_at: Option<i64>) -> ProviderSnapshot {
-        ProviderSnapshot {
-            plan: None,
-            checked_at: 1,
-            state: ProviderState::Available,
-            reason: None,
-            reset_at,
-            fresh_until: 2,
-            remaining_credits: remaining,
-            windows: vec![UsageWindow {
-                name: "weekly".into(),
-                used_percent: 0.0,
-                reset_at,
-            }],
-            renews_at: None,
-        }
-    }
-
-    #[test]
-    fn infers_next_saturday_without_sticky() {
-        let prev = snapshot(Some(4_000), None);
-        assert_eq!(
-            infer_weekly_reset(1_000, Some(15_000), Some(&prev)),
-            Some(next_saturday_utc(1_000))
-        );
-        assert_eq!(
-            infer_weekly_reset(1_000, Some(15_000), None),
-            Some(next_saturday_utc(1_000))
-        );
-    }
-
-    #[test]
-    fn next_saturday_after_sunday_morning() {
-        assert_eq!(next_saturday_utc(1_789_258_751), 1_789_776_000);
-    }
-
-    #[test]
-    fn sticky_full_grant_keeps_epoch() {
-        let reset = 1_000 + WEEKLY_PERIOD_SECS;
-        let prev = snapshot(Some(15_000), Some(reset));
-        assert_eq!(
-            infer_weekly_reset(1_200, Some(15_000), Some(&prev)),
-            Some(reset)
-        );
-    }
-
-    #[test]
-    fn projects_next_week_after_elapsed_period() {
-        let reset = 1_000 + WEEKLY_PERIOD_SECS;
-        let prev = snapshot(Some(2_000), Some(reset));
-        assert_eq!(
-            infer_weekly_reset(reset + 10, Some(2_000), Some(&prev)),
-            Some(reset + WEEKLY_PERIOD_SECS)
-        );
-    }
-
-    #[test]
-    fn keeps_cli_reset_at() {
-        let prev = snapshot(Some(4_000), None);
-        let mut outcome = ProbeOutcome {
-            plan: None,
-            cache_key: "grok:x".into(),
-            state: ProviderState::Available,
-            reason: None,
-            reset_at: Some(99),
-            remaining_credits: Some(15_000),
-            windows: vec![UsageWindow {
-                name: "weekly".into(),
-                used_percent: 0.0,
-                reset_at: Some(99),
-            }],
-            renews_at: None,
-        };
-        apply_inferred_weekly_reset(&mut outcome, Some(&prev), 1_000);
-        assert_eq!(outcome.reset_at, Some(99));
-        assert_eq!(outcome.windows[0].reset_at, Some(99));
     }
 }
