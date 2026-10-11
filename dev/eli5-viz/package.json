@@ -1,0 +1,11 @@
+{
+  "name": "eli5-viz",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:3d": "bun build core/scene3d.src.js --minify --format iife --outfile core/scene3d.js"
+  },
+  "dependencies": {
+    "three": "0.177.0"
+  }
+}

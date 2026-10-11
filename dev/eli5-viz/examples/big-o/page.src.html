@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Big-O 시간복잡도: 일이 늘어나는 모양</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+    <body>
+    <main class="mx-auto max-w-[50rem] space-y-16 px-4 pb-24 pt-14 sm:px-6">
+      <header>
+        <div class="flex items-center justify-between gap-4">
+          <p class="ui-eyebrow">개념 설명 · Big-O 시간복잡도</p>
+          <button type="button" data-theme-toggle class="ui-ctl ui-ink-2" aria-label="밝은 화면 / 어두운 화면"><i data-ic="sun" class="h-4 w-4 show-dark"></i><i data-ic="moon" class="h-4 w-4 show-light"></i></button>
+        </div>
+        <h1 id="title" class="mt-4 text-[2rem] leading-[1.25] sm:text-[2.6rem]">하루의 방이 창고가 된 날</h1>
+        <p class="ui-prose mt-4">입력 <span class="italic ui-accent">n</span>이 커질 때 일감은 어떤 모양으로 느는가. <code class="font-mono text-sm">O(1)</code>, <code class="font-mono text-sm">O(n)</code>, <code class="font-mono text-sm">O(n²)</code>, <code class="font-mono text-sm">O(log n)</code>은 그 모양에 붙인 이름이고, 몇 초 걸리는지는 말하지 않는다.</p>
+        <p class="ui-scene mt-4">하루의 방에는 장난감이 10개 있어서, 무엇을 어떻게 찾든 금방 끝났다. 어느 날, 방이 장난감 100만 개짜리 창고가 된다.</p>
+      </header>
+
+      <section id="predict" class="ui-card p-4 sm:p-6" data-w="quiz" data-q="predict" data-title="창고 문을 열기 전에 맞혀 보기"></section>
+
+      <section id="cast" aria-labelledby="cast-h">
+        <h2 id="cast-h" class="text-[1.5rem] leading-snug">하루가 쓰는 찾는 법 넷</h2>
+        <p class="mt-2 text-[15px] leading-relaxed ui-ink-2">하루는 무언가를 찾을 때 늘 이 넷 중 하나를 쓴다. n은 방에 있는 장난감 개수다.</p>
+        <div class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div class="ui-card k-o1 p-4" style="--tone:var(--pass)">
+            <div class="flex items-center justify-between"><span class="k-ink"><i data-ic="hand-grab" class="h-7 w-7"></i></span><span class="tone-ink" title="통과 · 커져도 괜찮다"><i data-ic="circle-check" class="h-4 w-4" aria-label="통과"></i></span></div>
+            <p class="mt-3 font-medium">바로 집기</p>
+            <p class="whitespace-nowrap font-mono text-sm k-ink">O(1)</p>
+            <p class="mt-1.5 text-sm leading-snug ui-ink-2">맨 앞 공 하나를 든다</p>
+            <p class="mt-3 border-t ui-line pt-2 text-xs tabular-nums ui-ink-3">100개여도 1번</p>
+          </div>
+          <div class="ui-card k-log p-4" style="--tone:var(--pass)">
+            <div class="flex items-center justify-between"><span class="k-ink"><i data-ic="scissors" class="h-7 w-7"></i></span><span class="tone-ink" title="통과 · 커져도 괜찮다"><i data-ic="circle-check" class="h-4 w-4" aria-label="통과"></i></span></div>
+            <p class="mt-3 font-medium">절반 버리기</p>
+            <p class="whitespace-nowrap font-mono text-sm k-ink">O(log n)</p>
+            <p class="mt-1.5 text-sm leading-snug ui-ink-2">숫자 맞추기, 물을 때마다 절반을 버린다</p>
+            <p class="mt-3 border-t ui-line pt-2 text-xs tabular-nums ui-ink-3">100개면 약 7번</p>
+          </div>
+          <div class="ui-card k-n p-4" style="--tone:var(--go)">
+            <div class="flex items-center justify-between"><span class="k-ink"><i data-ic="scan-search" class="h-7 w-7"></i></span><span class="tone-ink" title="진행 · 개수만큼 는다"><i data-ic="circle-arrow-right" class="h-4 w-4" aria-label="진행"></i></span></div>
+            <p class="mt-3 font-medium">쭉 보기</p>
+            <p class="whitespace-nowrap font-mono text-sm k-ink">O(n)</p>
+            <p class="mt-1.5 text-sm leading-snug ui-ink-2">빨간 자동차를 하나씩 끝까지 찾는다</p>
+            <p class="mt-3 border-t ui-line pt-2 text-xs tabular-nums ui-ink-3">100개면 100번</p>
+          </div>
+          <div class="ui-card k-n2 p-4" style="--tone:var(--stop)">
+            <div class="flex items-center justify-between"><span class="k-ink"><i data-ic="grid-3x3" class="h-7 w-7"></i></span><span class="tone-ink" title="정지 · 커지면 폭발한다"><i data-ic="octagon-x" class="h-4 w-4" aria-label="정지"></i></span></div>
+            <p class="mt-3 font-medium">전부 비교</p>
+            <p class="whitespace-nowrap font-mono text-sm k-ink">O(n²)</p>
+            <p class="mt-1.5 text-sm leading-snug ui-ink-2">짝꿍 찾기, 하나 들고 나머지를 다 본다</p>
+            <p class="mt-3 border-t ui-line pt-2 text-xs tabular-nums ui-ink-3">100개면 약 10,000번</p>
+          </div>
+        </div>
+        <ul class="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs ui-ink-3"><li class="flex items-center gap-1.5"><span class="tone-ink" style="--tone:var(--pass)"><i data-ic="circle-check" class="h-3.5 w-3.5"></i></span>통과 · 커져도 괜찮다</li><li class="flex items-center gap-1.5"><span class="tone-ink" style="--tone:var(--go)"><i data-ic="circle-arrow-right" class="h-3.5 w-3.5"></i></span>진행 · 개수만큼 는다</li><li class="flex items-center gap-1.5"><span class="tone-ink" style="--tone:var(--stop)"><i data-ic="octagon-x" class="h-3.5 w-3.5"></i></span>정지 · 커지면 폭발한다</li><li class="flex items-center gap-1.5"><svg class="h-3.5 w-5" viewBox="0 0 20 14" aria-hidden="true"><line x1="1" y1="7" x2="19" y2="7" stroke="var(--c-log)" stroke-width="2" stroke-dasharray="4 3"/></svg>점선 이음매</li></ul>
+      </section>
+
+      <div id="nbar" class="ui-bar sticky top-0 z-20 -mx-4 px-4 py-3 sm:-mx-6 sm:px-6">
+        <div data-w="slider" data-presets="10|작은 방|box;100;1000;1000000|큰 방|warehouse" data-presets-wide></div>
+      </div>
+
+      <section id="hero" class="ui-card -mt-6 p-4 sm:p-6">
+        <h3 class="mb-3 flex items-center gap-2 text-sm font-medium"><i data-ic="trending-up" class="h-4 w-4 ui-ink-3"></i>방이 커지면 하루를 가장 먼저 막는 선은? 위 슬라이더로 방을 키워 보자.</h3>
+        <div data-w="chart"></div>
+        <div class="mt-5"><div data-w="readout" data-compact></div></div>
+      </section>
+
+      <section id="steps" class="pt-4">
+        <article id="step-1" class="ui-chapter scroll-mt-28 p-4 sm:p-6">
+          <div class="ui-chapter-head">
+            <span class="ui-step-ic"><i data-ic="eye-off" class="h-6 w-6"></i></span>
+            <div class="min-w-0">
+              <p class="text-xs ui-ink-3">1장 <span aria-hidden="true">·</span> <span class="font-mono">n · 작업량</span></p>
+              <h2 class="mt-0.5 text-[1.4rem] leading-snug sm:text-[1.6rem]">작은 방의 착각</h2>
+            </div>
+          </div>
+          <p class="ui-scene mt-4">창고 첫날, 하루는 10개짜리 방에서 하던 대로 한다.</p>
+          <div class="ui-stage mt-4 space-y-5 p-3 sm:p-4"><div class="ui-toolbar"><button type="button" data-set-n="10" class="ui-chip inline-flex items-center gap-1.5"><i data-ic="box" class="h-3.5 w-3.5"></i>작은 방 · n = 10</button><button type="button" data-set-n="1000000" class="ui-chip inline-flex items-center gap-1.5"><i data-ic="warehouse" class="h-3.5 w-3.5"></i>큰 방 · n = 100만</button><span class="ml-auto inline-flex items-center gap-1.5 text-xs ui-ink-3">지금 <span data-w="place"></span></span></div><div data-w="readout" data-quiet></div></div>
+          <p class="mt-4" data-w="say" data-say="step-1"></p>
+          <div class="ui-quiz mt-4 p-4 sm:p-5" data-w="quiz" data-q="step-1"></div>
+          <div class="ui-chapter-foot mt-5 pt-4">
+            <p class="text-xs leading-relaxed ui-ink-3">실패를 미리 본다 · 구조를 먼저 고른다 · 측정 횟수를 아낀다</p>
+            <a class="ui-next" href="#step-2"><i data-ic="corner-down-right" class="h-4 w-4"></i><span>그래서 하루에게는 모양을 부를 이름이 필요해졌다.</span></a>
+          </div>
+        </article>
+        <article id="step-2" class="ui-chapter scroll-mt-28 p-4 sm:p-6">
+          <div class="ui-chapter-head">
+            <span class="ui-step-ic"><i data-ic="parentheses" class="h-6 w-6"></i></span>
+            <div class="min-w-0">
+              <p class="text-xs ui-ink-3">2장 <span aria-hidden="true">·</span> <span class="font-mono">O(1) · O(n) · O(n²) · O(log n)</span></p>
+              <h2 class="mt-0.5 text-[1.4rem] leading-snug sm:text-[1.6rem]">모양에 이름 붙이기</h2>
+            </div>
+          </div>
+          <p class="ui-scene mt-4">하루는 노트에 O( )를 적는다. 괄호 안에는 장난감을 몇 번 보는지를 쓴다.</p>
+          <div class="ui-stage mt-4 space-y-5 p-3 sm:p-4"><dl class="grid gap-x-6 gap-y-2 sm:grid-cols-2"><div class="flex items-center gap-3 border-b ui-line py-2 k-o1"><dt class="flex w-[7.5rem] items-center gap-2 font-mono text-sm k-ink"><i data-ic="hand-grab" class="h-4 w-4"></i>O(1)</dt><dd class="text-sm">늘 한 번</dd></div><div class="flex items-center gap-3 border-b ui-line py-2 k-log"><dt class="flex w-[7.5rem] items-center gap-2 font-mono text-sm k-ink"><i data-ic="scissors" class="h-4 w-4"></i>O(log n)</dt><dd class="text-sm">반으로 자른 횟수</dd></div><div class="flex items-center gap-3 border-b ui-line py-2 k-n"><dt class="flex w-[7.5rem] items-center gap-2 font-mono text-sm k-ink"><i data-ic="scan-search" class="h-4 w-4"></i>O(n)</dt><dd class="text-sm">개수만큼</dd></div><div class="flex items-center gap-3 border-b ui-line py-2 k-n2"><dt class="flex w-[7.5rem] items-center gap-2 font-mono text-sm k-ink"><i data-ic="grid-3x3" class="h-4 w-4"></i>O(n²)</dt><dd class="text-sm">개수 × 개수</dd></div></dl><div class="border-t ui-line pt-4"><div data-w="table" data-ns="10,100,1000"></div></div></div>
+          <p class="mt-4" data-w="say" data-say="step-2"></p>
+          <div class="ui-quiz mt-4 p-4 sm:p-5" data-w="quiz" data-q="step-2"></div>
+          <div class="ui-chapter-foot mt-5 pt-4">
+            <p class="text-xs leading-relaxed ui-ink-3">기호를 모양으로 바꾼다 · 네 경우를 바로 구분한다 · 곱셈 차이를 눈으로 본다</p>
+            <a class="ui-next" href="#step-3"><i data-ic="corner-down-right" class="h-4 w-4"></i><span>이름이 생기자, 하루는 아침 심부름부터 다시 본다.</span></a>
+          </div>
+        </article>
+        <article id="step-3" class="ui-chapter scroll-mt-28 p-4 sm:p-6">
+          <div class="ui-chapter-head">
+            <span class="ui-step-ic"><i data-ic="git-compare-arrows" class="h-6 w-6"></i></span>
+            <div class="min-w-0">
+              <p class="text-xs ui-ink-3">3장 <span aria-hidden="true">·</span> <span class="font-mono">O(1) · O(n)</span></p>
+              <h2 class="mt-0.5 text-[1.4rem] leading-snug sm:text-[1.6rem]">아침의 두 심부름</h2>
+            </div>
+          </div>
+          <p class="ui-scene mt-4">아침 심부름은 둘이다. 맨 앞 공 가져오기와 빨간 자동차 찾아오기.</p>
+          <div class="ui-stage mt-4 space-y-5 p-3 sm:p-4"><div data-w="toyrow" data-kinds="o1,n" data-sizes="10,30"></div><div class="border-t ui-line pt-4"><div class="ui-toolbar mb-2"><button type="button" data-set-n="1000000" class="ui-chip inline-flex items-center gap-1.5"><i data-ic="warehouse" class="h-3.5 w-3.5"></i>방을 창고로 키우기</button><span class="ml-auto inline-flex items-center gap-1.5 text-xs ui-ink-3">지금 <span data-w="place"></span></span></div><div data-w="readout" data-focus="o1,n" data-quiet></div></div></div>
+          <p class="mt-4" data-w="say" data-say="step-3"></p>
+          <div class="ui-quiz mt-4 p-4 sm:p-5" data-w="quiz" data-q="step-3"></div>
+          <div class="ui-chapter-foot mt-5 pt-4">
+            <p class="text-xs leading-relaxed ui-ink-3">묶임 여부를 먼저 묻는다 · 한 번 보기를 끝까지 본다 · 선형 증가를 바로 알아본다</p>
+            <a class="ui-next" href="#step-4"><i data-ic="corner-down-right" class="h-4 w-4"></i><span>그런데 오후 숙제는 짝꿍 찾기였다. 100만 개짜리 창고에서.</span></a>
+          </div>
+        </article>
+        <article id="step-4" class="ui-chapter scroll-mt-28 p-4 sm:p-6">
+          <div class="ui-chapter-head">
+            <span class="ui-step-ic"><i data-ic="arrow-down-up" class="h-6 w-6"></i></span>
+            <div class="min-w-0">
+              <p class="text-xs ui-ink-3">4장 <span aria-hidden="true">·</span> <span class="font-mono">O(n²) · O(log n)</span></p>
+              <h2 class="mt-0.5 text-[1.4rem] leading-snug sm:text-[1.6rem]">오후의 위기</h2>
+            </div>
+          </div>
+          <p class="ui-scene mt-4">하루는 장난감 하나를 들고 나머지를 전부 본다. 그러다 숫자 맞추기 놀이를 떠올린다.</p>
+          <div class="ui-stage mt-4 space-y-5 p-3 sm:p-4"><div class="ui-toolbar"><button type="button" data-set-n="100" class="ui-chip inline-flex items-center gap-1.5"><i data-ic="boxes" class="h-3.5 w-3.5"></i>100개 방</button><button type="button" data-set-n="1000000" class="ui-chip inline-flex items-center gap-1.5"><i data-ic="warehouse" class="h-3.5 w-3.5"></i>100만 개 창고</button><span class="ml-auto inline-flex items-center gap-1.5 text-xs ui-ink-3">지금 <span data-w="place"></span></span></div><div data-w="chart" data-focus="n2,log"></div><div class="border-t ui-line pt-4"><h3 class="mb-3 flex items-center gap-2 text-sm font-medium"><i data-ic="scissors" class="h-4 w-4 ui-ink-3"></i>절반 버리기: 지금 방을 반씩 자르면</h3><div data-w="halve"></div></div></div>
+          <p class="mt-4" data-w="say" data-say="step-4"></p>
+          <div class="ui-quiz mt-4 p-4 sm:p-5" data-w="quiz" data-q="step-4"></div>
+          <div class="ui-chapter-foot mt-5 pt-4">
+            <p class="text-xs leading-relaxed ui-ink-3">이중 확인을 먼저 의심한다 · 절반 삭제가 가능한지 묻는다 · 폭발과 완만을 갈라 놓는다</p>
+            <a class="ui-next" href="#step-5"><i data-ic="corner-down-right" class="h-4 w-4"></i><span>숫자 맞추기로 하루는 해 지기 전에 끝냈지만, 어른들은 더 빠른 컴퓨터를 사면 된다고 말한다.</span></a>
+          </div>
+        </article>
+        <article id="step-5" class="ui-chapter scroll-mt-28 p-4 sm:p-6">
+          <div class="ui-chapter-head">
+            <span class="ui-step-ic"><i data-ic="route" class="h-6 w-6"></i></span>
+            <div class="min-w-0">
+              <p class="text-xs ui-ink-3">5장 <span aria-hidden="true">·</span> <span class="font-mono">실패 경로 · 성공 경로</span></p>
+              <h2 class="mt-0.5 text-[1.4rem] leading-snug sm:text-[1.6rem]">마지막 함정</h2>
+            </div>
+          </div>
+          <p class="ui-scene mt-4">빠른 기계면 초는 정말 줄어든다. 하루는 그 말에 기대는 버릇 세 가지를 뒤집어 본다.</p>
+          <div class="ui-stage mt-4 space-y-5 p-3 sm:p-4"><div data-w="flip"></div><div class="border-t ui-line pt-4"><div class="ui-toolbar mb-3"><button type="button" data-set-n="1000000" class="ui-chip inline-flex items-center gap-1.5"><i data-ic="warehouse" class="h-3.5 w-3.5"></i>창고에서 따져 보기</button><span class="ml-auto inline-flex items-center gap-1.5 text-xs ui-ink-3">지금 <span data-w="place"></span></span></div><div data-w="speed"></div></div></div>
+          <p class="mt-4" data-w="say" data-say="step-5"></p>
+          <div class="ui-quiz mt-4 p-4 sm:p-5" data-w="quiz" data-q="step-5"></div>
+          <div class="ui-chapter-foot mt-5 pt-4">
+            <p class="text-xs leading-relaxed ui-ink-3">초와 모양을 분리한다 · 작은 수 판단을 뒤집는다 · 예외를 같은 크기로 둔다</p>
+            <a class="ui-next" href="#takeaway"><i data-ic="corner-down-right" class="h-4 w-4"></i><span>그리고 하루는 처음의 10개짜리 방으로 돌아간다.</span></a>
+          </div>
+        </article>
+      </section>
+
+      <section id="takeaway" class="ui-card p-6 sm:p-8">
+        <p class="ui-scene">하루는 처음의 10개짜리 방으로 돌아와, 이번에는 먼저 묻는다. 이 방이 100만 개가 되면 내 방법은 어떤 모양으로 늘까?</p>
+        <h2 class="mt-6 text-[1.75rem] leading-snug sm:text-[1.9rem]">Big-O는 불어나는 모양이다.</h2>
+        <p class="ui-prose mt-3">입력이 커질 때 터지는 일을 미리 고르기 때문이다. 가장 중요한 갈림은 <a href="#step-1" class="underline">작은 방과 큰 방</a>이다.</p>
+        <h3 class="mt-8 text-sm font-medium ui-ink-2">하루의 이야기, 다섯 장</h3>
+        <ol class="ui-recap-list mt-3"><li><a href="#step-1" class="ui-recap"><span class="font-mono text-xs ui-ink-3">1</span><span>작은 방의 착각</span></a></li><li><a href="#step-2" class="ui-recap"><span class="font-mono text-xs ui-ink-3">2</span><span>모양에 이름 붙이기</span></a></li><li><a href="#step-3" class="ui-recap"><span class="font-mono text-xs ui-ink-3">3</span><span>아침의 두 심부름</span></a></li><li><a href="#step-4" class="ui-recap"><span class="font-mono text-xs ui-ink-3">4</span><span>오후의 위기</span></a></li><li><a href="#step-5" class="ui-recap"><span class="font-mono text-xs ui-ink-3">5</span><span>마지막 함정</span></a></li></ol>
+        <h3 class="mt-8 text-sm font-medium ui-ink-2">한 장 정리</h3>
+        <dl class="mt-3 grid gap-x-6 sm:grid-cols-2"><div class="flex items-center gap-3 border-t ui-line py-2.5 k-o1"><dt class="flex w-[6.5rem] flex-none items-center gap-2 font-mono text-sm k-ink"><i data-ic="hand-grab" class="h-4 w-4"></i>O(1)</dt><dd class="flex flex-1 items-center justify-between gap-2 text-sm"><span>바로 집기 <span class="ui-ink-3">· 늘 한 번</span></span><span class="tone-ink" style="--tone:var(--pass)"><i data-ic="circle-check" class="h-4 w-4" aria-label="통과"></i></span></dd></div><div class="flex items-center gap-3 border-t ui-line py-2.5 k-log"><dt class="flex w-[6.5rem] flex-none items-center gap-2 font-mono text-sm k-ink"><i data-ic="scissors" class="h-4 w-4"></i>O(log n)</dt><dd class="flex flex-1 items-center justify-between gap-2 text-sm"><span>절반 버리기 <span class="ui-ink-3">· 반으로 자른 횟수</span></span><span class="tone-ink" style="--tone:var(--pass)"><i data-ic="circle-check" class="h-4 w-4" aria-label="통과"></i></span></dd></div><div class="flex items-center gap-3 border-t ui-line py-2.5 k-n"><dt class="flex w-[6.5rem] flex-none items-center gap-2 font-mono text-sm k-ink"><i data-ic="scan-search" class="h-4 w-4"></i>O(n)</dt><dd class="flex flex-1 items-center justify-between gap-2 text-sm"><span>쭉 보기 <span class="ui-ink-3">· 개수만큼</span></span><span class="tone-ink" style="--tone:var(--go)"><i data-ic="circle-arrow-right" class="h-4 w-4" aria-label="진행"></i></span></dd></div><div class="flex items-center gap-3 border-t ui-line py-2.5 k-n2"><dt class="flex w-[6.5rem] flex-none items-center gap-2 font-mono text-sm k-ink"><i data-ic="grid-3x3" class="h-4 w-4"></i>O(n²)</dt><dd class="flex flex-1 items-center justify-between gap-2 text-sm"><span>전부 비교 <span class="ui-ink-3">· 개수 × 개수</span></span><span class="tone-ink" style="--tone:var(--stop)"><i data-ic="octagon-x" class="h-4 w-4" aria-label="정지"></i></span></dd></div></dl>
+      </section>
+
+      <footer class="space-y-1 border-t ui-line pt-6 text-sm ui-ink-3">
+        <p>출처: 이 대화 앞부분의 Big-O 설명.</p>
+        <p>이 페이지는 원본으로 돌아가는 지도다. 정확한 정의는 교재와 문서를 본다.</p>
+      </footer>
+    </main>
+    <script type="application/json" id="eli5-data">{
+ "store": {
+  "n": 10,
+  "min": 1,
+  "max": 1000000,
+  "log": true,
+  "places": [
+   {
+    "upTo": 10,
+    "label": "처음 방",
+    "icon": "box"
+   },
+   {
+    "upTo": 1000,
+    "label": "커진 방",
+    "icon": "boxes"
+   },
+   {
+    "upTo": 1000000,
+    "label": "창고",
+    "icon": "warehouse"
+   }
+  ]
+ },
+ "kinds": {
+  "o1": {
+   "icon": "hand-grab",
+   "example": "100개여도 1번",
+   "read": "늘 한 번",
+   "story": "맨 앞 공 하나를 든다",
+   "label": "바로 집기",
+   "term": "O(1)",
+   "tone": "pass",
+   "bullets": [
+    "맨 앞 공 하나를 든다.",
+    "개수와 횟수가 끊어졌다.",
+    "방이 커져도 그대로다."
+   ]
+  },
+  "log": {
+   "icon": "scissors",
+   "example": "100개면 약 7번",
+   "read": "반으로 자른 횟수",
+   "story": "숫자 맞추기, 물을 때마다 절반을 버린다",
+   "label": "절반 버리기",
+   "term": "O(log n)",
+   "tone": "pass",
+   "bullets": [
+    "숫자 맞추기가 여기다.",
+    "물을 때마다 절반을 버린다.",
+    "100개면 약 7번이면 된다."
+   ]
+  },
+  "n": {
+   "icon": "scan-search",
+   "example": "100개면 100번",
+   "read": "개수만큼",
+   "story": "빨간 자동차를 하나씩 끝까지 찾는다",
+   "label": "쭉 보기",
+   "term": "O(n)",
+   "tone": "go",
+   "bullets": [
+    "빨간 자동차를 찾는다.",
+    "하나씩 끝까지 본다.",
+    "개수만큼 횟수가 는다."
+   ]
+  },
+  "n2": {
+   "icon": "grid-3x3",
+   "example": "100개면 약 10,000번",
+   "read": "개수 × 개수",
+   "story": "짝꿍 찾기, 하나 들고 나머지를 다 본다",
+   "label": "전부 비교",
+   "term": "O(n²)",
+   "tone": "stop",
+   "bullets": [
+    "하나 들고 나머지를 다 본다.",
+    "다음 것으로 갈아 들고 반복한다.",
+    "100개면 약 10,000번이다."
+   ]
+  }
+ },
+ "flip": [
+  {
+   "bad": "초로 읽는다.",
+   "good": "모양으로 비교한다."
+  },
+  {
+   "bad": "작은 수로 판단한다.",
+   "good": "큰 수로 판단한다."
+  },
+  {
+   "bad": "기계 차이로 모양을 덮는다.",
+   "good": "경우를 나눠 적는다."
+  }
+ ],
+ "ui": {
+  "tone": {
+   "pass": "통과",
+   "go": "진행",
+   "stop": "정지"
+  },
+  "hidden": "처음 방에서는 아직 안 보인다",
+  "noteSmall": "주의 · 하루의 처음 방처럼 n이 작으면 네 줄이 비슷해 보인다",
+  "noteBig": "주의 · 막대는 로그 눈금이다. 끝까지 찬 막대와 1칸 막대의 차이는 수백만 배다",
+  "noteLog": "* 절반 버리기는 올림한 근삿값이다",
+  "chartLabel": "n이 커질 때 작업 횟수 곡선",
+  "yLabel": "세로 = 하루가 보는 횟수 (위 끝 = n)",
+  "exit": "여기서 하루가 막힌다",
+  "colN": "방 크기 n",
+  "approx": "약",
+  "tableNote": "주의 · 숫자는 모양 비교용이다",
+  "run": "시작",
+  "shuffle": "다시 섞기",
+  "ready": "시작을 누르면 하루가 한 칸씩 확인한다 · 최악 {w}번",
+  "probe": "하루가 {k}번째 칸을 본다 / 총 {t}번",
+  "done": "하루가 찾았다 · {k}번 확인 (최악 {w}번)",
+  "secret": "찾는 숫자 {t}",
+  "legend": {
+   "o1": "굵은 테두리 = 맨 앞 공 · 하루는 한 번이면 끝난다",
+   "n": "빨간 테두리 = 빨간 자동차 · 파란 칸 = 하루가 이미 본 칸",
+   "log": "빨간 테두리 = 찾는 숫자 · 흐린 칸 = 하루가 버린 절반",
+   "n2": "꽉 찬 칸 = 하루가 든 것 · 파란 칸 = 비교 중 · 흐린 칸 = 끝난 것"
+  },
+  "machine": "기계 속도",
+  "slow": "느림",
+  "fast": "빠름",
+  "perSec": "번/초",
+  "colSteps": "횟수 (모양)",
+  "colSec": "초 (바뀜)",
+  "colRatio": "쭉 보기 대비 (그대로)",
+  "flipBad": "실패 경로 · 정지",
+  "flipGood": "성공 경로 · 통과",
+  "flipStop": "정지 · 하루에게 아직 실패 경로 {c}줄이 남았다",
+  "flipPass": "통과 · 하루는 성공 경로의 세 줄을 모두 지켰다",
+  "quizTitle": "확인 문제",
+  "quizRight": "맞았다",
+  "quizWrong": "다시 보자",
+  "quizRetry": "다시 풀기",
+  "toneHelp": {
+   "pass": "통과 · 커져도 괜찮다",
+   "go": "진행 · 개수만큼 는다",
+   "stop": "정지 · 커지면 폭발한다"
+  },
+  "storeLabel": "n"
+ },
+ "tutor": {
+  "goalsLine": "다 읽고 나면 일의 크기를 보는 횟수로 세고, 네 가지 모양에 이름을 붙이고, 작은 수에 속지 않게 된다.",
+  "castTitle": "먼저 등장인물 넷",
+  "castLead": "장난감 방에서 무언가를 찾는 네 가지 방법이다. n은 방에 있는 장난감 개수다.",
+  "predict": {
+   "q": "장난감이 10개에서 100개로 10배 늘었다. 하루의 짝꿍 찾기(전부 비교)는 몇 배 오래 걸릴까?",
+   "options": [
+    "10배",
+    "100배",
+    "2배"
+   ],
+   "answer": 1,
+   "why": "10개면 10 × 10 = 100번, 100개면 100 × 100 = 10,000번이다. 개수가 10배면 일은 100배다. 아래 차트에서 n을 직접 바꿔 보자."
+  },
+  "predictTitle": "읽기 전에 맞혀 보기",
+  "chartTitle": "n이 커지면 어느 선이 먼저 위 끝을 뚫고 나가나?",
+  "halveTitle": "n을 몇 번 반으로 자르면 하나가 남나?",
+  "halveLead": "n을 반으로 계속 자른다. 하나 남을 때까지 자른 횟수가 log n이다.",
+  "halveCount": "{k}번 자르면 하나",
+  "cheatTitle": "한 장 정리"
+ },
+ "quiz": {
+  "predict": {
+   "q": "장난감이 10개에서 100개로 10배 늘었다. 하루의 짝꿍 찾기(전부 비교)는 몇 배 오래 걸릴까?",
+   "options": [
+    "10배",
+    "100배",
+    "2배"
+   ],
+   "answer": 1,
+   "why": "10개면 10 × 10 = 100번, 100개면 100 × 100 = 10,000번이다. 개수가 10배면 일은 100배다. 아래 차트에서 n을 직접 바꿔 보자."
+  },
+  "step-1": {
+   "q": "10개 방에서는 네 방법이 다 금방 끝났다. 그럼 하루는 100만 개 창고에서도 같은 방법을 써도 될까?",
+   "options": [
+    "괜찮다. 이미 확인했다.",
+    "모른다. 큰 n으로 다시 봐야 한다."
+   ],
+   "answer": 1,
+   "why": "n=10에서 전부 비교는 100번이라 티가 안 난다. 100만 개면 1조 번이다. 위 슬라이더를 끝까지 밀어 보자."
+  },
+  "step-2": {
+   "q": "하루가 짝꿍 찾기를 O(n²)로 적었다. n = 1,000이면 대략 몇 번 볼까?",
+   "options": [
+    "1,000번",
+    "2,000번",
+    "1,000,000번"
+   ],
+   "answer": 2,
+   "why": "n²은 n × n이다. 1,000 × 1,000 = 1,000,000. 괄호 안 식에 n을 넣으면 횟수가 나온다."
+  },
+  "step-3": {
+   "q": "창고의 장난감이 2배가 되면, 하루의 빨간 자동차 찾기(쭉 보기, O(n)) 횟수는?",
+   "options": [
+    "그대로",
+    "2배",
+    "4배"
+   ],
+   "answer": 1,
+   "why": "하나씩 끝까지 보니 개수만큼 는다. 개수가 2배면 횟수도 2배다. 바로 집기는 그대로 1번이다."
+  },
+  "step-4": {
+   "q": "1부터 1,000까지 숫자 맞추기. 하루가 \"더 커? 작아?\"만 물으면 최대 몇 번이면 맞힐까?",
+   "options": [
+    "약 10번",
+    "약 500번",
+    "1,000번"
+   ],
+   "answer": 0,
+   "why": "1,000 → 500 → 250 → 125 → 63 → 32 → 16 → 8 → 4 → 2 → 1. 절반씩 열 번 자르면 하나만 남는다."
+  },
+  "step-5": {
+   "q": "어른들 말대로 100배 빠른 컴퓨터를 사면, 하루의 짝꿍 찾기(O(n²))가 O(n)이 될까?",
+   "options": [
+    "된다",
+    "안 된다. 초만 줄고 모양은 그대로다."
+   ],
+   "answer": 1,
+   "why": "기계 속도 슬라이더를 움직여 보자. 초 칸만 바뀌고 쭉 보기 대비 배율은 그대로다. 모양은 방법이 정한다."
+  }
+ },
+ "say": {
+  "step-1": {
+   "by": "store",
+   "lines": [
+    {
+     "upTo": 10,
+     "icon": "circle-question-mark",
+     "t": "작은 방: 어느 방법도 금방 끝나고 막대 길이가 비슷하다. 작은 수에서는 나쁜 모양이 숨는다."
+    },
+    {
+     "upTo": 99999,
+     "icon": "circle-question-mark",
+     "t": "n = {n}: 막대가 벌어지기 시작한다. 큰 방까지 밀어 보자."
+    },
+    {
+     "upTo": 1000000,
+     "icon": "lightbulb",
+     "state": "after",
+     "t": "큰 방: 그대로인 일, 함께 느는 일, 폭발하는 일이 따로 보인다. 그래서 큰 수의 모양으로 판단한다."
+    }
+   ]
+  },
+  "step-2": {
+   "by": "done",
+   "before": {
+    "icon": "circle-question-mark",
+    "t": "기호가 암호처럼 보인다. 노트를 읽고 아래 문제를 풀어 보자."
+   },
+   "after": {
+    "icon": "lightbulb",
+    "t": "괄호 안을 횟수의 모양으로 읽는다. n에 1,000을 넣으면 n²은 1,000,000번이다."
+   }
+  },
+  "step-3": {
+   "by": "done",
+   "before": {
+    "icon": "circle-question-mark",
+    "t": "둘 다 찾기라서 같아 보인다. 시작을 눌러 하루에게 시켜 보자."
+   },
+   "after": {
+    "icon": "lightbulb",
+    "t": "맨 앞 공은 개수와 횟수가 끊어져 방이 커져도 그대로, 빨간 자동차는 하나씩 끝까지 보느라 개수만큼 는다. 횟수가 개수에 묶이는지로 나눈다."
+   }
+  },
+  "step-4": {
+   "by": "store",
+   "lines": [
+    {
+     "upTo": 1000,
+     "icon": "circle-question-mark",
+     "t": "둘 다 영리해 보이지만 곡선이 반대다. 100만 개 창고로 가 보자."
+    },
+    {
+     "upTo": 1000000,
+     "icon": "lightbulb",
+     "state": "after",
+     "t": "n = {n}: 전부 비교는 하나 들고 나머지를 다 보느라 곱으로 불어나고, 절반 버리기는 물을 때마다 절반을 버려 나눗셈으로 줄어든다. 곱인지 나눗셈인지 본다."
+    }
+   ]
+  },
+  "step-5": {
+   "by": "done",
+   "before": {
+    "icon": "circle-question-mark",
+    "t": "한 숫자로 줄이면 모양이 지워진다. 버릇 세 줄을 모두 성공 경로로 뒤집어 보자."
+   },
+   "after": {
+    "icon": "lightbulb",
+    "t": "성공 경로의 세 줄로 검사한다. 기계 속도를 바꾸면 초만 바뀌고, 쭉 보기 대비 배율은 그대로다."
+   }
+  }
+ },
+ "lexicon": [
+  {
+   "t": "하루",
+   "cls": "hl-hero"
+  },
+  {
+   "t": "100만 개 창고",
+   "cls": "hl-place"
+  },
+  {
+   "t": "10개짜리 방",
+   "cls": "hl-place"
+  },
+  {
+   "t": "처음 방",
+   "cls": "hl-place"
+  },
+  {
+   "t": "커진 방",
+   "cls": "hl-place"
+  },
+  {
+   "t": "작은 방",
+   "cls": "hl-place"
+  },
+  {
+   "t": "큰 방",
+   "cls": "hl-place"
+  },
+  {
+   "t": "창고",
+   "cls": "hl-place"
+  },
+  {
+   "t": "바로 집기",
+   "cls": "hl-k k-o1"
+  },
+  {
+   "t": "맨 앞 공",
+   "cls": "hl-k k-o1"
+  },
+  {
+   "t": "절반 버리기",
+   "cls": "hl-k k-log"
+  },
+  {
+   "t": "숫자 맞추기",
+   "cls": "hl-k k-log"
+  },
+  {
+   "t": "쭉 보기",
+   "cls": "hl-k k-n"
+  },
+  {
+   "t": "빨간 자동차",
+   "cls": "hl-k k-n"
+  },
+  {
+   "t": "전부 비교",
+   "cls": "hl-k k-n2"
+  },
+  {
+   "t": "짝꿍 찾기",
+   "cls": "hl-k k-n2"
+  }
+ ]
+}</script>
+    <script data-eli5-page src="./widgets.js"></script>
+  </body>
+</html>
