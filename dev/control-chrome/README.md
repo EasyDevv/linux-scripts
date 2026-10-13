@@ -5,7 +5,8 @@ Chromium 실행, 종료, 탭 조회, CDP 호출용 커맨드 모음.
 ## Defaults
 
 - binary: `chromium`
-- 기본 상태: `open` 후 normal
+- 기본 상태: KDE Wayland에서는 `open` 후 minimized, 그 외 normal (`--normal`로 일반 창, `--minimize`로 강제 최소화)
+- profile: 9222(기본 포트)는 `~/.cache/chrome-debug-profile/9222`, 그 외는 `./.user-data/chrome-{name}`
 - WXT dev port 예시: `39225`
 
 ## Commands
@@ -16,7 +17,7 @@ Chromium 실행, 종료, 탭 조회, CDP 호출용 커맨드 모음.
 control-chrome open
 control-chrome open --port 39225
 control-chrome open --binary /path/to/chromium --port 39225
-control-chrome open --port 39225 --minimize
+control-chrome open --port 39225 --normal
 ```
 
 ### Close
@@ -41,6 +42,15 @@ control-chrome status --port 39225
 control-chrome minimize
 control-chrome minimize --port 39225
 ```
+
+### List
+
+```bash
+control-chrome list
+control-chrome list --json
+```
+
+실행 중인 모든 CDP 브라우저(서비스 포함)를 `:포트 · 프로필 · 첫 탭`으로 출력. 창은 포트별 시작 페이지(`CDP <port>`), app_id `cdp-<port>`, 포트 고정 테마 색으로 구분.
 
 ### Tabs
 

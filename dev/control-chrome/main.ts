@@ -4,6 +4,8 @@ import { main as openMain } from "./open.ts";
 import { main as closeMain } from "./close.ts";
 import { main as minimizeMain } from "./minimize.ts";
 import { main as openExtensionMain } from "./open-extension.ts";
+import { main as listMain } from "./list.ts";
+import { applyPortTheme } from "./port-identity.ts";
 import { browserReachable, resolvePortState } from "./browser-state.ts";
 import { listTabs } from "./cdp.ts";
 import { resolveBinary, clearLaunchInfo } from "./chrome-instance.ts";
@@ -16,9 +18,12 @@ Usage: control-chrome <command> [options]
 Commands:
   open                          Launch Chromium with remote debugging (default: normal)
   close                         Stop Chromium launched by control-chrome
+  list                          List running CDP browsers (port, profile, first tab)
   status                        Show port/lock status
   minimize                      Minimize Chromium window on a given port
   tabs                          List open tabs
+  identity --port N --user-data DIR
+                                Apply the port theme color to a profile (for service launchers)
   cdp <method> [params-json]    Send raw CDP command
   open-extension <pattern>      Open an extension page by name
 
@@ -165,6 +170,17 @@ async function main() {
 		case "close":
 			await closeMain(rest);
 			break;
+		case "list":
+			await listMain(rest);
+			break;
+		case "identity": {
+			const port = +(rest[rest.indexOf("--port") + 1] ?? 0);
+			const dir = rest[rest.indexOf("--user-data") + 1];
+			if (!port || !dir)
+				die("Usage: control-chrome identity --port <N> --user-data <dir>");
+			await applyPortTheme(dir, port);
+			break;
+		}
 		case "status":
 			await cmdStatus(rest);
 			break;

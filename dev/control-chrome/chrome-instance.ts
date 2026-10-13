@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { readFile, readlink, unlink } from "node:fs/promises";
+import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
-import { DEFAULT_BINARY } from "./config.ts";
+import { DEFAULT_BINARY, DEFAULT_PORT } from "./config.ts";
 
 export type LaunchInfo = {
 	pid?: number;
@@ -42,6 +43,24 @@ export function resolveProjectProfileDir(projectRoot = process.cwd()): string {
 		return join(cwd, ".user-data", `chrome-${name}`);
 	}
 	return join(cwd, ".user-data", `chrome-${basename(cwd)}`);
+}
+
+export function globalProfileDir(port: number): string {
+	return join(homedir(), ".cache", "chrome-debug-profile", String(port));
+}
+
+export function isDefaultProfilePort(port: number): boolean {
+	return port === DEFAULT_PORT;
+}
+
+/** Default port uses the shared global profile; other ports stay project-local. */
+export function resolveDefaultProfileDir(
+	port: number,
+	projectRoot = process.cwd(),
+): string {
+	return isDefaultProfilePort(port)
+		? globalProfileDir(port)
+		: resolveProjectProfileDir(projectRoot);
 }
 
 export function launchInfoPath(userDataDir: string): string {

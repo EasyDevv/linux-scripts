@@ -1,3 +1,4 @@
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -20,13 +21,15 @@ import {
 	resolveLocale,
 } from "./locale.ts";
 import { minimizeWindow } from "./minimize.ts";
+import { applyPortTheme, portStartPageUrl } from "./port-identity.ts";
 import {
 	type LaunchInfo,
 	clearLaunchInfo,
 	processExists,
 	processMatchesLaunchInfo,
 	readLaunchInfo,
-	resolveProjectProfileDir,
+	isDefaultProfilePort,
+	resolveDefaultProfileDir,
 	terminateProcess,
 	writeLaunchInfo,
 	resolveBinary,
@@ -36,6 +39,7 @@ import { resetTabs, waitForChrome } from "./cdp.ts";
 export type OpenOptions = {
 	port: number;
 	url: string;
+	urlExplicit: boolean;
 	userDataDir?: string;
 	clean: boolean;
 	binary?: string;
@@ -58,6 +62,8 @@ type OpenPlan = {
 };
 
 type KWinStartupMinimizeHandle = {
+	/** True once the hook handled the window (the script unloads itself then). */
+	waitHandled: (timeoutMs: number) => Promise<boolean>;
 	dispose: () => Promise<void>;
 };
 
@@ -72,8 +78,8 @@ Examples:
 
 Options:
   --port <N>            Remote debugging port (default: 9222)
-  --url <url>           Initial URL; bare hosts use http:// (default: about:blank)
-  --user-data <dir>     Chrome profile dir (default: ./.user-data/chrome-{name})
+  --url <url>           Initial URL; bare hosts use http:// (default: per-port start page "CDP <port>")
+  --user-data <dir>     Chrome profile dir (default: ~/.cache/chrome-debug-profile/9222 on 9222, else ./.user-data/chrome-{name})
   --clean               Launch with a fresh temporary profile
   --binary <path>       Explicit Chromium binary path
   --headless            Launch headless
@@ -81,7 +87,8 @@ Options:
   --browser-arg <arg>   Extra argument passed to the browser (repeatable)
   --locale <bcp47>      Browser UI/Accept-Language locale (default: ${DEFAULT_LOCALE})
 	--status              Show resolved port and lock status without launching
-	--minimize            Start the browser window minimized
+	--minimize            Start minimized (default on KDE Wayland)
+  --normal              Start a normal window (skip default minimize)
 	--dry-run             Print the resolved command without launching
 	--json                Print JSON output
 	--help                Show this help
@@ -99,9 +106,10 @@ function parseArgs(argv: string[]): OpenOptions {
 	const options: OpenOptions = {
 		port: BROWSER_DEFAULTS.port,
 		url: BROWSER_DEFAULTS.url,
+		urlExplicit: false,
 		headless: false,
 		status: false,
-		minimize: false,
+		minimize: canUseKWinStartupMinimize(),
 		dryRun: false,
 		json: false,
 		clean: false,
@@ -116,6 +124,7 @@ function parseArgs(argv: string[]): OpenOptions {
 				break;
 			case "--url":
 				options.url = argv[++i] ?? die("Usage: --url <url>");
+				options.urlExplicit = true;
 				break;
 			case "--user-data":
 				options.userDataDir = argv[++i] ?? die("Usage: --user-data <dir>");
@@ -147,10 +156,10 @@ function parseArgs(argv: string[]): OpenOptions {
 			case "--minimize":
 				options.minimize = true;
 				break;
+			case "--normal":
 			case "--no-minimize":
-				die(
-					'"--no-minimize" was removed. Normal window is now the default; pass "--minimize" when you want startup minimize.',
-				);
+				options.minimize = false;
+				break;
 			case "--dry-run":
 				options.dryRun = true;
 				break;
@@ -217,6 +226,25 @@ function renderOutput(output: Record<string, unknown>, json = false) {
 		console.log(`  accept-language: ${output.acceptLanguage}`);
 }
 
+// One-line result for agents: port, url, profile; extras only when non-default.
+function renderOpenSummary(info: {
+	port: number;
+	requestedPort: number;
+	url: string;
+	userDataDir: string;
+	defaultProfile: boolean;
+	windowState: string;
+	locale: string;
+}) {
+	const parts = [
+		`:${info.port}${info.port !== info.requestedPort ? ` (${info.requestedPort} busy)` : ""} ${info.url.startsWith("data:text/html") ? "start page" : info.url}`,
+		info.defaultProfile ? "default profile" : `profile ${info.userDataDir}`,
+	];
+	parts.push(info.locale);
+	if (info.windowState !== "normal") parts.push(info.windowState);
+	console.log(`✓ ${parts.join(" · ")}`);
+}
+
 function canUseKWinStartupMinimize() {
 	if (process.env.XDG_SESSION_TYPE !== "wayland") return false;
 	const desktop =
@@ -266,8 +294,44 @@ async function waitForKWinScriptObjectPath(scriptId: number) {
 	throw new Error(`KWin script object ${objectPath} did not become available`);
 }
 
+const ATTENTION_MS = 5000;
+const ATTENTION_SETTLE_MS = 500;
+
+// KWin clears demandsAttention while the new window is still being activated, so
+// a detached helper sets it once the window has settled, then clears it again.
+function scheduleTaskbarFlash(pid: number) {
+	const dir = mkdtempSync(join(tmpdir(), "control-chrome-kwin-flash-"));
+	const tag = `${pid}-${Date.now()}`;
+	const scriptFor = (on: boolean) => {
+		const name = `control-chrome-attention-${on ? "on" : "off"}-${tag}`;
+		const file = join(dir, `${on ? "on" : "off"}.js`);
+		writeFileSync(
+			file,
+			`for (const w of workspace.stackingOrder) {
+	if (w.pid === ${pid}) w.demandsAttention = ${on};
+}
+callDBus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript", "${name}");
+`,
+		);
+		return `run '${file}' '${name}'`;
+	};
+	const kwin = "gdbus call --session --dest org.kde.KWin --object-path";
+	const shell = `run() { id=$(${kwin} /Scripting --method org.kde.kwin.Scripting.loadScript "$1" "$2" | tr -dc 0-9); ${kwin} /Scripting/Script$id --method org.kde.kwin.Script.run >/dev/null; }
+sleep ${ATTENTION_SETTLE_MS / 1000}; ${scriptFor(true)}
+sleep ${ATTENTION_MS / 1000}; ${scriptFor(false)}
+sleep 1; rm -rf '${dir}'`;
+	Bun.spawn({
+		cmd: ["sh", "-c", shell],
+		detached: true,
+		stdin: "ignore",
+		stdout: "ignore",
+		stderr: "ignore",
+	}).unref();
+}
+
 async function installKWinStartupMinimize(
 	pid: number,
+	minimize: boolean,
 ): Promise<KWinStartupMinimizeHandle | null> {
 	if (!canUseKWinStartupMinimize()) return null;
 
@@ -276,17 +340,18 @@ async function installKWinStartupMinimize(
 	const pluginName = `control-chrome-start-minimize-${pid}-${Date.now()}`;
 	const scriptSource = `let handled = false;
 
-function maybeMinimize(window) {
+function maybeHandle(window) {
 	if (handled || !window) return;
 	if (window.pid !== ${pid}) return;
 	if (!window.normalWindow) return;
 	handled = true;
-	window.minimized = true;
+	${minimize ? "window.minimized = true;" : ""}
+	callDBus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript", "${pluginName}");
 }
 
-workspace.windowAdded.connect(maybeMinimize);
+workspace.windowAdded.connect(maybeHandle);
 for (const window of workspace.stackingOrder) {
-	maybeMinimize(window);
+	maybeHandle(window);
 }
 `;
 
@@ -325,6 +390,19 @@ for (const window of workspace.stackingOrder) {
 	}
 
 	return {
+		waitHandled: async (timeoutMs) => {
+			const deadline = Date.now() + timeoutMs;
+			while (Date.now() < deadline) {
+				const loaded = callKWinDbus(
+					"/Scripting",
+					"org.kde.kwin.Scripting.isScriptLoaded",
+					[pluginName],
+				);
+				if (loaded.includes("false")) return true;
+				await Bun.sleep(50);
+			}
+			return false;
+		},
 		dispose: async () => {
 			if (scriptId !== undefined) {
 				try {
@@ -454,8 +532,10 @@ async function maybeResolveExistingLaunch(userDataDir: string, port: number) {
 export async function main(argv: string[]): Promise<void> {
 	const options = parseArgs(argv);
 	const plan = await buildOpenPlan(options.port);
+	if (!options.urlExplicit) options.url = portStartPageUrl(plan.actualPort);
 
 	let userDataDir: string;
+	let usesDefaultProfile = false;
 	if (options.userDataDir) {
 		userDataDir = options.userDataDir;
 	} else if (options.clean) {
@@ -465,7 +545,8 @@ export async function main(argv: string[]): Promise<void> {
 			userDataDir = await mkdtemp(join(tmpdir(), "control-chrome-clean-"));
 		}
 	} else {
-		userDataDir = resolveProjectProfileDir();
+		userDataDir = resolveDefaultProfileDir(plan.actualPort);
+		usesDefaultProfile = isDefaultProfilePort(plan.actualPort);
 	}
 
 	const statusOutput = {
@@ -536,6 +617,9 @@ export async function main(argv: string[]): Promise<void> {
 
 	const claimed = await claimOpenLock(options, plan, userDataDir);
 	const actualPort = claimed.actualPort;
+	if (!options.urlExplicit && actualPort !== plan.actualPort) {
+		options.url = portStartPageUrl(actualPort);
+	}
 
 	if (!options.clean) {
 		await mkdir(userDataDir, { recursive: true });
@@ -545,6 +629,10 @@ export async function main(argv: string[]): Promise<void> {
 	await primeChromiumProfile(userDataDir, resolvedLocale, {
 		force: options.clean,
 	});
+
+	if (claimed.browserAction === "launch-new-browser" && !options.headless) {
+		await applyPortTheme(userDataDir, actualPort);
+	}
 
 	let replacedPid: number | undefined;
 	let launchedPid: number | undefined;
@@ -599,8 +687,11 @@ export async function main(argv: string[]): Promise<void> {
 			proc.unref();
 			launchedPid = proc.pid;
 			outputBinary = binary!;
-			if (!options.headless && options.minimize) {
-				kwinStartupMinimize = await installKWinStartupMinimize(proc.pid);
+			if (!options.headless) {
+				kwinStartupMinimize = await installKWinStartupMinimize(
+					proc.pid,
+					options.minimize,
+				);
 			}
 
 			await writeLaunchInfo({
@@ -646,8 +737,6 @@ export async function main(argv: string[]): Promise<void> {
 				url: focusedUrl,
 				note: claimed.portNote,
 			});
-			await kwinStartupMinimize?.dispose().catch(() => undefined);
-			kwinStartupMinimize = null;
 		} else {
 			await waitForChrome(actualPort);
 			const focused = await resetTabs(actualPort, options.url);
@@ -677,12 +766,23 @@ export async function main(argv: string[]): Promise<void> {
 			});
 		}
 
+		// The KWin hook acts at map time; CDP keeps reporting "normal" for seconds.
+		const hookHandled =
+			(await kwinStartupMinimize?.waitHandled(3000).catch(() => false)) ??
+			false;
+		if (hookHandled && launchedPid) {
+			scheduleTaskbarFlash(launchedPid);
+		}
+
 		if (!options.headless && options.minimize) {
-			let minimized = await minimizeWindow(actualPort, {
-				timeoutMs: 5000,
-				silent: true,
-			});
-			if (claimed.browserAction === "launch-new-browser") {
+			let minimized = hookHandled;
+			if (!minimized) {
+				minimized = await minimizeWindow(actualPort, {
+					timeoutMs: 5000,
+					silent: true,
+				});
+			}
+			if (!minimized && claimed.browserAction === "launch-new-browser") {
 				await Bun.sleep(400);
 				minimized =
 					(await minimizeWindow(actualPort, {
@@ -693,25 +793,42 @@ export async function main(argv: string[]): Promise<void> {
 			windowState = minimized ? "minimized" : "normal";
 		}
 
-		renderOutput(
-			{
-				requestedPort: options.port,
+		// Keep the hook until the window exists: CDP is up before the window maps.
+		await kwinStartupMinimize?.dispose().catch(() => undefined);
+		kwinStartupMinimize = null;
+
+		if (options.json) {
+			renderOutput(
+				{
+					requestedPort: options.port,
+					port: actualPort,
+					userDataDir,
+					url: focusedUrl,
+					browserAction: claimed.browserAction,
+					tabAction: "closed-all-existing-tabs-and-focused-one-tab",
+					lockStatus: "active",
+					portNote: claimed.portNote,
+					binary: outputBinary,
+					pid: launchedPid,
+					replacedPid,
+					windowState,
+					locale: resolvedLocale.appLocale,
+					acceptLanguage: resolvedLocale.acceptLanguages,
+					defaultProfile: usesDefaultProfile,
+				},
+				true,
+			);
+		} else {
+			renderOpenSummary({
 				port: actualPort,
-				userDataDir,
+				requestedPort: options.port,
 				url: focusedUrl,
-				browserAction: claimed.browserAction,
-				tabAction: "closed-all-existing-tabs-and-focused-one-tab",
-				lockStatus: "active",
-				portNote: claimed.portNote,
-				binary: outputBinary,
-				pid: launchedPid,
-				replacedPid,
+				userDataDir,
+				defaultProfile: usesDefaultProfile,
 				windowState,
 				locale: resolvedLocale.appLocale,
-				acceptLanguage: resolvedLocale.acceptLanguages,
-			},
-			options.json,
-		);
+			});
+		}
 	} catch (error) {
 		await kwinStartupMinimize?.dispose().catch(() => undefined);
 		await clearLaunchInfo(userDataDir);

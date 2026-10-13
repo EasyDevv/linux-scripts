@@ -1,10 +1,12 @@
 import { afterEach, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
+import { homedir } from "node:os";
 import { basename, join } from "node:path";
 
 import {
 	chromeDebugPortForProfile,
 	chromeUserDataDirFromArgs,
+	resolveDefaultProfileDir,
 	resolveProjectProfileDir,
 } from "./chrome-instance.ts";
 
@@ -77,4 +79,14 @@ test("extracts a profile path without a debug port", () => {
 			projectRoot,
 		),
 	).toBe(join(projectRoot, ".user-data", "chrome-project"));
+});
+
+test("default port 9222 uses the global profile, other ports stay project-local", () => {
+	const root = "/tmp/some-project";
+	expect(resolveDefaultProfileDir(9222, root)).toBe(
+		join(homedir(), ".cache", "chrome-debug-profile", "9222"),
+	);
+	expect(resolveDefaultProfileDir(39225, root)).toBe(
+		join(root, ".user-data", "chrome-some-project"),
+	);
 });

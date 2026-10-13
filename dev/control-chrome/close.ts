@@ -12,7 +12,7 @@ import {
 	processMatchesLaunchInfo,
 	processUsesUserDataDir,
 	readLaunchInfo,
-	resolveProjectProfileDir,
+	resolveDefaultProfileDir,
 	terminateProcess,
 } from "./chrome-instance.ts";
 import { DEFAULT_PORT } from "./config.ts";
@@ -33,7 +33,7 @@ Usage: control-chrome close [options]
 
 Options:
   --port <N>            Remote debugging port (default: 9222)
-  --user-data <dir>     Chrome profile dir (default: ./.user-data/chrome-{name})
+  --user-data <dir>     Chrome profile dir (default: ~/.cache/chrome-debug-profile/9222 on 9222, else ./.user-data/chrome-{name})
   --pid <N>             Explicit PID override
   --timeout <ms>        Grace period before SIGKILL (default: 5000)
   --json                Print JSON output
@@ -164,7 +164,7 @@ async function closeBrowserGracefully(
 
 export async function main(argv: string[]): Promise<void> {
 	const options = parseArgs(argv);
-	const userDataDir = options.userDataDir ?? resolveProjectProfileDir();
+	const userDataDir = options.userDataDir ?? resolveDefaultProfileDir(options.port);
 	const launchInfo =
 		options.pid !== undefined
 			? { pid: options.pid, port: options.port, userDataDir }

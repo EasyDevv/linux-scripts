@@ -1,3 +1,5 @@
+import { portClass } from "./port-identity.ts";
+
 export const DEFAULT_BINARY = "chromium";
 export const DEFAULT_PORT = 9222;
 
@@ -33,6 +35,7 @@ export function buildChromeLaunchArgs(opts: {
 		`--remote-debugging-address=${BROWSER_DEFAULTS.remoteDebuggingAddress}`,
 		...BROWSER_DEFAULTS.chromeFlags,
 		`--user-data-dir=${opts.userDataDir}`,
+		`--class=${portClass(opts.port)}`,
 		`--window-size=${BROWSER_DEFAULTS.windowSize.width},${BROWSER_DEFAULTS.windowSize.height}`,
 		...(opts.extraArgs ?? []),
 	];
