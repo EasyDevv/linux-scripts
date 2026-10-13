@@ -5,10 +5,11 @@
 //   bun hw-cdp.ts detail <ws|auto:match> <urlsFile> <outFile>
 //   bun hw-cdp.ts eval   <ws|auto:match> <jsFile>
 //   bun hw-cdp.ts back   <ws|auto:match> <url>        (navigate back to a base page, e.g. 2CPU sell)
-// "auto:<match>" resolves the page id via http://localhost:9201/json/list (e.g. auto:2cpu).
+// "auto:<match>" resolves the page id via $CDP_HOST/json/list (default http://localhost:9222, e.g. auto:2cpu).
+// detail output: [{url, data: {url, title, body}}] — the page text is data.body.
 export {};
 
-const CDP_HOST = process.env.CDP_HOST ?? "http://localhost:9201";
+const CDP_HOST = process.env.CDP_HOST ?? "http://localhost:9222";
 
 async function resolveWs(wsOrAuto: string): Promise<string> {
   if (!wsOrAuto.startsWith("auto:")) return wsOrAuto;

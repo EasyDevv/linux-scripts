@@ -2,13 +2,15 @@
 
 # YouTube 영상/재생목록 → ~/.yt-dlp/<채널>/<YYMMDD>-<ID>/meta.json + dialogue.txt
 # dialogue.txt는 타임스탬프 없는 대사만, meta.json에 출처(다운로드/STT)+화자프로필 표기.
-# 자막 우선, 없으면 음성만 받아 STT (onnx sensevoice 우선, 없으면 whisper turbo).
+# 자막 우선, 없으면 음성만 받아 Handy(로컬 STT AppImage)로 전사.
 # 채널 화자성향은 <채널>/channel.json에 solo|multi|unknown으로 유지, 이후 영상에 승계.
 
 set -euo pipefail
 
 BASE_DIR="$HOME/.yt-dlp"
-ONNX_BIN="$HOME/.local/lib/voxtype/voxtype-onnx"
+# Handy AppImage (버전이 올라가도 최신 파일을 가리킨다; 위치가 바뀌면 HANDY_BIN으로 지정)
+HANDY_BIN="${HANDY_BIN:-$(ls -t "$HOME"/.local/bin/Handy_*_amd64.AppImage 2>/dev/null | head -1)}"
+STT_SOURCE="STT 전사 (handy)"
 PLAYLIST=0
 ITEMS=""
 SPEAKERS=""
@@ -37,36 +39,40 @@ if [[ ${#URLS[@]} -eq 0 ]]; then
     usage; exit 1
 fi
 
-for cmd in yt-dlp ffmpeg voxtype; do
+for cmd in yt-dlp ffmpeg; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         echo "오류: '$cmd' 명령이 없습니다."; exit 1
     fi
 done
+if [[ -z "$HANDY_BIN" || ! -x "$HANDY_BIN" ]]; then
+    echo "오류: Handy AppImage를 찾을 수 없습니다 (~/.local/bin/Handy_*_amd64.AppImage)."; exit 1
+fi
 
 # 채널명 파일시스템 안전화
 sanitize() {
     echo "$1" | tr '/:*?"<>|' '_' | sed 's/^ *//;s/ *$//'
 }
 
-# STT 모델 확인 및 자동 다운로드 (onnx sensevoice 우선, 없으면 whisper turbo)
-ensure_stt_models() {
-    if [[ -x "$ONNX_BIN" ]]; then
-        if [[ ! -d "$HOME/.local/share/voxtype/models/sensevoice-small" ]]; then
-            echo ">> sensevoice-small 모델 설치 중..."
-            "$ONNX_BIN" setup --download --model sensevoice-small
+# STT 모델 확인. Handy headless 전사는 다운로드를 하지 않으므로(모델 사전 설치 필요)
+# 앱에서 내려받은 모델이 하나라도 있는지 확인한다.
+ensure_stt_model() {
+    local rc=0
+    "$HANDY_BIN" --list-models --json 2>/dev/null | python3 -c '
+import json, sys
+try:
+    models = json.load(sys.stdin)
+except Exception:
+    sys.exit(1)
+sys.exit(0 if any(m.get("is_downloaded") for m in models) else 2)
+' || rc=$?
+    if [[ $rc -ne 0 ]]; then
+        if [[ $rc -eq 2 ]]; then
+            echo "오류: 설치된 Handy 모델이 없습니다. Handy 앱에서 모델을 먼저 다운로드하세요."
+        else
+            echo "오류: Handy 모델 목록을 읽지 못했습니다 ($HANDY_BIN)."
         fi
-    elif [[ ! -f "$HOME/.local/share/voxtype/models/ggml-large-v3-turbo.bin" ]]; then
-        echo ">> whisper large-v3-turbo 모델 설치 중... (약 1.6GB)"
-        voxtype setup --download --model large-v3-turbo
+        exit 1
     fi
-}
-
-# STT용 임시 설정 (사용자 설정은 건드리지 않음: 모델 turbo + 언어 자동 + sensevoice 섹션)
-make_stt_config() { # $1=출력경로
-    cp "$HOME/.config/voxtype/config.toml" "$1"
-    sed -i '/^\[whisper\]/,/^\[/ s/^model = .*/model = "large-v3-turbo"/' "$1"
-    sed -i '/^\[whisper\]/,/^\[/ s/^language = .*/language = "auto"/' "$1"
-    grep -q '^\[sensevoice\]' "$1" || printf '\n[sensevoice]\nmodel = "sensevoice-small"\nlanguage = "auto"\nuse_itn = true\n' >> "$1"
 }
 
 # 채널 화자프로필 기록 (同 프로필이면 기존 speaker_names 유지)
@@ -115,8 +121,8 @@ with open(out, "w", encoding="utf-8") as f:
 EOF
 }
 
-# STT 청크 길이(초). SenseVoice 피크 메모리는 입력 길이에 초선형(60s≈0.8GB, 300s≈2GB,
-# 600s≈6GB)이라 통째로 넣으면 수십 분 영상에서 OOM 셧다운된다. 무음 구간에서 잘라 순차 처리.
+# STT 청크 길이(초). transcribe.cpp 계열은 긴 입력을 한 번에 넣으면 컨텍스트 윈도우를 넘기고
+# VRAM/처리시간이 늘어나므로, 무음 구간에서 잘라 순차 처리를 한다.
 CHUNK_MIN=30
 CHUNK_MAX=60
 
@@ -145,16 +151,16 @@ print(f"{pos:.3f} {total:.3f}")
 }
 
 # 청크별 순차 전사, 대사를 청크당 한 줄씩 stdout. 전체 로그는 $1/stt.log. 실패 시 0이 아님.
-transcribe_chunks() { # $1=OUT $2=STT바이너리 $3=엔진
-    local out="$1" bin="$2" engine="$3" dir="$1/chunks" s e wav log text
+transcribe_chunks() { # $1=OUT
+    local out="$1" dir="$1/chunks" s e wav json err
     mkdir -p "$dir"; : > "$out/stt.log"
     while read -r s e; do
-        wav="$dir/chunk.wav"; log="$dir/chunk.log"
+        wav="$dir/chunk.wav"; json="$dir/chunk.json"; err="$dir/chunk.err"
         ffmpeg -nostdin -y -loglevel error -ss "$s" -to "$e" -i "$out/vox.wav" -c copy "$wav" || return 1
-        "$bin" -c "$out/stt-config.toml" transcribe --engine "$engine" "$wav" \
-            < /dev/null > "$log" 2>&1 || { cat "$log" >> "$out/stt.log"; return 1; }
-        { echo "# chunk $s-$e"; cat "$log"; } >> "$out/stt.log"
-        sed -n 's/.*transcription completed in .*:[[:space:]]*"\(.*\)"[[:space:]]*$/\1/Ip' "$log" | tail -n 1
+        "$HANDY_BIN" --transcribe-file "$wav" --json \
+            < /dev/null > "$json" 2> "$err" || { cat "$json" "$err" >> "$out/stt.log"; return 1; }
+        { echo "# chunk $s-$e"; cat "$json"; } >> "$out/stt.log"
+        python3 -c 'import json, sys; print(json.load(sys.stdin).get("text", "").strip())' < "$json"
     done < <(plan_chunks "$out/vox.wav")
     rm -rf "$dir"
 }
@@ -204,25 +210,18 @@ process_video() { # $1=영상URL
         return 0
     fi
 
-    # 2. 자막 없음 → 음성만 다운로드 후 STT
-    ensure_stt_models
+    # 2. 자막 없음 → 음성만 다운로드 후 Handy로 STT
+    ensure_stt_model
     yt-dlp -x --audio-format wav --no-playlist --quiet --no-warnings \
         -o "$out/audio.%(ext)s" "$1" || return 1
     ffmpeg -y -loglevel error -i "$out/audio.wav" -ar 16000 -ac 1 "$out/vox.wav" || return 1
-    make_stt_config "$out/stt-config.toml"
-    local stt_bin="voxtype" stt_engine="whisper"
-    local stt_source="STT 전사 (whisper-large-v3-turbo)"
-    if [[ -x "$ONNX_BIN" ]]; then
-        stt_bin="$ONNX_BIN"; stt_engine="sensevoice"
-        stt_source="STT 전사 (sensevoice)"
-    fi
-    transcribe_chunks "$out" "$stt_bin" "$stt_engine" > "$out/dialogue.txt" || return 1
+    transcribe_chunks "$out" > "$out/dialogue.txt" || return 1
     if [[ ! -s "$out/dialogue.txt" ]]; then
         echo "경고: 전사문 추출 실패 ($vid, $out/stt.log 확인)"
         return 1
     fi
     write_meta "$out" "$title" "$watch_url" "$vid" "$date_fmt" \
-        "$stt_source" "$profile" "$chan_dir/channel.json"
+        "$STT_SOURCE" "$profile" "$chan_dir/channel.json"
     echo "STT완료: $out/meta.json"
     return 0
 }

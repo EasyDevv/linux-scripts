@@ -91,3 +91,7 @@ control-chrome close --port 39225
 
 - launch metadata: `.user-data/chrome-sandbox-wxt/.control-chrome-launch.json`
 - detached log: `.user-data/logs/dev-chrome.log`
+
+## Taskbar / desktop launcher
+
+`~/.local/share/applications/chromium.desktop` overrides the system entry so the pinned **Chromium** button runs `~/.local/usr/bin/chromium-cdp`: if 9222 is down it runs `control-chrome open --normal` (visible, global profile); if it is up it hands off to that browser (new window/tab, never resets tabs). `StartupWMClass=cdp-9222` matches the window's `--class`, so the button highlights and re-focuses it. Incognito stays stock Chromium; MimeType is dropped so it never becomes a link handler.

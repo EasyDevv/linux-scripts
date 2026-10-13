@@ -5,11 +5,11 @@
 //   bun hw-collect.ts <domain> <keywordsFile> <outFile>     domain: 2cpu | joongna | bunjang | dmall | daangn
 //   bun hw-collect.ts merge <outFile> <in1.json> [in2.json ...] [--grep <regex>]
 // keywordsFile: one keyword per line. Output: [{domain, keyword, id, url, title, price}]
-// CDP domains open a fresh tab on CDP_HOST (default http://localhost:9201) and close it when done.
+// CDP domains open a fresh tab on CDP_HOST (default http://localhost:9222, the logged-in profile) and close it when done.
 // 2cpu needs the CDP browser profile to be logged in. daangn uses plain fetch (JSON-LD), no browser.
 export {};
 
-const CDP_HOST = process.env.CDP_HOST ?? "http://localhost:9201";
+const CDP_HOST = process.env.CDP_HOST ?? "http://localhost:9222";
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const q = encodeURIComponent;
@@ -69,6 +69,11 @@ async function collectCdp(domain: string, keywords: string[]): Promise<Item[]> {
   const out: Item[] = [];
   try {
     await tab.send("Page.enable");
+    if (domain === "2cpu") {
+      await tab.send("Page.navigate", { url: "https://www.2cpu.co.kr/" }); await sleep(2500);
+      const r = await tab.send("Runtime.evaluate", { expression: `!!document.querySelector('a[href*="logout"]')`, returnByValue: true });
+      if (!r?.result?.value) throw new Error(`2CPU not logged in on ${CDP_HOST} — log in there, or run project skill collect-2cpu (it waits for login)`);
+    }
     for (const k of keywords) {
       await tab.send("Page.navigate", { url: site.url(k) });
       // wait until the result list renders and stops growing (max ~12s); an empty result is allowed
