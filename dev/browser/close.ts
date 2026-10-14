@@ -1,8 +1,10 @@
+import { printHelp } from "./ui.ts";
 import { rm } from "node:fs/promises";
 
 import {
 	browserReachable,
 	clearPortLock,
+	readPortLock,
 	resolvePortState,
 } from "./browser-state.ts";
 import { acceptPageDialogs, CDP, getBrowserWsUrl } from "./cdp.ts";
@@ -16,6 +18,7 @@ import {
 	terminateProcess,
 } from "./chrome-instance.ts";
 import { DEFAULT_PORT } from "./config.ts";
+import { saveSessionFromPort, sessionNameForProfile } from "./session.ts";
 
 const PROFILE_FLUSH_GRACE_MS = 300;
 
@@ -27,17 +30,21 @@ export type CloseOptions = {
 	json: boolean;
 };
 
-const HELP = `control-chrome close — Stop Chromium launched by control-chrome open
+const HELP = `browser close — stop a Chromium started by browser open
 
-Usage: control-chrome close [options]
+Usage
+  browser close [options]
 
-Options:
-  --port <N>            Remote debugging port (default: 9222)
-  --user-data <dir>     Chrome profile dir (default: ~/.cache/chrome-debug-profile/9222 on 9222, else ./.user-data/chrome-{name})
-  --pid <N>             Explicit PID override
-  --timeout <ms>        Grace period before SIGKILL (default: 5000)
-  --json                Print JSON output
-  --help                Show this help`;
+Options
+  --port <N>           CDP port (default: 9222)
+  --user-data <dir>    profile dir (default: the one recorded at launch)
+  --pid <N>            explicit PID
+  --timeout <ms>       grace before SIGKILL (default: 5000)
+  --json               JSON output
+
+Notes
+  Global profiles (9222) save their session first; --clean profiles are deleted.
+  9201 belongs to chrome.service: stop it with systemctl, not here.`;
 
 function die(msg: string): never {
 	console.error(`✗ ${msg}`);
@@ -69,7 +76,7 @@ function parseArgs(argv: string[]): CloseOptions {
 				options.json = true;
 				break;
 			case "--help":
-				console.log(HELP);
+				printHelp(HELP);
 				process.exit(0);
 			default:
 				die(`Unknown option: ${argv[i]}`);
@@ -164,7 +171,17 @@ async function closeBrowserGracefully(
 
 export async function main(argv: string[]): Promise<void> {
 	const options = parseArgs(argv);
-	const userDataDir = options.userDataDir ?? resolveDefaultProfileDir(options.port);
+	// The port lock remembers a --clean or --user-data profile the default would miss.
+	const lockedDir = (await readPortLock(options.port).catch(() => null))?.userDataDir;
+	const userDataDir =
+		options.userDataDir ?? lockedDir ?? resolveDefaultProfileDir(options.port);
+	// A global profile is a cache: keep its sign-ins in the session store first.
+	const sessionName = sessionNameForProfile(userDataDir);
+	if (sessionName && (await browserReachable(options.port))) {
+		await saveSessionFromPort(options.port, sessionName).catch((error) =>
+			console.warn(`⚠ session ${sessionName} not saved: ${error instanceof Error ? error.message : error}`),
+		);
+	}
 	const launchInfo =
 		options.pid !== undefined
 			? { pid: options.pid, port: options.port, userDataDir }
@@ -251,7 +268,7 @@ export async function main(argv: string[]): Promise<void> {
 		}
 
 		die(
-			`No recorded Chrome PID for profile ${userDataDir}. Launch with: control-chrome open --port ${options.port}`,
+			`No recorded Chrome PID for profile ${userDataDir}. Launch with: browser open --port ${options.port}`,
 		);
 	}
 

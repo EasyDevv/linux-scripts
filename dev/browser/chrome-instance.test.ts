@@ -21,7 +21,7 @@ afterEach(async () => {
 });
 
 test("uses the package name for the project-local default profile", async () => {
-	const root = await mkdtemp("/tmp/control-chrome-profile-");
+	const root = await mkdtemp("/tmp/browser-profile-");
 	tempRoots.push(root);
 	await Bun.write(join(root, "package.json"), '{"name":"property-portal"}\n');
 
@@ -31,7 +31,7 @@ test("uses the package name for the project-local default profile", async () => 
 });
 
 test("uses the project directory name when package.json has no name", async () => {
-	const root = await mkdtemp("/tmp/control-chrome-profile-");
+	const root = await mkdtemp("/tmp/browser-profile-");
 	tempRoots.push(root);
 	await Bun.write(join(root, "package.json"), "{}\n");
 
@@ -84,7 +84,7 @@ test("extracts a profile path without a debug port", () => {
 test("default port 9222 uses the global profile, other ports stay project-local", () => {
 	const root = "/tmp/some-project";
 	expect(resolveDefaultProfileDir(9222, root)).toBe(
-		join(homedir(), ".cache", "chrome-debug-profile", "9222"),
+		join(homedir(), ".cache", "browser", "profiles", "9222"),
 	);
 	expect(resolveDefaultProfileDir(39225, root)).toBe(
 		join(root, ".user-data", "chrome-some-project"),

@@ -72,7 +72,7 @@ async function collectCdp(domain: string, keywords: string[]): Promise<Item[]> {
     if (domain === "2cpu") {
       await tab.send("Page.navigate", { url: "https://www.2cpu.co.kr/" }); await sleep(2500);
       const r = await tab.send("Runtime.evaluate", { expression: `!!document.querySelector('a[href*="logout"]')`, returnByValue: true });
-      if (!r?.result?.value) throw new Error(`2CPU not logged in on ${CDP_HOST} — log in there, or run project skill collect-2cpu (it waits for login)`);
+      if (!r?.result?.value) throw new Error(`2CPU not logged in on ${CDP_HOST} — log in there, or run browse-site scripts/2cpu.ts (it waits for login)`);
     }
     for (const k of keywords) {
       await tab.send("Page.navigate", { url: site.url(k) });

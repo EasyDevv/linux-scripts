@@ -1,5 +1,5 @@
 // market-lib.ts — shared helpers for the per-site used-market collectors
-// (project skills collect-2cpu / collect-joongna / collect-bunjang / collect-daangn / collect-danawa).
+// (browse-site skill scripts 2cpu.ts / joongna.ts / bunjang.ts / daangn.ts / danawa.ts).
 // - CDP: the logged-in browser on CDP_HOST (default http://localhost:9222). Each run opens its own tab.
 // - Spec regex: capacity + speed, including the PC4-xxxxx alias (2933 = PC4-23400).
 // - DIMM type: UDIMM / SODIMM / LRDIMM / RDIMM / check (conflicting words) / unknown.

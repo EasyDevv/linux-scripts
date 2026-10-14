@@ -8,7 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const COMMANDS = {
 	dev: {
 		usage:
-			"wxtu dev chrome|firefox [wxt flags] [--sample react|svelte] [-- <control-chrome flags>]",
+			"wxtu dev chrome|firefox [wxt flags] [--sample react|svelte] [-- <browser flags>]",
 		sub: {
 			chrome: { script: "dev-chrome.mjs", passArgs: true },
 			firefox: { script: "dev-firefox.mjs", passArgs: true },
@@ -78,8 +78,8 @@ function printHelp() {
 		"",
 		"Commands:",
 		"  dev chrome|firefox      Start WXT dev server (chrome defaults detached)",
-		"    Unknown chrome flags are forwarded to control-chrome open",
-		"    Use -- to force-pass overlapping flags like --port to control-chrome",
+		"    Unknown chrome flags are forwarded to browser open",
+		"    Use -- to force-pass overlapping flags like --port to browser",
 		"    --sample react|svelte Start a sample app as the initial page",
 		"  sample react|svelte     Start a standalone sample dev server",
 		"  build                   Build chrome + firefox in parallel",

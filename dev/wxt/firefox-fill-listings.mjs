@@ -13,7 +13,7 @@ import {
 	createTab,
 	waitForLoad,
 	listTabs,
-} from "/home/easydev/.local/share/scripts/dev/control-chrome/cdp.ts";
+} from "/home/easydev/.local/share/scripts/dev/browser/cdp.ts";
 import { WXTU_CONFIG } from "./config.mjs";
 
 const FIREFOX_NAME_MAX_LENGTH = 50;

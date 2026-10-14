@@ -1,4 +1,5 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { printHelp } from "./ui.ts";
+import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -35,6 +36,12 @@ import {
 	resolveBinary,
 } from "./chrome-instance.ts";
 import { resetTabs, waitForChrome } from "./cdp.ts";
+import { mergeExtensionDirs, readProfileConfig } from "./profiles.ts";
+import {
+	injectBrowserCookies,
+	readSession,
+	sessionNameForProfile,
+} from "./session.ts";
 
 export type OpenOptions = {
 	port: number;
@@ -42,6 +49,7 @@ export type OpenOptions = {
 	urlExplicit: boolean;
 	userDataDir?: string;
 	clean: boolean;
+	session?: string;
 	binary?: string;
 	headless: boolean;
 	status: boolean;
@@ -67,35 +75,36 @@ type KWinStartupMinimizeHandle = {
 	dispose: () => Promise<void>;
 };
 
-const HELP = `control-chrome open — Launch Chromium with a remote debugging port
+const HELP = `browser open — launch Chromium with a CDP port, or attach to a running one
 
-Usage: control-chrome open [options]
+Usage
+  browser open [options]
 
-Examples:
-  control-chrome open --port 9222
-  control-chrome open --port 9222 --url http://localhost:5180
-  control-chrome open --port 39225 --load-extension .output/chrome-mv3-dev
+Options
+  --port <N>               CDP port (default: 9222)
+  --url <url>              first tab; bare hosts get http:// (default: the "CDP <port>" page)
+  --user-data <dir>        profile dir (default: global for 9222, else ./.user-data/chrome-{name})
+  --clean                  throwaway profile, removed on close
+  --session <name>         inject a saved session's cookies after launch
+  --load-extension <dir>   load an unpacked extension (comma list ok)
+  --normal                 normal window (default on KDE Wayland: minimized)
+  --minimize               start minimized
+  --headless               no window
+  --locale <bcp47>         UI and Accept-Language (default: ${DEFAULT_LOCALE})
+  --browser-arg <arg>      extra Chromium flag (repeatable)
+  --binary <path>          Chromium binary
+  --status                 show the resolved port and lock, launch nothing
+  --dry-run                print the command, launch nothing
+  --json                   JSON output
 
-Options:
-  --port <N>            Remote debugging port (default: 9222)
-  --url <url>           Initial URL; bare hosts use http:// (default: per-port start page "CDP <port>")
-  --user-data <dir>     Chrome profile dir (default: ~/.cache/chrome-debug-profile/9222 on 9222, else ./.user-data/chrome-{name})
-  --clean               Launch with a fresh temporary profile
-  --binary <path>       Explicit Chromium binary path
-  --headless            Launch headless
-  --load-extension <dir> Load unpacked extension from directory
-  --browser-arg <arg>   Extra argument passed to the browser (repeatable)
-  --locale <bcp47>      Browser UI/Accept-Language locale (default: ${DEFAULT_LOCALE})
-	--status              Show resolved port and lock status without launching
-	--minimize            Start minimized (default on KDE Wayland)
-  --normal              Start a normal window (skip default minimize)
-	--dry-run             Print the resolved command without launching
-	--json                Print JSON output
-	--help                Show this help
+Examples
+  browser open --port 9222 --url http://localhost:5180
+  browser open --port 9223 --clean --session 9222    # parallel worker
+  browser open --port 39225 --load-extension .output/chrome-mv3-dev
 
-Environment:
-  CONTROL_CHROME_BIN        Override auto-detected browser binary (default: chromium)
-  CONTROL_CHROME_LOCALE     Locale used when --locale is not passed (default: ${DEFAULT_LOCALE})`;
+Environment
+  BROWSER_CHROMIUM_BIN     browser binary (default: chromium)
+  BROWSER_LOCALE           locale when --locale is not passed`;
 
 function die(msg: string): never {
 	console.error(`✗ ${msg}`);
@@ -114,7 +123,7 @@ function parseArgs(argv: string[]): OpenOptions {
 		json: false,
 		clean: false,
 		browserArgs: [],
-		locale: process.env.CONTROL_CHROME_LOCALE?.trim() || DEFAULT_LOCALE,
+		locale: process.env.BROWSER_LOCALE?.trim() || DEFAULT_LOCALE,
 	};
 
 	for (let i = 0; i < argv.length; i++) {
@@ -131,6 +140,9 @@ function parseArgs(argv: string[]): OpenOptions {
 				break;
 			case "--clean":
 				options.clean = true;
+				break;
+			case "--session":
+				options.session = argv[++i] ?? die("Usage: --session <name>");
 				break;
 			case "--binary":
 				options.binary = argv[++i] ?? die("Usage: --binary <path>");
@@ -167,7 +179,7 @@ function parseArgs(argv: string[]): OpenOptions {
 				options.json = true;
 				break;
 			case "--help":
-				console.log(HELP);
+				printHelp(HELP);
 				process.exit(0);
 			default:
 				die(`Unknown option: ${argv[i]}`);
@@ -300,10 +312,10 @@ const ATTENTION_SETTLE_MS = 500;
 // KWin clears demandsAttention while the new window is still being activated, so
 // a detached helper sets it once the window has settled, then clears it again.
 function scheduleTaskbarFlash(pid: number) {
-	const dir = mkdtempSync(join(tmpdir(), "control-chrome-kwin-flash-"));
+	const dir = mkdtempSync(join(tmpdir(), "browser-kwin-flash-"));
 	const tag = `${pid}-${Date.now()}`;
 	const scriptFor = (on: boolean) => {
-		const name = `control-chrome-attention-${on ? "on" : "off"}-${tag}`;
+		const name = `browser-attention-${on ? "on" : "off"}-${tag}`;
 		const file = join(dir, `${on ? "on" : "off"}.js`);
 		writeFileSync(
 			file,
@@ -335,9 +347,9 @@ async function installKWinStartupMinimize(
 ): Promise<KWinStartupMinimizeHandle | null> {
 	if (!canUseKWinStartupMinimize()) return null;
 
-	const scriptDir = await mkdtemp(join(tmpdir(), "control-chrome-kwin-"));
+	const scriptDir = await mkdtemp(join(tmpdir(), "browser-kwin-"));
 	const scriptPath = join(scriptDir, "startup-minimize.js");
-	const pluginName = `control-chrome-start-minimize-${pid}-${Date.now()}`;
+	const pluginName = `browser-start-minimize-${pid}-${Date.now()}`;
 	const scriptSource = `let handled = false;
 
 function maybeHandle(window) {
@@ -540,13 +552,22 @@ export async function main(argv: string[]): Promise<void> {
 		userDataDir = options.userDataDir;
 	} else if (options.clean) {
 		if (options.dryRun) {
-			userDataDir = join(tmpdir(), "control-chrome-clean-XXXXXX");
+			userDataDir = join(tmpdir(), "browser-clean-XXXXXX");
 		} else {
-			userDataDir = await mkdtemp(join(tmpdir(), "control-chrome-clean-"));
+			userDataDir = await mkdtemp(join(tmpdir(), "browser-clean-"));
 		}
 	} else {
 		userDataDir = resolveDefaultProfileDir(plan.actualPort);
 		usesDefaultProfile = isDefaultProfilePort(plan.actualPort);
+	}
+
+	// Global profiles are caches: restore unpacked extensions always, and the
+	// saved session only into a profile dir that does not exist yet.
+	const profileName = sessionNameForProfile(userDataDir);
+	const freshProfile = !existsSync(userDataDir);
+	if (profileName) {
+		const { extensions } = await readProfileConfig(profileName);
+		options.loadExtension = mergeExtensionDirs(options.loadExtension, extensions);
 	}
 
 	const statusOutput = {
@@ -715,6 +736,12 @@ export async function main(argv: string[]): Promise<void> {
 			});
 
 			await waitForChrome(actualPort);
+			const inject = options.session ?? (freshProfile ? profileName : null);
+			if (inject) {
+				const saved = await readSession(inject).catch(() => null);
+				if (saved) await injectBrowserCookies(actualPort, saved);
+				else if (options.session) console.warn(`⚠ session ${inject} not found`);
+			}
 			const focused = await resetTabs(actualPort, options.url);
 			focusedUrl = focused.tab.url;
 

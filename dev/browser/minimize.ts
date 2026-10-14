@@ -235,7 +235,7 @@ export function parseMinimizeArgs(argv: string[]): MinimizeCliOptions {
 export async function main(argv: string[]): Promise<void> {
 	const options = parseMinimizeArgs(argv);
 	if (!options.port) {
-		console.error("Usage: control-chrome minimize --port <port>");
+		console.error("Usage: browser minimize --port <port>");
 		process.exit(1);
 	}
 

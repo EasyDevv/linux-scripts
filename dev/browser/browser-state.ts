@@ -38,7 +38,7 @@ type ClaimResult =
 const PORT_SCAN_LIMIT = 100;
 
 export function stateRootDir(): string {
-	return join(homedir(), ".cache", "control-chrome", "state");
+	return join(homedir(), ".cache", "browser", "state");
 }
 
 function locksDir(): string {

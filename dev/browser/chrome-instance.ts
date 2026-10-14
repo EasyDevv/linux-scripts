@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, readlink, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join, resolve } from "node:path";
@@ -46,25 +46,29 @@ export function resolveProjectProfileDir(projectRoot = process.cwd()): string {
 }
 
 export function globalProfileDir(port: number): string {
-	return join(homedir(), ".cache", "chrome-debug-profile", String(port));
+	return join(homedir(), ".cache", "browser", "profiles", String(port));
 }
 
 export function isDefaultProfilePort(port: number): boolean {
 	return port === DEFAULT_PORT;
 }
 
-/** Default port uses the shared global profile; other ports stay project-local. */
+/**
+ * The default port and any port that already owns a global profile
+ * (`~/.cache/browser/profiles/<port>`, e.g. chrome.service's 9201) use it;
+ * other ports stay project-local.
+ */
 export function resolveDefaultProfileDir(
 	port: number,
 	projectRoot = process.cwd(),
 ): string {
-	return isDefaultProfilePort(port)
+	return isDefaultProfilePort(port) || existsSync(globalProfileDir(port))
 		? globalProfileDir(port)
 		: resolveProjectProfileDir(projectRoot);
 }
 
 export function launchInfoPath(userDataDir: string): string {
-	return join(userDataDir, ".control-chrome-launch.json");
+	return join(userDataDir, ".browser-launch.json");
 }
 
 export async function readLaunchInfo(
@@ -252,7 +256,7 @@ export async function terminateProcess(
 }
 
 export function resolveBinary(explicit?: string): string {
-	const requested = explicit ?? process.env.CONTROL_CHROME_BIN;
+	const requested = explicit ?? process.env.BROWSER_CHROMIUM_BIN;
 	if (requested) {
 		const resolved = Bun.which(requested);
 		if (resolved) return resolved;

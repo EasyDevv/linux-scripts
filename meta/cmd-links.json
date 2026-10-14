@@ -250,25 +250,33 @@
       "description": "OVH Edge Firewall에서 공개 SSH를 허용할 단일 관리자 IPv4 /32를 조회·교체·차단한다."
     },
     {
-      "name": "control-chrome",
+      "name": "browser",
       "mode": "wrapper",
       "category": "browser",
-      "target": "dev/control-chrome/main.ts",
+      "target": "dev/browser/main.ts",
       "ownedPaths": [
-        "dev/control-chrome/README.md",
-        "dev/control-chrome/main.ts",
-        "dev/control-chrome/open.ts",
-        "dev/control-chrome/close.ts",
-        "dev/control-chrome/minimize.ts",
-        "dev/control-chrome/open-extension.ts",
-        "dev/control-chrome/config.ts",
-        "dev/control-chrome/chrome-instance.ts",
-        "dev/control-chrome/browser-state.ts",
-        "dev/control-chrome/cdp.ts",
-        "dev/control-chrome/navigation.ts"
+        "dev/browser/README.md",
+        "dev/browser/main.ts",
+        "dev/browser/fetch.ts",
+        "dev/browser/login.ts",
+        "dev/browser/session.ts",
+        "dev/browser/profiles.ts",
+        "dev/browser/open.ts",
+        "dev/browser/close.ts",
+        "dev/browser/list.ts",
+        "dev/browser/minimize.ts",
+        "dev/browser/open-extension.ts",
+        "dev/browser/config.ts",
+        "dev/browser/locale.ts",
+        "dev/browser/port-identity.ts",
+        "dev/browser/dialogs.ts",
+        "dev/browser/chrome-instance.ts",
+        "dev/browser/browser-state.ts",
+        "dev/browser/cdp.ts",
+        "dev/browser/navigation.ts"
       ],
-      "reason": "Uses sibling TypeScript modules under dev/control-chrome/.",
-      "description": "개발용 Chromium 브라우저를 제어하는 통합 CLI — 실행/종료/상태/최소화/CDP/탭/확장"
+      "reason": "Uses sibling TypeScript modules under dev/browser/.",
+      "description": "obscura(읽기·추출)와 Chromium(렌더·캡처·로그인)을 묶은 브라우저 CLI — fetch/login/session/open/close/tabs/cdp"
     },
     {
       "name": "open-extension",

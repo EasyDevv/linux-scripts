@@ -6,12 +6,12 @@ These scripts are used in common by `/home/easydev/dev/extensions/ebook-scroller
 `/home/easydev/dev/extensions/dev-selector`.
 
 Browser lifecycle (launch, stop, minimize) is managed by the global
-`control-chrome` command. The wrapper scripts in this directory delegate to it.
+`browser` command. The wrapper scripts in this directory delegate to it.
 
 ## Command Roles
 
 - `wxtu dev chrome`: start the Chrome WXT dev server.
-- `wxtu dev chrome` forwards unknown flags to `control-chrome open`; use `--` to pass through overlapping flags such as `--port`.
+- `wxtu dev chrome` forwards unknown flags to `browser open`; use `--` to pass through overlapping flags such as `--port`.
 - `wxtu dev firefox`: start the Firefox WXT dev server.
 - `wxtu build`: build Chrome and Firefox bundles in parallel.
 - `wxtu zip`: create Chrome and Firefox zip artifacts in parallel.

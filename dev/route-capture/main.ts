@@ -10,29 +10,29 @@ import {
   closeTabById,
   createTab,
   type Tab,
-} from "../control-chrome/cdp.ts";
+} from "../browser/cdp.ts";
 import {
   browserReachable,
   findAvailablePort,
   readPortLock,
-} from "../control-chrome/browser-state.ts";
+} from "../browser/browser-state.ts";
 import {
   findRunningChromeForProfile,
   processMatchesLaunchInfo,
   readLaunchInfo,
   resolveProjectProfileDir,
-} from "../control-chrome/chrome-instance.ts";
-import { minimizeWindow } from "../control-chrome/minimize.ts";
+} from "../browser/chrome-instance.ts";
+import { minimizeWindow } from "../browser/minimize.ts";
 
 
-const HELP = `route-capture - archive discovered SvelteKit routes with control-chrome
+const HELP = `route-capture - archive discovered SvelteKit routes with browser
 
 Usage:
   bun dev/route-capture/main.ts [project-root] [options]
 
 Options:
   --url <url>          Running app URL (default: ${ROUTE_SCREENSHOT_CONFIG.baseUrl})
-  --port <port>        Chrome DevTools port requested from control-chrome (default: ${ROUTE_SCREENSHOT_CONFIG.chrome.port})
+  --port <port>        Chrome DevTools port requested from browser (default: ${ROUTE_SCREENSHOT_CONFIG.chrome.port})
   --concurrency <n>    Parallel browser tabs (default: ${ROUTE_SCREENSHOT_CONFIG.capture.concurrency})
   --settle-ms <ms>     Extra wait after navigation for client rendering (default: ${ROUTE_SCREENSHOT_CONFIG.capture.settleMs})
   --timeout-ms <ms>    Per-navigation timeout (default: ${ROUTE_SCREENSHOT_CONFIG.capture.timeoutMs})
@@ -585,7 +585,7 @@ async function resolveChromePort(
 }
 
 async function openProjectChrome(options: Options): Promise<number> {
-  const controlChrome = Bun.which("control-chrome");
+  const controlChrome = Bun.which("browser");
   const resolved = await resolveChromePort(options);
   if (resolved.reuseExisting) {
     const minimized = await minimizeWindow(resolved.port, {
@@ -615,7 +615,7 @@ async function openProjectChrome(options: Options): Promise<number> {
     ? [controlChrome, ...openArgs]
     : [
         "bun",
-        join(import.meta.dir, "..", "control-chrome", "main.ts"),
+        join(import.meta.dir, "..", "browser", "main.ts"),
         ...openArgs,
       ];
   const process = Bun.spawn({
@@ -632,20 +632,20 @@ async function openProjectChrome(options: Options): Promise<number> {
   ]);
 
   if (exitCode !== 0)
-    fail(`control-chrome open failed: ${stderr.trim() || stdout.trim()}`);
+    fail(`browser open failed: ${stderr.trim() || stdout.trim()}`);
 
   let result: ControlChromeOpenResult;
   try {
     result = JSON.parse(stdout) as ControlChromeOpenResult;
   } catch {
-    fail(`control-chrome returned invalid JSON: ${stdout.trim()}`);
+    fail(`browser returned invalid JSON: ${stdout.trim()}`);
   }
 
   if (!result.port || !Number.isInteger(result.port))
-    fail("control-chrome did not return a DevTools port");
+    fail("browser did not return a DevTools port");
   if (result.userDataDir !== options.profileDir)
     fail(
-      `control-chrome selected ${result.userDataDir ?? "an unknown profile"} instead of ${options.profileDir}`,
+      `browser selected ${result.userDataDir ?? "an unknown profile"} instead of ${options.profileDir}`,
     );
   return result.port;
 }
@@ -654,12 +654,12 @@ async function closeProjectChrome(
   options: Options,
   port: number,
 ): Promise<void> {
-  const controlChrome = Bun.which("control-chrome");
+  const controlChrome = Bun.which("browser");
   const command = controlChrome
     ? [controlChrome, "close", "--port", String(port), "--json"]
     : [
         "bun",
-        join(import.meta.dir, "..", "control-chrome", "main.ts"),
+        join(import.meta.dir, "..", "browser", "main.ts"),
         "close",
         "--port",
         String(port),
@@ -678,7 +678,7 @@ async function closeProjectChrome(
     readStream(process.stderr),
   ]);
   if (exitCode !== 0)
-    fail(`control-chrome close failed: ${stderr.trim() || stdout.trim()}`);
+    fail(`browser close failed: ${stderr.trim() || stdout.trim()}`);
   console.error(`✓ Closed project Chrome on port ${port}`);
 }
 

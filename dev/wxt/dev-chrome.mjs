@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { startSampleServer, SAMPLE_REGISTRY } from "./sample-dev.mjs";
 import { consumeCommonDevArg } from "./dev-wxt-utils.mjs";
 import { WXTU_CONFIG } from "./config.mjs";
-import { getPageTab } from "../control-chrome/cdp.ts";
+import { getPageTab } from "../browser/cdp.ts";
 
 function readBooleanEnv(name, fallback) {
 	const value = process.env[name];
@@ -49,7 +49,7 @@ const START_MINIMIZED = readBooleanEnv(
 );
 const DEV_LOCALE =
 	process.env.WXT_CHROME_LOCALE?.trim() ||
-	process.env.CONTROL_CHROME_LOCALE?.trim() ||
+	process.env.BROWSER_LOCALE?.trim() ||
 	CHROME_CONFIG.defaultLocale;
 const LOCALE_RELAUNCH = readBooleanEnv(
 	"WXT_CHROME_LOCALE_RELAUNCH",
@@ -65,7 +65,7 @@ const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const SCRIPT_DIR = path.dirname(SCRIPT_PATH);
 const WXT_CHROME_SERVER_SCRIPT = path.join(SCRIPT_DIR, "dev-chrome-wxt.mjs");
 const isDetachedChild = process.env[DETACHED_CHILD_ENV] === "1";
-const CONTROL_CHROME_VALUE_FLAGS = new Set([
+const BROWSER_OPEN_VALUE_FLAGS = new Set([
 	"--binary",
 	"--browser-arg",
 	"--load-extension",
@@ -74,7 +74,7 @@ const CONTROL_CHROME_VALUE_FLAGS = new Set([
 	"--url",
 	"--user-data",
 ]);
-const CONTROL_CHROME_BOOLEAN_FLAGS = new Set([
+const BROWSER_OPEN_BOOLEAN_FLAGS = new Set([
 	"--clean",
 	"--dry-run",
 	"--headless",
@@ -96,8 +96,8 @@ let explicitWxtPort = null;
 
 function consumeControlChromeArg(args, index) {
 	const arg = args[index];
-	if (CONTROL_CHROME_VALUE_FLAGS.has(arg)) return index + 1;
-	if (CONTROL_CHROME_BOOLEAN_FLAGS.has(arg)) return index;
+	if (BROWSER_OPEN_VALUE_FLAGS.has(arg)) return index + 1;
+	if (BROWSER_OPEN_BOOLEAN_FLAGS.has(arg)) return index;
 	return null;
 }
 
@@ -340,7 +340,7 @@ function localeMatches(actual, expected) {
 
 async function terminateExistingChrome(port) {
 	try {
-		execFileSync("control-chrome", ["close", "--port", String(port)], {
+		execFileSync("browser", ["close", "--port", String(port)], {
 			stdio: "ignore",
 			timeout: 10_000,
 		});
@@ -402,7 +402,7 @@ async function launchChrome() {
 	ctrlArgs.push(...browserArgs);
 
 	try {
-		const result = execFileSync("control-chrome", ctrlArgs, {
+		const result = execFileSync("browser", ctrlArgs, {
 			encoding: "utf-8",
 			timeout: 30000,
 		});

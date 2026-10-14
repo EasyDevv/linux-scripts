@@ -59,7 +59,7 @@ async function main() {
 	];
 
 	try {
-		execFileSync("control-chrome", ctrlArgs, {
+		execFileSync("browser", ctrlArgs, {
 			encoding: "utf-8",
 			stdio: "inherit",
 			timeout: 30000,

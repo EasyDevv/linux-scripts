@@ -1,19 +1,20 @@
+import { printHelp } from "./ui.ts";
 import { CDP, getBrowserWsUrl } from "./cdp.ts";
 import { DEFAULT_PORT } from "./config.ts";
 
 const DEFAULT_PAGE = "popup.html";
 
-const HELP = `control-chrome open-extension — Open extension page by name
+const HELP = `browser open-extension — open an extension page by name
 
-Usage: control-chrome open-extension <NAME_PATTERN> [options]
+Usage
+  browser open-extension <name-pattern> [options]
 
-Options:
-  --port <N>            CDP debug port (default: 9222)
-  --page <page>         Extension page to open (default: popup.html)
-  --help                Show this help
+Options
+  --port <N>           CDP port (default: 9222)
+  --page <page>        extension page (default: popup.html)
 
-Environment:
-  EXTENSION_NAME        Name pattern (alternative to positional arg)`;
+Environment
+  EXTENSION_NAME       name pattern when no positional argument is given`;
 
 function die(msg: string): never {
 	console.error(`✗ ${msg}`);
@@ -167,7 +168,7 @@ export async function main(argv: string[]): Promise<void> {
 				pageArg = argv[++i] ?? DEFAULT_PAGE;
 				break;
 			case "--help":
-				console.log(HELP);
+				printHelp(HELP);
 				process.exit(0);
 			default:
 				positional.push(argv[i]);
@@ -178,7 +179,7 @@ export async function main(argv: string[]): Promise<void> {
 
 	if (!namePattern) {
 		console.error("Error: NAME_PATTERN is required");
-		console.log(HELP);
+		printHelp(HELP);
 		process.exit(1);
 	}
 

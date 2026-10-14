@@ -9,7 +9,7 @@ export function spawnDetachedMinimize(port = 9222, opts = {}) {
 		args.push("--timeout-ms", String(timeoutMs));
 
 	try {
-		execFileSync("control-chrome", args, {
+		execFileSync("browser", args, {
 			encoding: "utf-8",
 			timeout: timeoutMs + 5000,
 		});
@@ -27,7 +27,7 @@ export async function minimizeWindow(port = 9222, opts = {}) {
 		args.push("--timeout-ms", String(timeoutMs));
 
 	try {
-		execFileSync("control-chrome", args, {
+		execFileSync("browser", args, {
 			encoding: "utf-8",
 			timeout: timeoutMs + 5000,
 		});

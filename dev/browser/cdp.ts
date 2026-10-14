@@ -153,7 +153,7 @@ export async function listTabs(port: number): Promise<Tab[]> {
 		).json()) as Tab[];
 	} catch {
 		die(
-			`Cannot connect to Chrome on port ${port}. Launch with: control-chrome open --port ${port}`,
+			`Cannot connect to Chrome on port ${port}. Launch with: browser open --port ${port}`,
 		);
 	}
 }
