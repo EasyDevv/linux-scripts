@@ -108,7 +108,14 @@ fn cycle_end(json: &Value) -> Option<i64> {
     let year = cycle.get("year")?.as_i64()? as i32;
     let month = cycle.get("month")?.as_i64()? as i32;
     let next = month; // 0-based index of the following month
-    unix_from_utc(year + next.div_euclid(12), (next.rem_euclid(12) + 1) as u32, 1, 0, 0, 0)
+    unix_from_utc(
+        year + next.div_euclid(12),
+        (next.rem_euclid(12) + 1) as u32,
+        1,
+        0,
+        0,
+        0,
+    )
 }
 
 fn license_renews_from_invoices(json: &Value) -> Option<i64> {
@@ -381,6 +388,7 @@ fn finish(
         reset_at: window.reset_at,
         remaining_credits,
         windows: vec![window],
+        tickets: Vec::new(),
         renews_at,
     }
 }
@@ -394,6 +402,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         reset_at: None,
         remaining_credits: None,
         windows: Vec::new(),
+        tickets: Vec::new(),
         renews_at: None,
     }
 }

@@ -81,7 +81,6 @@ pub fn commandcode_api_key(
         .or_else(|| agent_credential(env, &["commandcode", "command-code"]))
 }
 
-
 #[derive(Clone, Debug)]
 pub struct OpenaiSession {
     pub access_token: String,
@@ -140,8 +139,8 @@ pub fn persist_openai_tokens(
     refresh_token: Option<&str>,
 ) -> std::io::Result<()> {
     let raw = fs::read_to_string(path)?;
-    let mut parsed: serde_json::Value =
-        serde_json::from_str(&raw).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    let mut parsed: serde_json::Value = serde_json::from_str(&raw)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
     if let Some(entry) = parsed
         .get_mut("openai-codex")
         .and_then(|v| v.as_object_mut())
@@ -151,7 +150,10 @@ pub fn persist_openai_tokens(
             serde_json::Value::String(access_token.to_string()),
         );
         if let Some(refresh) = refresh_token.filter(|v| !v.is_empty()) {
-            entry.insert("refresh".into(), serde_json::Value::String(refresh.to_string()));
+            entry.insert(
+                "refresh".into(),
+                serde_json::Value::String(refresh.to_string()),
+            );
         }
     } else {
         let tokens = parsed
@@ -444,7 +446,10 @@ mod tests {
         let openai = openai_session(&env).unwrap();
         assert_eq!(openai.access_token, "pi-codex");
         assert_eq!(openai.account_id.as_deref(), Some("acct"));
-        assert_eq!(commandcode_api_key(&env, None).as_deref(), Some("override-cc"));
+        assert_eq!(
+            commandcode_api_key(&env, None).as_deref(),
+            Some("override-cc")
+        );
         assert_eq!(opencode_cookie(&env, None).as_deref(), Some("pi-cookie"));
     }
 
@@ -465,7 +470,10 @@ mod tests {
             ("COMMAND_CODE_API_KEY".into(), "leftover-env".into()),
         ]);
         let env = |key: &str| map.get(key).cloned();
-        assert_eq!(commandcode_api_key(&env, None).as_deref(), Some("pi-cc-key"));
+        assert_eq!(
+            commandcode_api_key(&env, None).as_deref(),
+            Some("pi-cc-key")
+        );
     }
 
     #[test]

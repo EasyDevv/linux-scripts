@@ -6,6 +6,7 @@ Provider remaining-usage snapshots for grade fallback. Callers ask `remaining(mo
 provider-usage remaining <model> [--json] [--refresh] [--cache PATH]
 provider-usage status [--json] [--cache PATH]
 provider-usage refresh [provider] [--json] [--cache PATH]
+provider-usage reset <provider> [--grant ID] [--json] [--cache PATH]
 provider-usage mark-exhausted <model> [--until EPOCH] [--json] [--cache PATH]
 ```
 

@@ -372,6 +372,7 @@ fn usage_outcome(cache_key: String, parsed: &SubscriptionUsage, now: i64) -> Pro
             reset_at,
             remaining_credits: None,
             windows: cache_windows(&parsed.windows, now),
+            tickets: Vec::new(),
             renews_at,
         };
     }
@@ -383,6 +384,7 @@ fn usage_outcome(cache_key: String, parsed: &SubscriptionUsage, now: i64) -> Pro
         reset_at: None,
         remaining_credits: None,
         windows: cache_windows(&parsed.windows, now),
+        tickets: Vec::new(),
         renews_at,
     }
 }
@@ -411,6 +413,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         reset_at: None,
         remaining_credits: None,
         windows: Vec::new(),
+        tickets: Vec::new(),
         renews_at: None,
     }
 }

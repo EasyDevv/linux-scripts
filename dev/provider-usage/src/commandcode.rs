@@ -136,6 +136,7 @@ pub fn probe(http: &dyn Http, api_key: &str, base_url: &str) -> Result<ProbeOutc
             reset_at,
             remaining_credits: Some(credits.remaining_credits),
             windows: cache_windows(&credits),
+            tickets: Vec::new(),
             renews_at,
         });
     }
@@ -147,6 +148,7 @@ pub fn probe(http: &dyn Http, api_key: &str, base_url: &str) -> Result<ProbeOutc
         reset_at: None,
         remaining_credits: Some(credits.remaining_credits),
         windows: cache_windows(&credits),
+        tickets: Vec::new(),
         renews_at,
     })
 }
@@ -239,6 +241,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         reset_at: None,
         remaining_credits: None,
         windows: Vec::new(),
+        tickets: Vec::new(),
         renews_at: None,
     }
 }

@@ -108,6 +108,7 @@ pub fn probe(http: &dyn Http, session: &Session) -> Result<ProbeOutcome> {
         reset_at,
         remaining_credits: None,
         windows,
+        tickets: Vec::new(),
         renews_at: account.as_ref().and_then(|state| state.renews_at),
     })
 }
@@ -311,6 +312,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         reset_at: None,
         remaining_credits: None,
         windows: Vec::new(),
+        tickets: Vec::new(),
         renews_at: None,
     }
 }

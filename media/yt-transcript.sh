@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# YouTube 영상/재생목록 → ~/.yt-dlp/<채널>/<YYMMDD>-<ID>/meta.json + dialogue.txt
+# YouTube 영상/재생목록 → ~/chat/scrape/youtube/<채널>/<YYMMDD>-<ID>/meta.json + dialogue.txt
 # dialogue.txt는 타임스탬프 없는 대사만, meta.json에 출처(다운로드/STT)+화자프로필 표기.
 # 자막 우선, 없으면 음성만 받아 로컬 GPU STT로 전사 (기본 qwen3_asr_1.7b_ko, --fast는 nemotron 3.5).
 # STT 러너는 asr/<모델>.py (uv 인라인 스크립트, wav 인자 → 줄마다 JSON {file,text,sec}).
@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-BASE_DIR="$HOME/.yt-dlp"
+BASE_DIR="$HOME/chat/scrape/youtube"
 ASR_DIR="$(dirname "$(readlink -f "$0")")/asr"
 # 모델 선정 근거: chat/docs/voice/261016-korean-stt-ab-test.md (교체는 evaluate-stt-models 스킬)
 STT_RUNNER="qwen_ko"; STT_SOURCE="STT 전사 (TeamUNIVA/qwen3_asr_1.7b_ko)"

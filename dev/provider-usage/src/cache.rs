@@ -36,6 +36,20 @@ pub struct PlanState {
     pub ends_at: Option<i64>,
 }
 
+/// A usage-limit reset the account holds ("reset ticket"). Anthropic reports a
+/// grant with a remaining count and, when the promo carries one, an expiry.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResetTicket {
+    /// Provider grant id, echoed back when the reset is redeemed.
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    pub resets_left: u32,
+    /// Instant the ticket stops being redeemable.
+    pub expires_at: i64,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UsageWindow {
@@ -59,6 +73,9 @@ pub struct ProviderSnapshot {
     pub remaining_credits: Option<i64>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub windows: Vec<UsageWindow>,
+    /// Usage-limit resets the account can still spend.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tickets: Vec<ResetTicket>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub renews_at: Option<i64>,
     /// Present when the provider reports a plan/subscription state.
@@ -231,6 +248,7 @@ mod tests {
                 fresh_until: 20,
                 remaining_credits: Some(0),
                 windows: Vec::new(),
+                tickets: Vec::new(),
                 renews_at: None,
                 plan: None,
             },

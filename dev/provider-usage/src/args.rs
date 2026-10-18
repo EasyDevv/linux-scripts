@@ -6,10 +6,22 @@ use crate::core::{default_store, LiveProbes, SystemClock, UsageCore};
 
 #[derive(Debug, PartialEq)]
 enum Command {
-    Remaining { model: String, force: bool },
+    Remaining {
+        model: String,
+        force: bool,
+    },
     Status,
-    Refresh { target: Option<String> },
-    MarkExhausted { model: String, until: Option<i64> },
+    Refresh {
+        target: Option<String>,
+    },
+    Reset {
+        provider: String,
+        grant: Option<String>,
+    },
+    MarkExhausted {
+        model: String,
+        until: Option<i64>,
+    },
 }
 
 struct Options {
@@ -88,6 +100,19 @@ pub fn dispatch(args: &[String]) -> Result<()> {
                 }
             }
         }
+        Command::Reset { provider, grant } => {
+            let outcome = core.redeem(&provider, grant.as_deref())?;
+            if options.json {
+                println!("{}", serde_json::to_string_pretty(&outcome)?);
+            } else {
+                match outcome.resets_left {
+                    Some(left) => {
+                        println!("{} {} ({} left)", outcome.provider, outcome.result, left)
+                    }
+                    None => println!("{} {}", outcome.provider, outcome.result),
+                }
+            }
+        }
         Command::MarkExhausted { model, until } => {
             let answer = core.mark_exhausted(&model, until)?;
             if options.json {
@@ -125,6 +150,7 @@ fn parse(args: &[String]) -> Result<Options> {
     let mut force = false;
     let mut cache = None;
     let mut until = None;
+    let mut grant = None;
     let mut positional = Vec::new();
     let mut i = 0;
     while i < args.len() {
@@ -137,6 +163,13 @@ fn parse(args: &[String]) -> Result<Options> {
                     bail!("--cache needs a path");
                 };
                 cache = Some(value.clone());
+            }
+            "--grant" => {
+                i += 1;
+                let Some(value) = args.get(i) else {
+                    bail!("--grant needs a grant id");
+                };
+                grant = Some(value.clone());
             }
             "--until" => {
                 i += 1;
@@ -171,6 +204,15 @@ fn parse(args: &[String]) -> Result<Options> {
         "refresh" => Command::Refresh {
             target: positional.get(1).cloned(),
         },
+        "reset" => {
+            let Some(provider) = positional.get(1) else {
+                bail!("reset needs a provider");
+            };
+            Command::Reset {
+                provider: provider.clone(),
+                grant,
+            }
+        }
         "mark-exhausted" | "mark_exhausted" => {
             let Some(model) = positional.get(1) else {
                 bail!("mark-exhausted needs a model");
@@ -195,6 +237,7 @@ fn print_help() {
 provider-usage remaining <model> [--json] [--refresh] [--cache PATH]
 provider-usage status [--json] [--cache PATH]
 provider-usage refresh [provider] [--json] [--cache PATH]
+provider-usage reset <provider> [--grant ID] [--json] [--cache PATH]
 provider-usage mark-exhausted <model> [--until EPOCH] [--json] [--cache PATH]"
     );
 }

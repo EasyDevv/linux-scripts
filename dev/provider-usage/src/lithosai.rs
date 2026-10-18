@@ -49,6 +49,7 @@ fn outcome(
         reset_at: None,
         remaining_credits: remaining_cents,
         windows,
+        tickets: Vec::new(),
         renews_at: None,
     }
 }

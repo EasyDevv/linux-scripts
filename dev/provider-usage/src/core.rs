@@ -24,6 +24,7 @@ pub struct ProbeOutcome {
     pub reset_at: Option<i64>,
     pub remaining_credits: Option<i64>,
     pub windows: Vec<crate::cache::UsageWindow>,
+    pub tickets: Vec<crate::cache::ResetTicket>,
     pub renews_at: Option<i64>,
     pub plan: Option<crate::cache::PlanState>,
 }
@@ -37,6 +38,7 @@ impl ProbeOutcome {
             reset_at: None,
             remaining_credits: None,
             windows: Vec::new(),
+            tickets: Vec::new(),
             renews_at: None,
             plan: None,
         }
@@ -61,6 +63,23 @@ impl Clock for SystemClock {
 pub trait Probes {
     fn cache_key(&self, provider: &str) -> String;
     fn probe(&self, provider: &str, now: i64) -> ProbeOutcome;
+
+    /// Spend one usage-limit reset. Providers without a redeemable reset bail.
+    fn redeem(&self, provider: &str, _grant: &str) -> Result<RedeemOutcome> {
+        anyhow::bail!("{provider} has no redeemable usage reset")
+    }
+}
+
+/// Outcome of spending one usage-limit reset.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RedeemOutcome {
+    pub provider: String,
+    /// Provider verdict: `reset`, `already_used`, `not_limited`, `cooldown`,
+    /// `ineligible`, `unavailable`, or `error`.
+    pub result: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resets_left: Option<u32>,
 }
 
 pub struct UsageCore<C, S, P> {
@@ -192,6 +211,7 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
             fresh_until: policy::fresh_until(now, ProviderState::Exhausted, reset_at),
             remaining_credits: None,
             windows: Vec::new(),
+            tickets: Vec::new(),
             renews_at: None,
         };
         self.upsert(key, snapshot.clone())?;
@@ -202,6 +222,28 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
 
     pub fn status(&self) -> Result<CacheFile> {
         self.store.load()
+    }
+
+    /// Spend one usage-limit reset. The grant id defaults to the first ticket
+    /// with resets left in the cache, so a caller that just pressed a card
+    /// button does not have to carry it.
+    pub fn redeem(&self, provider_or_model: &str, grant: Option<&str>) -> Result<RedeemOutcome> {
+        let provider = provider_from_model(provider_or_model)
+            .unwrap_or_else(|| provider_or_model.trim().to_ascii_lowercase());
+        let grant = match grant {
+            Some(grant) => grant.to_string(),
+            None => {
+                let key = self.probes.cache_key(&provider);
+                self.store
+                    .load()?
+                    .providers
+                    .get(&key)
+                    .and_then(|snapshot| snapshot.tickets.iter().find(|t| t.resets_left > 0))
+                    .map(|ticket| ticket.id.clone())
+                    .ok_or_else(|| anyhow::anyhow!("no reset ticket for {provider}"))?
+            }
+        };
+        self.probes.redeem(&provider, &grant)
     }
 
     fn probe_provider(&self, provider: &str, now: i64) -> Result<ProviderSnapshot> {
@@ -241,6 +283,7 @@ fn outcome_snapshot(now: i64, outcome: ProbeOutcome) -> (String, ProviderSnapsho
         fresh_until: policy::fresh_until(now, outcome.state, outcome.reset_at),
         remaining_credits: outcome.remaining_credits,
         windows: outcome.windows,
+        tickets: outcome.tickets,
         renews_at: outcome.renews_at,
         plan: outcome.plan,
     };
@@ -342,6 +385,18 @@ impl<H: Http> Probes for LiveProbes<H> {
         }
     }
 
+    fn redeem(&self, provider: &str, grant: &str) -> Result<RedeemOutcome> {
+        match provider {
+            "claude" => claude::redeem(
+                &self.http,
+                self.claude_cookie.as_deref(),
+                &self.claude_base,
+                grant,
+            ),
+            other => anyhow::bail!("{other} has no redeemable usage reset"),
+        }
+    }
+
     fn probe(&self, provider: &str, now: i64) -> ProbeOutcome {
         match provider {
             "commandcode" => match self.commandcode_key.as_deref() {
@@ -354,6 +409,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                         reset_at: None,
                         remaining_credits: None,
                         windows: Vec::new(),
+                        tickets: Vec::new(),
                         renews_at: None,
                     }),
                 None => ProbeOutcome {
@@ -364,6 +420,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     reset_at: None,
                     remaining_credits: None,
                     windows: Vec::new(),
+                    tickets: Vec::new(),
                     renews_at: None,
                 },
             },
@@ -378,6 +435,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             reset_at: None,
                             remaining_credits: None,
                             windows: Vec::new(),
+                            tickets: Vec::new(),
                             renews_at: None,
                         }
                     })
@@ -399,6 +457,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             reset_at: None,
                             remaining_credits: None,
                             windows: Vec::new(),
+                            tickets: Vec::new(),
                             renews_at: None,
                         }),
                         None => key_unknown.unwrap_or(ProbeOutcome {
@@ -409,6 +468,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             reset_at: None,
                             remaining_credits: None,
                             windows: Vec::new(),
+                            tickets: Vec::new(),
                             renews_at: None,
                         }),
                     },
@@ -432,6 +492,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     reset_at: None,
                     remaining_credits: None,
                     windows: Vec::new(),
+                    tickets: Vec::new(),
                     renews_at: None,
                 }),
                 None => ProbeOutcome {
@@ -442,6 +503,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     reset_at: None,
                     remaining_credits: None,
                     windows: Vec::new(),
+                    tickets: Vec::new(),
                     renews_at: None,
                 },
             },
@@ -456,6 +518,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             reset_at: None,
                             remaining_credits: None,
                             windows: Vec::new(),
+                            tickets: Vec::new(),
                             renews_at: None,
                         })
                 } else if let Some(session) = &self.grok {
@@ -474,6 +537,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                         reset_at: None,
                         remaining_credits: None,
                         windows: Vec::new(),
+                        tickets: Vec::new(),
                         renews_at: None,
                     })
                 } else {
@@ -485,16 +549,13 @@ impl<H: Http> Probes for LiveProbes<H> {
                         reset_at: None,
                         remaining_credits: None,
                         windows: Vec::new(),
+                        tickets: Vec::new(),
                         renews_at: None,
                     }
                 }
             }
             "lithosai" => lithosai::probe(&self.http, self.lithosai_cookie.as_deref()),
-            "claude" => claude::probe(
-                &self.http,
-                self.claude_cookie.as_deref(),
-                &self.claude_base,
-            ),
+            "claude" => claude::probe(&self.http, self.claude_cookie.as_deref(), &self.claude_base),
             _ => ProbeOutcome {
                 plan: None,
                 cache_key: self.cache_key(provider),
@@ -503,6 +564,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                 reset_at: None,
                 remaining_credits: None,
                 windows: Vec::new(),
+                tickets: Vec::new(),
                 renews_at: None,
             },
         }
@@ -516,9 +578,9 @@ pub fn default_store(path: Option<&str>) -> FileStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cache::MemoryStore;
+    use crate::cache::{MemoryStore, ResetTicket};
     use crate::policy::NEGATIVE_CAP_SECS;
-    use std::cell::Cell;
+    use std::cell::{Cell, RefCell};
     use std::collections::HashMap;
 
     struct FakeClock(Cell<i64>);
@@ -533,6 +595,7 @@ mod tests {
         key: String,
         outcomes: HashMap<String, ProbeOutcome>,
         probes: Cell<u32>,
+        redeems: RefCell<Vec<String>>,
     }
 
     impl Probes for FakeProbes {
@@ -553,8 +616,18 @@ mod tests {
                     reset_at: None,
                     remaining_credits: None,
                     windows: Vec::new(),
+                    tickets: Vec::new(),
                     renews_at: None,
                 })
+        }
+
+        fn redeem(&self, provider: &str, grant: &str) -> Result<RedeemOutcome> {
+            self.redeems.borrow_mut().push(grant.to_string());
+            Ok(RedeemOutcome {
+                provider: provider.to_string(),
+                result: "reset".into(),
+                resets_left: Some(0),
+            })
         }
     }
 
@@ -569,8 +642,82 @@ mod tests {
                 key,
                 outcomes,
                 probes: Cell::new(0),
+                redeems: RefCell::new(Vec::new()),
             },
         }
+    }
+
+    #[test]
+    fn redeem_defaults_to_the_cached_ticket_and_honours_an_explicit_grant() {
+        let primed = ProbeOutcome {
+            plan: None,
+            cache_key: "claude:abc".into(),
+            state: ProviderState::Available,
+            reason: None,
+            reset_at: None,
+            remaining_credits: None,
+            windows: Vec::new(),
+            tickets: vec![ResetTicket {
+                id: "grant-1".into(),
+                label: None,
+                resets_left: 1,
+                expires_at: 9,
+            }],
+            renews_at: None,
+        };
+        let mut outcomes = HashMap::new();
+        outcomes.insert("claude".into(), primed);
+        let core = UsageCore {
+            clock: FakeClock(Cell::new(1_000)),
+            store: MemoryStore::default(),
+            probes: FakeProbes {
+                key: "claude:abc".into(),
+                outcomes,
+                probes: Cell::new(0),
+                redeems: RefCell::new(Vec::new()),
+            },
+        };
+        // The probe stores the ticket, so a bare `reset` can find it.
+        core.remaining("claude/x", false).unwrap();
+        assert_eq!(core.redeem("claude", None).unwrap().result, "reset");
+        assert_eq!(
+            core.probes.redeems.borrow().as_slice(),
+            ["grant-1".to_string()]
+        );
+        core.redeem("claude", Some("grant-2")).unwrap();
+        assert_eq!(
+            core.probes.redeems.borrow().last().map(String::as_str),
+            Some("grant-2")
+        );
+    }
+
+    #[test]
+    fn redeem_without_a_ticket_is_an_error() {
+        let outcome = ProbeOutcome {
+            plan: None,
+            cache_key: "claude:abc".into(),
+            state: ProviderState::Available,
+            reason: None,
+            reset_at: None,
+            remaining_credits: None,
+            windows: Vec::new(),
+            tickets: Vec::new(),
+            renews_at: None,
+        };
+        let mut outcomes = HashMap::new();
+        outcomes.insert("claude".into(), outcome);
+        let core = UsageCore {
+            clock: FakeClock(Cell::new(1_000)),
+            store: MemoryStore::default(),
+            probes: FakeProbes {
+                key: "claude:abc".into(),
+                outcomes,
+                probes: Cell::new(0),
+                redeems: RefCell::new(Vec::new()),
+            },
+        };
+        core.remaining("claude/x", false).unwrap();
+        assert!(core.redeem("claude", None).is_err());
     }
 
     #[test]
@@ -583,6 +730,7 @@ mod tests {
             reset_at: Some(5_000),
             remaining_credits: Some(0),
             windows: Vec::new(),
+            tickets: Vec::new(),
             renews_at: None,
         };
         let core = core(1_000, outcome);
@@ -610,6 +758,7 @@ mod tests {
             reset_at: None,
             remaining_credits: Some(0),
             windows: Vec::new(),
+            tickets: Vec::new(),
             renews_at: None,
         };
         let core = core(1_000, outcome);
@@ -629,6 +778,7 @@ mod tests {
             reset_at: None,
             remaining_credits: Some(9),
             windows: Vec::new(),
+            tickets: Vec::new(),
             renews_at: None,
         };
         let core = core(1_000, outcome);
@@ -651,6 +801,7 @@ mod tests {
             reset_at: None,
             remaining_credits: Some(0),
             windows: Vec::new(),
+            tickets: Vec::new(),
             renews_at: None,
         };
         let core = core(1_000, outcome);
@@ -690,6 +841,7 @@ mod tests {
                     reset_at: None,
                     remaining_credits: Some(1),
                     windows: Vec::new(),
+                    tickets: Vec::new(),
                     renews_at: None,
                 }
             }

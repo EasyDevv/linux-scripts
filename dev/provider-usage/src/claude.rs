@@ -7,7 +7,11 @@
 //!
 //! - `GET /api/organizations` names the org and its plan (`capabilities`).
 //! - `GET /api/organizations/{uuid}/usage` has the same `limits[]` the CLI's
-//!   `/usage` screen reads: the 5h session and the weekly window.
+//!   `/usage` screen reads: the 5h session and the weekly window. With the
+//!   `cedar_ember=1` experiment param it also carries the usage-limit reset
+//!   ("reset ticket") grants the account can spend.
+//! - `POST /api/organizations/{uuid}/reset_rate_limits` spends one of those
+//!   grants (`program` `cedar_ember`).
 //! - `GET /api/organizations/{uuid}/subscription_details` has the next charge.
 //!
 //! Cloudflare answers a stale `cf_clearance` with a 403 challenge page, which
@@ -16,8 +20,8 @@
 use anyhow::Result;
 use serde_json::Value;
 
-use crate::cache::{PlanState, ProviderState, UsageWindow};
-use crate::core::ProbeOutcome;
+use crate::cache::{PlanState, ProviderState, ResetTicket, UsageWindow};
+use crate::core::{ProbeOutcome, RedeemOutcome};
 use crate::http::Http;
 use crate::iso::parse_iso_unix;
 
@@ -31,6 +35,10 @@ const USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KH
 /// unmapped: the footer chip contract is `s`/`w`/`m` only, and a model name
 /// has no letter.
 const WINDOW_KINDS: [(&str, &str); 2] = [("session", "5h"), ("weekly_all", "weekly")];
+
+/// Experiment flag that makes `/usage` return the reset-ticket grants, and the
+/// `program` the redeem endpoint expects for them.
+const RESET_PROGRAM: &str = "cedar_ember";
 
 pub fn probe(http: &dyn Http, cookie: Option<&str>, base_url: &str) -> ProbeOutcome {
     let cookie = cookie.map(str::trim).filter(|value| !value.is_empty());
@@ -57,9 +65,16 @@ pub fn probe(http: &dyn Http, cookie: Option<&str>, base_url: &str) -> ProbeOutc
     if windows.is_empty() {
         return unknown(cache_key, Some("usage".into()));
     }
-    let exhausted = windows
-        .iter()
-        .any(|window| window.used_percent >= 100.0);
+    // Best effort: the ticket lives behind an experiment query param, so an
+    // account without one (or a renamed param) still gets its windows.
+    let tickets = get_json(
+        http,
+        cookie,
+        &format!("{org_url}/usage?{RESET_PROGRAM}=1&skip_spend=1"),
+    )
+    .map(|json| parse_tickets(&json))
+    .unwrap_or_default();
+    let exhausted = windows.iter().any(|window| window.used_percent >= 100.0);
     let reset_at = windows
         .iter()
         .filter(|window| window.used_percent >= 100.0)
@@ -86,8 +101,20 @@ pub fn probe(http: &dyn Http, cookie: Option<&str>, base_url: &str) -> ProbeOutc
         // A subscription quota, never a balance: nothing to render as a metric.
         remaining_credits: None,
         windows,
+        tickets,
         renews_at: subscription.as_ref().and_then(parse_renews_at),
     }
+}
+
+/// One GET with the session cookie; the `Err` is the probe's `reason`.
+/// One GET with the session cookie; the `Err` carries an `anyhow` error for
+/// callers outside the probe's `reason` vocabulary (the redeem path).
+fn get_json_raw(http: &dyn Http, cookie: &str, url: &str) -> Result<Value> {
+    let response = authed_get(http, cookie, url)?;
+    if response.status >= 400 {
+        return Err(anyhow::anyhow!("http:{}", response.status));
+    }
+    serde_json::from_str(&response.body).map_err(|_| anyhow::anyhow!("unreadable response"))
 }
 
 /// One GET with the session cookie; the `Err` is the probe's `reason`.
@@ -213,6 +240,42 @@ pub fn parse_windows(json: &Value) -> Vec<UsageWindow> {
     windows
 }
 
+/// Reset-ticket grants from the `cedar_ember` block of a usage response. A
+/// spent grant (`resets_left` 0) is not a card row, and a grant without an
+/// expiry carries none.
+pub fn parse_tickets(json: &Value) -> Vec<ResetTicket> {
+    let Some(grants) = json
+        .get(RESET_PROGRAM)
+        .and_then(|block| block.get("grants"))
+        .and_then(Value::as_array)
+    else {
+        return Vec::new();
+    };
+    grants
+        .iter()
+        .filter_map(|grant| {
+            let id = grant.get("id").and_then(Value::as_str)?.to_string();
+            let resets_left = grant.get("resets_left").and_then(Value::as_u64)? as u32;
+            if resets_left == 0 {
+                return None;
+            }
+            Some(ResetTicket {
+                id,
+                label: grant
+                    .get("label")
+                    .and_then(Value::as_str)
+                    .map(str::to_string),
+                resets_left,
+                expires_at: grant
+                    .get("ends_at")
+                    .and_then(Value::as_str)
+                    .and_then(parse_iso_unix)
+                    .unwrap_or(i64::MAX),
+            })
+        })
+        .collect()
+}
+
 fn authed_get(http: &dyn Http, cookie: &str, url: &str) -> Result<crate::http::HttpResponse> {
     http.get(
         url,
@@ -224,6 +287,80 @@ fn authed_get(http: &dyn Http, cookie: &str, url: &str) -> Result<crate::http::H
     )
 }
 
+/// Redeem one reset ticket. Spends the account's grant for real; the caller
+/// must only reach this on an explicit confirmation.
+pub fn redeem(
+    http: &dyn Http,
+    cookie: Option<&str>,
+    base_url: &str,
+    grant_id: &str,
+) -> Result<RedeemOutcome> {
+    let cookie = cookie
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| anyhow::anyhow!("missing CLAUDE_COOKIE"))?;
+    let orgs = get_json_raw(http, cookie, &format!("{base_url}/api/organizations"))?;
+    let org = pick_org(&orgs, cookie).ok_or_else(|| anyhow::anyhow!("no organization"))?;
+    let uuid = org
+        .get("uuid")
+        .and_then(Value::as_str)
+        .ok_or_else(|| anyhow::anyhow!("no organization"))?;
+    let body = serde_json::json!({
+        "program": RESET_PROGRAM,
+        "grant_id": grant_id,
+        "request_id": uuid::Uuid::new_v4().to_string(),
+    })
+    .to_string();
+    let response = http
+        .post(
+            &format!("{base_url}/api/organizations/{uuid}/reset_rate_limits"),
+            &[
+                ("accept", "application/json"),
+                ("user-agent", USER_AGENT),
+                ("cookie", cookie),
+            ],
+            &body,
+        )
+        .map_err(|_| anyhow::anyhow!("network"))?;
+    if response.status >= 400 {
+        // 4xx is the provider's verdict on the ticket, not a transport error:
+        // keep the result so the caller can tell the user what happened.
+        return Ok(RedeemOutcome {
+            provider: "claude".into(),
+            result: "error".into(),
+            resets_left: None,
+        });
+    }
+    let json: Value = serde_json::from_str(&response.body)
+        .map_err(|_| anyhow::anyhow!("unreadable reset response"))?;
+    Ok(RedeemOutcome {
+        provider: "claude".into(),
+        result: parse_redeem_result(&json),
+        resets_left: json
+            .get("resets_left")
+            .and_then(Value::as_u64)
+            .map(|left| left as u32),
+    })
+}
+
+/// The redeem endpoint answers the verdict in `result`; anything unrecognized
+/// is the board's `error`.
+fn parse_redeem_result(json: &Value) -> String {
+    const RESULTS: [&str; 6] = [
+        "reset",
+        "already_used",
+        "not_limited",
+        "cooldown",
+        "ineligible",
+        "unavailable",
+    ];
+    json.get("result")
+        .and_then(Value::as_str)
+        .filter(|result| RESULTS.contains(result))
+        .unwrap_or("error")
+        .to_string()
+}
+
 fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
     ProbeOutcome {
         plan: None,
@@ -233,6 +370,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         reset_at: None,
         remaining_credits: None,
         windows: Vec::new(),
+        tickets: Vec::new(),
         renews_at: None,
     }
 }
@@ -286,23 +424,64 @@ mod tests {
 
     /// Most specific pattern first: `contains` would let `/api/organizations`
     /// swallow the per-org paths.
-    fn routes(
-        orgs: (u16, String),
-        usage: (u16, String),
-        subscription: (u16, String),
-    ) -> MapHttp {
+    fn routes(orgs: (u16, String), usage: (u16, String), subscription: (u16, String)) -> MapHttp {
         MapHttp {
             routes: vec![
-                ("/subscription_details".into(), subscription.0, subscription.1),
+                (
+                    "/subscription_details".into(),
+                    subscription.0,
+                    subscription.1,
+                ),
+                ("usage?cedar_ember=1".into(), 200, usage_body(0.0, 0.0)),
                 ("/usage".into(), usage.0, usage.1),
                 ("/api/organizations".into(), orgs.0, orgs.1),
             ],
         }
     }
 
+    /// A usage response that also carries one reset-ticket grant.
+    fn tickets_body() -> String {
+        json!({
+            "cedar_ember": {
+                "eligible": true,
+                "next_grant_id": "opus55-launch-promax-20260921",
+                "weekly_resets_at": "2026-10-20T15:00:00+00:00",
+                "grants": [
+                    {
+                        "id": "opus55-launch-promax-20260921",
+                        "label": "Claude Opus 5.5 launch: one usage-limit reset for Pro and Max",
+                        "resets_total": 1,
+                        "resets_left": 1,
+                        "starts_at": "2026-09-22T16:00:00+00:00",
+                        "ends_at": "2026-10-22T16:00:00+00:00",
+                        "paused": false,
+                        "usable_now": true,
+                    },
+                    {
+                        "id": "spent-grant",
+                        "resets_total": 1,
+                        "resets_left": 0,
+                        "ends_at": "2026-10-22T16:00:00+00:00",
+                    }
+                ]
+            }
+        })
+        .to_string()
+    }
+
+    /// Pro routes whose ticket GET answers with `tickets_body`.
+    fn ticketed_routes() -> MapHttp {
+        let mut map = pro_routes(42.0, 5.0);
+        map.routes[1].2 = tickets_body();
+        map
+    }
+
     fn pro_routes(session_percent: f64, weekly_percent: f64) -> MapHttp {
         routes(
-            (200, orgs_body(vec![org("org-pro", &["claude_pro", "chat"])])),
+            (
+                200,
+                orgs_body(vec![org("org-pro", &["claude_pro", "chat"])]),
+            ),
             (200, usage_body(session_percent, weekly_percent)),
             (200, subscription_body("active", None)),
         )
@@ -333,7 +512,10 @@ mod tests {
         assert_eq!(plan.display.as_deref(), Some("Pro"));
         assert!(plan.active);
         assert_eq!(plan.ends_at, None);
-        assert_eq!(outcome.cache_key, crate::auth::cache_key("claude", Some(COOKIE)));
+        assert_eq!(
+            outcome.cache_key,
+            crate::auth::cache_key("claude", Some(COOKIE))
+        );
     }
 
     #[test]
@@ -341,7 +523,10 @@ mod tests {
         let outcome = probe(&pro_routes(100.0, 12.0), Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Exhausted);
         assert_eq!(outcome.reason.as_deref(), Some("window"));
-        assert_eq!(outcome.reset_at, Some(parse_iso_unix(SESSION_RESET_ISO).unwrap()));
+        assert_eq!(
+            outcome.reset_at,
+            Some(parse_iso_unix(SESSION_RESET_ISO).unwrap())
+        );
         assert_eq!(outcome.windows.len(), 2);
     }
 
@@ -349,7 +534,10 @@ mod tests {
     fn a_full_weekly_window_reports_the_weekly_reset() {
         let outcome = probe(&pro_routes(10.0, 100.0), Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Exhausted);
-        assert_eq!(outcome.reset_at, Some(parse_iso_unix(WEEKLY_RESET_ISO).unwrap()));
+        assert_eq!(
+            outcome.reset_at,
+            Some(parse_iso_unix(WEEKLY_RESET_ISO).unwrap())
+        );
     }
 
     #[test]
@@ -379,7 +567,11 @@ mod tests {
     #[test]
     fn a_rejected_cookie_is_unknown_with_the_cookie_reason() {
         let http = MapHttp {
-            routes: vec![("/api/organizations".into(), 401, r#"{"error":"auth"}"#.into())],
+            routes: vec![(
+                "/api/organizations".into(),
+                401,
+                r#"{"error":"auth"}"#.into(),
+            )],
         };
         let outcome = probe(&http, Some(COOKIE), DEFAULT_BASE);
         assert_eq!(outcome.state, ProviderState::Unknown);
@@ -421,7 +613,10 @@ mod tests {
     #[test]
     fn a_dead_subscription_keeps_the_windows_and_the_plan() {
         let http = routes(
-            (200, orgs_body(vec![org("org-pro", &["claude_pro", "chat"])])),
+            (
+                200,
+                orgs_body(vec![org("org-pro", &["claude_pro", "chat"])]),
+            ),
             (200, usage_body(33.0, 5.0)),
             (500, String::new()),
         );
@@ -465,7 +660,10 @@ mod tests {
         assert_eq!(picked["uuid"], "org-pro");
         // No `lastActiveOrg`: the first org carrying a Claude plan.
         let orgs = json!([org("org-api", &["api"]), org("org-pro", &["claude_pro"])]);
-        assert_eq!(pick_org(&orgs, "sessionKey=sk-1").expect("org")["uuid"], "org-pro");
+        assert_eq!(
+            pick_org(&orgs, "sessionKey=sk-1").expect("org")["uuid"],
+            "org-pro"
+        );
         // A `lastActiveOrg` the account no longer has falls back, never fails.
         let orgs = json!([org("org-api", &["api"])]);
         assert_eq!(
@@ -483,7 +681,10 @@ mod tests {
         // probe's, because Max tiers share one key and two prices.
         assert_eq!(plan.display.as_deref(), Some("Max"));
         assert_eq!(plan_display("claude_pro").as_deref(), Some("Pro"));
-        assert_eq!(plan_display("claude_enterprise").as_deref(), Some("Enterprise"));
+        assert_eq!(
+            plan_display("claude_enterprise").as_deref(),
+            Some("Enterprise")
+        );
         assert_eq!(plan_display(""), None);
         assert_eq!(parse_plan(&org("org-api", &["api"]), None), None);
     }
@@ -494,10 +695,14 @@ mod tests {
         let canceled: Value = serde_json::from_str(&subscription_body("canceled", None)).unwrap();
         assert!(!parse_plan(&pro, Some(&canceled)).expect("plan").active);
         let ending: Value =
-            serde_json::from_str(&subscription_body("active", Some("2026-11-01T00:00:00Z"))).unwrap();
+            serde_json::from_str(&subscription_body("active", Some("2026-11-01T00:00:00Z")))
+                .unwrap();
         let plan = parse_plan(&pro, Some(&ending)).expect("plan");
         assert!(!plan.active);
-        assert_eq!(plan.ends_at, Some(parse_iso_unix("2026-11-01T00:00:00Z").unwrap()));
+        assert_eq!(
+            plan.ends_at,
+            Some(parse_iso_unix("2026-11-01T00:00:00Z").unwrap())
+        );
         let active: Value = serde_json::from_str(&subscription_body("active", None)).unwrap();
         assert!(parse_plan(&pro, Some(&active)).expect("plan").active);
     }
@@ -510,5 +715,105 @@ mod tests {
             Some(parse_iso_unix("2026-10-27T00:00:00Z").unwrap())
         );
         assert_eq!(parse_renews_at(&json!({})), None);
+    }
+
+    #[test]
+    fn probe_carries_the_unspent_reset_tickets() {
+        let outcome = probe(&ticketed_routes(), Some(COOKIE), DEFAULT_BASE);
+        assert_eq!(outcome.windows.len(), 2);
+        assert_eq!(outcome.tickets.len(), 1);
+        let ticket = &outcome.tickets[0];
+        assert_eq!(ticket.id, "opus55-launch-promax-20260921");
+        assert_eq!(ticket.resets_left, 1);
+        assert_eq!(
+            ticket.expires_at,
+            parse_iso_unix("2026-10-22T16:00:00+00:00").unwrap()
+        );
+        assert!(ticket
+            .label
+            .as_deref()
+            .unwrap()
+            .starts_with("Claude Opus 5.5"));
+    }
+
+    #[test]
+    fn a_usage_response_without_the_experiment_block_has_no_tickets() {
+        let outcome = probe(&pro_routes(10.0, 20.0), Some(COOKIE), DEFAULT_BASE);
+        assert!(outcome.tickets.is_empty());
+    }
+
+    #[test]
+    fn parse_tickets_skips_a_spent_or_expiry_less_grant() {
+        let mut json: Value = serde_json::from_str(&tickets_body()).unwrap();
+        let grants = json
+            .get_mut("cedar_ember")
+            .and_then(|block| block.get_mut("grants"))
+            .and_then(Value::as_array_mut)
+            .expect("grants");
+        grants.push(json!({
+            "id": "no-expiry",
+            "resets_left": 2,
+        }));
+        let tickets = parse_tickets(&json);
+        assert_eq!(
+            tickets.iter().map(|t| t.id.as_str()).collect::<Vec<_>>(),
+            vec!["opus55-launch-promax-20260921", "no-expiry"]
+        );
+        assert_eq!(tickets[1].expires_at, i64::MAX);
+        assert_eq!(parse_tickets(&json!({})).len(), 0);
+    }
+
+    #[test]
+    fn redeem_posts_the_grant_and_reads_the_verdict() {
+        let http = MapHttp {
+            routes: vec![
+                (
+                    "POST https://claude.ai/api/organizations/org-pro/reset_rate_limits".into(),
+                    200,
+                    json!({ "result": "reset", "resets_left": 0, "cleared": ["five_hour", "seven_day"] })
+                        .to_string(),
+                ),
+                (
+                    "/api/organizations".into(),
+                    200,
+                    orgs_body(vec![org("org-pro", &["claude_pro"])]),
+                ),
+            ],
+        };
+        let outcome = redeem(
+            &http,
+            Some(COOKIE),
+            DEFAULT_BASE,
+            "opus55-launch-promax-20260921",
+        )
+        .expect("redeem");
+        assert_eq!(outcome.provider, "claude");
+        assert_eq!(outcome.result, "reset");
+        assert_eq!(outcome.resets_left, Some(0));
+    }
+
+    #[test]
+    fn redeem_maps_an_unknown_verdict_and_a_rejected_cookie_to_errors() {
+        let unknown = MapHttp {
+            routes: vec![
+                (
+                    "POST https://claude.ai/api/organizations/org-pro/reset_rate_limits".into(),
+                    200,
+                    json!({ "result": "whatever" }).to_string(),
+                ),
+                (
+                    "/api/organizations".into(),
+                    200,
+                    orgs_body(vec![org("org-pro", &["claude_pro"])]),
+                ),
+            ],
+        };
+        assert_eq!(
+            redeem(&unknown, Some(COOKIE), DEFAULT_BASE, "g")
+                .unwrap()
+                .result,
+            "error"
+        );
+        assert!(redeem(&pro_routes(1.0, 1.0), None, DEFAULT_BASE, "g").is_err());
     }
 }
