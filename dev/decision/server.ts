@@ -31,10 +31,7 @@ async function body(req: Request): Promise<Record<string, unknown> | undefined> 
 type Handler = (req: Request) => Response | Promise<Response>;
 
 export function startServer(config: DaemonConfig = readConfig()) {
-	const { auth, ladder, budget, engine, log } = createRuntime(config);
-	void ladder.refresh(true);
-	const refreshTimer = setInterval(() => void ladder.refresh(), 60 * 60_000);
-	refreshTimer.unref?.();
+	const { auth, budget, engine, log } = createRuntime(config);
 
 	const decide = engine.decide.bind(engine);
 	const featureRoutes: Record<string, { POST: Handler }> = {};
@@ -49,6 +46,7 @@ export function startServer(config: DaemonConfig = readConfig()) {
 				const input = runtime.parse(b);
 				if (typeof input === "string") return bad(input);
 				const result = await runtime.run(input, decide);
+				if (def.logs && !def.logs(result)) return Response.json(result);
 				log.write({
 					type: "result",
 					feature: def.name,
@@ -115,5 +113,5 @@ export function startServer(config: DaemonConfig = readConfig()) {
 		},
 		fetch: () => new Response("not found", { status: 404 }),
 	});
-	return { server, engine, stop: () => (clearInterval(refreshTimer), server.stop(true)) };
+	return { server, engine, stop: () => server.stop(true) };
 }

@@ -235,6 +235,7 @@ pub fn parse_windows(json: &Value) -> Vec<UsageWindow> {
                 .get("resets_at")
                 .and_then(Value::as_str)
                 .and_then(parse_iso_unix),
+            limit_cents: None,
         });
     }
     windows

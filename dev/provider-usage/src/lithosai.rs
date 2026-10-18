@@ -127,15 +127,21 @@ fn amount_of(entry: &Value) -> Option<i64> {
 }
 
 /// Spent share of the newest manual purchase, as the card's `Credit` window.
+///
+/// The window reads as a percentage (spent ÷ purchase) like any other; the
+/// purchase itself rides along as `limit_cents`, which the board uses only to
+/// price the dated daily-spend history.
 fn credit_window(balance_nanos: i64, credit_nanos: i64) -> Option<UsageWindow> {
     if credit_nanos <= 0 {
         return None;
     }
-    let used = (credit_nanos - balance_nanos).max(0) as f64 / credit_nanos as f64 * 100.0;
+    let spent_nanos = (credit_nanos - balance_nanos).max(0);
+    let used = spent_nanos as f64 / credit_nanos as f64 * 100.0;
     Some(UsageWindow {
         name: "Credit".into(),
         used_percent: used.clamp(0.0, 100.0),
         reset_at: None,
+        limit_cents: Some(credit_nanos / NANOS_PER_CENT),
     })
 }
 
@@ -286,10 +292,11 @@ mod tests {
             ),
         ]);
         let outcome = probe(&http, Some("session=abc"));
-        // $10.00 bought on 2026-09-20, $6.20 left -> 38% spent.
+        // $10.00 bought on 2026-09-20, $6.20 left -> 38% spent, $3.80 of $10.00.
         assert_eq!(outcome.remaining_credits, Some(620));
         assert_eq!(outcome.windows.len(), 1);
         assert_eq!(outcome.windows[0].used_percent, 38.0);
+        assert_eq!(outcome.windows[0].limit_cents, Some(1000));
     }
 
     #[test]

@@ -1,0 +1,21 @@
+# decision
+
+Typed routing decisions served over HTTP to two harnesses. This repo is the source of truth; the
+harness-side clients are thin and fail-open.
+
+## Harness linkage (do not fork the logic into them)
+
+| Consumer | Path |
+| --- | --- |
+| pi extension | `~/.pi/agent/extensions/decision/` (`index.ts` hooks, `client.ts`, `config.ts`, `skills.ts`, `route.ts`) |
+| Claude Code plugin | `~/.agents/plugins/decision/hooks/` (`register.ts`, `decision.ts`) |
+
+- Daemon `decision serve` on `http://127.0.0.1:45130` (`DECISION_URL` overrides), run as the
+  `decision.service` systemd user unit. Clients change nothing when the daemon is down, slow, or
+  answers `status != "routed"`.
+- `CONTRACTS.md` is the shared contract: change it first, then both clients. `POST /v1/*` shapes,
+  `FeatureResult`, `harness`/`sessionId`, skip reasons.
+- Tier config lives outside this repo at `~/.config/decision/tiers.json` (`tiers.ts`), one list per
+  harness (`pi` → `models.profiles` ladder, `claude` → catch-all model).
+- `decision audit` joins the decision log with the harness transcripts (`PI_CODING_AGENT_DIR` or
+  `~/.pi/agent/sessions`, `~/.claude/projects`).

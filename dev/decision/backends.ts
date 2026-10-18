@@ -2,22 +2,17 @@
  * Backend ladder and the pi-ai adapter behind the engine's `ModelsPort`.
  *
  * Default ladder: the newest Jev on OpenRouter (`typesafe/jev-X.Y`, paid per token, read from the
- * pi-ai catalog because OpenRouter's public listing omits classifiers), then the newest Jev the
- * OpenCode Zen account serves — its free SKU, then the paid one. Only decision models answer:
- * there is no chat-model fallback, so a ladder with no answer means `unavailable` and every
- * harness changes nothing. "Newest" is read from Zen's
- * live `/v1/models` (refreshed every 6 h), so `jev-1.14-free` replaces `jev-1.13-free` the day
- * Zen lists it, with no config edit. The pi-ai catalog is the fallback when the listing fails.
- * `config.json` `backends` pins an explicit ladder instead.
+ * pi-ai catalog because OpenRouter's public listing omits classifiers). OpenCode Zen's Jev SKUs
+ * are no longer in the default (261018, the owner's call); `config.json` `backends` (the dashboard's
+ * Settings › Models › Jev) pins an explicit ladder instead, tried in order. Only decision models
+ * answer: there is no chat-model fallback, so a ladder with no answer means `unavailable` and every
+ * harness changes nothing.
  */
 
 import type { ClassifierApi, ClassifierModel, JsonObject, MutableModels } from "@earendil-works/pi-ai";
 import { builtinModels, getBuiltinClassifierModels } from "@earendil-works/pi-ai/providers/all";
 import type { PiAuthStore } from "./auth.ts";
 import type { Backend, ModelsPort } from "./engine.ts";
-
-const ZEN_MODELS_URL = "https://opencode.ai/zen/v1/models";
-const REFRESH_MS = 6 * 60 * 60_000;
 
 /** Parse `jev-<major>.<minor>[-free]` (OpenRouter prefixes `typesafe/`); other ids are not Jev SKUs. */
 export function jevVersion(id: string): { major: number; minor: number; free: boolean } | undefined {
@@ -42,46 +37,15 @@ export function latestJev(ids: readonly string[]): string[] {
 		.map((v) => v.id);
 }
 
+/** The pinned `config.json` ladder, else the newest Jev on OpenRouter. */
 export class BackendLadder {
-	private jevIds: string[] = [];
 	private readonly openrouterIds = latestJev(getBuiltinClassifierModels("openrouter").map((m) => m.id));
-	private refreshedAt = 0;
 
-	constructor(
-		private readonly auth: PiAuthStore,
-		private readonly pinned: readonly Backend[] | undefined,
-	) {
-		this.jevIds = latestJev(getBuiltinClassifierModels("opencode").map((m) => m.id));
-	}
-
-	/** Re-read Zen's listing when stale; keeps the last good list on failure. */
-	async refresh(force = false): Promise<void> {
-		if (this.pinned || (!force && Date.now() - this.refreshedAt < REFRESH_MS)) return;
-		this.refreshedAt = Date.now();
-		const credential = await this.auth.read("opencode");
-		const key = credential?.type === "api_key" ? credential.key : undefined;
-		if (!key) return;
-		try {
-			const res = await fetch(ZEN_MODELS_URL, {
-				headers: { Authorization: `Bearer ${key}` },
-				signal: AbortSignal.timeout(5_000),
-			});
-			if (!res.ok) return;
-			const body = (await res.json()) as { data?: { id?: unknown }[] };
-			const ids = (body.data ?? []).flatMap((m) => (typeof m.id === "string" ? [m.id] : []));
-			const latest = latestJev(ids);
-			if (latest.length > 0) this.jevIds = latest;
-		} catch {
-			// Offline: keep the previous list.
-		}
-	}
+	constructor(private readonly pinned: readonly Backend[] | undefined) {}
 
 	list(): Backend[] {
 		if (this.pinned) return [...this.pinned];
-		return [
-			...this.openrouterIds.map((id): Backend => ({ kind: "classifier", model: `openrouter/${id}` })),
-			...this.jevIds.map((id): Backend => ({ kind: "classifier", model: `opencode/${id}` })),
-		];
+		return this.openrouterIds.map((id): Backend => ({ kind: "classifier", model: `openrouter/${id}` }));
 	}
 }
 
@@ -90,7 +54,7 @@ function splitRef(ref: string): [string, string] {
 	return slash < 0 ? ["", ref] : [ref.slice(0, slash), ref.slice(slash + 1)];
 }
 
-/** pi-ai `Models` behind the engine's port; zen classifier SKUs Zen lists but the catalog lacks are synthesized. */
+/** pi-ai `Models` behind the engine's port; a pinned Jev SKU the catalog lacks is synthesized from its siblings. */
 export class PiModels implements ModelsPort {
 	readonly models: MutableModels;
 

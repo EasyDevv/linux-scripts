@@ -1,0 +1,50 @@
+{
+	"version": "v1",
+	"source": "pydantic-ai-harness LoopDetection (PR #336: 5-in-10 repetition, 3 identical results, 3 A-B cycles, 3 near-identical monologues, harness-marked nudge); RICEJOA Jev runaway check (announced action, no tool call, turn ended); fusegate repeat/depth wording; pi-jev failure_class options",
+	"limits": {
+		"repeatThreshold": 5,
+		"window": 10,
+		"errorCycleThreshold": 3,
+		"alternationCycles": 3,
+		"monologueThreshold": 3,
+		"monologuePrefixChars": 200,
+		"runawayTailChars": 400,
+		"runawayThreshold": 0.7,
+		"runawayPerPrompt": 1,
+		"failureConfidence": 0.6,
+		"outputChars": 1500
+	},
+	"makerTools": ["subagent", "Agent"],
+	"promise": {
+		"en": "\\b(?:i(?:'ll| will)|let me|let's|now i(?:'ll| will)|next,? i(?:'ll| will)|going to)\\s+(?:now\\s+)?(?:run|test|check|verify|fix|update|apply|implement|write|edit|add|start|try|build|install|commit|look|read|search|create|re-?run)\\b[^?]*[.:…]?\\s*$",
+		"ko": "(?:하겠습니다|할게요|하겠어요|해보겠습니다|해볼게요|진행하겠습니다|진행할게요|실행하겠습니다|확인하겠습니다|확인해보겠습니다|수정하겠습니다|시작하겠습니다)[.!…]?\\s*$"
+	},
+	"runaway": {
+		"type": "bool",
+		"instructions": "The assistant's turn ended with `final_text` and no tool call. Did it announce a concrete action it would take next (run, edit, test, check) and then stop without taking it? Read `request` for what the user asked.",
+		"criteria": {
+			"true": "It said it will do something now and stopped before doing it",
+			"false": "It finished, asked the user something, reported a result, or offered an optional next step"
+		}
+	},
+	"failure": {
+		"type": "choice",
+		"instructions": "A delegated agent run failed with `output` and is being dispatched again. What kind of failure is `output` reporting?",
+		"criteria": {
+			"transient": "A network or resource hiccup that may succeed on a retry",
+			"environment": "A missing dependency, port, credential, or tool in the local setup",
+			"code_bug": "The code or types are wrong",
+			"permission": "Access was denied by the OS or a server",
+			"user_error": "The task or call itself was given wrongly",
+			"no_failure": "Output reports success or nothing wrong"
+		}
+	},
+	"advice": {
+		"transient": "a retry may pass",
+		"environment": "fix the environment first; the same retry will fail the same way",
+		"code_bug": "change the code or the task before retrying",
+		"permission": "do not retry; report the denial",
+		"user_error": "fix the task text before retrying",
+		"no_failure": "the earlier run did not fail"
+	}
+}

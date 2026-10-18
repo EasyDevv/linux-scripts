@@ -2,23 +2,32 @@
  * model_route: which capability tier a prompt deserves.
  *
  * Jev judges the task (kind, complexity, capability deserved, need for deep reasoning); code
- * composes those into `quick | standard | high | premium`. The tier names are the harness's own
- * ladders (`config.jsonc` `models.profiles`), so the daemon never names a model. Skips run here,
- * not in each harness, so pi and Claude Code skip the same prompts.
+ * composes those into a 0–3 demand. Each harness has its own tier list (`tiers.ts`, the person's
+ * `tiers.json`); `tier` is the asking harness's tier whose band holds the demand (pi's for anyone
+ * else) and `tiers` names both. `effort` is Claude Code's effort for the task, from the reasoning
+ * judgement; pi's effort stays on its tier's ladder. Skips run here, not in each harness, so pi and
+ * Claude Code skip the same prompts.
  */
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ClassifierAnswer, ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
 import type { DecideRequest, Decision } from "../engine.ts";
+import { DEFAULT_TIERS, DEMAND_MAX, loadTiers, type TiersFile, tierFor } from "../tiers.ts";
+
+/** Claude Code's `--effort` levels model_route picks from. */
+export type Effort = "low" | "medium" | "high" | "xhigh";
+/** An unsure task kind is capped here: the default `standard` band, below `high`. */
+const LOW_CONFIDENCE_DEMAND = 1;
 import { type FeatureDef, type FeatureResult, num, str } from "./types.ts";
 
-export const TIERS = ["quick", "standard", "high", "premium"] as const;
-export type Tier = (typeof TIERS)[number];
+/** A tier name from `tiers.json`; the prompt's own floors use the default four names. */
+export type Tier = string;
 
 export interface RoutePrompt {
 	version: string;
 	taskKinds: Record<string, string>;
+	/** Default pi tier names (`DEFAULT_TIERS`); each floors demand at that tier's `minDemand`. */
 	kindMinimumTier: Record<string, Tier>;
 	questions: Record<string, { type: ClassifierQuestion["type"]; instructions: string; criteria?: unknown }>;
 	compose: {
@@ -52,7 +61,10 @@ export interface RouteInput {
 export interface RouteResult extends FeatureResult {
 	decisionId?: string;
 	status: "routed" | "skipped" | "unavailable";
+	/** The asking harness's tier (pi's when it is neither). */
 	tier?: Tier;
+	tiers?: { pi: Tier; claude: Tier };
+	effort?: Effort;
 	kind?: string;
 	demand?: number;
 }
@@ -99,15 +111,24 @@ function clamp(value: number, min: number, max: number): number {
 	return Math.min(max, Math.max(min, value));
 }
 
-function tierIndex(tier: Tier | undefined): number {
-	const index = TIERS.indexOf(tier ?? "standard");
-	return index < 0 ? 1 : index;
+/** Where a prompt-side tier name starts: the default band of that name (the scale is fixed). */
+function floorOf(name: string): number {
+	return DEFAULT_TIERS.pi.find((t) => t.name === name)?.minDemand ?? 0;
+}
+
+/** Claude's effort: deep reasoning buys high (xhigh in the top band), a light task low. */
+function effortOf(reasoning: number, demand: number, c: RoutePrompt["compose"]): Effort {
+	if (reasoning >= c.reasoningHigh) return demand >= DEFAULT_TIERS.pi[3].minDemand ? "xhigh" : "high";
+	if (reasoning <= c.reasoningLow) return "low";
+	return "medium";
 }
 
 export function compose(
 	answers: Record<string, ClassifierAnswer>,
 	prompt: RoutePrompt,
-): Pick<RouteResult, "tier" | "kind" | "demand" | "reason" | "notes"> {
+	file: TiersFile = DEFAULT_TIERS,
+	harness?: string,
+): Pick<RouteResult, "tier" | "tiers" | "effort" | "kind" | "demand" | "reason" | "notes"> {
 	const c = prompt.compose;
 	const kindAnswer = answers.task_kind;
 	const kind = kindAnswer?.type === "choice" ? kindAnswer.choice : "chat";
@@ -120,27 +141,32 @@ export function compose(
 	let demand = c.complexityWeight * complexity + c.capabilityWeight * capability;
 	if (reasoning >= c.reasoningHigh) demand += c.reasoningHighBoost;
 	else if (reasoning <= c.reasoningLow) demand -= c.reasoningLowPenalty;
-	demand = clamp(demand, 0, TIERS.length - 1);
+	demand = clamp(demand, 0, DEMAND_MAX);
 
-	const floor = tierIndex(prompt.kindMinimumTier[kind] ?? "quick");
+	const floorName = prompt.kindMinimumTier[kind];
+	const floor = floorName ? floorOf(floorName) : 0;
 	if (demand < floor) {
-		notes.push(`${kind} floors at ${TIERS[floor]}`);
+		notes.push(`${kind} floors at ${floorName}`);
 		demand = floor;
 	}
-	let index = clamp(Math.round(demand), 0, TIERS.length - 1);
-	// An unsure classification does not buy the expensive tiers.
-	if (kindConfidence > 0 && kindConfidence < c.kindConfidenceFloor && index > 1) {
-		notes.push(`low kind confidence ${kindConfidence.toFixed(2)} → standard`);
-		index = 1;
+	// An unsure classification does not buy the bands above the default second tier.
+	const unsureCap = DEFAULT_TIERS.pi[2].minDemand;
+	if (kindConfidence > 0 && kindConfidence < c.kindConfidenceFloor && demand >= unsureCap) {
+		notes.push(`low kind confidence ${kindConfidence.toFixed(2)} → demand ${LOW_CONFIDENCE_DEMAND}`);
+		demand = LOW_CONFIDENCE_DEMAND;
 	}
-	const reason = `${kind} · complexity ${complexity.toFixed(2)}/3 · capability ${capability.toFixed(2)}/3 · reasoning ${reasoning.toFixed(2)} → ${TIERS[index]}`;
-	return { tier: TIERS[index], kind, demand: Math.round(demand * 100) / 100, reason, notes };
+	const tiers = { pi: tierFor(demand, file.pi).name, claude: tierFor(demand, file.claude).name };
+	const tier = harness === "claude" ? tiers.claude : tiers.pi;
+	const effort = effortOf(reasoning, demand, c);
+	const reason = `${kind} · complexity ${complexity.toFixed(2)}/3 · capability ${capability.toFixed(2)}/3 · reasoning ${reasoning.toFixed(2)} → ${tier}`;
+	return { tier, tiers, effort, kind, demand: Math.round(demand * 100) / 100, reason, notes };
 }
 
 export async function routeModel(
 	input: RouteInput,
 	decide: (request: DecideRequest) => Promise<Decision>,
 	prompt: RoutePrompt,
+	tiers: () => TiersFile = loadTiers,
 ): Promise<RouteResult> {
 	const skip = skipReason(input);
 	if (skip) return { status: "skipped", reason: skip, notes: [] };
@@ -156,7 +182,7 @@ export async function routeModel(
 	return {
 		decisionId: decision.decisionId,
 		status: "routed",
-		...compose(decision.answers, prompt),
+		...compose(decision.answers, prompt, tiers(), input.harness),
 		backend: decision.backend,
 		calibrated: decision.calibrated,
 		latencyMs: decision.latencyMs,
@@ -188,10 +214,13 @@ export const modelRoute: FeatureDef = {
 			run: (input, decide) => routeModel(input as RouteInput, decide, prompt),
 		};
 	},
-	/** `expected` is the tier a person assigned. */
+	/** `expected` is the tier a person assigned, by the default names the eval cases use; the
+	 *  answer is scored by its demand on the default bands, whatever the person's lists say. */
 	score(expected, result): Record<string, number> {
-		const want = TIERS.indexOf(expected as Tier);
-		const got = TIERS.indexOf(result.tier as Tier);
+		const names = DEFAULT_TIERS.pi.map((t) => t.name);
+		const want = names.indexOf(expected as Tier);
+		const demand = (result as RouteResult).demand;
+		const got = demand === undefined ? -1 : names.indexOf(tierFor(demand, DEFAULT_TIERS.pi).name);
 		if (want < 0) return {};
 		if (got < 0) return { exact: 0, within1: 0, answered: 0 };
 		return { exact: Number(want === got), within1: Number(Math.abs(want - got) <= 1), answered: 1 };

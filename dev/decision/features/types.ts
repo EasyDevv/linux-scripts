@@ -42,6 +42,8 @@ export interface FeatureDef {
 	 * `expected` is the case's label as written in `evals/<name>.jsonl`.
 	 */
 	score(expected: unknown, result: FeatureResult): Record<string, number>;
+	/** Whether the server logs this result; omitted logs every one. A per-tool-call feature skips the clear ones. */
+	logs?(result: FeatureResult): boolean;
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {

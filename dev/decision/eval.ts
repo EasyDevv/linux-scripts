@@ -10,7 +10,6 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { PiAuthStore } from "./auth.ts";
 import { BackendLadder } from "./backends.ts";
 import type { Backend, DecideRequest, Decision } from "./engine.ts";
 import { feature as findFeature, FEATURES } from "./features/index.ts";
@@ -514,10 +513,9 @@ export const EVAL_USAGE = `usage: decision eval --feature <f> --version vN [--ag
   Jev quota is small (it is shared with the live daemon, and a spent quota makes the run \`unavailable\`).`;
 
 async function pinBackends(config: DaemonConfig, which: string | undefined): Promise<Backend[] | undefined> {
-	const probe = new BackendLadder(new PiAuthStore(), config.backends);
-	await probe.refresh(true);
+	const probe = new BackendLadder(config.backends);
 	if (which === undefined) return probe.list();
-	// Pin one Jev SKU (e.g. `opencode/jev-1.13-free`) to compare free and paid on the same cases.
+	// Pin one Jev SKU (e.g. `openrouter/typesafe/jev-1.14`) to compare free and paid on the same cases.
 	const list = probe.list().filter((b) => b.model === which);
 	if (list.length === 0)
 		throw new Error(

@@ -81,6 +81,7 @@ pub fn dispatch(args: &[String]) -> Result<()> {
                     "opencode-go".to_string(),
                     "grok".to_string(),
                     "lithosai".to_string(),
+                    "openrouter".to_string(),
                     "claude".to_string(),
                 ]
             } else {

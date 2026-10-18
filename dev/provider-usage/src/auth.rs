@@ -262,6 +262,26 @@ pub fn claude_cookie(
     env_override(env, env_file, &["CLAUDE_COOKIE"])
 }
 
+/// OpenRouter API key (`sk-or-…`).
+///
+/// The key is normally operator-global rather than a Pi login: this machine
+/// keeps it in fish's global `.env` (`~/.config/fish/.env`), which the server's
+/// systemd scope never inherits. Precedence: the agent `.env` overlay (the
+/// Settings row), then the process environment, then a Pi `auth.json`
+/// `openrouter` entry, then that fish file. Only the first three can be
+/// written from the dashboard; the fish file is read, never touched.
+pub fn openrouter_api_key(
+    env: &dyn Fn(&str) -> Option<String>,
+    env_file: Option<&Path>,
+) -> Option<String> {
+    env_override(env, env_file, &["OPENROUTER_API_KEY"])
+        .or_else(|| agent_credential(env, &["openrouter"]))
+        .or_else(|| {
+            let path = home_dir(env).join(".config").join("fish").join(".env");
+            env_file_value(&path, "OPENROUTER_API_KEY")
+        })
+}
+
 pub fn opencode_cookie(
     env: &dyn Fn(&str) -> Option<String>,
     env_file: Option<&Path>,
@@ -474,6 +494,48 @@ mod tests {
             commandcode_api_key(&env, None).as_deref(),
             Some("pi-cc-key")
         );
+    }
+
+    #[test]
+    fn openrouter_key_falls_back_to_the_global_fish_env() {
+        let dir = tempdir().unwrap();
+        let home = dir.path();
+        let agent = home.join(".pi").join("agent");
+        std::fs::create_dir_all(&agent).unwrap();
+        std::fs::create_dir_all(home.join(".config").join("fish")).unwrap();
+        std::fs::write(
+            home.join(".config/fish/.env"),
+            "OPENROUTER_API_KEY=fish-key\n",
+        )
+        .unwrap();
+        let home_s = home.to_string_lossy().to_string();
+        let env = |key: &str| (key == "HOME").then(|| home_s.clone());
+        assert_eq!(openrouter_api_key(&env, None).as_deref(), Some("fish-key"));
+
+        // The agent overlay wins over the global file.
+        std::fs::write(agent.join(".env"), "OPENROUTER_API_KEY=overlay-key\n").unwrap();
+        assert_eq!(
+            openrouter_api_key(&env, None).as_deref(),
+            Some("overlay-key")
+        );
+
+        // The process environment wins too, and a Pi `openrouter` entry sits above fish.
+        let map: HashMap<String, String> = HashMap::from([
+            ("HOME".into(), home_s.clone()),
+            ("OPENROUTER_API_KEY".into(), "env-key".into()),
+        ]);
+        let with_env = |key: &str| map.get(key).cloned();
+        std::fs::remove_file(agent.join(".env")).unwrap();
+        assert_eq!(
+            openrouter_api_key(&with_env, None).as_deref(),
+            Some("env-key")
+        );
+        std::fs::write(
+            agent.join("auth.json"),
+            r#"{"openrouter":{"type":"api_key","key":"pi-or-key"}}"#,
+        )
+        .unwrap();
+        assert_eq!(openrouter_api_key(&env, None).as_deref(), Some("pi-or-key"));
     }
 
     #[test]

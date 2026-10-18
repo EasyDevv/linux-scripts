@@ -73,6 +73,7 @@ fn cache_windows(credits: &Credits) -> Vec<crate::cache::UsageWindow> {
                 },
                 used_percent: ((limit.used / limit.cap) * 100.0).clamp(0.0, 100.0),
                 reset_at: limit.reset_at,
+                limit_cents: None,
             })
         })
         .collect()

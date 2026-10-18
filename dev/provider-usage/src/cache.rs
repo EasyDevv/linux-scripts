@@ -57,6 +57,12 @@ pub struct UsageWindow {
     pub used_percent: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reset_at: Option<i64>,
+    /// Dollars the window is anchored to, in cents (a prepaid credit's last
+    /// purchase). The board reads the window as a percentage and uses this
+    /// anchor only to price its daily-spend history; a subscription window
+    /// leaves it empty.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit_cents: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

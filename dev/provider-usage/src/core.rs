@@ -12,6 +12,7 @@ use crate::http::{Http, ReqwestHttp};
 use crate::lithosai;
 use crate::openai;
 use crate::opencode_go;
+use crate::openrouter;
 use crate::policy::{self, Remaining};
 
 pub const REMAINING_TIMEOUT_MS: u64 = 8_000;
@@ -332,6 +333,7 @@ pub struct LiveProbes<H> {
     pub grok_management_key: Option<String>,
     pub grok_team_id: Option<String>,
     pub lithosai_cookie: Option<String>,
+    pub openrouter_key: Option<String>,
     pub claude_cookie: Option<String>,
     pub claude_base: String,
 }
@@ -350,6 +352,7 @@ impl LiveProbes<ReqwestHttp> {
             grok_management_key: auth::grok_management_key(&auth::env_lookup, None),
             grok_team_id: auth::grok_team_id(&auth::env_lookup),
             lithosai_cookie: auth::lithosai_cookie(&auth::env_lookup, None),
+            openrouter_key: auth::openrouter_api_key(&auth::env_lookup, None),
             claude_cookie: auth::claude_cookie(&auth::env_lookup, None),
             claude_base: DEFAULT_CLAUDE_BASE.to_string(),
         })
@@ -380,6 +383,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     .or_else(|| self.grok.as_ref().map(|s| s.access_token.as_str())),
             ),
             "lithosai" => lithosai::cache_key(self.lithosai_cookie.as_deref()),
+            "openrouter" => openrouter::cache_key(self.openrouter_key.as_deref()),
             "claude" => cache_key(provider, self.claude_cookie.as_deref()),
             other => cache_key(other, None),
         }
@@ -555,6 +559,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                 }
             }
             "lithosai" => lithosai::probe(&self.http, self.lithosai_cookie.as_deref()),
+            "openrouter" => openrouter::probe(&self.http, self.openrouter_key.as_deref()),
             "claude" => claude::probe(&self.http, self.claude_cookie.as_deref(), &self.claude_base),
             _ => ProbeOutcome {
                 plan: None,

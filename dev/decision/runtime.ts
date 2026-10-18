@@ -19,7 +19,7 @@ export interface DaemonConfig {
 	dailyBudgetUsd: number;
 	cacheTtlSec: number;
 	timeoutMs: number;
-	/** Explicit ladder; omitted → newest Zen Jev (free, then paid). */
+	/** Explicit ladder, tried in order; omitted → the newest OpenRouter Jev. */
 	backends?: Backend[];
 	/** Prompt version per feature (the `current` pointer `decision promote` moves); missing → v1. */
 	prompts: Record<string, string>;
@@ -48,7 +48,7 @@ export function promptVersion(config: DaemonConfig, feature: string): string {
 
 export function createRuntime(config: DaemonConfig, log = new FileLog()) {
 	const auth = new PiAuthStore();
-	const ladder = new BackendLadder(auth, config.backends);
+	const ladder = new BackendLadder(config.backends);
 	const budget = new FileBudget(config.dailyBudgetUsd);
 	const engine = new Engine({
 		models: new PiModels(auth),

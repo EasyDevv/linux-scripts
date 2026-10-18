@@ -300,6 +300,7 @@ fn window_from(value: &Value, fallback: &str) -> Option<UsageWindow> {
         name: window_name(value, fallback),
         used_percent: used.clamp(0.0, 100.0),
         reset_at: value.get("reset_at").and_then(Value::as_i64),
+        limit_cents: None,
     })
 }
 

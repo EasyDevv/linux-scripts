@@ -137,6 +137,7 @@ fn cache_windows(windows: &[UsageWindow], now: i64) -> Vec<crate::cache::UsageWi
             },
             used_percent: window.used_percent,
             reset_at: window.reset_in_sec.map(|secs| now.saturating_add(secs)),
+            limit_cents: None,
         })
         .collect()
 }

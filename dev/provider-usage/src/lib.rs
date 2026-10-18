@@ -11,6 +11,7 @@ mod iso;
 mod lithosai;
 mod openai;
 mod opencode_go;
+mod openrouter;
 mod policy;
 
 pub use args::run;
