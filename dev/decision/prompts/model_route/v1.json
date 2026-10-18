@@ -1,0 +1,71 @@
+{
+	"version": "v1",
+	"source": "pi-jev-model-router 0.8.0 questions and composition, unchanged as the baseline",
+	"taskKinds": {
+		"plan": "Deciding what to build, sequencing work, or designing an approach before editing",
+		"implement": "Writing or changing code, scripts, or configuration to produce a concrete result",
+		"write": "Producing prose, documentation, comments, or other non-code content from scratch",
+		"debug": "Diagnosing a failure, error, or unexpected behavior and finding its root cause",
+		"refactor": "Restructuring existing code without changing intended behavior",
+		"review": "Auditing code, a diff, a document, or a plan for problems and risks",
+		"research": "Searching, reading, and synthesizing external information or unfamiliar APIs",
+		"explain": "Answering a question or explaining how something works",
+		"operate": "Running commands, tooling, git, deploys, or environment setup",
+		"chat": "Small talk, acknowledgements, or a request with no real work attached"
+	},
+	"kindMinimumTier": {
+		"chat": "quick",
+		"explain": "quick",
+		"write": "quick",
+		"operate": "standard",
+		"implement": "standard",
+		"debug": "standard",
+		"refactor": "standard",
+		"research": "standard",
+		"plan": "high",
+		"review": "high"
+	},
+	"questions": {
+		"task_kind": {
+			"type": "choice",
+			"instructions": "Which single kind of work does `request` ask for? Judge the work the user wants done, not the topic they mention. Read `conversation_excerpt` when the request is a short follow-up that only makes sense in context. Pick the closest kind even when the request is ambiguous."
+		},
+		"complexity": {
+			"type": "score",
+			"instructions": "How hard is `request` to do well, judged only on the work itself? Use the conversation excerpt and environment to judge scope. Ignore how much any model costs.",
+			"criteria": [
+				"Trivial: one obvious step, no design decisions, answer is known or mechanical",
+				"Moderate: a few dependent steps using familiar patterns, little ambiguity",
+				"Complex: multiple files or interacting constraints, real tradeoffs to weigh",
+				"Architectural: cross-cutting design, high stakes, long horizon, easy to get subtly wrong"
+			]
+		},
+		"capability_deserved": {
+			"type": "score",
+			"instructions": "Setting price aside entirely, how much model capability does this request deserve to get a good outcome? Judge by stakes, difficulty, and how much a stronger model would measurably improve the result.",
+			"criteria": [
+				"Minimal: any fast small model answers this just as well",
+				"Standard: a competent mid-tier model is enough",
+				"High: a strong frontier model materially improves the outcome",
+				"Maximum: correctness matters more than cost; use the best available"
+			]
+		},
+		"needs_deep_reasoning": {
+			"type": "bool",
+			"instructions": "Does answering `request` well require extended multi-step reasoning (algorithm design, subtle debugging, proof, careful long-horizon planning) rather than recall, lookup, or a short direct edit?",
+			"criteria": {
+				"true": "The work hinges on reasoning through non-obvious steps or edge cases",
+				"false": "The work is recall, lookup, formatting, or a short direct change"
+			}
+		}
+	},
+	"compose": {
+		"complexityWeight": 0.55,
+		"capabilityWeight": 0.45,
+		"reasoningHigh": 0.65,
+		"reasoningHighBoost": 0.75,
+		"reasoningLow": 0.2,
+		"reasoningLowPenalty": 0.25,
+		"kindConfidenceFloor": 0.34
+	}
+}

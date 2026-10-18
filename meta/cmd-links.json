@@ -90,6 +90,27 @@
       "description": "Web+API 복합 개발 서버를 --web-port/--api-port 기준으로 실행하고 executor 친화 로그 태그를 남긴다."
     },
     {
+      "name": "decision",
+      "mode": "wrapper",
+      "category": "dev",
+      "target": "dev/decision/main.ts",
+      "ownedPaths": [
+        "dev/decision/main.ts",
+        "dev/decision/server.ts",
+        "dev/decision/engine.ts",
+        "dev/decision/backends.ts",
+        "dev/decision/auth.ts",
+        "dev/decision/llm.ts",
+        "dev/decision/state.ts",
+        "dev/decision/features/model-route.ts",
+        "dev/decision/prompts/model_route/v1.json",
+        "dev/decision/package.json",
+        "dev/decision/tsconfig.json"
+      ],
+      "reason": "Uses sibling TypeScript modules and its own pi-ai dependency under dev/decision/.",
+      "description": "pi·Claude Code 공용 디시전 데몬 — Jev 판정으로 model_route 등 라우팅, systemd user unit으로 상주"
+    },
+    {
       "name": "executor",
       "mode": "wrapper",
       "category": "dev",

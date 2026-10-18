@@ -12,8 +12,8 @@ import tty
 import unicodedata
 from pathlib import Path
 
-RULE_SOURCE_ROOT = Path("~/.agents/rules-ready").expanduser().resolve()
-SKILL_SOURCE_ROOT = Path("/home/easydev/.agents/skills-ready").expanduser().resolve()
+RULE_SOURCE_ROOT = Path("~/.agents/rules-optional").expanduser().resolve()
+SKILL_SOURCE_ROOT = Path("/home/easydev/.agents/skills-optional").expanduser().resolve()
 HELP_TEXT = "Inline selector | Arrow keys/jk move | Space toggle | a toggle all | Enter confirm | q quit"
 RULE_SUFFIXES = (".md",)
 EXCLUSIVE_PREFIXES = ("stack-",)

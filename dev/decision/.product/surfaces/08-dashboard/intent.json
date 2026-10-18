@@ -1,0 +1,12 @@
+{
+	"kind": "intent",
+	"surface": "08-dashboard",
+	"problem": "audit 리포트는 파일이라 기능별 추세를 한눈에 보기 어렵다.",
+	"outcome": "dashboard에서 기능별 지연·routed 비율·현재 버전·outcome 신호를 본다.",
+	"users": ["decision을 개선하는 운영자"],
+	"systems": ["decision log","dashboard"],
+	"constraints": ["Extra: 요청 전에 만들지 않는다","읽기 전용"],
+	"outOfScope": ["승격 버튼"],
+	"openQuestions": ["필요 여부 자체가 미정"],
+	"success": "요청 시 정의"
+}

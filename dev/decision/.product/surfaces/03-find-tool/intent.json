@@ -1,0 +1,12 @@
+{
+	"kind": "intent",
+	"surface": "03-find-tool",
+	"problem": "비활성 도구를 모두 켜면 스키마가 컨텍스트를 차지하고, 끄면 필요한 순간에 모델이 쓰지 못한다.",
+	"outcome": "요청과 최근 행동을 보고 켜야 할 비활성 도구 top-k를 받아 하네스가 활성 집합에 더한다.",
+	"users": ["pi 세션의 사용자"],
+	"systems": ["POST /v1/find_tool","prompts/find_tool/v1.json","pi extensions/decision/tools.ts"],
+	"constraints": ["가산만: 도구를 끄지 않는다","core 도구, deep_research, ask_user_question, exclude 목록은 후보가 아니다","turn당 setActiveTools 한 번"],
+	"outOfScope": ["Claude Code 도구 활성화(M3 eval 뒤 결정)"],
+	"openQuestions": ["recall을 0.95로 올릴 프롬프트 v4는 무엇인가?"],
+	"success": "evals/find_tool.jsonl 26건에서 recall 0.95 이상, precision 0.9 이상, 잘못 켠 도구 0"
+}

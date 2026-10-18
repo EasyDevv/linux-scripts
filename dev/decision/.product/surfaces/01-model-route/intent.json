@@ -1,0 +1,12 @@
+{
+	"kind": "intent",
+	"surface": "01-model-route",
+	"problem": "모든 프롬프트가 같은 모델로 가면 단순 작업에 비싼 모델을 쓰고 어려운 작업에 약한 모델을 쓴다. pi-jev-model-router는 키·판정·적용이 한 패키지에 섞여 Claude Code와 공유할 수 없었다.",
+	"outcome": "프롬프트마다 tier(quick·standard·high·premium)와 kind·demand를 받고, 하네스가 그 tier의 models.profiles 사다리로 모델을 바꾼다.",
+	"users": ["pi 세션의 사용자","Claude Code 세션의 사용자"],
+	"systems": ["POST /v1/model_route","prompts/model_route/v1.json","pi extensions/decision/route.ts","Jev 백엔드 사다리"],
+	"constraints": ["Jev가 task_kind·complexity·capability·reasoning을 판단하고 tier 조합은 코드가 한다","데몬은 모델 이름을 고르지 않는다","skip(slash, ack, 짧은 후속)은 모든 기능이 같은 skipReason을 쓴다","CLI --model, contributor 세션, PI_SUBAGENT=1은 모델을 바꾸지 않는다","fail-open: unavailable이면 현재 모델 유지"],
+	"outOfScope": ["모델 직접 지정","하네스 대신 setModel"],
+	"openQuestions": ["모델 전환이 프롬프트 캐시를 깨는 비용을 tier 판정에 넣을 것인가?"],
+	"success": "evals/model_route.jsonl 38건에서 exact 0.842 이상, within1 1.0, p95 800 ms 이하"
+}

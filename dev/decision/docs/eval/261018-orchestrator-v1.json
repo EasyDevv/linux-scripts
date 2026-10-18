@@ -1,0 +1,590 @@
+{
+	"schema": 1,
+	"feature": "orchestrator",
+	"version": "v1",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14",
+		"opencode/jev-1.13-free",
+		"opencode/jev-1.13"
+	],
+	"casesPath": "/home/easydev/.local/share/scripts/dev/decision/evals/orchestrator.jsonl",
+	"generatedAt": "2026-10-18T03:20:05.367Z",
+	"candidate": {
+		"summary": {
+			"version": "v1",
+			"cases": 24,
+			"answered": 24,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"plan": 0.9166666666666666,
+				"roleRecall": 0.9375,
+				"rolePrecision": 0.7569444444444445,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 376,
+				"p95": 579,
+				"n": 24
+			},
+			"costUsd": 0.000972468,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 24
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "Fix the typo in the README heading.",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.03,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.7}],\"reason\":\"single · parallel 0.03 · shared-sub-general 0.70\"}",
+				"costUsd": 0.000040656000000000005,
+				"status": "routed",
+				"latencyMs": 579,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "Map how auth, billing and notifications each handle retries and report what you find.",
+				"expected": {
+					"plan": "fanout",
+					"roles": [
+						"shared-sub-explore"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"fanout\",\"worthParallel\":0.75,\"steps\":[{\"role\":\"shared-sub-explore\",\"p\":0.93},{\"role\":\"shared-sub-general\",\"p\":0.9}],\"reason\":\"fanout · parallel 0.75 · shared-sub-explore 0.93 → shared-sub-general 0.90\"}",
+				"costUsd": 0.000040992,
+				"status": "routed",
+				"latencyMs": 583,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "Investigate why the nightly export is flaky, then fix it, then verify with the test suite.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"shared-sub-explore",
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.3,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.92},{\"role\":\"shared-sub-explore\",\"p\":0.89},{\"role\":\"shared-sub-debug\",\"p\":0.79}],\"reason\":\"staged · parallel 0.30 · shared-sub-general 0.92 …",
+				"costUsd": 0.000041286000000000004,
+				"status": "routed",
+				"latencyMs": 399,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Three rounds of patches did not stop the race condition in the job queue; find the root cause.",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"shared-sub-debug"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 0,
+					"roleRecall": 1,
+					"rolePrecision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.3,\"steps\":[{\"role\":\"shared-sub-explore\",\"p\":0.86},{\"role\":\"shared-sub-general\",\"p\":0.86},{\"role\":\"shared-sub-debug\",\"p\":0.84}],\"reason\":\"staged · parallel 0.30 · shared-sub-explore 0.86 …",
+				"costUsd": 0.000041160000000000006,
+				"status": "routed",
+				"latencyMs": 364,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "Find all usages of the deprecated config loader across the repo.",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"shared-sub-explore"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.47,\"steps\":[{\"role\":\"shared-sub-explore\",\"p\":0.93}],\"reason\":\"single · parallel 0.47 · shared-sub-explore 0.93\"}",
+				"costUsd": 0.000040866000000000005,
+				"status": "routed",
+				"latencyMs": 359,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "Migrate packages a, b and c from the old logger to the new one; they are independent.",
+				"expected": {
+					"plan": "fanout",
+					"roles": [
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"fanout\",\"worthParallel\":0.64,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.91},{\"role\":\"shared-sub-explore\",\"p\":0.68}],\"reason\":\"fanout · parallel 0.64 · shared-sub-general 0.91 → shared-sub-explore 0.68\"}",
+				"costUsd": 0.00004124400000000001,
+				"status": "routed",
+				"latencyMs": 362,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "Understand how the cache layer works, change its eviction policy, then run the benchmarks.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"shared-sub-explore",
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.27,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.89},{\"role\":\"shared-sub-explore\",\"p\":0.84}],\"reason\":\"staged · parallel 0.27 · shared-sub-general 0.89 → shared-sub-explore 0.84\"}",
+				"costUsd": 0.00004111800000000001,
+				"status": "routed",
+				"latencyMs": 388,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "Add a unit test for the date parser.",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.11,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.86}],\"reason\":\"single · parallel 0.11 · shared-sub-general 0.86\"}",
+				"costUsd": 0.000040698,
+				"status": "routed",
+				"latencyMs": 361,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "Survey the codebase for security-sensitive endpoints and, in parallel, review the dependency list for outdated packages.",
+				"expected": {
+					"plan": "fanout",
+					"roles": [
+						"shared-sub-explore",
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"fanout\",\"worthParallel\":0.78,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.93},{\"role\":\"shared-sub-explore\",\"p\":0.89}],\"reason\":\"fanout · parallel 0.78 · shared-sub-general 0.93 → shared-sub-explore 0.89\"}",
+				"costUsd": 0.000041202,
+				"status": "routed",
+				"latencyMs": 359,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "Reproduce the crash, bisect the offending change, patch it, and re-run the regression tests.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"shared-sub-debug",
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.36,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.93},{\"role\":\"shared-sub-debug\",\"p\":0.85},{\"role\":\"shared-sub-explore\",\"p\":0.79}],\"reason\":\"staged · parallel 0.36 · shared-sub-general 0.93…",
+				"costUsd": 0.00004124400000000001,
+				"status": "routed",
+				"latencyMs": 355,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "What does the build script do?",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"shared-sub-explore"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.13,\"steps\":[{\"role\":\"shared-sub-explore\",\"p\":0.73}],\"reason\":\"single · parallel 0.13 · shared-sub-explore 0.73\"}",
+				"costUsd": 0.00004061400000000001,
+				"status": "routed",
+				"latencyMs": 369,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "Write migration docs for modules x, y and z and check each against the code.",
+				"expected": {
+					"plan": "fanout",
+					"roles": [
+						"shared-sub-explore",
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"fanout\",\"worthParallel\":0.61,\"steps\":[{\"role\":\"shared-sub-explore\",\"p\":0.91},{\"role\":\"shared-sub-general\",\"p\":0.88}],\"reason\":\"fanout · parallel 0.61 · shared-sub-explore 0.91 → shared-sub-general 0.88\"}",
+				"costUsd": 0.00004103400000000001,
+				"status": "routed",
+				"latencyMs": 410,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "Rename a local variable in one file.",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"general-purpose"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.05,\"steps\":[{\"role\":\"general-purpose\",\"p\":0.2}],\"reason\":\"single · parallel 0.05 · general-purpose 0.20\"}",
+				"costUsd": 0.000039648000000000004,
+				"status": "routed",
+				"latencyMs": 385,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "Plan the migration of our REST layer to GraphQL.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"Explore",
+						"Plan"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.67,\"steps\":[{\"role\":\"Plan\",\"p\":0.94},{\"role\":\"general-purpose\",\"p\":0.86},{\"role\":\"Explore\",\"p\":0.76}],\"reason\":\"staged · parallel 0.67 · Plan 0.94 → general-purpose 0.86 → Explore 0.76\"}",
+				"costUsd": 0.000039816000000000006,
+				"status": "routed",
+				"latencyMs": 383,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "Search the repo for every place we parse dates and list them.",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"Explore"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.44,\"steps\":[{\"role\":\"Explore\",\"p\":0.96}],\"reason\":\"single · parallel 0.44 · Explore 0.96\"}",
+				"costUsd": 0.000039858000000000004,
+				"status": "routed",
+				"latencyMs": 420,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "Investigate the three failing CI jobs independently and fix each.",
+				"expected": {
+					"plan": "fanout",
+					"roles": [
+						"general-purpose"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"fanout\",\"worthParallel\":0.71,\"steps\":[{\"role\":\"general-purpose\",\"p\":0.89},{\"role\":\"Explore\",\"p\":0.7},{\"role\":\"Plan\",\"p\":0.66}],\"reason\":\"fanout · parallel 0.71 · general-purpose 0.89 → Explore 0.70 → Plan 0.66\"}",
+				"costUsd": 0.00003990000000000001,
+				"status": "routed",
+				"latencyMs": 369,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "Design the approach for adding multi-tenancy, then implement it, then verify.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"Plan",
+						"general-purpose"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.54,\"steps\":[{\"role\":\"Plan\",\"p\":0.92},{\"role\":\"general-purpose\",\"p\":0.91},{\"role\":\"Explore\",\"p\":0.57}],\"reason\":\"staged · parallel 0.54 · Plan 0.92 → general-purpose 0.91 → Explore 0.57\"}",
+				"costUsd": 0.000039984,
+				"status": "routed",
+				"latencyMs": 360,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "Review the frontend and the backend of this PR in parallel and report findings.",
+				"expected": {
+					"plan": "fanout",
+					"roles": [
+						"Explore",
+						"general-purpose"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"fanout\",\"worthParallel\":0.76,\"steps\":[{\"role\":\"general-purpose\",\"p\":0.76},{\"role\":\"Explore\",\"p\":0.63}],\"reason\":\"fanout · parallel 0.76 · general-purpose 0.76 → Explore 0.63\"}",
+				"costUsd": 0.000039942000000000005,
+				"status": "routed",
+				"latencyMs": 379,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "Where is the session token validated?",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"Explore"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.15,\"steps\":[{\"role\":\"Explore\",\"p\":0.84}],\"reason\":\"single · parallel 0.15 · Explore 0.84\"}",
+				"costUsd": 0.00003960600000000001,
+				"status": "routed",
+				"latencyMs": 528,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "Draft an implementation plan for the new billing page; read the existing screens first.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"Explore",
+						"Plan"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.25,\"steps\":[{\"role\":\"Plan\",\"p\":0.93},{\"role\":\"Explore\",\"p\":0.82},{\"role\":\"general-purpose\",\"p\":0.75}],\"reason\":\"staged · parallel 0.25 · Plan 0.93 → Explore 0.82 → general-purpose 0.75\"}",
+				"costUsd": 0.000039984,
+				"status": "routed",
+				"latencyMs": 398,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "Update the copyright year in the footer.",
+				"expected": {
+					"plan": "single",
+					"roles": [
+						"general-purpose"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 0,
+					"rolePrecision": 0
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.05,\"steps\":[{\"role\":\"Explore\",\"p\":0.52}],\"reason\":\"single · parallel 0.05 · Explore 0.52\"}",
+				"costUsd": 0.000039648000000000004,
+				"status": "routed",
+				"latencyMs": 365,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "Research how five different modules handle errors, one agent per module.",
+				"expected": {
+					"plan": "fanout",
+					"roles": [
+						"shared-sub-explore"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"fanout\",\"worthParallel\":0.77,\"steps\":[{\"role\":\"shared-sub-explore\",\"p\":0.89},{\"role\":\"shared-sub-general\",\"p\":0.87}],\"reason\":\"fanout · parallel 0.77 · shared-sub-explore 0.89 → shared-sub-general 0.87\"}",
+				"costUsd": 0.000040866000000000005,
+				"status": "routed",
+				"latencyMs": 376,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "Our fix attempts keep failing the same assertion; get a fresh diagnosis and then apply the new approach.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"shared-sub-debug",
+						"shared-sub-general"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 1,
+					"roleRecall": 1,
+					"rolePrecision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"staged\",\"worthParallel\":0.22,\"steps\":[{\"role\":\"shared-sub-general\",\"p\":0.84},{\"role\":\"shared-sub-debug\",\"p\":0.8},{\"role\":\"shared-sub-explore\",\"p\":0.68}],\"reason\":\"staged · parallel 0.22 · shared-sub-general 0.84 …",
+				"costUsd": 0.000041160000000000006,
+				"status": "routed",
+				"latencyMs": 362,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 23,
+				"prompt": "Explore the monorepo layout and propose where a new package should live.",
+				"expected": {
+					"plan": "staged",
+					"roles": [
+						"Explore",
+						"Plan"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"plan": 0,
+					"roleRecall": 0.5,
+					"rolePrecision": 1
+				},
+				"got": "{\"status\":\"routed\",\"plan\":\"single\",\"worthParallel\":0.25,\"steps\":[{\"role\":\"Explore\",\"p\":0.9}],\"reason\":\"single · parallel 0.25 · Explore 0.90\"}",
+				"costUsd": 0.000039942000000000005,
+				"status": "routed",
+				"latencyMs": 378,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "floor",
+		"holds": true,
+		"floors": [],
+		"better": [],
+		"worse": [],
+		"guards": [],
+		"reasons": []
+	}
+}

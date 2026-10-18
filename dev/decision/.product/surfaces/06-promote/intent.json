@@ -1,0 +1,12 @@
+{
+	"kind": "intent",
+	"surface": "06-promote",
+	"problem": "현재 버전을 코드 수정으로 바꾸면 되돌리기와 기록이 어렵다.",
+	"outcome": "decision promote f vN 한 번으로 ~/.config/decision/config.json prompts 포인터가 바뀌고 데몬 재시작 뒤 적용된다.",
+	"users": ["decision을 개선하는 운영자"],
+	"systems": ["decision promote","~/.config/decision/config.json","systemctl --user restart decision"],
+	"constraints": ["eval 리포트 없이 승격하지 않는다","이전 버전 파일은 지우지 않는다"],
+	"outOfScope": ["자동 승격"],
+	"openQuestions": [],
+	"success": "find_skill v2 승격 뒤 데몬 log의 result.version이 v2"
+}

@@ -1,0 +1,1143 @@
+{
+	"schema": 1,
+	"feature": "find_tool",
+	"version": "v3",
+	"against": "v1",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14",
+		"opencode/jev-1.13-free",
+		"opencode/jev-1.13"
+	],
+	"casesPath": "/home/easydev/.local/share/scripts/dev/decision/evals/find_tool.jsonl",
+	"generatedAt": "2026-10-18T03:22:00.371Z",
+	"candidate": {
+		"summary": {
+			"version": "v3",
+			"cases": 26,
+			"answered": 26,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"recall": 0.9038461538461539,
+				"precision": 0.9294871794871794,
+				"exact": 0.7307692307692307,
+				"falseActivation": 0,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 367,
+				"p95": 397,
+				"n": 26
+			},
+			"costUsd": 0.0011091780000000002,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 26
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "What changed in Svelte 5.40 runes? Look up the latest release notes.",
+				"expected": [
+					"web_search"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.5,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"web_search\",\"p\":0.74},{\"name\":\"fetch_content\",\"p\":0.23}],\"done\":0.02,\"reason\":\"activate web_search, fetch_content · none 0.01 · needs 0.70 · done 0.02\"}",
+				"costUsd": 0.000043134000000000004,
+				"status": "routed",
+				"latencyMs": 424,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "Read this article and summarize it: https://example.org/blog/post-1",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.99}],\"done\":0.02,\"reason\":\"activate fetch_content · none 0.00 · needs 0.71 · done 0.02\"}",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 395,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "Write a thorough, cited comparison of three vector databases for our use case.",
+				"expected": [
+					"deep_research"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.5,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"deep_research\",\"p\":0.58},{\"name\":\"web_search\",\"p\":0.33}],\"done\":0.01,\"reason\":\"activate deep_research, web_search · none 0.00 · needs 0.85 · done 0.01\"}",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 362,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Fix the typo in README.md line 12.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.99 · needs 0.03 · done 0.02\"}",
+				"costUsd": 0.00004275600000000001,
+				"status": "routed",
+				"latencyMs": 383,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "Install the package with sudo and answer the installer's prompts.",
+				"expected": [
+					"interactive_shell"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"interactive_shell\",\"p\":0.98}],\"done\":0.01,\"reason\":\"activate interactive_shell · none 0.01 · needs 0.74 · done 0.01\"}",
+				"costUsd": 0.000042798000000000006,
+				"status": "routed",
+				"latencyMs": 353,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "Rename the exported function parseConfig and update every caller; check nothing else broke.",
+				"expected": [
+					"lsp_references"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"lsp_references\",\"p\":0.57}],\"done\":0.01,\"reason\":\"activate lsp_references · none 0.42 · needs 0.12 · done 0.01\"}",
+				"costUsd": 0.000043008000000000006,
+				"status": "routed",
+				"latencyMs": 368,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "Why does the TypeScript build report errors in src/api? Show me all diagnostics.",
+				"expected": [
+					"lsp_diagnostics"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"lsp_diagnostics\",\"p\":0.83}],\"done\":0.02,\"reason\":\"activate lsp_diagnostics · none 0.16 · needs 0.34 · done 0.02\"}",
+				"costUsd": 0.00004309200000000001,
+				"status": "routed",
+				"latencyMs": 356,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "Open our staging site and check that the login page renders correctly.",
+				"expected": [
+					"browser_navigate",
+					"browser_screenshot"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"browser_navigate\",\"p\":0.86}],\"done\":0.01,\"reason\":\"activate browser_navigate · none 0.00 · needs 0.95 · done 0.01\"}",
+				"costUsd": 0.00004284,
+				"status": "routed",
+				"latencyMs": 377,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "Have one agent survey the auth module while you review the billing module.",
+				"expected": [
+					"subagent"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"subagent\",\"p\":0.86}],\"done\":0.01,\"reason\":\"activate subagent · none 0.14 · needs 0.79 · done 0.01\"}",
+				"costUsd": 0.00004288200000000001,
+				"status": "routed",
+				"latencyMs": 397,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "Which of the two migration approaches do you want me to take?",
+				"expected": [
+					"ask_user_question"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"ask_user_question\",\"p\":0.78}],\"done\":0.03,\"reason\":\"activate ask_user_question · none 0.21 · needs 0.19 · done 0.03\"}",
+				"costUsd": 0.00004284,
+				"status": "routed",
+				"latencyMs": 387,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "Run the unit tests and tell me which ones fail.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.97 · needs 0.18 · done 0.02\"}",
+				"costUsd": 0.00004275600000000001,
+				"status": "routed",
+				"latencyMs": 373,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "Find where the retry delay is configured and change it to 5 seconds.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.95 · needs 0.12 · done 0.02\"}",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 378,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "Compare the pricing of the two LLM APIs on their current pricing pages.",
+				"expected": [
+					"web_search",
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.6666666666666666,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"ask_user_question\",\"p\":0.32},{\"name\":\"fetch_content\",\"p\":0.26},{\"name\":\"web_search\",\"p\":0.23}],\"done\":0.02,\"reason\":\"activate ask_user_question, fetch_content, web_search · none 0.00 · needs 0.93 · d…",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 363,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "Summarize the issue thread and then write the fix.",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.91}],\"done\":0.02,\"reason\":\"activate fetch_content · none 0.01 · needs 0.56 · done 0.02\"}",
+				"costUsd": 0.000044856000000000006,
+				"status": "routed",
+				"latencyMs": 358,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "Fix the failing test in tests/queue.test.ts.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.95,\"reason\":\"no extra tool · none 1.00 · needs 0.05 · done 0.95\"}",
+				"costUsd": 0.000046620000000000004,
+				"status": "routed",
+				"latencyMs": 375,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "Show me a screenshot of the dashboard after the CSS change.",
+				"expected": [
+					"browser_screenshot",
+					"browser_navigate"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"browser_screenshot\",\"p\":0.76},{\"name\":\"browser_navigate\",\"p\":0.2}],\"done\":0.02,\"reason\":\"activate browser_screenshot, browser_navigate · none 0.01 · needs 0.88 · done 0.02\"}",
+				"costUsd": 0.000042798000000000006,
+				"status": "routed",
+				"latencyMs": 377,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "Look through the notebook analysis.ipynb and fix the plotting cell.",
+				"expected": [
+					"NotebookEdit"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.63 · needs 0.15 · done 0.02\"}",
+				"costUsd": 0.00004174800000000001,
+				"status": "routed",
+				"latencyMs": 374,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "Find every place the Cart type is referenced across the repo and rename it to Basket.",
+				"expected": [
+					"LSP",
+					"mcp__serena__rename_symbol"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.64 · needs 0.07 · done 0.02\"}",
+				"costUsd": 0.000041874000000000006,
+				"status": "routed",
+				"latencyMs": 362,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "Look up the current Next.js docs for the new caching options.",
+				"expected": [
+					"WebSearch"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.5,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"WebFetch\",\"p\":0.6},{\"name\":\"WebSearch\",\"p\":0.39}],\"done\":0.01,\"reason\":\"activate WebFetch, WebSearch · none 0.01 · needs 0.85 · done 0.01\"}",
+				"costUsd": 0.000041706000000000004,
+				"status": "routed",
+				"latencyMs": 354,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "Fetch https://example.org/changelog and list the breaking changes.",
+				"expected": [
+					"WebFetch"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"WebFetch\",\"p\":0.98}],\"done\":0.02,\"reason\":\"activate WebFetch · none 0.02 · needs 0.76 · done 0.02\"}",
+				"costUsd": 0.00004174800000000001,
+				"status": "routed",
+				"latencyMs": 367,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "Start the dev server in the background and tell me when it logs an error.",
+				"expected": [
+					"Monitor"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"Monitor\",\"p\":0.74}],\"done\":0.02,\"reason\":\"activate Monitor · none 0.26 · needs 0.54 · done 0.02\"}",
+				"costUsd": 0.00004183200000000001,
+				"status": "routed",
+				"latencyMs": 348,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "Try the risky refactor in an isolated worktree so main stays clean.",
+				"expected": [
+					"EnterWorktree"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"EnterWorktree\",\"p\":0.87}],\"done\":0.02,\"reason\":\"activate EnterWorktree · none 0.13 · needs 0.16 · done 0.02\"}",
+				"costUsd": 0.000041790000000000005,
+				"status": "routed",
+				"latencyMs": 373,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "Add a null check to the helper in utils.ts.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.82 · needs 0.06 · done 0.02\"}",
+				"costUsd": 0.000041622,
+				"status": "routed",
+				"latencyMs": 356,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 23,
+				"prompt": "Who calls loadUser and where is it defined?",
+				"expected": [
+					"LSP",
+					"mcp__serena__find_symbol"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"mcp__serena__find_symbol\",\"p\":0.29},{\"name\":\"LSP\",\"p\":0.28}],\"done\":0.02,\"reason\":\"activate mcp__serena__find_symbol, LSP · none 0.43 · needs 0.13 · done 0.02\"}",
+				"costUsd": 0.000041622,
+				"status": "routed",
+				"latencyMs": 357,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 24,
+				"prompt": "Stop the background build that is still running.",
+				"expected": [
+					"TaskStop"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"TaskStop\",\"p\":0.92}],\"done\":0.02,\"reason\":\"activate TaskStop · none 0.08 · needs 0.42 · done 0.02\"}",
+				"costUsd": 0.00004153800000000001,
+				"status": "routed",
+				"latencyMs": 351,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 25,
+				"prompt": "Explain how the retry logic in this repo works.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.87 · needs 0.11 · done 0.02\"}",
+				"costUsd": 0.000041622,
+				"status": "routed",
+				"latencyMs": 354,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"baseline": {
+		"summary": {
+			"version": "v1",
+			"cases": 26,
+			"answered": 26,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"recall": 0.9230769230769231,
+				"precision": 0.9166666666666667,
+				"exact": 0.7692307692307693,
+				"falseActivation": 0,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 360,
+				"p95": 404,
+				"n": 26
+			},
+			"costUsd": 0.0011091780000000002,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 26
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "What changed in Svelte 5.40 runes? Look up the latest release notes.",
+				"expected": [
+					"web_search"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.5,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"web_search\",\"p\":0.74},{\"name\":\"fetch_content\",\"p\":0.23}],\"done\":0.02,\"reason\":\"activate web_search, fetch_content · none 0.01 · needs 0.70 · done 0.02\"}",
+				"costUsd": 0.000043134000000000004,
+				"status": "routed",
+				"latencyMs": 349,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "Read this article and summarize it: https://example.org/blog/post-1",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.99}],\"done\":0.02,\"reason\":\"activate fetch_content · none 0.00 · needs 0.74 · done 0.02\"}",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 354,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "Write a thorough, cited comparison of three vector databases for our use case.",
+				"expected": [
+					"deep_research"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.5,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"deep_research\",\"p\":0.61},{\"name\":\"web_search\",\"p\":0.31}],\"done\":0.02,\"reason\":\"activate deep_research, web_search · none 0.00 · needs 0.85 · done 0.02\"}",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 374,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Fix the typo in README.md line 12.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.99 · needs 0.03 · done 0.02\"}",
+				"costUsd": 0.00004275600000000001,
+				"status": "routed",
+				"latencyMs": 415,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "Install the package with sudo and answer the installer's prompts.",
+				"expected": [
+					"interactive_shell"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"interactive_shell\",\"p\":0.97}],\"done\":0.01,\"reason\":\"activate interactive_shell · none 0.02 · needs 0.74 · done 0.01\"}",
+				"costUsd": 0.000042798000000000006,
+				"status": "routed",
+				"latencyMs": 404,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "Rename the exported function parseConfig and update every caller; check nothing else broke.",
+				"expected": [
+					"lsp_references"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"lsp_references\",\"p\":0.53}],\"done\":0.01,\"reason\":\"activate lsp_references · none 0.46 · needs 0.12 · done 0.01\"}",
+				"costUsd": 0.000043008000000000006,
+				"status": "routed",
+				"latencyMs": 367,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "Why does the TypeScript build report errors in src/api? Show me all diagnostics.",
+				"expected": [
+					"lsp_diagnostics"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"lsp_diagnostics\",\"p\":0.83}],\"done\":0.02,\"reason\":\"activate lsp_diagnostics · none 0.16 · needs 0.40 · done 0.02\"}",
+				"costUsd": 0.00004309200000000001,
+				"status": "routed",
+				"latencyMs": 377,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "Open our staging site and check that the login page renders correctly.",
+				"expected": [
+					"browser_navigate",
+					"browser_screenshot"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"browser_navigate\",\"p\":0.85}],\"done\":0.01,\"reason\":\"activate browser_navigate · none 0.00 · needs 0.94 · done 0.01\"}",
+				"costUsd": 0.00004284,
+				"status": "routed",
+				"latencyMs": 363,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "Have one agent survey the auth module while you review the billing module.",
+				"expected": [
+					"subagent"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"subagent\",\"p\":0.87}],\"done\":0.02,\"reason\":\"activate subagent · none 0.13 · needs 0.76 · done 0.02\"}",
+				"costUsd": 0.00004288200000000001,
+				"status": "routed",
+				"latencyMs": 345,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "Which of the two migration approaches do you want me to take?",
+				"expected": [
+					"ask_user_question"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"ask_user_question\",\"p\":0.83}],\"done\":0.03,\"reason\":\"activate ask_user_question · none 0.16 · needs 0.20 · done 0.03\"}",
+				"costUsd": 0.00004284,
+				"status": "routed",
+				"latencyMs": 380,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "Run the unit tests and tell me which ones fail.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.97 · needs 0.22 · done 0.02\"}",
+				"costUsd": 0.00004275600000000001,
+				"status": "routed",
+				"latencyMs": 371,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "Find where the retry delay is configured and change it to 5 seconds.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.01,\"reason\":\"no extra tool · none 0.97 · needs 0.11 · done 0.01\"}",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 362,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "Compare the pricing of the two LLM APIs on their current pricing pages.",
+				"expected": [
+					"web_search",
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 0.3333333333333333,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"ask_user_question\",\"p\":0.3},{\"name\":\"fetch_content\",\"p\":0.26},{\"name\":\"browser_navigate\",\"p\":0.22}],\"done\":0.02,\"reason\":\"activate ask_user_question, fetch_content, browser_navigate · none 0.00 · nee…",
+				"costUsd": 0.000042924000000000004,
+				"status": "routed",
+				"latencyMs": 359,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "Summarize the issue thread and then write the fix.",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.89}],\"done\":0.01,\"reason\":\"activate fetch_content · none 0.01 · needs 0.57 · done 0.01\"}",
+				"costUsd": 0.000044856000000000006,
+				"status": "routed",
+				"latencyMs": 368,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "Fix the failing test in tests/queue.test.ts.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.95,\"reason\":\"no extra tool · none 1.00 · needs 0.05 · done 0.95\"}",
+				"costUsd": 0.000046620000000000004,
+				"status": "routed",
+				"latencyMs": 355,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "Show me a screenshot of the dashboard after the CSS change.",
+				"expected": [
+					"browser_screenshot",
+					"browser_navigate"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"browser_screenshot\",\"p\":0.75},{\"name\":\"browser_navigate\",\"p\":0.2}],\"done\":0.02,\"reason\":\"activate browser_screenshot, browser_navigate · none 0.01 · needs 0.87 · done 0.02\"}",
+				"costUsd": 0.000042798000000000006,
+				"status": "routed",
+				"latencyMs": 363,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "Look through the notebook analysis.ipynb and fix the plotting cell.",
+				"expected": [
+					"NotebookEdit"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"NotebookEdit\",\"p\":0.32}],\"done\":0.02,\"reason\":\"activate NotebookEdit · none 0.68 · needs 0.14 · done 0.02\"}",
+				"costUsd": 0.00004174800000000001,
+				"status": "routed",
+				"latencyMs": 357,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "Find every place the Cart type is referenced across the repo and rename it to Basket.",
+				"expected": [
+					"LSP",
+					"mcp__serena__rename_symbol"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.01,\"reason\":\"no extra tool · none 0.61 · needs 0.09 · done 0.01\"}",
+				"costUsd": 0.000041874000000000006,
+				"status": "routed",
+				"latencyMs": 381,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "Look up the current Next.js docs for the new caching options.",
+				"expected": [
+					"WebSearch"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.5,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"WebFetch\",\"p\":0.55},{\"name\":\"WebSearch\",\"p\":0.44}],\"done\":0.02,\"reason\":\"activate WebFetch, WebSearch · none 0.01 · needs 0.87 · done 0.02\"}",
+				"costUsd": 0.000041706000000000004,
+				"status": "routed",
+				"latencyMs": 360,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "Fetch https://example.org/changelog and list the breaking changes.",
+				"expected": [
+					"WebFetch"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"WebFetch\",\"p\":0.98}],\"done\":0.02,\"reason\":\"activate WebFetch · none 0.02 · needs 0.77 · done 0.02\"}",
+				"costUsd": 0.00004174800000000001,
+				"status": "routed",
+				"latencyMs": 350,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "Start the dev server in the background and tell me when it logs an error.",
+				"expected": [
+					"Monitor"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"Monitor\",\"p\":0.81}],\"done\":0.02,\"reason\":\"activate Monitor · none 0.19 · needs 0.47 · done 0.02\"}",
+				"costUsd": 0.00004183200000000001,
+				"status": "routed",
+				"latencyMs": 355,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "Try the risky refactor in an isolated worktree so main stays clean.",
+				"expected": [
+					"EnterWorktree"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"EnterWorktree\",\"p\":0.87}],\"done\":0.02,\"reason\":\"activate EnterWorktree · none 0.13 · needs 0.19 · done 0.02\"}",
+				"costUsd": 0.000041790000000000005,
+				"status": "routed",
+				"latencyMs": 349,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "Add a null check to the helper in utils.ts.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.84 · needs 0.06 · done 0.02\"}",
+				"costUsd": 0.000041622,
+				"status": "routed",
+				"latencyMs": 368,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 23,
+				"prompt": "Who calls loadUser and where is it defined?",
+				"expected": [
+					"LSP",
+					"mcp__serena__find_symbol"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"LSP\",\"p\":0.32},{\"name\":\"mcp__serena__find_symbol\",\"p\":0.29}],\"done\":0.02,\"reason\":\"activate LSP, mcp__serena__find_symbol · none 0.39 · needs 0.12 · done 0.02\"}",
+				"costUsd": 0.000041622,
+				"status": "routed",
+				"latencyMs": 357,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 24,
+				"prompt": "Stop the background build that is still running.",
+				"expected": [
+					"TaskStop"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"TaskStop\",\"p\":0.93}],\"done\":0.02,\"reason\":\"activate TaskStop · none 0.07 · needs 0.37 · done 0.02\"}",
+				"costUsd": 0.00004153800000000001,
+				"status": "routed",
+				"latencyMs": 358,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 25,
+				"prompt": "Explain how the retry logic in this repo works.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.88 · needs 0.09 · done 0.02\"}",
+				"costUsd": 0.000041622,
+				"status": "routed",
+				"latencyMs": 356,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "against",
+		"holds": false,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.95,
+				"value": 0.9038461538461539,
+				"ok": false
+			}
+		],
+		"better": [
+			"precision"
+		],
+		"worse": [
+			"recall",
+			"exact"
+		],
+		"guards": [
+			{
+				"name": "p95 latency ms",
+				"base": 404,
+				"value": 397,
+				"ok": true
+			},
+			{
+				"name": "cost USD",
+				"base": 0.0011091780000000002,
+				"value": 0.0011091780000000002,
+				"ok": true
+			},
+			{
+				"name": "calibrated share",
+				"base": 1,
+				"value": 1,
+				"ok": true
+			}
+		],
+		"reasons": [
+			"recall 0.904 < floor 0.95",
+			"worse on recall, exact"
+		]
+	}
+}

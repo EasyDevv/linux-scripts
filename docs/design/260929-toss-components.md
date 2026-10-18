@@ -162,8 +162,8 @@ bun ~/.local/share/scripts/dev/design/cli/check-theme-chrome.ts --theme ~/.local
 cd ~/dev/dashboard && bun apps/client/src/lib/server/design/cli/inject-draft-chrome.ts
 
 # ref 셸 게이트
-bun ~/.agents/skills-ready/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light
-bun ~/.agents/skills-ready/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme dark
+bun ~/.agents/skills-optional/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light
+bun ~/.agents/skills-optional/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme dark
 ```
 
 카탈로그: `http://dashboard.localhost/design/draft?file=foundation/page.svelte&project=theme-toss&style=toss&scheme=light`

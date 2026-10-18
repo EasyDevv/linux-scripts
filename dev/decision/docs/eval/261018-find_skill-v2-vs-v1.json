@@ -1,0 +1,2210 @@
+{
+	"schema": 1,
+	"feature": "find_skill",
+	"version": "v2",
+	"against": "v1",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14",
+		"opencode/jev-1.13-free",
+		"opencode/jev-1.13"
+	],
+	"casesPath": "/home/easydev/.local/share/scripts/dev/decision/evals/find_skill.jsonl",
+	"generatedAt": "2026-10-18T03:50:45.752Z",
+	"candidate": {
+		"summary": {
+			"version": "v2",
+			"cases": 47,
+			"answered": 47,
+			"unavailable": 0,
+			"skipped": 1,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.8085106382978723,
+				"recall": 0.9556737588652482,
+				"precision": 0.9432624113475176,
+				"quiet": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 751,
+				"p95": 858,
+				"n": 46
+			},
+			"costUsd": 0.005836362000000001,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 46
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "svelte 컴포넌트에서 $effect가 몇 초마다 리셋돼",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.3333333333333333,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"svelte-effects\",\"path\":\"/home/easydev/.agents/rules-routed/svelte-effects.md\",\"scope\":\"global\",\"p\":0.6,\"body\":\"# Svelte Effects\\n\\n- `$effect` tr…",
+				"costUsd": 0.00012406800000000002,
+				"status": "routed",
+				"latencyMs": 792,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "다이얼로그 열 때마다 입력값이 폴링 때문에 원래 값으로 되돌아가. untrack 써야 하나?",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.3333333333333333,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"svelte-effects\",\"path\":\"/home/easydev/.agents/rules-routed/svelte-effects.md\",\"scope\":\"global\",\"p\":0.97,\"body\":\"# Svelte Effects\\n\\n- `$effect` t…",
+				"costUsd": 0.00012532800000000002,
+				"status": "routed",
+				"latencyMs": 760,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "SvelteKit 라우트에 툴바와 배지 추가하고 rune 상태로 바꿔줘",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 2 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills/build-frontend/SKILL.md\",\"description\":\"Shape SPA screens for sparse copy, ranked actions, and safe Sve…",
+				"costUsd": 0.00012482400000000002,
+				"status": "routed",
+				"latencyMs": 858,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Add a retry button to the settings dialog in our Svelte app",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 2 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills/build-frontend/SKILL.md\",\"description\":\"Shape SPA screens for sparse copy, ranked actions, and safe Sve…",
+				"costUsd": 0.000130368,
+				"status": "routed",
+				"latencyMs": 749,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "당근에서 RTX 3090 시세 수집해줘",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills/browse-site/SKILL.md\",\"description\":\"Route site-specific collection and browsing to the one reference that…",
+				"costUsd": 0.00012713400000000002,
+				"status": "routed",
+				"latencyMs": 759,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "CGV 용산 취소표 좌석 확인해줘",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills/browse-site/SKILL.md\",\"description\":\"Route site-specific collection and browsing to the one reference that…",
+				"costUsd": 0.00013620600000000002,
+				"status": "routed",
+				"latencyMs": 803,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "Collect the top posts from this Reddit thread and summarize",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills/browse-site/SKILL.md\",\"description\":\"Route site-specific collection and browsing to the one reference that…",
+				"costUsd": 0.00012663000000000003,
+				"status": "routed",
+				"latencyMs": 767,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "로그인이 필요한 페이지를 로그인 세션 저장해서 읽어와줘",
+				"expected": {
+					"skills": [
+						"browser"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"browser\",\"path\":\"/home/easydev/.agents/skills/browser/SKILL.md\",\"description\":\"Pick the engine and run the `browser` CLI — obscura --stealth to read pages (…",
+				"costUsd": 0.00013423200000000003,
+				"status": "routed",
+				"latencyMs": 757,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "pi -p 로 파일마다 요약 돌리는 스크립트 짜줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"pi-print"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 1 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"build-terminal-script\",\"path\":\"/home/easydev/.agents/skills/build-terminal-script/SKILL.md\",\"description\":\"Build or restyle one-shot terminal CLIs in any la…",
+				"costUsd": 0.00013251000000000002,
+				"status": "routed",
+				"latencyMs": 751,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "How should I call pi --print in a CI pipeline for a one-shot summary?",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"pi-print"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"pi-print\",\"path\":\"/home/easydev/.agents/rules-routed/pi-print.md\",\"scope\":\"global\",\"p\":0.98,\"body\":\"# Pi print mode\\n\\n- For `pi -p` / `pi --prin…",
+				"costUsd": 0.00012343800000000002,
+				"status": "routed",
+				"latencyMs": 720,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "새 로그인 화면을 .product 에 Loop 로 먼저 만들어줘",
+				"expected": {
+					"skills": [
+						"shape-product-loop"
+					],
+					"rules": [
+						"design-themes",
+						"product-loop",
+						"theme-ref"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 4 rules (asked 3 of 27)\",\"skills\":[{\"name\":\"shape-product-loop\",\"path\":\"/home/easydev/.agents/skills/shape-product-loop/SKILL.md\",\"description\":\"Defines Loop, Side, and Extra surfaces as shadcn `.svel…",
+				"costUsd": 0.000138726,
+				"status": "routed",
+				"latencyMs": 737,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "LOOP.md 에 새 surface 행 추가하고 page.svelte 초안 만들어",
+				"expected": {
+					"skills": [
+						"shape-product-loop"
+					],
+					"rules": [
+						"design-themes",
+						"product-loop",
+						"theme-ref"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 4 rules (asked 3 of 27)\",\"skills\":[{\"name\":\"shape-product-loop\",\"path\":\"/home/easydev/.agents/skills/shape-product-loop/SKILL.md\",\"description\":\"Defines Loop, Side, and Extra surfaces as shadcn `.svel…",
+				"costUsd": 0.00013889400000000003,
+				"status": "routed",
+				"latencyMs": 736,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "toss 테마 design.json 에 새 토큰을 승격해줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"design-themes"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"design-themes\",\"path\":\"/home/easydev/.agents/rules-routed/design-themes.md\",\"scope\":\"global\",\"p\":0.91,\"body\":\"# Design themes\\n\\n- Theme store is…",
+				"costUsd": 0.00012394200000000001,
+				"status": "routed",
+				"latencyMs": 762,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "라이브 사이트 사이드바를 draft 에 똑같이 포팅하고 padding gap 다시 측정해줘",
+				"expected": {
+					"skills": [
+						"shape-product-loop"
+					],
+					"rules": [
+						"design-themes",
+						"product-loop",
+						"theme-ref"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.25,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"theme-ref\",\"path\":\"/home/easydev/.agents/rules-routed/theme-ref.md\",\"scope\":\"global\",\"p\":0.99,\"body\":\"# Theme-ref live port\\n\\n- Outer `w`/`h`/`r…",
+				"costUsd": 0.00012453000000000003,
+				"status": "routed",
+				"latencyMs": 806,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "대시보드 화면들 캡처 떠서 라이트 다크 일관성 맞춰줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"frontend-consistency\",\"path\":\"/home/easydev/.agents/rules-routed/frontend-consistency.md\",\"scope\":\"global\",\"p\":0.98,\"body\":\"# Frontend consistenc…",
+				"costUsd": 0.00012385800000000002,
+				"status": "routed",
+				"latencyMs": 761,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "대시보드 UX 정리하고 중복 버튼 지워줘",
+				"expected": {
+					"skills": [
+						"improve-ux"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 1 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"improve-ux\",\"path\":\"/home/easydev/.agents/skills/improve-ux/SKILL.md\",\"description\":\"Clean up an existing frontend for end users from route captures and sou…",
+				"costUsd": 0.00012259800000000002,
+				"status": "routed",
+				"latencyMs": 796,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "뭔가 좀 개선해줘. 알아서 해",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 2 of 27)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.000128982,
+				"status": "routed",
+				"latencyMs": 752,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "make the thing faster, you know which one",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 0.94)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010374000000000002,
+				"status": "routed",
+				"latencyMs": 392,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "새 스킬 하나 만들어줘. frontmatter 포함해서",
+				"expected": {
+					"skills": [
+						"write-a-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-a-skill\",\"path\":\"/home/easydev/.agents/skills/write-a-skill/SKILL.md\",\"description\":\"Create and structurally revise agent skills (frontmatter, naming,…",
+				"costUsd": 0.00012419400000000002,
+				"status": "routed",
+				"latencyMs": 765,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "always-on 규칙 하나 추가하고 싶어. 컨벤션 정리해줘",
+				"expected": {
+					"skills": [
+						"write-a-rule"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills/write-a-rule/SKILL.md\",\"description\":\"Create and revise standing agent rules that stay out of context unt…",
+				"costUsd": 0.00012507600000000003,
+				"status": "routed",
+				"latencyMs": 732,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "이 skill 실행하다 계속 실패했어. SKILL.md 고쳐줘",
+				"expected": {
+					"skills": [
+						"improve-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"improve-skill\",\"path\":\"/home/easydev/.agents/skills/improve-skill/SKILL.md\",\"description\":\"Review an existing skill, runbook, or workflow from real executio…",
+				"costUsd": 0.000124194,
+				"status": "routed",
+				"latencyMs": 706,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "지난주 pi 세션 jsonl 분석해서 반복 실수 알려줘",
+				"expected": {
+					"skills": [
+						"analyze-pi-sessions"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"analyze-pi-sessions\",\"path\":\"/home/easydev/.agents/skills/analyze-pi-sessions/SKILL.md\",\"description\":\"Analyzes pi-agent session history and recommends erro…",
+				"costUsd": 0.000124236,
+				"status": "routed",
+				"latencyMs": 727,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "ratatui 로 두 패널 TUI 크레이트 만들어줘",
+				"expected": {
+					"skills": [
+						"build-tui"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-tui\",\"path\":\"/home/easydev/.agents/skills/build-tui/SKILL.md\",\"description\":\"Build a persistent Rust TUI crate with ratatui, crossterm, dual-tree or m…",
+				"costUsd": 0.00012406800000000002,
+				"status": "routed",
+				"latencyMs": 791,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 23,
+				"prompt": "bun 터미널 스크립트에 화살표 선택 메뉴랑 help 그룹 추가해줘",
+				"expected": {
+					"skills": [
+						"build-terminal-script"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-terminal-script\",\"path\":\"/home/easydev/.agents/skills/build-terminal-script/SKILL.md\",\"description\":\"Build or restyle one-shot terminal CLIs in any la…",
+				"costUsd": 0.00012650400000000002,
+				"status": "routed",
+				"latencyMs": 943,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 24,
+				"prompt": "조사 문서를 결론 먼저 쓰는 형식으로 docs 에 작성해줘",
+				"expected": {
+					"skills": [
+						"write-doc"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-doc\",\"path\":\"/home/easydev/.agents/skills/write-doc/SKILL.md\",\"description\":\"Write conclusion-first markdown documents (research, comparison, decision…",
+				"costUsd": 0.000124026,
+				"status": "routed",
+				"latencyMs": 783,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 25,
+				"prompt": "ASCII 와이어프레임으로 레이아웃 초안 그려줘",
+				"expected": {
+					"skills": [
+						"write-ascii-draft"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-ascii-draft\",\"path\":\"/home/easydev/.agents/skills/write-ascii-draft/SKILL.md\",\"description\":\"Write ASCII layout drafts to docs/ascii/YYMMDD-*.md, cont…",
+				"costUsd": 0.00012574800000000002,
+				"status": "routed",
+				"latencyMs": 765,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 26,
+				"prompt": "Actix 핸들러에 admin 권한 체크하고 CORS 허용 목록 설정해줘",
+				"expected": {
+					"skills": [
+						"build-backend"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-backend\",\"path\":\"/home/easydev/.agents/skills/build-backend/SKILL.md\",\"description\":\"Write HTTP APIs and their SPA clients with explicit authn/authz, …",
+				"costUsd": 0.000125412,
+				"status": "routed",
+				"latencyMs": 800,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 27,
+				"prompt": "로컬 LLM 서버용 GPU 가격 대비 성능 비교해서 견적 짜줘",
+				"expected": {
+					"skills": [
+						"evaluate-hardware-value"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"evaluate-hardware-value\",\"path\":\"/home/easydev/.agents/skills/evaluate-hardware-value/SKILL.md\",\"description\":\"Researches hardware price-performance for loc…",
+				"costUsd": 0.000125076,
+				"status": "routed",
+				"latencyMs": 784,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 28,
+				"prompt": "ComfyUI 결과 이미지를 1-5점으로 블라인드 평가하는 페이지 만들어줘",
+				"expected": {
+					"skills": [
+						"evaluate-image-preference"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"evaluate-image-preference\",\"path\":\"/home/easydev/.agents/skills/evaluate-image-preference/SKILL.md\",\"description\":\"Blind 1-5 star rating of generated images…",
+				"costUsd": 0.00012474,
+				"status": "routed",
+				"latencyMs": 741,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 29,
+				"prompt": "Discord 알림에서 ERROR 이상일 때만 멘션하게 바꿔줘",
+				"expected": {
+					"skills": [
+						"notifier"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"notifier\",\"path\":\"/home/easydev/.agents/skills/notifier/SKILL.md\",\"description\":\"Configure and verify VPS Discord early-warning alerts (severity policy, det…",
+				"costUsd": 0.000124446,
+				"status": "routed",
+				"latencyMs": 732,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 30,
+				"prompt": "https://github.com/foo/bar 프로젝트를 참고하라",
+				"expected": {
+					"skills": [
+						"sync-reference-repo"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"sync-reference-repo\",\"path\":\"/home/easydev/.agents/skills/sync-reference-repo/SKILL.md\",\"description\":\"Clones GitHub repositories into ~/.ref or updates exi…",
+				"costUsd": 0.00012440400000000002,
+				"status": "routed",
+				"latencyMs": 801,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 31,
+				"prompt": "모듈 인터페이스를 더 깊게 설계하고 seam 을 어디에 둘지 정리해줘",
+				"expected": {
+					"skills": [
+						"codebase-design"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"codebase-design\",\"path\":\"/home/easydev/.agents/skills/codebase-design/SKILL.md\",\"description\":\"Shared vocabulary for designing deep modules. Use when the us…",
+				"costUsd": 0.00012440400000000002,
+				"status": "routed",
+				"latencyMs": 733,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 32,
+				"prompt": "KDE 에서 한글을 클립보드로 붙여넣는 키 입력 자동화해줘",
+				"expected": {
+					"skills": [
+						"control-kde"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"control-kde\",\"path\":\"/home/easydev/.agents/skills/control-kde/SKILL.md\",\"description\":\"Drive the live KDE Wayland desktop autonomously — synthesize keyboard…",
+				"costUsd": 0.000125832,
+				"status": "routed",
+				"latencyMs": 731,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 33,
+				"prompt": "Orca worktree 새로 만들고 handoff 상태 갱신해줘",
+				"expected": {
+					"skills": [
+						"orca-cli"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"orca-cli\",\"path\":\"/home/easydev/.agents/skills/orca-cli/SKILL.md\",\"description\":\"Operate Orca-managed worktrees, terminals, artifacts, and the in-app browse…",
+				"costUsd": 0.000123606,
+				"status": "routed",
+				"latencyMs": 803,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 34,
+				"prompt": "what is the capital of France",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 1.00)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010361400000000001,
+				"status": "routed",
+				"latencyMs": 539,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 35,
+				"prompt": "Explain what a monad is in simple terms",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 1.00)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010378200000000002,
+				"status": "routed",
+				"latencyMs": 389,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 36,
+				"prompt": "git log 최근 5개만 보여줘",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 0.93)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010378200000000002,
+				"status": "routed",
+				"latencyMs": 436,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 37,
+				"prompt": "안녕, 오늘 기분 어때?",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 1.00)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010378200000000002,
+				"status": "routed",
+				"latencyMs": 408,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 38,
+				"prompt": "고마워!",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"skipped\",\"reason\":\"acknowledgement\",\"skills\":[],\"rules\":[],\"candidates\":0}",
+				"costUsd": 0,
+				"status": "skipped"
+			},
+			{
+				"index": 39,
+				"prompt": "grade ladder 사다리에서 불필요한 fallback 낭비를 점검해줘",
+				"expected": {
+					"skills": [
+						"analyze-grade-waste"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 34)\",\"skills\":[{\"name\":\"analyze-grade-waste\",\"path\":\"/home/easydev/.pi/agent/.agents/skills/analyze-grade-waste/SKILL.md\",\"description\":\"Find wasted time and silent drops in Pi gra…",
+				"costUsd": 0.00014607600000000003,
+				"status": "routed",
+				"latencyMs": 781,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 40,
+				"prompt": "upstream codex 하네스 프롬프트를 overlay 로 이식하고 SOURCE 핀 갱신해줘",
+				"expected": {
+					"skills": [
+						"port-harness"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 34)\",\"skills\":[{\"name\":\"port-harness\",\"path\":\"/home/easydev/.pi/agent/.agents/skills/port-harness/SKILL.md\",\"description\":\"Port and update an upstream agent harness into Pi easy-ha…",
+				"costUsd": 0.00014653800000000004,
+				"status": "routed",
+				"latencyMs": 729,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 41,
+				"prompt": "config.jsonc 의 quick 프로필 맨 앞에 새 무료 모델을 추가해줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"config-jsonc"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 34)\",\"skills\":[],\"rules\":[{\"name\":\"config-jsonc\",\"path\":\"/home/easydev/.pi/agent/.agents/rules-routed/config-jsonc.md\",\"scope\":\"project\",\"p\":0.99,\"body\":\"# config.jsonc\\n\\n- Edit `…",
+				"costUsd": 0.00014448000000000003,
+				"status": "routed",
+				"latencyMs": 743,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 42,
+				"prompt": "permission.bash 에 rm -rf 를 trash-put 으로 바꾸는 규칙을 넣어줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"config-jsonc"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 1 rules (asked 2 of 34)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills/write-a-rule/SKILL.md\",\"description\":\"Create and revise standing agent rules that stay out of context unt…",
+				"costUsd": 0.00015246000000000004,
+				"status": "routed",
+				"latencyMs": 746,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 43,
+				"prompt": "subagent 가 429를 받으면 같은 provider 형제 작업을 취소하도록 고쳐줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"provider-errors"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 34)\",\"skills\":[],\"rules\":[{\"name\":\"provider-errors\",\"path\":\"/home/easydev/.pi/agent/.agents/rules-routed/provider-errors.md\",\"scope\":\"project\",\"p\":0.99,\"body\":\"# Provider Errors\\n\\…",
+				"costUsd": 0.00014456400000000002,
+				"status": "routed",
+				"latencyMs": 974,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 44,
+				"prompt": "codex family 에 codex-sub-review 서브에이전트를 추가해줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"subagent"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 34)\",\"skills\":[],\"rules\":[{\"name\":\"subagent\",\"path\":\"/home/easydev/.pi/agent/.agents/rules-routed/subagent.md\",\"scope\":\"project\",\"p\":0.99,\"body\":\"# Upstream subagents\\n\\n- Add `<fa…",
+				"costUsd": 0.000143892,
+				"status": "routed",
+				"latencyMs": 745,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 45,
+				"prompt": "config.jsonc 에서 port 를 8080 으로 바꿔줘",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 0.94)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010424400000000001,
+				"status": "routed",
+				"latencyMs": 366,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 46,
+				"prompt": "docs/plan 아래에 새 계획 문서를 쓰려고 해. 어떤 skill을 써야 하는지 이름만 한 줄로 답해.",
+				"expected": {
+					"skills": [
+						"write-doc"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 2 of 34)\",\"skills\":[{\"name\":\"write-doc\",\"path\":\"/home/easydev/.agents/skills/write-doc/SKILL.md\",\"description\":\"Write conclusion-first markdown documents (research, comparison, decision…",
+				"costUsd": 0.00015317400000000003,
+				"status": "routed",
+				"latencyMs": 748,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"baseline": {
+		"summary": {
+			"version": "v1",
+			"cases": 47,
+			"answered": 47,
+			"unavailable": 0,
+			"skipped": 1,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.7872340425531915,
+				"recall": 0.9343971631205673,
+				"precision": 0.9432624113475176,
+				"quiet": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 732,
+				"p95": 788,
+				"n": 46
+			},
+			"costUsd": 0.005836362000000001,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 46
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "svelte 컴포넌트에서 $effect가 몇 초마다 리셋돼",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.3333333333333333,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"svelte-effects\",\"path\":\"/home/easydev/.agents/rules-routed/svelte-effects.md\",\"scope\":\"global\",\"p\":0.53,\"body\":\"# Svelte Effects\\n\\n- `$effect` t…",
+				"costUsd": 0.00012406800000000002,
+				"status": "routed",
+				"latencyMs": 756,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "다이얼로그 열 때마다 입력값이 폴링 때문에 원래 값으로 되돌아가. untrack 써야 하나?",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.3333333333333333,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"svelte-effects\",\"path\":\"/home/easydev/.agents/rules-routed/svelte-effects.md\",\"scope\":\"global\",\"p\":0.98,\"body\":\"# Svelte Effects\\n\\n- `$effect` t…",
+				"costUsd": 0.00012532800000000002,
+				"status": "routed",
+				"latencyMs": 730,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "SvelteKit 라우트에 툴바와 배지 추가하고 rune 상태로 바꿔줘",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 2 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills/build-frontend/SKILL.md\",\"description\":\"Shape SPA screens for sparse copy, ranked actions, and safe Sve…",
+				"costUsd": 0.00012482400000000002,
+				"status": "routed",
+				"latencyMs": 901,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Add a retry button to the settings dialog in our Svelte app",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 2 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills/build-frontend/SKILL.md\",\"description\":\"Shape SPA screens for sparse copy, ranked actions, and safe Sve…",
+				"costUsd": 0.000130368,
+				"status": "routed",
+				"latencyMs": 707,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "당근에서 RTX 3090 시세 수집해줘",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills/browse-site/SKILL.md\",\"description\":\"Route site-specific collection and browsing to the one reference that…",
+				"costUsd": 0.00012713400000000002,
+				"status": "routed",
+				"latencyMs": 751,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "CGV 용산 취소표 좌석 확인해줘",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills/browse-site/SKILL.md\",\"description\":\"Route site-specific collection and browsing to the one reference that…",
+				"costUsd": 0.00013620600000000002,
+				"status": "routed",
+				"latencyMs": 752,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "Collect the top posts from this Reddit thread and summarize",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills/browse-site/SKILL.md\",\"description\":\"Route site-specific collection and browsing to the one reference that…",
+				"costUsd": 0.00012663000000000003,
+				"status": "routed",
+				"latencyMs": 724,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "로그인이 필요한 페이지를 로그인 세션 저장해서 읽어와줘",
+				"expected": {
+					"skills": [
+						"browser"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"browser\",\"path\":\"/home/easydev/.agents/skills/browser/SKILL.md\",\"description\":\"Pick the engine and run the `browser` CLI — obscura --stealth to read pages (…",
+				"costUsd": 0.00013423200000000003,
+				"status": "routed",
+				"latencyMs": 750,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "pi -p 로 파일마다 요약 돌리는 스크립트 짜줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"pi-print"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 1 rules (asked 2 of 27)\",\"skills\":[{\"name\":\"build-terminal-script\",\"path\":\"/home/easydev/.agents/skills/build-terminal-script/SKILL.md\",\"description\":\"Build or restyle one-shot terminal CLIs in any la…",
+				"costUsd": 0.00013251000000000002,
+				"status": "routed",
+				"latencyMs": 788,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "How should I call pi --print in a CI pipeline for a one-shot summary?",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"pi-print"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"pi-print\",\"path\":\"/home/easydev/.agents/rules-routed/pi-print.md\",\"scope\":\"global\",\"p\":0.98,\"body\":\"# Pi print mode\\n\\n- For `pi -p` / `pi --prin…",
+				"costUsd": 0.00012343800000000002,
+				"status": "routed",
+				"latencyMs": 734,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "새 로그인 화면을 .product 에 Loop 로 먼저 만들어줘",
+				"expected": {
+					"skills": [
+						"shape-product-loop"
+					],
+					"rules": [
+						"design-themes",
+						"product-loop",
+						"theme-ref"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 4 rules (asked 3 of 27)\",\"skills\":[{\"name\":\"shape-product-loop\",\"path\":\"/home/easydev/.agents/skills/shape-product-loop/SKILL.md\",\"description\":\"Defines Loop, Side, and Extra surfaces as shadcn `.svel…",
+				"costUsd": 0.000138726,
+				"status": "routed",
+				"latencyMs": 829,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "LOOP.md 에 새 surface 행 추가하고 page.svelte 초안 만들어",
+				"expected": {
+					"skills": [
+						"shape-product-loop"
+					],
+					"rules": [
+						"design-themes",
+						"product-loop",
+						"theme-ref"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 4 rules (asked 3 of 27)\",\"skills\":[{\"name\":\"shape-product-loop\",\"path\":\"/home/easydev/.agents/skills/shape-product-loop/SKILL.md\",\"description\":\"Defines Loop, Side, and Extra surfaces as shadcn `.svel…",
+				"costUsd": 0.00013889400000000003,
+				"status": "routed",
+				"latencyMs": 754,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "toss 테마 design.json 에 새 토큰을 승격해줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"design-themes"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"design-themes\",\"path\":\"/home/easydev/.agents/rules-routed/design-themes.md\",\"scope\":\"global\",\"p\":0.9,\"body\":\"# Design themes\\n\\n- Theme store is …",
+				"costUsd": 0.00012394200000000001,
+				"status": "routed",
+				"latencyMs": 747,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "라이브 사이트 사이드바를 draft 에 똑같이 포팅하고 padding gap 다시 측정해줘",
+				"expected": {
+					"skills": [
+						"shape-product-loop"
+					],
+					"rules": [
+						"design-themes",
+						"product-loop",
+						"theme-ref"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.25,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"theme-ref\",\"path\":\"/home/easydev/.agents/rules-routed/theme-ref.md\",\"scope\":\"global\",\"p\":0.99,\"body\":\"# Theme-ref live port\\n\\n- Outer `w`/`h`/`r…",
+				"costUsd": 0.00012453000000000003,
+				"status": "routed",
+				"latencyMs": 746,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "대시보드 화면들 캡처 떠서 라이트 다크 일관성 맞춰줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 27)\",\"skills\":[],\"rules\":[{\"name\":\"frontend-consistency\",\"path\":\"/home/easydev/.agents/rules-routed/frontend-consistency.md\",\"scope\":\"global\",\"p\":0.99,\"body\":\"# Frontend consistenc…",
+				"costUsd": 0.00012385800000000002,
+				"status": "routed",
+				"latencyMs": 755,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "대시보드 UX 정리하고 중복 버튼 지워줘",
+				"expected": {
+					"skills": [
+						"improve-ux"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 1 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"improve-ux\",\"path\":\"/home/easydev/.agents/skills/improve-ux/SKILL.md\",\"description\":\"Clean up an existing frontend for end users from route captures and sou…",
+				"costUsd": 0.00012259800000000002,
+				"status": "routed",
+				"latencyMs": 758,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "뭔가 좀 개선해줘. 알아서 해",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 2 of 27)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.000128982,
+				"status": "routed",
+				"latencyMs": 739,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "make the thing faster, you know which one",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 0.93)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010374000000000002,
+				"status": "routed",
+				"latencyMs": 420,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "새 스킬 하나 만들어줘. frontmatter 포함해서",
+				"expected": {
+					"skills": [
+						"write-a-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-a-skill\",\"path\":\"/home/easydev/.agents/skills/write-a-skill/SKILL.md\",\"description\":\"Create and structurally revise agent skills (frontmatter, naming,…",
+				"costUsd": 0.00012419400000000002,
+				"status": "routed",
+				"latencyMs": 760,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "always-on 규칙 하나 추가하고 싶어. 컨벤션 정리해줘",
+				"expected": {
+					"skills": [
+						"write-a-rule"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills/write-a-rule/SKILL.md\",\"description\":\"Create and revise standing agent rules that stay out of context unt…",
+				"costUsd": 0.00012507600000000003,
+				"status": "routed",
+				"latencyMs": 729,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "이 skill 실행하다 계속 실패했어. SKILL.md 고쳐줘",
+				"expected": {
+					"skills": [
+						"improve-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"improve-skill\",\"path\":\"/home/easydev/.agents/skills/improve-skill/SKILL.md\",\"description\":\"Review an existing skill, runbook, or workflow from real executio…",
+				"costUsd": 0.000124194,
+				"status": "routed",
+				"latencyMs": 748,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "지난주 pi 세션 jsonl 분석해서 반복 실수 알려줘",
+				"expected": {
+					"skills": [
+						"analyze-pi-sessions"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"analyze-pi-sessions\",\"path\":\"/home/easydev/.agents/skills/analyze-pi-sessions/SKILL.md\",\"description\":\"Analyzes pi-agent session history and recommends erro…",
+				"costUsd": 0.000124236,
+				"status": "routed",
+				"latencyMs": 718,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "ratatui 로 두 패널 TUI 크레이트 만들어줘",
+				"expected": {
+					"skills": [
+						"build-tui"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-tui\",\"path\":\"/home/easydev/.agents/skills/build-tui/SKILL.md\",\"description\":\"Build a persistent Rust TUI crate with ratatui, crossterm, dual-tree or m…",
+				"costUsd": 0.00012406800000000002,
+				"status": "routed",
+				"latencyMs": 763,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 23,
+				"prompt": "bun 터미널 스크립트에 화살표 선택 메뉴랑 help 그룹 추가해줘",
+				"expected": {
+					"skills": [
+						"build-terminal-script"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-terminal-script\",\"path\":\"/home/easydev/.agents/skills/build-terminal-script/SKILL.md\",\"description\":\"Build or restyle one-shot terminal CLIs in any la…",
+				"costUsd": 0.00012650400000000002,
+				"status": "routed",
+				"latencyMs": 740,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 24,
+				"prompt": "조사 문서를 결론 먼저 쓰는 형식으로 docs 에 작성해줘",
+				"expected": {
+					"skills": [
+						"write-doc"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-doc\",\"path\":\"/home/easydev/.agents/skills/write-doc/SKILL.md\",\"description\":\"Write conclusion-first markdown documents (research, comparison, decision…",
+				"costUsd": 0.000124026,
+				"status": "routed",
+				"latencyMs": 724,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 25,
+				"prompt": "ASCII 와이어프레임으로 레이아웃 초안 그려줘",
+				"expected": {
+					"skills": [
+						"write-ascii-draft"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"write-ascii-draft\",\"path\":\"/home/easydev/.agents/skills/write-ascii-draft/SKILL.md\",\"description\":\"Write ASCII layout drafts to docs/ascii/YYMMDD-*.md, cont…",
+				"costUsd": 0.00012574800000000002,
+				"status": "routed",
+				"latencyMs": 732,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 26,
+				"prompt": "Actix 핸들러에 admin 권한 체크하고 CORS 허용 목록 설정해줘",
+				"expected": {
+					"skills": [
+						"build-backend"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"build-backend\",\"path\":\"/home/easydev/.agents/skills/build-backend/SKILL.md\",\"description\":\"Write HTTP APIs and their SPA clients with explicit authn/authz, …",
+				"costUsd": 0.000125412,
+				"status": "routed",
+				"latencyMs": 727,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 27,
+				"prompt": "로컬 LLM 서버용 GPU 가격 대비 성능 비교해서 견적 짜줘",
+				"expected": {
+					"skills": [
+						"evaluate-hardware-value"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"evaluate-hardware-value\",\"path\":\"/home/easydev/.agents/skills/evaluate-hardware-value/SKILL.md\",\"description\":\"Researches hardware price-performance for loc…",
+				"costUsd": 0.000125076,
+				"status": "routed",
+				"latencyMs": 736,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 28,
+				"prompt": "ComfyUI 결과 이미지를 1-5점으로 블라인드 평가하는 페이지 만들어줘",
+				"expected": {
+					"skills": [
+						"evaluate-image-preference"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"evaluate-image-preference\",\"path\":\"/home/easydev/.agents/skills/evaluate-image-preference/SKILL.md\",\"description\":\"Blind 1-5 star rating of generated images…",
+				"costUsd": 0.00012474,
+				"status": "routed",
+				"latencyMs": 710,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 29,
+				"prompt": "Discord 알림에서 ERROR 이상일 때만 멘션하게 바꿔줘",
+				"expected": {
+					"skills": [
+						"notifier"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"notifier\",\"path\":\"/home/easydev/.agents/skills/notifier/SKILL.md\",\"description\":\"Configure and verify VPS Discord early-warning alerts (severity policy, det…",
+				"costUsd": 0.000124446,
+				"status": "routed",
+				"latencyMs": 753,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 30,
+				"prompt": "https://github.com/foo/bar 프로젝트를 참고하라",
+				"expected": {
+					"skills": [
+						"sync-reference-repo"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"sync-reference-repo\",\"path\":\"/home/easydev/.agents/skills/sync-reference-repo/SKILL.md\",\"description\":\"Clones GitHub repositories into ~/.ref or updates exi…",
+				"costUsd": 0.00012440400000000002,
+				"status": "routed",
+				"latencyMs": 720,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 31,
+				"prompt": "모듈 인터페이스를 더 깊게 설계하고 seam 을 어디에 둘지 정리해줘",
+				"expected": {
+					"skills": [
+						"codebase-design"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"codebase-design\",\"path\":\"/home/easydev/.agents/skills/codebase-design/SKILL.md\",\"description\":\"Shared vocabulary for designing deep modules. Use when the us…",
+				"costUsd": 0.00012440400000000002,
+				"status": "routed",
+				"latencyMs": 732,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 32,
+				"prompt": "KDE 에서 한글을 클립보드로 붙여넣는 키 입력 자동화해줘",
+				"expected": {
+					"skills": [
+						"control-kde"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"control-kde\",\"path\":\"/home/easydev/.agents/skills/control-kde/SKILL.md\",\"description\":\"Drive the live KDE Wayland desktop autonomously — synthesize keyboard…",
+				"costUsd": 0.000125832,
+				"status": "routed",
+				"latencyMs": 721,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 33,
+				"prompt": "Orca worktree 새로 만들고 handoff 상태 갱신해줘",
+				"expected": {
+					"skills": [
+						"orca-cli"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 27)\",\"skills\":[{\"name\":\"orca-cli\",\"path\":\"/home/easydev/.agents/skills/orca-cli/SKILL.md\",\"description\":\"Operate Orca-managed worktrees, terminals, artifacts, and the in-app browse…",
+				"costUsd": 0.000123606,
+				"status": "routed",
+				"latencyMs": 720,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 34,
+				"prompt": "what is the capital of France",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 1.00)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010361400000000001,
+				"status": "routed",
+				"latencyMs": 377,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 35,
+				"prompt": "Explain what a monad is in simple terms",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 1.00)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010378200000000002,
+				"status": "routed",
+				"latencyMs": 391,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 36,
+				"prompt": "git log 최근 5개만 보여줘",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 0.94)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010378200000000002,
+				"status": "routed",
+				"latencyMs": 369,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 37,
+				"prompt": "안녕, 오늘 기분 어때?",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 1.00)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010378200000000002,
+				"status": "routed",
+				"latencyMs": 379,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 38,
+				"prompt": "고마워!",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"skipped\",\"reason\":\"acknowledgement\",\"skills\":[],\"rules\":[],\"candidates\":0}",
+				"costUsd": 0,
+				"status": "skipped"
+			},
+			{
+				"index": 39,
+				"prompt": "grade ladder 사다리에서 불필요한 fallback 낭비를 점검해줘",
+				"expected": {
+					"skills": [
+						"analyze-grade-waste"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 34)\",\"skills\":[{\"name\":\"analyze-grade-waste\",\"path\":\"/home/easydev/.pi/agent/.agents/skills/analyze-grade-waste/SKILL.md\",\"description\":\"Find wasted time and silent drops in Pi gra…",
+				"costUsd": 0.00014607600000000003,
+				"status": "routed",
+				"latencyMs": 717,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 40,
+				"prompt": "upstream codex 하네스 프롬프트를 overlay 로 이식하고 SOURCE 핀 갱신해줘",
+				"expected": {
+					"skills": [
+						"port-harness"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 34)\",\"skills\":[{\"name\":\"port-harness\",\"path\":\"/home/easydev/.pi/agent/.agents/skills/port-harness/SKILL.md\",\"description\":\"Port and update an upstream agent harness into Pi easy-ha…",
+				"costUsd": 0.00014653800000000004,
+				"status": "routed",
+				"latencyMs": 730,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 41,
+				"prompt": "config.jsonc 의 quick 프로필 맨 앞에 새 무료 모델을 추가해줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"config-jsonc"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 34)\",\"skills\":[],\"rules\":[{\"name\":\"config-jsonc\",\"path\":\"/home/easydev/.pi/agent/.agents/rules-routed/config-jsonc.md\",\"scope\":\"project\",\"p\":0.99,\"body\":\"# config.jsonc\\n\\n- Edit `…",
+				"costUsd": 0.00014448000000000003,
+				"status": "routed",
+				"latencyMs": 733,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 42,
+				"prompt": "permission.bash 에 rm -rf 를 trash-put 으로 바꾸는 규칙을 넣어줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"config-jsonc"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 1 rules (asked 2 of 34)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills/write-a-rule/SKILL.md\",\"description\":\"Create and revise standing agent rules that stay out of context unt…",
+				"costUsd": 0.00015246000000000004,
+				"status": "routed",
+				"latencyMs": 708,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 43,
+				"prompt": "subagent 가 429를 받으면 같은 provider 형제 작업을 취소하도록 고쳐줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"provider-errors"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 34)\",\"skills\":[],\"rules\":[{\"name\":\"provider-errors\",\"path\":\"/home/easydev/.pi/agent/.agents/rules-routed/provider-errors.md\",\"scope\":\"project\",\"p\":0.99,\"body\":\"# Provider Errors\\n\\…",
+				"costUsd": 0.00014456400000000002,
+				"status": "routed",
+				"latencyMs": 731,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 44,
+				"prompt": "codex family 에 codex-sub-review 서브에이전트를 추가해줘",
+				"expected": {
+					"skills": [],
+					"rules": [
+						"subagent"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"0 skills, 1 rules (asked 1 of 34)\",\"skills\":[],\"rules\":[{\"name\":\"subagent\",\"path\":\"/home/easydev/.pi/agent/.agents/rules-routed/subagent.md\",\"scope\":\"project\",\"p\":0.99,\"body\":\"# Upstream subagents\\n\\n- Add `<fa…",
+				"costUsd": 0.000143892,
+				"status": "routed",
+				"latencyMs": 786,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 45,
+				"prompt": "config.jsonc 에서 port 를 8080 으로 바꿔줘",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"none applies (none 0.95)\",\"skills\":[],\"rules\":[],\"candidates\":27}",
+				"costUsd": 0.00010424400000000001,
+				"status": "routed",
+				"latencyMs": 380,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 46,
+				"prompt": "docs/plan 아래에 새 계획 문서를 쓰려고 해. 어떤 skill을 써야 하는지 이름만 한 줄로 답해.",
+				"expected": {
+					"skills": [
+						"write-doc"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 2 of 34)\",\"skills\":[],\"rules\":[],\"candidates\":34}",
+				"costUsd": 0.00015317400000000003,
+				"status": "routed",
+				"latencyMs": 763,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "against",
+		"holds": true,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.9,
+				"value": 0.9556737588652482,
+				"ok": true
+			}
+		],
+		"better": [
+			"exact",
+			"recall"
+		],
+		"worse": [],
+		"guards": [
+			{
+				"name": "p95 latency ms",
+				"base": 788,
+				"value": 858,
+				"ok": true
+			},
+			{
+				"name": "cost USD",
+				"base": 0.005836362000000001,
+				"value": 0.005836362000000001,
+				"ok": true
+			},
+			{
+				"name": "calibrated share",
+				"base": 1,
+				"value": 1,
+				"ok": true
+			}
+		],
+		"reasons": []
+	}
+}

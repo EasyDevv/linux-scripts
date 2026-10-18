@@ -1,0 +1,12 @@
+{
+	"kind": "intent",
+	"surface": "02-find-skill",
+	"problem": "모든 skill 설명과 rule 본문을 매 세션 선로드하면 초기 컨텍스트가 커진다(기준선 35,286 B 중 skills 14,389 B).",
+	"outcome": "프롬프트에 맞는 skill과 routed rule만 받아 하네스가 rule 본문을 주입하고 skill hint를 보내며, pi는 카탈로그를 trim한다.",
+	"users": ["pi 세션의 사용자","Claude Code 세션의 사용자"],
+	"systems": ["POST /v1/find_skill","catalog.ts","~/.agents/rules-routed","{projectRoot}/.agents/rules-routed","prompts/find_skill/v2.json"],
+	"constraints": ["큰 카탈로그는 choice 한 번으로 shortlist, 그 뒤 후보별 bool — 프롬프트당 Jev 호출 2회 이하","loaded 이름은 다시 돌려주지 않는다","rule의 skills: frontmatter는 그 skill이 선택되면 함께 온다","trim은 find_skill이 답한 턴에만, 패키지·_manual skill은 항상 유지"],
+	"outOfScope": ["skill 실행","always-on rule 관리"],
+	"openQuestions": ["keepSkills 기본값을 둘 것인가?","경로 글롭 트리거를 Jev보다 먼저 볼 것인가?"],
+	"success": "evals/find_skill.jsonl 47건에서 recall 0.95 이상, precision 0.94 이상, p95 1 s 이하"
+}

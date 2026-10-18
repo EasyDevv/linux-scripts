@@ -1,0 +1,12 @@
+{
+	"kind": "intent",
+	"surface": "05-eval",
+	"problem": "질문 프롬프트를 고칠 때 나아졌는지 감으로 판단하면 회귀를 놓친다.",
+	"outcome": "버전별로 같은 케이스를 채점한 리포트(md+json)가 docs/eval에 남고 승격 규칙 HOLDS 여부가 나온다.",
+	"users": ["decision을 개선하는 운영자"],
+	"systems": ["decision eval","evals/<feature>.jsonl","FeatureDef.score","docs/eval/"],
+	"constraints": ["리포트는 승격하지 않는다","한 지표에서 낫고 나머지에서 같거나 나을 때만 HOLDS","run 간 노이즈(recall ±0.02, p95 스파이크)는 반복 실행으로 본다","pi -p와 eval은 stdin을 /dev/null로"],
+	"outOfScope": ["라벨 자동 생성"],
+	"openQuestions": ["seed 라벨을 사용자가 검토할 때까지 수치는 참고값"],
+	"success": "4개 기능 모두 기준선 리포트가 있고 새 버전마다 vs 리포트가 남는다"
+}

@@ -297,7 +297,7 @@ bash build.sh                      # spec.json → layout.css + 다크 + tail, �
 cd ~/dev/dashboard
 bun apps/client/src/lib/server/design/cli/inject-draft-chrome.ts   # 드래프트 sheet 갱신
 executor reload dashboard                                          # 새 ref 디렉터리 반영
-bun ~/.agents/skills-ready/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light
+bun ~/.agents/skills-optional/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light
 ```
 
 미탐색 자료는 `/tmp/site-to-design/toss/`에 있다.

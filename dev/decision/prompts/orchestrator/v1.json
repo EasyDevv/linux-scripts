@@ -1,0 +1,39 @@
+{
+	"version": "v1",
+	"source": "plan 261018-decision-model §6-4: plan choice, worth_parallel bool, one bool per role",
+	"maxRoles": 12,
+	"questions": {
+		"plan": {
+			"type": "choice",
+			"instructions": "How should `task` be carried out with delegated subagents? Judge the shape of the work, not its size. Choose single when one focused subagent (or the lead agent alone) can do it end to end, fanout when several independent parts can run at the same time and be merged afterwards, staged when later phases need the findings of earlier ones.",
+			"criteria": {
+				"single": "One cohesive piece of work, one thread: a focused edit, a single question, a small fix, or parts too entangled to split",
+				"fanout": "Two or more independent parts that do not depend on each other's results (survey several areas, check several components, write unrelated pieces)",
+				"staged": "Phases that must happen in order because each needs the previous result (investigate, then change, then verify)"
+			}
+		},
+		"worth_parallel": {
+			"type": "bool",
+			"instructions": "Would running two or more independent subagents at the same time finish `task` materially better (faster, or with more complete coverage) than one agent working through it alone? Coordination has a cost: false for small, tightly coupled, or purely sequential work.",
+			"criteria": {
+				"true": "The task splits into independent slices that are each substantial enough to be worth a separate agent",
+				"false": "The task is small, tightly coupled, or one agent can do it as fast as several"
+			}
+		},
+		"role": {
+			"type": "bool",
+			"instructions": "Would handing a self-contained part of `task` to a `{role}` subagent be a good use of that role? Role description: {description}. True only when the role's strengths and tools match real work in the task; false when the role would sit idle or the lead agent would do the work faster itself.",
+			"criteria": {
+				"true": "The task contains work this role is built for",
+				"false": "The task has no work for this role"
+			}
+		}
+	},
+	"compose": {
+		"rolePass": 0.5,
+		"singleFloor": 0.2,
+		"worthParallelFloor": 0.35,
+		"maxSteps": 4,
+		"descriptionChars": 240
+	}
+}
