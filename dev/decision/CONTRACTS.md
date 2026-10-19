@@ -77,6 +77,28 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   → `maker_retry` with Jev's `failureClass`. Both `shadow`: logged and shown, never sent to the model.
 - Clear results are not logged.
 
+## `POST /v1/guard`
+
+- in: `{harness, sessionId?, cwd?, phase: "call" | "result", tool, args, output?, isError?}`. Clients ask
+  only where a rule can fire: `call` for a shell call (`bash`, `Bash`), `result` for a failed edit (`edit`,
+  `Edit`). Code only, no Jev: one answer per shell call, so the daemon answers at once and the client
+  waits at most `timeoutMs` (default 300), then runs the call unchanged.
+- out: `{action: none | rewrite | deny | hint, rules: string[], args?, message?, notice?}`.
+  - `rewrite`: run with `args` instead; `message` goes after the tool result for the model.
+  - `deny`: do not run; `message` is the block reason the model reads.
+  - `hint`: append `message` to the failed result.
+  - `notice`: one line for the person (toast / notify), every action but `none`.
+- Rules: `pkill_self` (`pkill -f` without `-A` matches its own shell → add `-A`), `quote_glob` (a
+  glob meant for the program, `--include=*.ts` or after `-name`/`--glob`, is single-quoted),
+  `wide_search` (`find`/`grep -r`/`rg` over `~` or `/` without a depth ≤ 3 → deny), `wait_loop`
+  (not under `harness: pi`, which has no background mode: a foreground `until`/`while` loop with
+  `sleep` polling a task output file, `/tasks/` or `*.output|*.out|*.log`, → deny toward
+  `run_in_background`/Monitor; the client sends `args.run_in_background: true` for a background
+  call, which is never denied), `edit_hint` (where
+  the oldText's closest match is and its first differing line; overlapping and repeated spans by line).
+- Text the model reads is appended after the tool result, never in the system prompt (cache).
+- `none` results are not logged.
+
 ## `POST /v1/outcome`
 
 - in: `{decisionId?, feature, signal, detail?}` → 204.
