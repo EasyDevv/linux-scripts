@@ -65,6 +65,14 @@ pub struct UsageWindow {
     pub limit_cents: Option<i64>,
 }
 
+/// One local calendar day of prepaid spend, in cents.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DaySpend {
+    pub day: String,
+    pub cents: i64,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProviderSnapshot {
@@ -87,6 +95,10 @@ pub struct ProviderSnapshot {
     /// Present when the provider reports a plan/subscription state.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PlanState>,
+    /// Vendor-dated daily spend. `None` leaves the board on snapshot deltas;
+    /// `Some` (even empty) is the card's Daily use and skips that fallback.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spend_days: Option<Vec<DaySpend>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -257,6 +269,7 @@ mod tests {
                 tickets: Vec::new(),
                 renews_at: None,
                 plan: None,
+                spend_days: None,
             },
         );
         store.save(&cache).unwrap();

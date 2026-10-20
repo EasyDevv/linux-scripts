@@ -282,6 +282,15 @@ pub fn openrouter_api_key(
         })
 }
 
+/// Browser `Cookie:` header for `openrouter.ai` Activity. Overlay `.env` only;
+/// the global fish file is the API key, not the session.
+pub fn openrouter_cookie(
+    env: &dyn Fn(&str) -> Option<String>,
+    env_file: Option<&Path>,
+) -> Option<String> {
+    env_override(env, env_file, &["OPENROUTER_COOKIE"])
+}
+
 pub fn opencode_cookie(
     env: &dyn Fn(&str) -> Option<String>,
     env_file: Option<&Path>,
@@ -547,7 +556,7 @@ mod tests {
         // A pasted header carries `;`, which the file reader must keep whole.
         fs::write(
             agent.join(".env"),
-            "LITHOSAI_COOKIE=\"__Host-console_session=abc; __Host-console_csrf=def\"\nCLAUDE_COOKIE=sessionKey=sk-1; cf_clearance=cf-2\n",
+            "LITHOSAI_COOKIE=\"__Host-console_session=abc; __Host-console_csrf=def\"\nCLAUDE_COOKIE=sessionKey=sk-1; cf_clearance=cf-2\nOPENROUTER_COOKIE=\"__session=or-sess; __client=or-client\"\n",
         )
         .unwrap();
         // Neither the old cookie names, a Pi key, nor the CLI file is a source.
@@ -571,6 +580,10 @@ mod tests {
         assert_eq!(
             claude_cookie(&env, None).as_deref(),
             Some("sessionKey=sk-1; cf_clearance=cf-2")
+        );
+        assert_eq!(
+            openrouter_cookie(&env, None).as_deref(),
+            Some("__session=or-sess; __client=or-client")
         );
     }
 

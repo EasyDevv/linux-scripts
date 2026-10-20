@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::auth::{self, cache_key};
 use crate::cache::{
-    CacheFile, FileStore, ProviderSnapshot, ProviderState, Store, DEFAULT_CACHE_PATH,
+    CacheFile, DaySpend, FileStore, ProviderSnapshot, ProviderState, Store, DEFAULT_CACHE_PATH,
 };
 use crate::claude;
 use crate::commandcode;
@@ -28,6 +28,7 @@ pub struct ProbeOutcome {
     pub tickets: Vec<crate::cache::ResetTicket>,
     pub renews_at: Option<i64>,
     pub plan: Option<crate::cache::PlanState>,
+    pub spend_days: Option<Vec<crate::cache::DaySpend>>,
 }
 
 impl ProbeOutcome {
@@ -42,6 +43,7 @@ impl ProbeOutcome {
             tickets: Vec::new(),
             renews_at: None,
             plan: None,
+            spend_days: None,
         }
     }
 }
@@ -186,7 +188,8 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
         let mut cache = self.store.load()?;
         let mut answers = Vec::with_capacity(jobs.len());
         for ((provider, model), outcome) in jobs.into_iter().zip(outcomes) {
-            let (key, snapshot) = outcome_snapshot(now, outcome);
+            let (key, mut snapshot) = outcome_snapshot(now, outcome);
+            keep_spend_days(&cache, &key, &mut snapshot);
             cache.providers.insert(key, snapshot.clone());
             answers.push(RemainingAnswer::from_snapshot(
                 &model, &provider, &snapshot, false,
@@ -214,6 +217,7 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
             windows: Vec::new(),
             tickets: Vec::new(),
             renews_at: None,
+            spend_days: None,
         };
         self.upsert(key, snapshot.clone())?;
         Ok(RemainingAnswer::from_snapshot(
@@ -250,7 +254,8 @@ impl<C: Clock, S: Store, P: Probes> UsageCore<C, S, P> {
     fn probe_provider(&self, provider: &str, now: i64) -> Result<ProviderSnapshot> {
         let outcome = self.probes.probe(provider, now);
         let mut cache = self.store.load()?;
-        let (key, snapshot) = outcome_snapshot(now, outcome);
+        let (key, mut snapshot) = outcome_snapshot(now, outcome);
+        keep_spend_days(&cache, &key, &mut snapshot);
         cache.providers.insert(key, snapshot.clone());
         self.store.save(&cache)?;
         Ok(snapshot)
@@ -287,8 +292,28 @@ fn outcome_snapshot(now: i64, outcome: ProbeOutcome) -> (String, ProviderSnapsho
         tickets: outcome.tickets,
         renews_at: outcome.renews_at,
         plan: outcome.plan,
+        spend_days: outcome.spend_days,
     };
     (key, snapshot)
+}
+
+/// An empty Activity series means the cookie was refused, not that spend
+/// dropped to zero. Keep the last dated days so the card does not blank.
+fn keep_spend_days(cache: &CacheFile, key: &str, snapshot: &mut ProviderSnapshot) {
+    if !snapshot.spend_days.as_ref().is_some_and(Vec::is_empty) {
+        return;
+    }
+    let Some(prev) = cache
+        .providers
+        .get(key)
+        .and_then(|old| old.spend_days.clone())
+    else {
+        return;
+    };
+    if prev.is_empty() {
+        return;
+    }
+    snapshot.spend_days = Some(prev);
 }
 
 pub fn provider_from_model(model: &str) -> Option<String> {
@@ -334,6 +359,7 @@ pub struct LiveProbes<H> {
     pub grok_team_id: Option<String>,
     pub lithosai_cookie: Option<String>,
     pub openrouter_key: Option<String>,
+    pub openrouter_cookie: Option<String>,
     pub claude_cookie: Option<String>,
     pub claude_base: String,
 }
@@ -353,6 +379,7 @@ impl LiveProbes<ReqwestHttp> {
             grok_team_id: auth::grok_team_id(&auth::env_lookup),
             lithosai_cookie: auth::lithosai_cookie(&auth::env_lookup, None),
             openrouter_key: auth::openrouter_api_key(&auth::env_lookup, None),
+            openrouter_cookie: auth::openrouter_cookie(&auth::env_lookup, None),
             claude_cookie: auth::claude_cookie(&auth::env_lookup, None),
             claude_base: DEFAULT_CLAUDE_BASE.to_string(),
         })
@@ -415,6 +442,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                         windows: Vec::new(),
                         tickets: Vec::new(),
                         renews_at: None,
+                        spend_days: None,
                     }),
                 None => ProbeOutcome {
                     plan: None,
@@ -426,6 +454,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     windows: Vec::new(),
                     tickets: Vec::new(),
                     renews_at: None,
+                    spend_days: None,
                 },
             },
             "opencode-go" => {
@@ -441,6 +470,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             windows: Vec::new(),
                             tickets: Vec::new(),
                             renews_at: None,
+                            spend_days: None,
                         }
                     })
                 });
@@ -463,6 +493,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             windows: Vec::new(),
                             tickets: Vec::new(),
                             renews_at: None,
+                            spend_days: None,
                         }),
                         None => key_unknown.unwrap_or(ProbeOutcome {
                             plan: None,
@@ -474,6 +505,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             windows: Vec::new(),
                             tickets: Vec::new(),
                             renews_at: None,
+                            spend_days: None,
                         }),
                     },
                 }
@@ -498,6 +530,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     windows: Vec::new(),
                     tickets: Vec::new(),
                     renews_at: None,
+                    spend_days: None,
                 }),
                 None => ProbeOutcome {
                     plan: None,
@@ -509,6 +542,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                     windows: Vec::new(),
                     tickets: Vec::new(),
                     renews_at: None,
+                    spend_days: None,
                 },
             },
             "grok" => {
@@ -524,6 +558,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                             windows: Vec::new(),
                             tickets: Vec::new(),
                             renews_at: None,
+                            spend_days: None,
                         })
                 } else if let Some(session) = &self.grok {
                     grok::probe(
@@ -543,6 +578,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                         windows: Vec::new(),
                         tickets: Vec::new(),
                         renews_at: None,
+                        spend_days: None,
                     })
                 } else {
                     ProbeOutcome {
@@ -555,11 +591,17 @@ impl<H: Http> Probes for LiveProbes<H> {
                         windows: Vec::new(),
                         tickets: Vec::new(),
                         renews_at: None,
+                        spend_days: None,
                     }
                 }
             }
             "lithosai" => lithosai::probe(&self.http, self.lithosai_cookie.as_deref()),
-            "openrouter" => openrouter::probe(&self.http, self.openrouter_key.as_deref()),
+            "openrouter" => openrouter::probe(
+                &self.http,
+                self.openrouter_key.as_deref(),
+                self.openrouter_cookie.as_deref(),
+                now,
+            ),
             "claude" => claude::probe(&self.http, self.claude_cookie.as_deref(), &self.claude_base),
             _ => ProbeOutcome {
                 plan: None,
@@ -571,6 +613,7 @@ impl<H: Http> Probes for LiveProbes<H> {
                 windows: Vec::new(),
                 tickets: Vec::new(),
                 renews_at: None,
+                spend_days: None,
             },
         }
     }
@@ -623,6 +666,7 @@ mod tests {
                     windows: Vec::new(),
                     tickets: Vec::new(),
                     renews_at: None,
+                    spend_days: None,
                 })
         }
 
@@ -669,6 +713,7 @@ mod tests {
                 expires_at: 9,
             }],
             renews_at: None,
+            spend_days: None,
         };
         let mut outcomes = HashMap::new();
         outcomes.insert("claude".into(), primed);
@@ -708,6 +753,7 @@ mod tests {
             windows: Vec::new(),
             tickets: Vec::new(),
             renews_at: None,
+            spend_days: None,
         };
         let mut outcomes = HashMap::new();
         outcomes.insert("claude".into(), outcome);
@@ -737,6 +783,7 @@ mod tests {
             windows: Vec::new(),
             tickets: Vec::new(),
             renews_at: None,
+            spend_days: None,
         };
         let core = core(1_000, outcome);
         let first = core
@@ -765,6 +812,7 @@ mod tests {
             windows: Vec::new(),
             tickets: Vec::new(),
             renews_at: None,
+            spend_days: None,
         };
         let core = core(1_000, outcome);
         core.remaining("commandcode/x", false).unwrap();
@@ -785,6 +833,7 @@ mod tests {
             windows: Vec::new(),
             tickets: Vec::new(),
             renews_at: None,
+            spend_days: None,
         };
         let core = core(1_000, outcome);
         core.remaining("commandcode/x", false).unwrap();
@@ -808,6 +857,7 @@ mod tests {
             windows: Vec::new(),
             tickets: Vec::new(),
             renews_at: None,
+            spend_days: None,
         };
         let core = core(1_000, outcome);
         core.remaining("commandcode/x", false).unwrap();
@@ -848,6 +898,7 @@ mod tests {
                     windows: Vec::new(),
                     tickets: Vec::new(),
                     renews_at: None,
+                    spend_days: None,
                 }
             }
         }
@@ -879,5 +930,33 @@ mod tests {
             delay * 3,
             elapsed
         );
+    }
+
+    #[test]
+    fn empty_activity_keeps_the_last_spend_days() {
+        let mut cache = CacheFile::empty();
+        cache.providers.insert(
+            "openrouter:abc".into(),
+            ProviderSnapshot {
+                checked_at: 1,
+                state: ProviderState::Available,
+                reason: None,
+                reset_at: None,
+                fresh_until: 2,
+                remaining_credits: Some(1),
+                windows: Vec::new(),
+                tickets: Vec::new(),
+                renews_at: None,
+                plan: None,
+                spend_days: Some(vec![DaySpend {
+                    day: "2026-10-18".into(),
+                    cents: 12,
+                }]),
+            },
+        );
+        let mut snapshot = cache.providers["openrouter:abc"].clone();
+        snapshot.spend_days = Some(Vec::new());
+        keep_spend_days(&cache, "openrouter:abc", &mut snapshot);
+        assert_eq!(snapshot.spend_days.as_ref().unwrap()[0].cents, 12);
     }
 }

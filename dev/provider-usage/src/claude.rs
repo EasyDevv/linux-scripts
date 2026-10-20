@@ -103,6 +103,7 @@ pub fn probe(http: &dyn Http, cookie: Option<&str>, base_url: &str) -> ProbeOutc
         windows,
         tickets,
         renews_at: subscription.as_ref().and_then(parse_renews_at),
+        spend_days: None,
     }
 }
 
@@ -373,6 +374,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         windows: Vec::new(),
         tickets: Vec::new(),
         renews_at: None,
+        spend_days: None,
     }
 }
 

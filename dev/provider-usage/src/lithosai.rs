@@ -51,6 +51,7 @@ fn outcome(
         windows,
         tickets: Vec::new(),
         renews_at: None,
+        spend_days: None,
     }
 }
 

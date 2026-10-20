@@ -393,6 +393,7 @@ fn finish(
         windows: vec![window],
         tickets: Vec::new(),
         renews_at,
+        spend_days: None,
     }
 }
 
@@ -407,6 +408,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         windows: Vec::new(),
         tickets: Vec::new(),
         renews_at: None,
+        spend_days: None,
     }
 }
 

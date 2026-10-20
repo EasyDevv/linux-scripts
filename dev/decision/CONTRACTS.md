@@ -50,6 +50,10 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   the nearest ancestor of `cwd` holding `.git`, else `cwd`.
 - Routed rule frontmatter: `description:` (one line, what work it governs) and optional
   `skills: [a, b]` (also load this rule when one of those skills is selected).
+- `~/.agents` skills carry `disable-model-invocation: true`, so no harness lists them in the model's
+  catalog and this answer is how the model learns of one; `_manual/` only keeps a skill out of it.
+  A client shows `⚠ decision down · no skills` (pi footer, Claude Code status line) while
+  find_skill gets no answer or `unavailable`; a skip clears it.
 
 ## `POST /v1/find_tool`
 

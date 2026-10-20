@@ -375,6 +375,7 @@ fn usage_outcome(cache_key: String, parsed: &SubscriptionUsage, now: i64) -> Pro
             windows: cache_windows(&parsed.windows, now),
             tickets: Vec::new(),
             renews_at,
+            spend_days: None,
         };
     }
     ProbeOutcome {
@@ -387,6 +388,7 @@ fn usage_outcome(cache_key: String, parsed: &SubscriptionUsage, now: i64) -> Pro
         windows: cache_windows(&parsed.windows, now),
         tickets: Vec::new(),
         renews_at,
+        spend_days: None,
     }
 }
 
@@ -416,6 +418,7 @@ fn unknown(cache_key: String, reason: Option<String>) -> ProbeOutcome {
         windows: Vec::new(),
         tickets: Vec::new(),
         renews_at: None,
+        spend_days: None,
     }
 }
 
