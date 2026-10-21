@@ -102,7 +102,7 @@ describe("judgePromotion", () => {
 		expect(low.holds).toBe(false);
 		expect(low.reasons[0]).toContain("floor");
 		expect(judgePromotion("model_route", summary({})).holds).toBe(false);
-		expect(judgePromotion("orchestrator", summary({ accuracy: 0.1 })).holds).toBe(true);
+		expect(judgePromotion("loop", summary({ accuracy: 0.1 })).holds).toBe(true);
 	});
 
 	test("unavailable cases block the rule, since the averages cover only part of the set", () => {

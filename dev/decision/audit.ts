@@ -6,7 +6,7 @@
  * its turn by time (pi also records the `decisionId` in a `decision-route` entry). Signals follow
  * plan §9-2: manual model change, a repeated request, or premium spent on a short answer for
  * model_route; recommended-and-used vs missed vs noise for find_skill; activated-and-called for
- * find_tool; planned-and-spawned for orchestrator.
+ * find_tool.
  *
  * Wrong-looking cases go to `candidates/<feature>.jsonl` in eval-case format. They are
  * suggestions: only a person moves a line into `evals/`. Everything written is secret-masked and
@@ -96,8 +96,6 @@ const SIGNAL_FEATURE: Record<string, string> = {
 	used: "find_skill",
 	activated: "find_tool",
 	called: "find_tool",
-	planned: "orchestrator",
-	spawned: "orchestrator",
 };
 
 export function parseLogLines(
@@ -433,10 +431,9 @@ export function manualModelChanges(
 	return out;
 }
 
-const SKILL_PATH = /skills\/([\w.-]+)\/SKILL\.md/g;
+const SKILL_PATH = /skills(?:-routed)?\/([\w.-]+)\/SKILL\.md/g;
 const READ_TOOLS = /^(read|bulk_read)$/i;
-const SHELL_READ = /\b(cat|head|tail|sed|bat|less|nl)\b[^|;&\n]*skills\/[\w.-]+\/SKILL\.md/;
-const SUBAGENT_TOOLS = /^(subagent|agent|task)$/i;
+const SHELL_READ = /\b(cat|head|tail|sed|bat|less|nl)\b[^|;&\n]*skills(?:-routed)?\/[\w.-]+\/SKILL\.md/;
 
 /** Skills a turn opened: a read of `<name>/SKILL.md` or a `Skill` tool call. */
 export function skillsUsed(events: readonly TEvent[]): Set<string> {
@@ -590,8 +587,15 @@ export function deriveSignals(log: LogData, locate: TranscriptLocator, features:
 			const used = skillsUsed(slice);
 			for (const o of outcomes)
 				if (o.signal === "used" && isRecord(o.detail) && str(o.detail.name)) used.add(String(o.detail.name));
+			// A body the harness loaded was delivered, not merely recommended: reading the file is moot.
+			const loaded = new Set(
+				outcomes
+					.filter((o) => o.signal === "injected")
+					.flatMap((o) => (isRecord(o.detail) ? namesOf(o.detail.bodies) : [])),
+			);
+			for (const n of loaded) add("body_loaded", "ok", n);
 			const hits = [...recommended].filter((n) => used.has(n));
-			const noise = [...recommended].filter((n) => !used.has(n));
+			const noise = [...recommended].filter((n) => !used.has(n) && !loaded.has(n));
 			const missed = [...used].filter((n) => !recommended.has(n));
 			for (const n of hits) add("used", "ok", n);
 			for (const n of noise) add("noise", "wrong", `${n} recommended, never used`);
@@ -613,18 +617,6 @@ export function deriveSignals(log: LogData, locate: TranscriptLocator, features:
 			}
 			input = { userRequest: input.prompt };
 			expected = hits;
-		} else if (r.feature === "orchestrator") {
-			const plan = str(r.raw.plan);
-			const spawned =
-				tools.filter((e) => e.kind === "tool" && SUBAGENT_TOOLS.test(e.name)).length +
-				outcomes.filter((o) => o.signal === "spawned").length;
-			if (plan === "single" && spawned > 0)
-				add("under_planned", "wrong", `plan single but ${spawned} subagent call(s)`);
-			else if ((plan === "fanout" || plan === "staged") && spawned === 0)
-				add("unfollowed", "wrong", `plan ${plan} but nothing spawned`);
-			else add("followed", "ok", `plan ${plan ?? "?"}, ${spawned} spawned`);
-			input = { task: input.prompt };
-			expected = plan === "single" || spawned === 0 ? { plan: "single" } : { plan: spawned > 1 ? "fanout" : "staged" };
 		}
 
 		const wrong = found.filter((f) => f.verdict === "wrong");

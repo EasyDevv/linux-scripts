@@ -119,7 +119,7 @@ export function isMiss(metrics: Record<string, number>): boolean {
 	return Object.entries(metrics).some(([name, value]) => (lowerIsBetter(name) ? value > 0 : value < 1));
 }
 
-/** The plan's absolute promotion floors (§9-1), per feature and metric. Orchestrator has none: ≥ baseline only. */
+/** The plan's absolute promotion floors (§9-1), per feature and metric. A feature without an entry has none: ≥ baseline only. */
 export const FLOORS: Record<string, Record<string, number>> = {
 	model_route: { within1: 0.9 },
 	find_skill: { recall: 0.9 },

@@ -1,6 +1,6 @@
 /**
  * The shape every decision feature exposes, so the server, `decision eval`, and `decision audit`
- * treat model_route, find_skill, find_tool, and orchestrator the same way.
+ * treat model_route, find_skill, and find_tool the same way.
  *
  * A feature owns its HTTP body parsing, its versioned question file
  * (`prompts/<name>/vN.json`), its composition from answers to a recommendation, and its eval
@@ -32,7 +32,7 @@ export interface FeatureRuntime {
 }
 
 export interface FeatureDef {
-	/** Log and prompt-folder name: `model_route`, `find_skill`, `find_tool`, `orchestrator`. */
+	/** Log and prompt-folder name: `model_route`, `find_skill`, `find_tool`. */
 	name: string;
 	/** HTTP route, `/v1/<name>`. */
 	path: string;

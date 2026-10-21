@@ -81,7 +81,7 @@ function reader(entries: readonly CatalogEntry[]): CatalogReader {
 		];
 		const file =
 			e.kind === "skill"
-				? join(home, ".agents/skills", e.name, "SKILL.md")
+				? join(home, ".agents/skills-routed", e.name, "SKILL.md")
 				: join(home, ".agents/rules-routed", `${e.name}.md`);
 		mkdirSync(join(file, ".."), { recursive: true });
 		writeFileSync(file, `---\n${front.join("\n")}\n---\n${e.body ?? ""}`);
@@ -143,6 +143,28 @@ describe("find_skill shortlist and compose", () => {
 		const r = compose(asked, { c0: bool(0.7), c1: bool(0.95) }, catalog, prompt);
 		expect(r.rules).toHaveLength(1);
 		expect(r.rules[0]?.p).toBe(0.95);
+	});
+
+	test("only the top skill at the inject threshold carries its body, and an oversized body stays a hint", () => {
+		const forced = {
+			...prompt,
+			limits: { ...prompt.limits, injectThreshold: 0.85, injectMax: 1, injectMaxChars: 100 },
+		};
+		const asked = [
+			entry("skill", "build-frontend", { body: "# frontend" }),
+			entry("skill", "browse-site", { body: "# browse" }),
+		];
+		const r = compose(asked, { c0: bool(0.9), c1: bool(0.95) }, catalog, forced);
+		expect(r.skills.map((s) => [s.name, s.body])).toEqual([
+			["browse-site", "# browse"],
+			["build-frontend", undefined],
+		]);
+		expect(r.notes).toContain("skill browse-site body injected (p 0.95)");
+		const big = compose([entry("skill", "build-frontend", { body: "x".repeat(101) })], { c0: bool(0.9) }, catalog, forced);
+		expect(big.skills[0]?.body).toBeUndefined();
+		const below = compose(asked.slice(0, 1), { c0: bool(0.8) }, catalog, forced);
+		expect(below.skills[0]?.body).toBeUndefined();
+		expect(compose(asked.slice(0, 1), { c0: bool(0.99) }, catalog, prompt).skills[0]?.body).toBeUndefined();
 	});
 
 	test("a linked rule that is already loaded is not returned", () => {

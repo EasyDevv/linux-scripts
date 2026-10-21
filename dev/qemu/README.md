@@ -8,7 +8,7 @@
 ```text
 implementation: ~/.local/share/scripts/dev/qemu
 command:        ~/.local/bin/wq
-skill:          ~/.agents/skills/windows-qemu
+skill:          ~/.agents/skills-routed/windows-qemu
 quadlet:        ~/.config/containers/systemd/windows@.container
 ```
 

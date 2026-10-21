@@ -206,7 +206,7 @@ describe("building blocks", () => {
 
 	test("skillsUsed sees SKILL.md reads, shell cats, and Skill calls, but not edits", () => {
 		const used = skillsUsed([
-			tool(1, "read", { path: "/home/u/.agents/skills/build-frontend/SKILL.md" }),
+			tool(1, "read", { path: "/home/u/.agents/skills-routed/build-frontend/SKILL.md" }),
 			tool(2, "Read", { file_path: "/home/u/.claude/skills/write-a-rule/SKILL.md" }),
 			tool(3, "bash", { command: "cat ~/.agents/skills/improve-skill/SKILL.md | head" }),
 			tool(4, "Skill", { skill: "plug:learn" }),
@@ -318,6 +318,22 @@ describe("find_skill signals", () => {
 		expect(d.candidates[0].case.expected).toEqual({ skills: ["build-frontend", "write-a-rule"], rules: [] });
 	});
 
+	test("a skill whose body the harness loaded is delivered, not noise", () => {
+		const log = logOf([
+			result(1, { feature: "find_skill", decisionId: "s1", skills: [{ name: "build-frontend", p: 0.9 }], rules: [] }),
+			{
+				ts: at(2),
+				type: "outcome",
+				decisionId: "s1",
+				signal: "injected",
+				detail: { skills: ["build-frontend"], rules: [], bodies: ["build-frontend"] },
+			},
+		]);
+		const d = deriveSignals(log, locateWith(pi([user(1, "restyle the card"), assistant(6, "done")])), ["find_skill"]);
+		expect(d.findings).toEqual([expect.objectContaining({ signal: "body_loaded", verdict: "ok" })]);
+		expect(d.candidates).toEqual([]);
+	});
+
 	test("the skill read counts as use when the harness reports no outcome", () => {
 		const log = logOf([result(1, { feature: "find_skill", decisionId: "s1", skills: [{ name: "browser" }] })]);
 		const events = [user(1, "open the site"), tool(3, "Read", { file_path: "/h/.claude/skills/browser/SKILL.md" })];
@@ -327,7 +343,7 @@ describe("find_skill signals", () => {
 	});
 });
 
-describe("find_tool and orchestrator signals", () => {
+describe("find_tool signals", () => {
 	test("activated tools are called or unused, judged inside the containing turn", () => {
 		const log = logOf([
 			result(5, {
@@ -349,25 +365,6 @@ describe("find_tool and orchestrator signals", () => {
 		expect(d.candidates[0].case.input).toMatchObject({ userRequest: "look up the symbol" });
 	});
 
-	test("orchestrator: plan vs spawned subagents", () => {
-		const events = [user(1, "split this into parallel work"), tool(3, "subagent", {}), tool(3, "subagent", {})];
-		const single = deriveSignals(
-			logOf([result(1, { feature: "orchestrator", plan: "single" })]),
-			locateWith(pi(events)),
-			["orchestrator"],
-		);
-		expect(single.findings[0].signal).toBe("under_planned");
-		const fan = deriveSignals(
-			logOf([result(1, { feature: "orchestrator", plan: "fanout" })]),
-			locateWith(pi([user(1, "do it")])),
-			["orchestrator"],
-		);
-		expect(fan.findings[0].signal).toBe("unfollowed");
-		const ok = deriveSignals(logOf([result(1, { feature: "orchestrator", plan: "fanout" })]), locateWith(pi(events)), [
-			"orchestrator",
-		]);
-		expect(ok.findings[0].signal).toBe("followed");
-	});
 });
 
 describe("efficiency, tally, and report", () => {

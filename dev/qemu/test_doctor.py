@@ -36,7 +36,7 @@ def test_inspect_reports_drift(tmp: Path) -> None:
     here = tmp / "qemu"
     home = tmp / "home"
     _write(here / "wq.py", "")
-    _write(home / ".agents/skills/windows-qemu/scripts/ssh_forward.py", "")
+    _write(home / ".agents/skills-routed/windows-qemu/scripts/ssh_forward.py", "")
     _write(
         home / ".config/systemd/user/windows@.service.d/ssh-forward.conf",
         "ExecStartPost=/old/windows-ssh-forward.sh %i\n",

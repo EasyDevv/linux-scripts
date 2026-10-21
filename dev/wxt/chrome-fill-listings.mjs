@@ -13,7 +13,7 @@ import {
 	createTab,
 	waitForLoad,
 	listTabs,
-} from "/home/easydev/.agents/skills/bun-webview/scripts/cdp.ts";
+} from "/home/easydev/.agents/skills-routed/bun-webview/scripts/cdp.ts";
 import { WXTU_CONFIG } from "./config.mjs";
 
 const CHROME_EDIT_URL =

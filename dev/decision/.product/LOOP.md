@@ -36,7 +36,7 @@ decision.service ─ auth · catalog(skills, rules-routed) · prompts/vN · back
 | 01-model-route | 프롬프트가 받을 capability tier(`quick`·`standard`·`high`·`premium`) | `POST /v1/model_route` | v1 |
 | 02-find-skill | 실을 skill과 routed rule | `POST /v1/find_skill` | **v2** (`skillThreshold` 0.5) |
 | 03-find-tool | 켤 비활성 도구(가산만) | `POST /v1/find_tool` | v1 (v2·v3 기각) |
-| 04-orchestrate | single·fanout·staged 계획과 역할 | `POST /v1/orchestrate` | v1 |
+| ~~04-orchestrate~~ | 보관됨 (`archive/orchestrator/`) | – | – |
 
 ```mermaid
 flowchart TD
@@ -54,11 +54,6 @@ flowchart TD
         H --> O["outcome 신호 (applied, injected, used, activated, called)"]
         O --> L["decision log"]
     end
-    subgraph orch["오케스트레이션 — /orchestrate 요청마다, 사람 게이트"]
-        P{"사람: /orchestrate 실행"} --> Q["orchestrate: plan + 역할 (upstream 역할만)"]
-        Q --> W["하네스가 subagent 실행"]
-        W --> L
-    end
     subgraph improve["개선 루프 — 버전마다, 사람 게이트"]
         L --> AU["decision audit: 효율·outcome·후보 케이스"]
         AU --> G1{"사람: 후보 케이스를 evals로 옮길까?"}
@@ -75,7 +70,7 @@ Loop 판정의 품질을 재고 버전을 옮기는 CLI.
 
 | id | 역할 | 명령 | 상태 |
 | --- | --- | --- | --- |
-| 05-eval | 버전별 오프라인 채점, 리포트 `docs/eval/` | `decision eval --feature f --version vN [--against vM] --all` | 완료. 케이스 model_route 38 · find_skill 47 · find_tool 26 · orchestrator 24 |
+| 05-eval | 버전별 오프라인 채점, 리포트 `docs/eval/` | `decision eval --feature f --version vN [--against vM] --all` | 완료. 케이스 model_route 38 · find_skill 47 · find_tool 26 |
 | 06-promote | 현재 버전 포인터 이동 | `decision promote f vN` | 완료. find_skill v2 승격 |
 | 07-audit | 실사용 log와 transcript 결합, 후보 케이스 | `decision audit --since 7d --harness pi\|claude` | 완료. 7일 사용 뒤 첫 정식 audit 예정 |
 
@@ -91,7 +86,7 @@ Loop 판정의 품질을 재고 버전을 옮기는 CLI.
 | --- | --- |
 | 코어 | Bun 데몬 `main.ts serve`, `features/*`(FeatureDef), `catalog.ts`, `engine.ts`, `backends.ts`, `auth.ts`, `eval.ts`, `audit.ts`, `promote.ts`. 계약 `CONTRACTS.md` |
 | 카탈로그 | skills `~/.agents/skills/*/SKILL.md`(`_manual` 제외) + 프로젝트 `.agents/skills`, rules `~/.agents/rules-routed` + 프로젝트 `.agents/rules-routed`. 프로젝트가 같은 이름을 이긴다 |
-| pi | `~/.pi/agent/extensions/decision/` — model_route 적용, find_skill rule 주입·hint·`trimCatalog`, find_tool 가산 활성화, `/orchestrate` |
+| pi | `~/.pi/agent/extensions/decision/` — model_route 적용, find_skill rule 주입·hint·`trimCatalog`, find_tool 가산 활성화 |
 | Claude Code | `~/.agents/plugins/decision/` — `prompt.submit`, `tool.call` mod |
 | 측정 | pi merged prompt 35,286 B → 16,929 B (trimCatalog, write-doc 질의). prefetch로 사용자 메시지 전 지연 1.34 s → 0.59 s |
-| 열림 | find_tool recall 0.904(목표 0.95 미달), orchestrator rolePrecision 0.757, seed 라벨 사용자 검토 전, 7일 audit 전 |
+| 열림 | find_tool recall 0.904(목표 0.95 미달), seed 라벨 사용자 검토 전, 7일 audit 전 |

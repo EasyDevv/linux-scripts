@@ -43,15 +43,23 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 
 - in: `{prompt, history?, cwd?, loaded?: string[]}` — `loaded` names (skills or rules) already in
   context; they are never returned again.
-- out: `{skills: [{name, path, description, p}], rules: [{name, path, scope: "global"|"project", p,
-  body}], candidates: number}` — `body` is the rule text without frontmatter.
-- Catalog: skills `~/.agents/skills/*/SKILL.md` (not `_manual/`), `{projectRoot}/.agents/skills/*/SKILL.md`;
+- out: `{skills: [{name, path, description, p, body?}], rules: [{name, path, scope: "global"|"project", p,
+  body}], candidates: number}` — a rule's `body` is its text without frontmatter. A skill carries `body`
+  (its `SKILL.md` without frontmatter) only when the prompt version sets `limits.injectThreshold` and the
+  skill is among the top `injectMax` (default 1) at p ≥ it and ≤ `injectMaxChars` (default 12000): the
+  harness then puts the body in context itself, and a skill without `body` stays a hint.
+- Catalog: skills `~/.agents/skills-routed/*/SKILL.md`, `{projectRoot}/.agents/skills-routed/*/SKILL.md`;
   rules `~/.agents/rules-routed/*.md`, `{projectRoot}/.agents/rules-routed/*.md`. `projectRoot` is
   the nearest ancestor of `cwd` holding `.git`, else `cwd`.
 - Routed rule frontmatter: `description:` (one line, what work it governs) and optional
   `skills: [a, b]` (also load this rule when one of those skills is selected).
-- `~/.agents` skills carry `disable-model-invocation: true`, so no harness lists them in the model's
-  catalog and this answer is how the model learns of one; `_manual/` only keeps a skill out of it.
+- Exposure is the folder, not a frontmatter flag. `skills-routed/` is scanned by no harness, so a
+  routed skill reaches the model only through this answer: a body, or a hint the model follows by
+  reading the `SKILL.md` at `path` (not the Skill tool, which does not know it). `.agents/skills/`
+  holds manual skills: the harnesses scan it, their authored `disable-model-invocation: true` keeps
+  them out of the model catalog, `/name` (Claude Code) and `/skill:name` (pi) run them, and the
+  catalog never reads it. Both clients offer `/routed <name>` to load a routed skill by hand, and on
+  a turn find_skill does not answer they list the routed skills by root, once a session.
   A client shows `⚠ decision down · no skills` (pi footer, Claude Code status line) while
   find_skill gets no answer or `unavailable`; a skip clears it.
 
@@ -59,12 +67,6 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 
 - in: `{userRequest, actionsTaken?: string[], assistantSaid?: string[], inactive: [{name, description}], topK?}`
 - out: `{activate: [{name, p}], done?: number}` — additive only; `done` is advisory.
-
-## `POST /v1/orchestrate`
-
-- in: `{task, roles: [{name, description}], cwd?}`
-- out: `{plan?: single|fanout|staged, worthParallel?: number, steps: [{role, p}]}` — roles only; the
-  harness writes each step's task text.
 
 ## `POST /v1/loop`
 
@@ -106,9 +108,8 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 ## `POST /v1/outcome`
 
 - in: `{decisionId?, feature, signal, detail?}` → 204.
-- signals: model_route `applied`; find_skill `injected` (`detail: {skills, rules}`), `used`
-  (`detail: {name}`); find_tool `activated`, `called` (`detail: {name}`); orchestrator `planned`,
-  `spawned` (`detail: {role}`).
+- signals: model_route `applied`; find_skill `injected` (`detail: {skills, rules, bodies?}` — `bodies` names the skills whose body the harness loaded), `used`
+  (`detail: {name}`); find_tool `activated`, `called` (`detail: {name}`).
 
 ## Log
 
@@ -119,5 +120,5 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 ## Eval case
 
 `evals/<feature>.jsonl`: `{input: <the HTTP body>, expected: <label>, source: "seed"|<sessionId>, note?}`.
-Labels: model_route a tier; find_skill `{skills: string[], rules: string[]}`; find_tool `string[]`;
-orchestrator `{plan, roles?: string[]}`. `FeatureDef.score(expected, result)` returns the metrics.
+Labels: model_route a tier; find_skill `{skills: string[], rules: string[]}`; find_tool `string[]`.
+`FeatureDef.score(expected, result)` returns the metrics.

@@ -1,8 +1,8 @@
 /**
  * Skill and routed-rule catalog for find_skill.
  *
- * Skills: `SKILL.md` one directory down in `~/.agents/skills` and `{projectRoot}/.agents/skills` (never
- * `_manual/`). Rules: `~/.agents/rules-routed/*.md` and `{projectRoot}/.agents/rules-routed/*.md`.
+ * Skills: `SKILL.md` one directory down in `~/.agents/skills-routed` and `{projectRoot}/.agents/skills-routed`,
+ * folders no harness scans (`~/.agents/skills` holds the manual ones, which find_skill never sees). Rules: `~/.agents/rules-routed/*.md` and `{projectRoot}/.agents/rules-routed/*.md`.
  * A project entry replaces a global one of the same kind and name. Each file is parsed once and
  * re-parsed only when its mtime or size changes; the directory listings are read on every call,
  * so a new or deleted skill shows up on the next prompt without a restart.
@@ -23,7 +23,7 @@ export interface CatalogEntry {
 	skills: string[];
 	/** `paths:` globs, project-relative: a prompt that names or a harness that touches a match triggers it. */
 	paths: string[];
-	/** Rules only: the text without frontmatter. */
+	/** The text without frontmatter: a rule is sent whole, a skill only past `injectThreshold` (find_skill). */
 	body?: string;
 }
 
@@ -126,7 +126,7 @@ function listOf(value: string | string[] | undefined): string[] {
 }
 
 function parseSkill(path: string, dirName: string, scope: CatalogEntry["scope"]): CatalogEntry | undefined {
-	const { meta } = parseFrontmatter(readFileSync(path, "utf8"));
+	const { meta, body } = parseFrontmatter(readFileSync(path, "utf8"));
 	const description = scalar(meta.description);
 	if (!description) return undefined;
 	return {
@@ -137,6 +137,7 @@ function parseSkill(path: string, dirName: string, scope: CatalogEntry["scope"])
 		description,
 		skills: [],
 		paths: listOf(meta.paths),
+		body: body.trim(),
 	};
 }
 
@@ -173,7 +174,7 @@ export class CatalogReader {
 		const merged = new Map<string, CatalogEntry>();
 		for (const { base, scope } of roots) {
 			for (const entry of [
-				...this.scanSkills(join(base, "skills"), scope),
+				...this.scanSkills(join(base, "skills-routed"), scope),
 				...this.scanRules(join(base, "rules-routed"), scope),
 			]) {
 				merged.set(`${entry.kind}:${entry.name}`, entry);
@@ -193,7 +194,7 @@ export class CatalogReader {
 	private scanSkills(dir: string, scope: CatalogEntry["scope"]): CatalogEntry[] {
 		const found: CatalogEntry[] = [];
 		for (const name of this.list(dir)) {
-			if (name.startsWith(".") || name === "_manual") continue;
+			if (name.startsWith(".")) continue;
 			const file = join(dir, name, "SKILL.md");
 			const entry = this.cached(file, () => parseSkill(file, name, scope));
 			if (entry) found.push(entry);

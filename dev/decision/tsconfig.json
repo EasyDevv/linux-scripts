@@ -7,6 +7,12 @@
 		"noEmit": true,
 		"strict": true,
 		"skipLibCheck": true,
-		"types": ["bun"]
-	}
+		"types": [
+			"bun"
+		]
+	},
+	"exclude": [
+		"archive",
+		"node_modules"
+	]
 }

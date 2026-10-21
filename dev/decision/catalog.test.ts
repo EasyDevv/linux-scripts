@@ -64,20 +64,19 @@ describe("projectRoot", () => {
 });
 
 describe("CatalogReader", () => {
-	test("reads global and project skills and routed rules; _manual and dotdirs are skipped", () => {
+	test("reads global and project routed skills and rules; manual skills and dotdirs are skipped", () => {
 		const home = temp();
 		const repo = temp();
 		mkdirSync(join(repo, ".git"));
-		write(join(home, ".agents/skills/alpha/SKILL.md"), "---\nname: alpha\ndescription: Does alpha.\n---\n# Alpha");
-		write(join(home, ".agents/skills/_manual/hidden/SKILL.md"), "---\nname: hidden\ndescription: no\n---\n");
-		write(join(home, ".agents/skills/_manual/SKILL.md"), "---\nname: manual\ndescription: no\n---\n");
-		write(join(home, ".agents/skills/.cache/SKILL.md"), "---\nname: cache\ndescription: no\n---\n");
-		write(join(home, ".agents/skills/nodesc/SKILL.md"), "---\nname: nodesc\n---\n");
+		write(join(home, ".agents/skills-routed/alpha/SKILL.md"), "---\nname: alpha\ndescription: Does alpha.\n---\n# Alpha");
+		write(join(home, ".agents/skills/manual/SKILL.md"), "---\nname: manual\ndescription: no\n---\n");
+		write(join(home, ".agents/skills-routed/.cache/SKILL.md"), "---\nname: cache\ndescription: no\n---\n");
+		write(join(home, ".agents/skills-routed/nodesc/SKILL.md"), "---\nname: nodesc\n---\n");
 		write(
 			join(home, ".agents/rules-routed/style.md"),
 			"---\ndescription: Code style work.\nskills: [alpha]\n---\n\n# Style\n\n- tabs",
 		);
-		write(join(repo, ".agents/skills/beta/SKILL.md"), "---\ndescription: Does beta.\n---\n");
+		write(join(repo, ".agents/skills-routed/beta/SKILL.md"), "---\ndescription: Does beta.\n---\n");
 		write(join(repo, ".agents/rules-routed/local.md"), "---\ndescription: Local work.\n---\n# Local\n- x");
 		const entries = new CatalogReader(home).read(join(repo, "src"));
 		expect(entries.map((e) => `${e.kind}:${e.name}:${e.scope}`).sort()).toEqual([
@@ -120,7 +119,7 @@ describe("CatalogReader", () => {
 		write(file, "---\ndescription: two, longer\n---\n# A\n- a");
 		utimesSync(file, new Date(), new Date(Date.now() + 5_000));
 		expect(reader.read()[0]?.description).toBe("two, longer");
-		write(join(home, ".agents/skills/new/SKILL.md"), "---\ndescription: new skill\n---\n");
+		write(join(home, ".agents/skills-routed/new/SKILL.md"), "---\ndescription: new skill\n---\n");
 		expect(reader.read().map((e) => e.name)).toEqual(["new", "live"]);
 		rmSync(file);
 		expect(reader.read().map((e) => e.name)).toEqual(["new"]);
@@ -129,7 +128,7 @@ describe("CatalogReader", () => {
 	test("a cwd that is the home itself does not double-read the global catalog", () => {
 		const home = temp();
 		mkdirSync(join(home, ".git"));
-		write(join(home, ".agents/skills/solo/SKILL.md"), "---\ndescription: solo\n---\n");
+		write(join(home, ".agents/skills-routed/solo/SKILL.md"), "---\ndescription: solo\n---\n");
 		const entries = new CatalogReader(home).read(home);
 		expect(entries).toHaveLength(1);
 		expect(entries[0]?.scope).toBe("global");

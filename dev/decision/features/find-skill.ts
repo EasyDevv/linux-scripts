@@ -43,6 +43,12 @@ export interface FindSkillPrompt {
 		ruleThreshold: number;
 		maxSkills: number;
 		maxRules: number;
+		/** A skill at or above this probability arrives with its `SKILL.md` body; absent = hints only. */
+		injectThreshold?: number;
+		/** At most this many skills carry a body (the highest p first); default 1. */
+		injectMax?: number;
+		/** A body longer than this stays a hint: a skill cut mid-way misleads. Default 12000. */
+		injectMaxChars?: number;
 		/** Match `paths:` globs before asking Jev. */
 		scriptFirst?: boolean;
 	};
@@ -71,6 +77,8 @@ export interface FoundSkill {
 	path: string;
 	description: string;
 	p: number;
+	/** `SKILL.md` without frontmatter, set when the harness should load it into context itself. */
+	body?: string;
 }
 
 export interface FoundRule {
@@ -224,12 +232,21 @@ export function compose(
 		}
 	}
 	return {
-		skills: skills.map(({ entry, p }) => ({
-			name: entry.name,
-			path: entry.path,
-			description: entry.description,
-			p: round(p),
-		})),
+		skills: skills.map(({ entry, p }, index) => {
+			const found: FoundSkill = { name: entry.name, path: entry.path, description: entry.description, p: round(p) };
+			const body = entry.body ?? "";
+			const forced =
+				l.injectThreshold !== undefined &&
+				p >= l.injectThreshold &&
+				index < (l.injectMax ?? 1) &&
+				body !== "" &&
+				body.length <= (l.injectMaxChars ?? 12_000);
+			if (forced) {
+				found.body = body;
+				notes.push(`skill ${entry.name} body injected (p ${round(p)})`);
+			}
+			return found;
+		}),
 		rules: [...rules.values()]
 			.sort(byP)
 			.slice(0, l.maxRules)

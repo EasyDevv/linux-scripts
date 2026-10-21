@@ -5,10 +5,9 @@ import { findTool } from "./find-tool.ts";
 import { guardFeature } from "./guard.ts";
 import { loop } from "./loop.ts";
 import { modelRoute } from "./model-route.ts";
-import { orchestrator } from "./orchestrator.ts";
 import type { FeatureDef } from "./types.ts";
 
-export const FEATURES: readonly FeatureDef[] = [modelRoute, findSkill, findTool, orchestrator, loop, guardFeature];
+export const FEATURES: readonly FeatureDef[] = [modelRoute, findSkill, findTool, loop, guardFeature];
 
 export function feature(name: string): FeatureDef | undefined {
 	return FEATURES.find((f) => f.name === name);

@@ -83,8 +83,10 @@ def list_rule_items() -> list[ManagedItem]:
 
 
 def list_skill_items() -> list[ManagedItem]:
+    # Shared skills moved to ~/.agents/skills-routed, which find_skill offers in every project, so
+    # there is no opt-in pool left to link; the rule half of this tool still works.
     if not SKILL_SOURCE_ROOT.is_dir():
-        raise SystemExit(f"Source directory does not exist: {SKILL_SOURCE_ROOT}")
+        return []
     skill_dirs = sorted(
         {
             skill_file.parent.relative_to(SKILL_SOURCE_ROOT)
