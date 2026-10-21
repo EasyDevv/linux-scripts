@@ -1,0 +1,35 @@
+{
+  "version": "v5",
+  "source": "pi-jev skill applicability wording (the requested activity is the candidate's activity; a shared topic alone is not enough), plus a choice question that shortlists a large catalog; v2: skillThreshold 0.6 → 0.5 so a 0.55 write-doc pick is not hidden when the catalog is trimmed; v3: scriptFirst — `paths:` globs on skills and routed rules match the paths a prompt names or a harness touched before Jev (a rule hit is selected, a skill hit is always asked); v4: injectThreshold 0.85 / injectMax 1 / injectMaxChars 12000 — the top skill at p ≥ 0.85 arrives with its SKILL.md body (selection is unchanged, so v3 metrics hold); v5: chooseDescriptionChars 260 → 120, a shorter stage-1 catalog (stage 2 keeps 420)",
+  "kinds": {
+    "skill": "skill",
+    "rule": "standing rule"
+  },
+  "choose": {
+    "noneLabel": "none",
+    "noneDescription": "No candidate's activity is requested: general questions, chit-chat, or work no listed skill or rule specialises in",
+    "instructions": "Which single candidate covers the main activity `request` asks for? Judge the work the user wants done, not the topics they mention: a shared topic alone is not enough. Read `conversation_excerpt` only when the request is a short follow-up that makes sense in context. Pick `none` when no candidate's activity is requested."
+  },
+  "apply": {
+    "instructions": "Is the work `request` asks for the activity that this {kind} covers? {kind}: {name}. {description} Answer true only when the user is asking for that activity itself; a shared topic alone is not enough. Read `conversation_excerpt` only when the request is a short follow-up.",
+    "true": "The requested activity is the one this {kind} covers",
+    "false": "The request only shares a topic with it, or asks for something else"
+  },
+  "limits": {
+    "chooseDescriptionChars": 120,
+    "applyDescriptionChars": 420,
+    "historyChars": 2000,
+    "directBelow": 12,
+    "shortlistSize": 6,
+    "shortlistFloor": 0.03,
+    "noneStop": 0.9,
+    "skillThreshold": 0.5,
+    "ruleThreshold": 0.5,
+    "maxSkills": 3,
+    "maxRules": 4,
+    "scriptFirst": true,
+    "injectThreshold": 0.85,
+    "injectMax": 1,
+    "injectMaxChars": 12000
+  }
+}

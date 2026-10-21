@@ -1,8 +1,8 @@
 /**
  * Skill and routed-rule catalog for find_skill.
  *
- * Skills: `SKILL.md` one directory down in `~/.agents/skills-routed` and `{projectRoot}/.agents/skills-routed`,
- * folders no harness scans (`~/.agents/skills` holds the manual ones, which find_skill never sees). Rules: `~/.agents/rules-routed/*.md` and `{projectRoot}/.agents/rules-routed/*.md`.
+ * Skills: `<name>/SKILL.md` or `<category>/<name>/SKILL.md` in `~/.agents/skills-routed` and
+ * `{projectRoot}/.agents/skills-routed` (a folder without `SKILL.md` is a category), folders no harness scans (`~/.agents/skills` holds the manual ones, which find_skill never sees). Rules: `~/.agents/rules-routed/*.md` and `{projectRoot}/.agents/rules-routed/*.md`.
  * A project entry replaces a global one of the same kind and name. Each file is parsed once and
  * re-parsed only when its mtime or size changes; the directory listings are read on every call,
  * so a new or deleted skill shows up on the next prompt without a restart.
@@ -196,6 +196,16 @@ export class CatalogReader {
 		for (const name of this.list(dir)) {
 			if (name.startsWith(".")) continue;
 			const file = join(dir, name, "SKILL.md");
+			if (!existsSync(file)) {
+				// A category folder: its skills sit one level down, and the category is not part of the name.
+				for (const child of this.list(join(dir, name))) {
+					if (child.startsWith(".")) continue;
+					const nested = join(dir, name, child, "SKILL.md");
+					const entry = this.cached(nested, () => parseSkill(nested, child, scope));
+					if (entry) found.push(entry);
+				}
+				continue;
+			}
 			const entry = this.cached(file, () => parseSkill(file, name, scope));
 			if (entry) found.push(entry);
 		}

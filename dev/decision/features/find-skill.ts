@@ -10,8 +10,9 @@
  *
  * With `limits.scriptFirst`, `paths:` globs run before Jev (`path-trigger.ts`): a rule whose glob
  * matches a path the prompt names or the harness touched is selected outright, and a matching
- * skill is always asked (the shortlist cannot drop it). A body with `paths` and no prompt is a
- * touch report: only the globs answer, no Jev call.
+ * skill, or one a matched rule names in `skills:`, is always asked (the shortlist cannot drop it).
+ * A body with `paths` and no prompt is a touch report: only the globs answer, no Jev call, and
+ * those skills come back as hints.
  */
 
 import { readFileSync } from "node:fs";
@@ -307,15 +308,19 @@ export async function findSkills(
 			)
 		: [];
 	const ruleHits = hits.filter((h) => h.entry.kind === "rule");
-	const skillHits = hits.filter((h) => h.entry.kind === "skill").map((h) => h.entry);
+	// A matched rule's `skills:` count as matched too: the rule names the skill its work needs.
+	const paired = new Set(ruleHits.flatMap((h) => h.entry.skills));
+	const skillHits = candidates.filter(
+		(e) => e.kind === "skill" && (paired.has(e.name) || hits.some((h) => h.entry === e)),
+	);
 	const pathOnly = (reason: string, decision?: Decision): FindSkillResult => {
 		const found = compose([], {}, candidates, prompt, ruleHits);
 		return {
 			decisionId: decision?.decisionId,
 			status: "routed",
 			reason,
-			notes: found.notes,
-			skills: [],
+			notes: [...found.notes, ...skillHits.map((e) => `skill ${e.name} hinted by path`)],
+			skills: skillHits.map((e) => ({ name: e.name, path: e.path, description: e.description, p: 1 })),
 			rules: found.rules,
 			candidates: candidates.length,
 			backend: decision?.backend,
@@ -323,7 +328,7 @@ export async function findSkills(
 			latencyMs: Date.now() - started,
 		};
 	};
-	if (touchOnly) return pathOnly(`${ruleHits.length} rules by path`);
+	if (touchOnly) return pathOnly(`${ruleHits.length} rules, ${skillHits.length} skills by path`);
 
 	// Rules a glob already selected are not asked again.
 	const forcedRules = new Set(ruleHits.map((h) => h.entry));

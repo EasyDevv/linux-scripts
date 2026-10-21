@@ -48,11 +48,17 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   (its `SKILL.md` without frontmatter) only when the prompt version sets `limits.injectThreshold` and the
   skill is among the top `injectMax` (default 1) at p ≥ it and ≤ `injectMaxChars` (default 12000): the
   harness then puts the body in context itself, and a skill without `body` stays a hint.
-- Catalog: skills `~/.agents/skills-routed/*/SKILL.md`, `{projectRoot}/.agents/skills-routed/*/SKILL.md`;
+- Catalog: skills `~/.agents/skills-routed/{<name>,<category>/<name>}/SKILL.md` and the same under
+  `{projectRoot}/.agents/skills-routed/` (a folder without `SKILL.md` is a category, one level; the
+  name never includes it);
   rules `~/.agents/rules-routed/*.md`, `{projectRoot}/.agents/rules-routed/*.md`. `projectRoot` is
   the nearest ancestor of `cwd` holding `.git`, else `cwd`.
 - Routed rule frontmatter: `description:` (one line, what work it governs) and optional
   `skills: [a, b]` (also load this rule when one of those skills is selected).
+- A touch report (`paths` and an empty `prompt`, prompt version with `limits.scriptFirst`) answers
+  from `paths:` globs alone: matched rules, plus as hints (`p: 1`, no `body`) the skills whose glob
+  matched and the skills a matched rule names in `skills:`. A prompt with a matched rule asks Jev
+  about those paired skills too, past the shortlist. Clients append both to the tool result.
 - Exposure is the folder, not a frontmatter flag. `skills-routed/` is scanned by no harness, so a
   routed skill reaches the model only through this answer: a body, or a hint the model follows by
   reading the `SKILL.md` at `path` (not the Skill tool, which does not know it). `.agents/skills/`

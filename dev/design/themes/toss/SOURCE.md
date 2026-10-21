@@ -242,8 +242,8 @@ Run at 1440×900, `deviceScaleFactor 1`, against `http://dashboard.localhost` (m
 bun ~/.local/share/scripts/dev/design/cli/validate-layout-scheme.ts --project themes/toss/layout.css  # ok
 bun ~/.local/share/scripts/dev/design/cli/check-theme-chrome.ts --theme themes/toss                   # ok
 bun ~/.local/share/scripts/dev/design/cli/compare-shadcn-theme.ts --project themes/toss/layout.css     # missing 0, unsectioned 0
-bun ~/.agents/skills-routed/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light      # 8 pages ok
-bun ~/.agents/skills-routed/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme dark       # 8 pages ok
+bun ~/.agents/skills-routed/web/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme light      # 8 pages ok
+bun ~/.agents/skills-routed/web/site-to-design/scripts/measure-theme-ref.ts --slug toss --scheme dark       # 8 pages ok
 ```
 
 `measure-theme-ref.ts`: foundation, button, controls, inputs, lists, content, overlays, feedback —

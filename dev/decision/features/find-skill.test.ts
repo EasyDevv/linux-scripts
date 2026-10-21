@@ -160,7 +160,12 @@ describe("find_skill shortlist and compose", () => {
 			["build-frontend", undefined],
 		]);
 		expect(r.notes).toContain("skill browse-site body injected (p 0.95)");
-		const big = compose([entry("skill", "build-frontend", { body: "x".repeat(101) })], { c0: bool(0.9) }, catalog, forced);
+		const big = compose(
+			[entry("skill", "build-frontend", { body: "x".repeat(101) })],
+			{ c0: bool(0.9) },
+			catalog,
+			forced,
+		);
 		expect(big.skills[0]?.body).toBeUndefined();
 		const below = compose(asked.slice(0, 1), { c0: bool(0.8) }, catalog, forced);
 		expect(below.skills[0]?.body).toBeUndefined();
@@ -293,9 +298,30 @@ describe("findSkills scriptFirst", () => {
 			reader(pathCatalog),
 		);
 		expect(calls).toHaveLength(0);
-		expect(touch).toMatchObject({ status: "routed", skills: [], rules: [{ name: "docs-archive" }] });
+		expect(touch).toMatchObject({ status: "routed", rules: [{ name: "docs-archive" }] });
+		expect(touch.skills).toMatchObject([{ name: "write-doc", description: "write-doc description", p: 1 }]);
+		expect(touch.skills[0]?.body).toBeUndefined();
 		const down = await findSkills({ prompt: "fix docs/x.md wording", cwd: "/repo" }, run, v3, reader(pathCatalog));
 		expect(down).toMatchObject({ status: "routed", rules: [{ name: "docs-archive" }] });
+	});
+
+	test("a touch hints the skills a matched rule pairs, with no glob of their own", async () => {
+		const paired: CatalogEntry[] = [
+			...catalog,
+			entry("skill", "write-doc"),
+			entry("rule", "docs-archive", { paths: ["**/*.md"], skills: ["write-doc"] }),
+		];
+		const run = engine();
+		const touch = await findSkills(
+			{ prompt: "", paths: ["/repo/research/report.md"], cwd: "/repo" },
+			run,
+			v3,
+			reader(paired),
+		);
+		expect(calls).toHaveLength(0);
+		expect(touch.rules.map((r) => r.name)).toEqual(["docs-archive"]);
+		expect(touch.skills.map((s) => [s.name, s.p, s.body])).toEqual([["write-doc", 1, undefined]]);
+		expect(touch.notes).toContain("skill write-doc hinted by path");
 	});
 
 	test("v2 ignores paths", async () => {

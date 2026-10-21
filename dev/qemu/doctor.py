@@ -11,7 +11,7 @@ import argparse
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SKILL_SCRIPTS = Path.home() / ".agents/skills-routed/windows-qemu/scripts"
+SKILL_SCRIPTS = Path.home() / ".agents/skills-routed/system/windows-qemu/scripts"
 QUADLET_SKILL = (
     Path.home() / ".config/containers/systemd/.agents/skills/windows-qemu"
 )
@@ -23,7 +23,7 @@ PATH_WQ = Path.home() / ".local/bin/wq"
 def inspect(*, here: Path | None = None, home: Path | None = None) -> list[str]:
     here = here or HERE
     home = home or Path.home()
-    skill_scripts = home / ".agents/skills-routed/windows-qemu/scripts"
+    skill_scripts = home / ".agents/skills-routed/system/windows-qemu/scripts"
     quadlet_skill = home / ".config/containers/systemd/.agents/skills/windows-qemu"
     dropin = home / ".config/systemd/user/windows@.service.d/ssh-forward.conf"
     container = home / ".config/containers/systemd/windows@.container"

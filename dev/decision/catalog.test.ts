@@ -68,7 +68,10 @@ describe("CatalogReader", () => {
 		const home = temp();
 		const repo = temp();
 		mkdirSync(join(repo, ".git"));
-		write(join(home, ".agents/skills-routed/alpha/SKILL.md"), "---\nname: alpha\ndescription: Does alpha.\n---\n# Alpha");
+		write(
+			join(home, ".agents/skills-routed/alpha/SKILL.md"),
+			"---\nname: alpha\ndescription: Does alpha.\n---\n# Alpha",
+		);
 		write(join(home, ".agents/skills/manual/SKILL.md"), "---\nname: manual\ndescription: no\n---\n");
 		write(join(home, ".agents/skills-routed/.cache/SKILL.md"), "---\nname: cache\ndescription: no\n---\n");
 		write(join(home, ".agents/skills-routed/nodesc/SKILL.md"), "---\nname: nodesc\n---\n");
@@ -90,6 +93,23 @@ describe("CatalogReader", () => {
 		expect(style?.body).toBe("# Style\n\n- tabs");
 		expect(style?.path).toBe(join(home, ".agents/rules-routed/style.md"));
 		expect(entries.find((e) => e.name === "beta")?.description).toBe("Does beta.");
+	});
+
+	test("a folder without SKILL.md is a category: its skills are read one level down, named without it", () => {
+		const home = temp();
+		const repo = temp();
+		mkdirSync(join(repo, ".git"));
+		write(join(home, ".agents/skills-routed/web/browser/SKILL.md"), "---\ndescription: Browse.\n---\n# B");
+		write(join(home, ".agents/skills-routed/web/.hidden/SKILL.md"), "---\ndescription: no\n---\n");
+		write(join(home, ".agents/skills-routed/web/deep/more/SKILL.md"), "---\ndescription: no\n---\n");
+		write(join(home, ".agents/skills-routed/flat/SKILL.md"), "---\ndescription: Flat.\n---\n");
+		write(join(home, ".agents/skills-routed/flat/sub/SKILL.md"), "---\ndescription: no\n---\n");
+		write(join(repo, ".agents/skills-routed/tools/browser/SKILL.md"), "---\ndescription: Project browse.\n---\n");
+		const entries = new CatalogReader(home).read(repo);
+		expect(entries.map((e) => `${e.name}:${e.scope}`).sort()).toEqual(["browser:project", "flat:global"]);
+		expect(new CatalogReader(home).read().find((e) => e.name === "browser")?.path).toBe(
+			join(home, ".agents/skills-routed/web/browser/SKILL.md"),
+		);
 	});
 
 	test("a project entry replaces the global one of the same name", () => {
