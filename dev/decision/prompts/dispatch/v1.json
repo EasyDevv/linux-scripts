@@ -1,0 +1,85 @@
+{
+	"version": "v1",
+	"source": "docs/plan/261022-agent-composer.md (dashboard) §3–§4: routes, splitting rules, Goal vs Routine by who decides the end",
+	"connectors": {
+		"split": [
+			"고,",
+			"고，",
+			"하고 ",
+			"그리고 ",
+			"; "
+		],
+		"after": [
+			"끝나면 ",
+			"통과하면 ",
+			"then ",
+			"and then "
+		],
+		"joinIfOnly": [
+			"머지",
+			"merge",
+			"병합",
+			"머지해",
+			"머지해줘",
+			"merge it"
+		]
+	},
+	"limits": {
+		"maxItems": 6,
+		"pathsMax": 40,
+		"vagueThreshold": 0.5
+	},
+	"questions": {
+		"kind": {
+			"type": "choice",
+			"instructions": "What does `item` ask the dashboard to do? Read `item` as one instruction a person typed into a development dashboard; `whole` is the full sentence it came from. Judge who decides when the work ends: the person's own finished work ends a goal; the outside world keeps making work for a routine.",
+			"criteria": {
+				"task": "Do one piece of work now (change code, run tests, write, fix, investigate) and then stop",
+				"goal": "Reach an end the person's own work completes: a target value, a deadline, 'until', 'finish', or a one-time outside event after which a job is done ('when X ships, upgrade'), or asks to add or define a goal for a project",
+				"routine": "Repeat the same kind of work with no end: on a schedule ('every week', 'monthly') or every time an outside event happens ('whenever an advisory appears'), or asks to add a routine",
+				"org-edit": "Change an existing advice or quiet item (hold, dismiss, reword, reprioritise)",
+				"answer": "Only answer a question about the current state; nothing should run or change"
+			}
+		},
+		"mode": {
+			"type": "choice",
+			"instructions": "If `item` is one piece of work in a project, how should it run? `state.plainRunning` says whether a session is already working on the main tree.",
+			"criteria": {
+				"worktree": "A self-contained change worth its own branch: a feature, a refactor, a fix that touches several files, anything a reviewer should see as one diff",
+				"plain": "A small step that continues what the main session just did, or a command with no lasting change: run the tests, show the status, try that again, a one-line tweak"
+			}
+		},
+		"trigger": {
+			"type": "choice",
+			"instructions": "When should `item` start?",
+			"criteria": {
+				"now": "Right away, once",
+				"schedule": "At recurring times (days of the week, a time of day, monthly)",
+				"watch-once": "When an outside value or release changes once ('when Tauri 3 ships')",
+				"watch-each": "Every time an outside value or feed changes ('whenever a new advisory appears')"
+			}
+		},
+		"end": {
+			"type": "choice",
+			"instructions": "What ends `item`?",
+			"criteria": {
+				"none": "Nothing: it is done when this one run finishes, or it repeats forever",
+				"milestones": "Reaching a target the work moves toward step by step (a metric below a value, a feature complete)",
+				"until": "An outside condition becoming true",
+				"deadline": "A date or period ('this month', 'by Friday')"
+			}
+		},
+		"area": {
+			"type": "choice",
+			"instructions": "Which one of the project's top folders in `paths` will `item` most likely change? Choose `unknown` when the item names no part of the code or could touch many places."
+		},
+		"vague_target": {
+			"type": "bool",
+			"instructions": "Does `item` ask to keep improving or fixing something without saying what result would count as finished (no metric, no target value, no deadline, no single outside event)?",
+			"criteria": {
+				"true": "Open-ended improvement: it could be a goal once a target is named, or a routine that never ends",
+				"false": "It names a target, a deadline, a single event, or it is plainly one-off or plainly endless upkeep (checks, scans, reports)"
+			}
+		}
+	}
+}

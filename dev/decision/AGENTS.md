@@ -15,6 +15,9 @@ harness-side clients are thin and fail-open.
   answers `status != "routed"`.
 - `CONTRACTS.md` is the shared contract: change it first, then both clients. `POST /v1/*` shapes,
   `FeatureResult`, `harness`/`sessionId`, skip reasons.
+- A feature change lands in both clients, including client-only behaviour (commands, status line,
+  context delivery). Check each harness's own limits and test each one (pi `bun test`, Claude
+  `claude plugin test`); where one cannot match, say so in CONTRACTS.md.
 - Tier config lives outside this repo at `~/.config/decision/tiers.json` (`tiers.ts`), one list per
   harness (`pi` → `models.profiles` ladder, `claude` → catch-all model).
 - `decision audit` joins the decision log with the harness transcripts (`PI_CODING_AGENT_DIR` or

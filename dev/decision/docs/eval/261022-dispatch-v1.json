@@ -1,0 +1,425 @@
+{
+	"schema": 1,
+	"feature": "dispatch",
+	"version": "v1",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "/home/easydev/.local/share/scripts/dev/decision/evals/dispatch.jsonl",
+	"generatedAt": "2026-10-22T06:04:29.412Z",
+	"candidate": {
+		"summary": {
+			"version": "v1",
+			"cases": 19,
+			"answered": 19,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"kind": 1,
+				"answered": 1,
+				"mode": 1,
+				"items": 1,
+				"asks": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 407,
+				"p95": 805,
+				"n": 19
+			},
+			"costUsd": 0.0010667580000000001,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 19
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "워크플로우로 composer 토큰 파서 리팩터",
+				"expected": {
+					"kind": "task",
+					"mode": "worktree",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"mode": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"워크플로우로 composer 토큰 파서 리팩터\",\"kind\":\"task\",\"projects\":[],\"mode\":\"worktree\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.85,\"choices\":[\"task\",\"goal\"],\"reason\":\"task 0.85 · worktree 0.98\"}],\"reason\":\"tas…",
+				"costUsd": 0.000052752000000000006,
+				"status": "routed",
+				"latencyMs": 424,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "서버 에러 메시지 바꿔",
+				"expected": {
+					"kind": "task",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"서버 에러 메시지 바꿔\",\"kind\":\"task\",\"projects\":[],\"mode\":\"worktree\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.36,\"choices\":[\"task\",\"org-edit\"],\"reason\":\"task 0.89 · worktree 0.36\"}],\"reason\":\"task 0.89 · …",
+				"costUsd": 0.00005241600000000001,
+				"status": "routed",
+				"latencyMs": 467,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "방금 거 테스트 돌려",
+				"expected": {
+					"kind": "task",
+					"mode": "plain",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"mode": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"방금 거 테스트 돌려\",\"kind\":\"task\",\"projects\":[],\"mode\":\"plain\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":1,\"choices\":[\"task\",\"goal\"],\"reason\":\"task 1.00 · plain 1.00\"}],\"reason\":\"task 1.00 · plain 1.00\"}",
+				"costUsd": 0.00004716600000000001,
+				"status": "routed",
+				"latencyMs": 371,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "프로젝트 전체에 주기적인 보안검사",
+				"expected": {
+					"kind": "routine",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"프로젝트 전체에 주기적인 보안검사\",\"kind\":\"routine\",\"projects\":[],\"ownedPaths\":[],\"when\":\"schedule\",\"end\":\"none\",\"p\":0.97,\"choices\":[\"routine\",\"task\"],\"reason\":\"routine 0.97 · schedule\"}],\"reason\":\"routine 0.97 · sche…",
+				"costUsd": 0.000048258000000000005,
+				"status": "routed",
+				"latencyMs": 432,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "Postdock 에 유의미한 goal 추가",
+				"expected": {
+					"kind": "goal",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"Postdock 에 유의미한 goal 추가\",\"kind\":\"goal\",\"projects\":[\"postdock\"],\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.4,\"choices\":[\"goal\",\"routine\"],\"reason\":\"goal 0.99 · no target 0.60\"}],\"reason\":\"goal 0.99 …",
+				"costUsd": 0.00004758600000000001,
+				"status": "routed",
+				"latencyMs": 421,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "dev-selector, scroll-detox 에 보안점검 실시",
+				"expected": {
+					"kind": "task",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"dev-selector, scroll-detox 에 보안점검 실시\",\"kind\":\"task\",\"projects\":[\"dev-selector\",\"scroll-detox\"],\"mode\":\"plain\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.08,\"choices\":[\"task\",\"goal\"],\"reason\":\"task …",
+				"costUsd": 0.00004809000000000001,
+				"status": "routed",
+				"latencyMs": 426,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "이 함수 이름만 바꿔줘",
+				"expected": {
+					"kind": "task",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"이 함수 이름만 바꿔줘\",\"kind\":\"task\",\"projects\":[],\"mode\":\"plain\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.86,\"choices\":[\"task\",\"goal\"],\"reason\":\"task 0.97 · plain 0.86\"}],\"reason\":\"task 0.97 · plain 0.86…",
+				"costUsd": 0.000051324000000000005,
+				"status": "routed",
+				"latencyMs": 359,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "매주 월요일 전체 프로젝트 보안검사하고, 심각한 건 바로 고쳐줘",
+				"expected": {
+					"kind": "routine",
+					"items": 2
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"매주 월요일 전체 프로젝트 보안검사하고\",\"kind\":\"routine\",\"projects\":[],\"ownedPaths\":[],\"when\":\"schedule\",\"end\":\"none\",\"p\":0.99,\"choices\":[\"routine\",\"task\"],\"reason\":\"routine 0.99 · schedule\"},{\"text\":\"심각한 건 바로 고쳐줘\",\"kin…",
+				"costUsd": 0.00009605400000000001,
+				"status": "routed",
+				"latencyMs": 805,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "postdock 결제 실패율 1% 밑으로 떨어질 때까지 매주 개선",
+				"expected": {
+					"kind": "goal",
+					"items": 1,
+					"asks": false
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1,
+					"asks": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"postdock 결제 실패율 1% 밑으로 떨어질 때까지 매주 개선\",\"kind\":\"goal\",\"projects\":[\"postdock\"],\"ownedPaths\":[],\"when\":\"schedule\",\"end\":\"milestones\",\"p\":0.74,\"choices\":[\"goal\",\"routine\"],\"reason\":\"goal 0.74 · schedule · en…",
+				"costUsd": 0.00004893000000000001,
+				"status": "routed",
+				"latencyMs": 373,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "Tauri 3 정식 나오면 dashboard 업그레이드해",
+				"expected": {
+					"kind": "goal",
+					"items": 1,
+					"asks": false
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1,
+					"asks": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"Tauri 3 정식 나오면 dashboard 업그레이드해\",\"kind\":\"goal\",\"projects\":[\"dashboard\"],\"ownedPaths\":[],\"when\":\"watch-once\",\"end\":\"until\",\"p\":0.97,\"choices\":[\"goal\",\"task\"],\"reason\":\"goal 0.97 · watch-once · end until\"…",
+				"costUsd": 0.000048132000000000006,
+				"status": "routed",
+				"latencyMs": 372,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "dev-selector, scroll-detox 의존성 매달 올리고 테스트 통과하면 머지",
+				"expected": {
+					"kind": "routine",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"dev-selector, scroll-detox 의존성 매달 올리고 테스트 머지\",\"kind\":\"routine\",\"projects\":[\"dev-selector\",\"scroll-detox\"],\"ownedPaths\":[],\"when\":\"schedule\",\"end\":\"none\",\"p\":0.96,\"choices\":[\"routine\",\"task\"],\"reason\":\"r…",
+				"costUsd": 0.00004872000000000001,
+				"status": "routed",
+				"latencyMs": 374,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "지금 서버 에러 메시지 고치고, 앞으로 에러 메시지 규칙은 매주 점검",
+				"expected": {
+					"kind": "task",
+					"items": 2
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"지금 서버 에러 메시지 고치고\",\"kind\":\"task\",\"projects\":[],\"mode\":\"worktree\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.12,\"choices\":[\"task\",\"routine\"],\"reason\":\"task 0.74 · worktree 0.12\"},{\"text\":\"앞으로 에러 메시지 …",
+				"costUsd": 0.00009651600000000001,
+				"status": "routed",
+				"latencyMs": 781,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "릴리스 노트 쓰고 끝나면 blog 프로젝트에 초안 올려",
+				"expected": {
+					"kind": "task",
+					"items": 2
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"릴리스 노트 쓰고\",\"kind\":\"task\",\"projects\":[],\"mode\":\"plain\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.56,\"choices\":[\"task\",\"goal\"],\"reason\":\"task 0.77 · plain 0.56\"},{\"text\":\"blog 프로젝트에 초안 올려\",\"kind\":\"t…",
+				"costUsd": 0.00009597000000000002,
+				"status": "routed",
+				"latencyMs": 753,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "이번 달 안에 true-index 랜딩 페이지 완성",
+				"expected": {
+					"kind": "goal",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"이번 달 안에 true-index 랜딩 페이지 완성\",\"kind\":\"goal\",\"projects\":[\"true-index\"],\"ownedPaths\":[],\"when\":\"now\",\"end\":\"deadline\",\"p\":0.96,\"choices\":[\"goal\",\"task\"],\"reason\":\"goal 0.96 · end deadline\"}],\"reason\":\"goa…",
+				"costUsd": 0.000047754000000000004,
+				"status": "routed",
+				"latencyMs": 358,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "매주 개선해줘",
+				"expected": {
+					"kind": "routine",
+					"items": 1,
+					"asks": true
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1,
+					"asks": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"매주 개선해줘\",\"kind\":\"routine\",\"projects\":[],\"ownedPaths\":[],\"when\":\"schedule\",\"end\":\"none\",\"p\":0.12,\"choices\":[\"goal\",\"routine\"],\"reason\":\"routine 0.99 · no target 0.88 · schedule\"}],\"reason\":\"routine 0.99 …",
+				"costUsd": 0.00004716600000000001,
+				"status": "routed",
+				"latencyMs": 397,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "npm 보안 공지가 나올 때마다 해당 프로젝트 점검",
+				"expected": {
+					"kind": "routine",
+					"items": 1,
+					"asks": false
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1,
+					"asks": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"npm 보안 공지가 나올 때마다 해당 프로젝트 점검\",\"kind\":\"routine\",\"projects\":[],\"ownedPaths\":[],\"when\":\"watch-each\",\"end\":\"none\",\"p\":1,\"choices\":[\"routine\",\"task\"],\"reason\":\"routine 1.00 · watch-each\"}],\"reason\":\"routine …",
+				"costUsd": 0.00004800600000000001,
+				"status": "routed",
+				"latencyMs": 440,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "지금 돌고 있는 거 뭐야",
+				"expected": {
+					"kind": "answer",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"지금 돌고 있는 거 뭐야\",\"kind\":\"answer\",\"projects\":[],\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":1,\"choices\":[\"answer\",\"task\"],\"reason\":\"answer 1.00\"}],\"reason\":\"answer 1.00\"}",
+				"costUsd": 0.000047418000000000006,
+				"status": "routed",
+				"latencyMs": 407,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "그거 다시 해봐",
+				"expected": {
+					"kind": "task",
+					"mode": "plain",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"mode": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"그거 다시 해봐\",\"kind\":\"task\",\"projects\":[],\"mode\":\"plain\",\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.97,\"choices\":[\"task\",\"routine\"],\"reason\":\"task 0.97 · plain 0.98\"}],\"reason\":\"task 0.97 · plain 0.98\"}",
+				"costUsd": 0.00004708200000000001,
+				"status": "routed",
+				"latencyMs": 360,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "r39 조언은 보류해",
+				"expected": {
+					"kind": "org-edit",
+					"items": 1
+				},
+				"metrics": {
+					"kind": 1,
+					"answered": 1,
+					"items": 1
+				},
+				"got": "{\"status\":\"routed\",\"items\":[{\"text\":\"r39 조언은 보류해\",\"kind\":\"org-edit\",\"projects\":[],\"ownedPaths\":[],\"when\":\"now\",\"end\":\"none\",\"p\":0.99,\"choices\":[\"org-edit\",\"task\"],\"reason\":\"org-edit 0.99\"}],\"reason\":\"org-edit 0.99\"}",
+				"costUsd": 0.000047418000000000006,
+				"status": "routed",
+				"latencyMs": 363,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "floor",
+		"holds": true,
+		"floors": [],
+		"better": [],
+		"worse": [],
+		"guards": [],
+		"reasons": []
+	}
+}

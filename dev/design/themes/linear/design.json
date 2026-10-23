@@ -330,6 +330,8 @@
       "fill": "mark rgb(28, 28, 27)",
       "chevron": "28px hit target, ink color-mix(--muted-foreground 28%)",
       "plus": "24px hit target at the band end",
+      "offsets": "from the band's left edge: 16px chevron box at +10, status icon at +37, title at +60, count 8px after the title (ref/linear.app/pages/team-all.mhtml, measured 2026-10-22)",
+      "treeIndent": "16px per nesting level; child rows keep the band's icon column and step it by 16 (sidebar tree and dashboard portfolio rows, measured 2026-10-22)",
       "hit": "whole band toggles the fold; inner buttons (name, +, chips) keep their own action; the chevron stays the keyboard control (accepted in dashboard 05-projects portfolio, 2026-10-07)",
       "axis": "every band in one list answers the same question (state: Advice · Done | Automation · Paused); never mix entity bands (one per project) with state bands — the entity becomes a row or the row's identifier (dashboard 05-projects portfolio, corrected 2026-10-08)",
       "rowKind": "one row kind per band: a band of proposal rows holds no project rows and vice versa; an entity listed in another band links by a muted count after its name, not by nesting (accepted 2026-10-08)"
@@ -339,7 +341,8 @@
       "radius": "--radius-sm",
       "insetX": "--list-row-hover-inset",
       "insetY": 0,
-      "hit": "whole row edge to edge (chevron, status icon, gutters, empty meta) is the title's hit target; end-cell action buttons sit above it; row text stays above the hover fill (accepted in dashboard 05-projects portfolio, 2026-10-07)"
+      "hit": "whole row edge to edge (chevron, status icon, gutters, empty meta) is the title's hit target; end-cell action buttons sit above it; row text stays above the hover fill (accepted in dashboard 05-projects portfolio, 2026-10-07)",
+      "endCell": "a persistent marker (risk shield, status) holds the far-right 24px slot at rest and on hover; hover actions reveal in fixed 24px slots to its left, never between marker and edge; at rest only the marker and a drill-in › show so the title keeps its width (corrected in dashboard portfolio, 2026-10-22)"
     },
     "rowSelected": {
       "fill": "--primary",

@@ -64,8 +64,10 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   reading the `SKILL.md` at `path` (not the Skill tool, which does not know it). `.agents/skills/`
   holds manual skills: the harnesses scan it, their authored `disable-model-invocation: true` keeps
   them out of the model catalog, `/name` (Claude Code) and `/skill:name` (pi) run them, and the
-  catalog never reads it. Both clients offer `/routed <name>` to load a routed skill by hand, and on
-  a turn find_skill does not answer they list the routed skills by root, once a session.
+  catalog never reads it. Both clients offer `/routed <name>` to load a routed skill by hand, and
+  register each routed skill as a command (`/<name> [request]` in Claude Code, `/skill:<name>` in
+  pi) that loads it and sends the request; on a turn find_skill does not answer they list the
+  routed skills by root, once a session.
   A client shows `⚠ decision down · no skills` (pi footer, Claude Code status line) while
   find_skill gets no answer or `unavailable`; a skip clears it.
 
@@ -110,6 +112,36 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   the oldText's closest match is and its first differing line; overlapping and repeated spans by line).
 - Text the model reads is appended after the tool result, never in the system prompt (cache).
 - `none` results are not logged.
+
+## `POST /v1/dispatch`
+
+The dashboard's composer and Footer Chat ask where one sentence goes (`~/dev/dashboard`,
+`docs/plan/261022-agent-composer.md`). Only the dashboard calls it; pi and Claude Code do not.
+
+- in: `{prompt, harness: "dashboard", scope?: {page?, project?, projects?: string[]},
+  fixed?: {kind?, mode?, scope?: string[]}, state?: {plainRunning?, plainPaths?: string[], tasks?,
+  projects?: string[], paths?: string[]}}` — `prompt` is the sentence with its `/kind` and `@scope`
+  tokens already read out by the client (those axes arrive in `fixed`); `state.projects` names the
+  registered projects; `state.paths` the selected project's top folders, the only `ownedPaths` Jev
+  may pick.
+- out: `{items: [{text, kind: task|goal|routine|org-edit|answer, projects: string[],
+  mode?: worktree|plain, ownedPaths: string[], when: now|schedule|watch-once|watch-each,
+  end: none|milestones|until|deadline, after?: number, p, choices: string[], reason}]}`.
+- Splitting is code, not Jev: a connector (`하고` · `그리고` · `끝나면` · `통과하면` · `and` ·
+  `then` · `;`) ends one item; `끝나면` · `통과하면` · `then` also set the next item's `after` to the
+  previous index. Each item is asked separately (kind, mode for a task, trigger, end, area).
+- A `fixed` axis is never asked and never changed; its share of `p` is 1. `p` is the lowest
+  confidence among the asked axes that decide the route (kind; mode when the item is a task).
+- `projects`: `fixed.scope`, else the `state.projects` names the item mentions, else
+  `scope.project`.
+- Skips: empty and acknowledgement (as model_route). A slash command does not skip: the tokens were
+  read out already. `unavailable` = the dashboard keeps its own mode chip.
+- `choices`: what to offer back when `p` is low — the two likeliest kinds, or `worktree` · `plain`
+  when the mode is the weaker axis. A goal or routine with no
+  target (`vague_target` ≥ `limits.vagueThreshold`, "improve it every week") offers goal · routine and
+  its `p` drops to `1 - vague`.
+- Eval label: `{kind, mode?, items?, asks?}`; metrics `kind`, `mode`, `items` (count), `asks` (some
+  item under 0.7), `answered`.
 
 ## `POST /v1/outcome`
 

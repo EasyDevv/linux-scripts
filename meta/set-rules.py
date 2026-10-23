@@ -56,8 +56,26 @@ def source_root_for(item: ManagedItem) -> Path:
     return RULE_SOURCE_ROOT if item.kind == "rule" else SKILL_SOURCE_ROOT
 
 
+def rule_is_routed(item: ManagedItem) -> bool:
+    # A rule with `description:` frontmatter is injected per prompt from rules-routed/;
+    # any other rule (`paths:` glob or none) goes to rules/, which every harness loads.
+    lines = (RULE_SOURCE_ROOT / item.relative_path).read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].rstrip() != "---":
+        return False
+    for line in lines[1:]:
+        if line.rstrip() == "---":
+            return False
+        if line.startswith("description:"):
+            return True
+    return False
+
+
 def target_root_for(project_root: Path, item: ManagedItem) -> Path:
-    return project_root / ".agents" / ("rules" if item.kind == "rule" else "skills")
+    # An opt-in skill is routed for that project only: find_skill reads
+    # <project>/.agents/skills-routed/{<name>,<category>/<name>}.
+    if item.kind == "skill":
+        return project_root / ".agents" / "skills-routed"
+    return project_root / ".agents" / ("rules-routed" if rule_is_routed(item) else "rules")
 
 
 def display_name_for(item: ManagedItem) -> str:
@@ -83,8 +101,8 @@ def list_rule_items() -> list[ManagedItem]:
 
 
 def list_skill_items() -> list[ManagedItem]:
-    # Shared skills moved to ~/.agents/skills-routed, which find_skill offers in every project, so
-    # there is no opt-in pool left to link; the rule half of this tool still works.
+    # ~/.agents/skills-optional holds skills only some projects want (`writing/write-doc`); the
+    # category folder is kept in the link so the project's skills-routed reads it the same way.
     if not SKILL_SOURCE_ROOT.is_dir():
         return []
     skill_dirs = sorted(
@@ -453,8 +471,8 @@ def render_lines(
     header_lines = [
         paint(f"Rule source: {RULE_SOURCE_ROOT}", BOLD, BLUE),
         paint(f"Skill source: {SKILL_SOURCE_ROOT}", BOLD, BLUE),
-        paint(f"Rule target: {project_root / '.agents' / 'rules'}", BOLD, BLUE),
-        paint(f"Skill target: {project_root / '.agents' / 'skills'}", BOLD, BLUE),
+        paint(f"Rule target: {project_root / '.agents'}/{{rules,rules-routed}}", BOLD, BLUE),
+        paint(f"Skill target: {project_root / '.agents' / 'skills-routed'}", BOLD, BLUE),
         paint(HELP_TEXT, DIM),
         paint(
             f"Selected: {sum(selection.values())}/{len(items)} | {summarize_states(states)}",

@@ -1,0 +1,19 @@
+{"input": {"prompt": "워크플로우로 composer 토큰 파서 리팩터", "state": {"paths": ["apps/client", "apps/server"]}}, "expected": {"kind": "task", "mode": "worktree", "items": 1}, "source": "seed", "note": "① keyword rule fixes worktree on the server; Jev should agree"}
+{"input": {"prompt": "서버 에러 메시지 바꿔", "state": {"plainRunning": true, "plainPaths": ["apps/server/src/main.rs"], "paths": ["apps/client", "apps/server"]}}, "expected": {"kind": "task", "items": 1}, "source": "seed", "note": "② overlap rule decides worktree on the server"}
+{"input": {"prompt": "방금 거 테스트 돌려", "state": {"plainRunning": true}}, "expected": {"kind": "task", "mode": "plain", "items": 1}, "source": "seed", "note": "plain continuation"}
+{"input": {"prompt": "프로젝트 전체에 주기적인 보안검사", "state": {"projects": ["dashboard", "postdock"]}}, "expected": {"kind": "routine", "items": 1}, "source": "seed", "note": "③"}
+{"input": {"prompt": "Postdock 에 유의미한 goal 추가", "state": {"projects": ["postdock"]}}, "expected": {"kind": "goal", "items": 1}, "source": "seed", "note": "④"}
+{"input": {"prompt": "dev-selector, scroll-detox 에 보안점검 실시", "state": {"projects": ["dev-selector", "scroll-detox"]}}, "expected": {"kind": "task", "items": 1}, "source": "seed", "note": "⑤ two projects → core on the server"}
+{"input": {"prompt": "이 함수 이름만 바꿔줘", "state": {"paths": ["src"]}}, "expected": {"kind": "task", "items": 1}, "source": "seed", "note": "⑥ small task, auto model picks a low tier"}
+{"input": {"prompt": "매주 월요일 전체 프로젝트 보안검사하고, 심각한 건 바로 고쳐줘"}, "expected": {"kind": "routine", "items": 2}, "source": "seed", "note": "C1 split routine + its fix clause; the server folds the fix into auto-low"}
+{"input": {"prompt": "postdock 결제 실패율 1% 밑으로 떨어질 때까지 매주 개선", "state": {"projects": ["postdock"]}}, "expected": {"kind": "goal", "items": 1, "asks": false}, "source": "seed", "note": "C2"}
+{"input": {"prompt": "Tauri 3 정식 나오면 dashboard 업그레이드해", "state": {"projects": ["dashboard"]}}, "expected": {"kind": "goal", "items": 1, "asks": false}, "source": "seed", "note": "C3 watch-once wait condition"}
+{"input": {"prompt": "dev-selector, scroll-detox 의존성 매달 올리고 테스트 통과하면 머지", "state": {"projects": ["dev-selector", "scroll-detox"]}}, "expected": {"kind": "routine", "items": 1}, "source": "seed", "note": "C4"}
+{"input": {"prompt": "지금 서버 에러 메시지 고치고, 앞으로 에러 메시지 규칙은 매주 점검"}, "expected": {"kind": "task", "items": 2}, "source": "seed", "note": "C5 task + routine"}
+{"input": {"prompt": "릴리스 노트 쓰고 끝나면 blog 프로젝트에 초안 올려", "state": {"projects": ["blog"]}}, "expected": {"kind": "task", "items": 2}, "source": "seed", "note": "C6 after"}
+{"input": {"prompt": "이번 달 안에 true-index 랜딩 페이지 완성", "state": {"projects": ["true-index"]}}, "expected": {"kind": "goal", "items": 1}, "source": "seed", "note": "C7 deadline"}
+{"input": {"prompt": "매주 개선해줘"}, "expected": {"kind": "routine", "items": 1, "asks": true}, "source": "seed", "note": "C8 ambiguous: p should fall below 0.7"}
+{"input": {"prompt": "npm 보안 공지가 나올 때마다 해당 프로젝트 점검"}, "expected": {"kind": "routine", "items": 1, "asks": false}, "source": "seed", "note": "C9 watch-each"}
+{"input": {"prompt": "지금 돌고 있는 거 뭐야"}, "expected": {"kind": "answer", "items": 1}, "source": "seed", "note": "counterexample: question only"}
+{"input": {"prompt": "그거 다시 해봐", "state": {"plainRunning": true}}, "expected": {"kind": "task", "mode": "plain", "items": 1}, "source": "seed", "note": "counterexample: plain continuation"}
+{"input": {"prompt": "r39 조언은 보류해"}, "expected": {"kind": "org-edit", "items": 1}, "source": "seed", "note": "org-edit by reference"}
