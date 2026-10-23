@@ -1,0 +1,422 @@
+{
+	"schema": 1,
+	"feature": "find_tool",
+	"version": "v4",
+	"against": "v1",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "evals/synthetic/tool-holdout.jsonl",
+	"generatedAt": "2026-10-23T09:33:45.244Z",
+	"candidate": {
+		"summary": {
+			"version": "v4",
+			"cases": 8,
+			"answered": 8,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"recall": 0.9375,
+				"precision": 1,
+				"exact": 0.875,
+				"falseActivation": 0,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 379,
+				"p95": 509,
+				"n": 8
+			},
+			"costUsd": 0.00035301,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 8
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "우리 레포에서 'searchIndex' 문자열이 어디에 박혀 있는지 전부 찾아서 파일:줄로 보여줘. 주석이나 테스트 픽스처에 있는 것도 포함해서.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.99 · needs 0.04 · done 0.02\"}",
+				"costUsd": 0.000041622,
+				"status": "routed",
+				"latencyMs": 411,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "첫 번째 결과 열어서 Svelte 5.40 breaking changes 섹션만 요약해줘.",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.78}],\"done\":0.02,\"reason\":\"activate fetch_content · none 0.01 · needs 0.73 · done 0.02\"}",
+				"costUsd": 0.00004523400000000001,
+				"status": "routed",
+				"latencyMs": 408,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "Sentry에서 이 이벤트가 올라왔는데 v2.8 이후로 알려진 버그인지 확인하고, 관련 이슈 본문까지 읽어서 임시 우회책 정리해줘. ```json {\"event_id\":\"9f2c1a\",\"level\":\"error\",\"message\":\"TypeError: Cannot read properties of undefined (reading 'retryAfter')\",\"release\":\"api@2.8.3\",\"stack\":\"at backoff (src/http/retry.ts:57:21)\"} ```",
+				"expected": [
+					"web_search",
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"web_search\",\"p\":0.64}],\"done\":0.01,\"reason\":\"activate web_search · none 0.02 · needs 0.90 · done 0.01\"}",
+				"costUsd": 0.000046998000000000006,
+				"status": "routed",
+				"latencyMs": 376,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Perfect, now screenshot the top card so I can check the spacing.",
+				"expected": [
+					"browser_screenshot"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"browser_screenshot\",\"p\":0.99}],\"done\":0.03,\"reason\":\"activate browser_screenshot · none 0.01 · needs 0.90 · done 0.03\"}",
+				"costUsd": 0.00004305,
+				"status": "routed",
+				"latencyMs": 385,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "Now watch its log and ping me the first time a request returns 500.",
+				"expected": [
+					"Monitor"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"Monitor\",\"p\":0.88}],\"done\":0.03,\"reason\":\"activate Monitor · none 0.09 · needs 0.44 · done 0.03\"}",
+				"costUsd": 0.00004460400000000001,
+				"status": "routed",
+				"latencyMs": 369,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "PR 설명에 넣을 링크가 살아있는지 확인해줘. https://example.invalid/docs/retry-policy랑 https://example.invalid/docs/backoff 둘 다.",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.84}],\"done\":0.01,\"reason\":\"activate fetch_content · none 0.02 · needs 0.88 · done 0.01\"}",
+				"costUsd": 0.00004204200000000001,
+				"status": "routed",
+				"latencyMs": 509,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "운영에서 이 응답이 오는데 프론트 어디서 터지는지 찾아줘. ``` GET https://api.example.invalid/v1/orders?page=2 -> 500 {\"error\":\"order_totals_missing\",\"orderId\":\"8f14e45f-ceea-467a-9d1b-7c0b1f1a2b3c\",\"items\":[{\"sku\":\"A-11\",\"total\":null}]} ```",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.72 · needs 0.49 · done 0.02\"}",
+				"costUsd": 0.000046410000000000005,
+				"status": "routed",
+				"latencyMs": 357,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "Run prettier on just that file and tell me if it changed anything.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.04,\"reason\":\"no extra tool · none 1.00 · needs 0.32 · done 0.04\"}",
+				"costUsd": 0.00004305,
+				"status": "routed",
+				"latencyMs": 379,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"baseline": {
+		"summary": {
+			"version": "v1",
+			"cases": 8,
+			"answered": 8,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"recall": 0.9375,
+				"precision": 0.9375,
+				"exact": 0.75,
+				"falseActivation": 0,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 373,
+				"p95": 429,
+				"n": 8
+			},
+			"costUsd": 0.00034024200000000004,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 8
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "우리 레포에서 'searchIndex' 문자열이 어디에 박혀 있는지 전부 찾아서 파일:줄로 보여줘. 주석이나 테스트 픽스처에 있는 것도 포함해서.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.01,\"reason\":\"no extra tool · none 1.00 · needs 0.04 · done 0.01\"}",
+				"costUsd": 0.000040026000000000006,
+				"status": "routed",
+				"latencyMs": 375,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "첫 번째 결과 열어서 Svelte 5.40 breaking changes 섹션만 요약해줘.",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.8}],\"done\":0.02,\"reason\":\"activate fetch_content · none 0.01 · needs 0.76 · done 0.02\"}",
+				"costUsd": 0.000043638000000000005,
+				"status": "routed",
+				"latencyMs": 374,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "Sentry에서 이 이벤트가 올라왔는데 v2.8 이후로 알려진 버그인지 확인하고, 관련 이슈 본문까지 읽어서 임시 우회책 정리해줘. ```json {\"event_id\":\"9f2c1a\",\"level\":\"error\",\"message\":\"TypeError: Cannot read properties of undefined (reading 'retryAfter')\",\"release\":\"api@2.8.3\",\"stack\":\"at backoff (src/http/retry.ts:57:21)\"} ```",
+				"expected": [
+					"web_search",
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"web_search\",\"p\":0.63}],\"done\":0.01,\"reason\":\"activate web_search · none 0.02 · needs 0.93 · done 0.01\"}",
+				"costUsd": 0.000045402000000000003,
+				"status": "routed",
+				"latencyMs": 429,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Perfect, now screenshot the top card so I can check the spacing.",
+				"expected": [
+					"browser_screenshot"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"browser_screenshot\",\"p\":0.99}],\"done\":0.03,\"reason\":\"activate browser_screenshot · none 0.01 · needs 0.88 · done 0.03\"}",
+				"costUsd": 0.00004145400000000001,
+				"status": "routed",
+				"latencyMs": 373,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "Now watch its log and ping me the first time a request returns 500.",
+				"expected": [
+					"Monitor"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"Monitor\",\"p\":0.86}],\"done\":0.03,\"reason\":\"activate Monitor · none 0.11 · needs 0.43 · done 0.03\"}",
+				"costUsd": 0.000043008000000000006,
+				"status": "routed",
+				"latencyMs": 358,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "PR 설명에 넣을 링크가 살아있는지 확인해줘. https://example.invalid/docs/retry-policy랑 https://example.invalid/docs/backoff 둘 다.",
+				"expected": [
+					"fetch_content"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 0.5,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"fetch_content\",\"p\":0.78},{\"name\":\"browser_navigate\",\"p\":0.2}],\"done\":0.01,\"reason\":\"activate fetch_content, browser_navigate · none 0.02 · needs 0.91 · done 0.01\"}",
+				"costUsd": 0.000040446000000000005,
+				"status": "routed",
+				"latencyMs": 359,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "운영에서 이 응답이 오는데 프론트 어디서 터지는지 찾아줘. ``` GET https://api.example.invalid/v1/orders?page=2 -> 500 {\"error\":\"order_totals_missing\",\"orderId\":\"8f14e45f-ceea-467a-9d1b-7c0b1f1a2b3c\",\"items\":[{\"sku\":\"A-11\",\"total\":null}]} ```",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.72 · needs 0.42 · done 0.02\"}",
+				"costUsd": 0.00004481400000000001,
+				"status": "routed",
+				"latencyMs": 377,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "Run prettier on just that file and tell me if it changed anything.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.04,\"reason\":\"no extra tool · none 0.99 · needs 0.22 · done 0.04\"}",
+				"costUsd": 0.00004145400000000001,
+				"status": "routed",
+				"latencyMs": 358,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "against",
+		"holds": false,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.95,
+				"value": 0.9375,
+				"ok": false
+			}
+		],
+		"better": [
+			"precision",
+			"exact"
+		],
+		"worse": [],
+		"guards": [
+			{
+				"name": "p95 latency ms",
+				"base": 429,
+				"value": 509,
+				"ok": true
+			},
+			{
+				"name": "cost USD",
+				"base": 0.00034024200000000004,
+				"value": 0.00035301,
+				"ok": true
+			},
+			{
+				"name": "calibrated share",
+				"base": 1,
+				"value": 1,
+				"ok": true
+			}
+		],
+		"reasons": [
+			"recall 0.938 < floor 0.95"
+		]
+	}
+}

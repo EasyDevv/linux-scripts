@@ -1,0 +1,40 @@
+{
+	"version": "v4",
+	"source": "v1 + noneCeiling only (a session activated web_enable at none 0.69); v2's tool families lowered precision; v4: synthetic-scenario loop 261023, tool-train only — needs_extra_tool scored 0.06–0.11 (< gate 0.12 → none) on 5 of 12 cases where grep/shell could approximate but a specialised tool gives exact results (symbol call sites, diagnostics); wording now counts 'materially more reliable' and exact-result needs as true",
+	"noneLabel": "none",
+	"noneDescription": "No optional tool is needed: the always-available tools (read, edit, write, bash, grep, find) can take the next step, or the work is finished.",
+	"questions": {
+		"next_tool": {
+			"type": "choice",
+			"instructions": "The assistant always has read, edit, write, bash, grep and find. Each label below is an extra tool that is switched off right now. Given `user_request`, `actions_taken` (with results) and `assistant_said`, which single extra tool would the assistant most likely need to call next or soon after to make progress? Judge by what the work requires, not by words that merely share a topic. Choose the none label when the always-available tools are enough or when every requested action is already done. Never choose a tool just because it was used earlier."
+		},
+		"needs_extra_tool": {
+			"type": "bool",
+			"instructions": "Setting the always-available tools (read, edit, write, bash, grep, find) aside, does finishing `user_request` from here require a capability only one of the listed extra tools provides: live web or documentation lookup, a browser, a language server, a subagent, an interactive terminal, or a similar specialised tool? Also true when text search or shell commands could only approximate what the specialised tool returns exactly (for example symbol-level results instead of string matches). A task that file reads, edits, searches and shell commands can complete reliably is false.",
+			"criteria": {
+				"true": "Part of the remaining work needs, or is made materially more reliable by, a specialised tool the assistant does not currently have switched on",
+				"false": "Reading, editing, searching and shell commands are enough for the remaining work"
+			}
+		},
+		"done": {
+			"type": "bool",
+			"instructions": "Every single action `user_request` asked for already appears as a successful entry in `actions_taken`, and the assistant has nothing left to look up, change or verify. False if at least one requested action has not been carried out yet, a needed lookup returned nothing useful, or `actions_taken` is empty.",
+			"criteria": {
+				"true": "All requested work is finished and verified; only the final answer remains",
+				"false": "Requested work remains, failed, or has not started"
+			}
+		}
+	},
+	"compose": {
+		"threshold": 0.2,
+		"gate": 0.12,
+		"topK": 3,
+		"maxInactive": 60,
+		"descriptionChars": 240,
+		"resultChars": 600,
+		"saidChars": 300,
+		"maxActions": 12,
+		"maxSaid": 4,
+		"noneCeiling": 0.5
+	}
+}

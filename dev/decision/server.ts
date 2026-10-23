@@ -30,8 +30,8 @@ async function body(req: Request): Promise<Record<string, unknown> | undefined> 
 
 type Handler = (req: Request) => Response | Promise<Response>;
 
-export function startServer(config: DaemonConfig = readConfig()) {
-	const { auth, budget, engine, log } = createRuntime(config);
+export function startServer(config: DaemonConfig = readConfig(), runtime = createRuntime(config)) {
+	const { auth, budget, engine, log } = runtime;
 
 	const decide = engine.decide.bind(engine);
 	const featureRoutes: Record<string, { POST: Handler }> = {};

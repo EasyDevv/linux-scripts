@@ -1,0 +1,811 @@
+{
+	"schema": 1,
+	"feature": "find_skill",
+	"version": "v9",
+	"against": "v7",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "evals/synthetic/holdout.jsonl",
+	"generatedAt": "2026-10-23T09:37:10.262Z",
+	"candidate": {
+		"summary": {
+			"version": "v9",
+			"cases": 16,
+			"answered": 16,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.5,
+				"recall": 0.96875,
+				"precision": 0.7260416666666667,
+				"quiet": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 429,
+				"p95": 566,
+				"n": 16
+			},
+			"costUsd": 0.007553322,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 16
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "apps/server에 upload 라우트를 새로 넣고 서비스를 재시작했는데 웹에서는 계속 400이야. 응답은 {\"error\":\"Unknown operation.\"}이고, 페이지는 정상으로 보여. 서버 쪽 라우트 등록이랑 실제 응답을 확인해줘.",
+				"expected": {
+					"skills": [
+						"build-backend",
+						"bun-webview"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.5,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-backend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-backend/SKILL.md\",\"description\":\"HTTP API + auth — Actix/Rust handlers, login/sessio…",
+				"costUsd": 0.00047271000000000005,
+				"status": "routed",
+				"latencyMs": 464,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "4090 두 장이랑 3090 네 장 중에 로컬 LLM에서 tok/s당 가격이 어느 쪽이 나은지 중고 시세로 계산해줘. 2CPU랑 당근 가격을 같이 보고, 추정치는 표시해줘.",
+				"expected": {
+					"skills": [
+						"evaluate-hardware-value",
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"evaluate-hardware-value\",\"path\":\"/home/easydev/.agents/skills-routed/research/evaluate-hardware-value/SKILL.md\",\"description\":\"Hardware price-performance f…",
+				"costUsd": 0.00047245800000000004,
+				"status": "routed",
+				"latencyMs": 446,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "~/.claude/projects/-home-easydev-dev-dashboard 아래 세션 5017da19-4f2a-4c1e-9a3b-2c7d8e9f0011에서 같은 권한 에러가 반복됐어. 그 세션만 근거로 원인과 재발 방지책 정리해줘.",
+				"expected": {
+					"skills": [
+						"analyze-claude-sessions"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"analyze-claude-sessions\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/analyze-claude-sessions/SKILL.md\",\"description\":\"Claude Code 세션 분석 — sessio…",
+				"costUsd": 0.00047313000000000005,
+				"status": "routed",
+				"latencyMs": 486,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "최근 7일 decision 로그에서 find_skill이 frontend-consistency를 계속 놓쳤어. Find the prompts where it missed and fix the rule description or path glob.",
+				"expected": {
+					"skills": [
+						"improve-decision-workflow"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"improve-decision-workflow\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/improve-decision-workflow/SKILL.md\",\"description\":\"decision daemon misses…",
+				"costUsd": 0.00047119800000000004,
+				"status": "routed",
+				"latencyMs": 446,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "라우티드 규칙으로 'DB 마이그레이션은 항상 백업을 먼저 뜨고 실행한다'를 추가해줘. 어느 디렉터리에 어떤 description으로 둘지도 정해줘.",
+				"expected": {
+					"skills": [
+						"write-a-rule"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/write-a-rule/SKILL.md\",\"description\":\"Write or revise an agent rule file in ~/.agents/…",
+				"costUsd": 0.00047191200000000006,
+				"status": "routed",
+				"latencyMs": 425,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "~/.local/share/scripts/dev/init-server/deploy.py에 podman 배포용 plan/--apply 단계를 추가해줘. 기본은 plan만 출력하고, SSH는 기존 ControlMaster를 재사용하게.",
+				"expected": {
+					"skills": [
+						"write-server-script"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-server-script\",\"path\":\"/home/easydev/.agents/skills-routed/build/write-server-script/SKILL.md\",\"description\":\"Operator server scripts — init-server, …",
+				"costUsd": 0.00047182800000000004,
+				"status": "routed",
+				"latencyMs": 566,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "~/.local/share/scripts/dev/db-sync에 스냅샷 고르는 화살표 메뉴를 넣고, --help를 카테고리별로 묶어줘. 넘버 메뉴는 없애고.",
+				"expected": {
+					"skills": [
+						"build-terminal-script"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-terminal-script\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-terminal-script/SKILL.md\",\"description\":\"Terminal CLI scripts (터미널 스크립트, CLI…",
+				"costUsd": 0.00047182800000000004,
+				"status": "routed",
+				"latencyMs": 429,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "방금 고친 로그인 리다이렉트 두 줄만 commit하고 디버그 로그는 빼줘. Here's the diff. @@ -41,6 +41,9 @@ export async function load({ cookies }) { - return { user: null }; + const session = cookies.get('session'); + if (!session) return redirect(303, '/login'); + return { user: await getUser(session) }; + console.log('session…",
+				"expected": {
+					"skills": [
+						"stage-hunks"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"stage-hunks\",\"path\":\"/home/easydev/.agents/skills-routed/git/stage-hunks/SKILL.md\",\"description\":\"Stage or commit part of a file — gah, git add -p hunks, 이…",
+				"costUsd": 0.00047468400000000007,
+				"status": "routed",
+				"latencyMs": 438,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "npm 패키지에 source map이랑 테스트 파일까지 들어가는 것 같아. 실제 배포 tarball을 열어서 확인하고, 릴리스 스크립트에서 빠지게 고쳐줘. 비밀키는 당연히 없어야 하고.",
+				"expected": {
+					"skills": [
+						"release-hardening"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"release-hardening\",\"path\":\"/home/easydev/.agents/skills-routed/build/release-hardening/SKILL.md\",\"description\":\"Release hardening against reverse engineeri…",
+				"costUsd": 0.00047233200000000006,
+				"status": "routed",
+				"latencyMs": 420,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "CrowdSec 차단 알림이 지금 ERROR로 오는데 NOTICE로 내리고, 사용자 멘션은 진짜 장애일 때만 가게 해줘. VPS에는 아직 배포하지 말고 워크스테이션에서 테스트까지.",
+				"expected": {
+					"skills": [
+						"notifier"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"notifier\",\"path\":\"/home/easydev/.agents/skills-routed/system/notifier/SKILL.md\",\"description\":\"VPS Discord alerts — vps-alert, Discord webhooks, CrowdSec/F…",
+				"costUsd": 0.00047229000000000005,
+				"status": "routed",
+				"latencyMs": 411,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "카드 그리드로. 빈 상태 문구도 같이 넣어줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.2
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.00047254200000000006,
+				"status": "routed",
+				"latencyMs": 421,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "응, 그리드 켜고 같은 시드끼리 나란히 보이게 해줘. 점수는 1-5 그대로.",
+				"expected": {
+					"skills": [
+						"evaluate-image-preference"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.25
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.00047405400000000007,
+				"status": "routed",
+				"latencyMs": 407,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "Playwright랑 Puppeteer 중에 새 프로젝트 기준으로 뭐가 더 나아? 우리 코드는 아직 안 건드려.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00047098800000000004,
+				"status": "routed",
+				"latencyMs": 425,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "What are the usual ways to shrink a Docker image? Just list the options, don't change our deploy scripts.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00047056800000000004,
+				"status": "routed",
+				"latencyMs": 441,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "What's Reddit's API rate limit per minute these days? Just the docs link, nothing else.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00047044200000000006,
+				"status": "routed",
+				"latencyMs": 423,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "CSS에서 flex랑 grid는 언제 각각 써? 한 줄로만.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00047035800000000004,
+				"status": "routed",
+				"latencyMs": 451,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"baseline": {
+		"summary": {
+			"version": "v7",
+			"cases": 16,
+			"answered": 16,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.5,
+				"recall": 0.96875,
+				"precision": 0.7229166666666667,
+				"quiet": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 435,
+				"p95": 883,
+				"n": 16
+			},
+			"costUsd": 0.006836970000000001,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 16
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "apps/server에 upload 라우트를 새로 넣고 서비스를 재시작했는데 웹에서는 계속 400이야. 응답은 {\"error\":\"Unknown operation.\"}이고, 페이지는 정상으로 보여. 서버 쪽 라우트 등록이랑 실제 응답을 확인해줘.",
+				"expected": {
+					"skills": [
+						"build-backend",
+						"bun-webview"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.5,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-backend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-backend/SKILL.md\",\"description\":\"HTTP API + auth — Actix/Rust handlers, login/sessio…",
+				"costUsd": 0.00042793800000000005,
+				"status": "routed",
+				"latencyMs": 410,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "4090 두 장이랑 3090 네 장 중에 로컬 LLM에서 tok/s당 가격이 어느 쪽이 나은지 중고 시세로 계산해줘. 2CPU랑 당근 가격을 같이 보고, 추정치는 표시해줘.",
+				"expected": {
+					"skills": [
+						"evaluate-hardware-value",
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"evaluate-hardware-value\",\"path\":\"/home/easydev/.agents/skills-routed/research/evaluate-hardware-value/SKILL.md\",\"description\":\"Hardware price-performance f…",
+				"costUsd": 0.00042768600000000004,
+				"status": "routed",
+				"latencyMs": 435,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "~/.claude/projects/-home-easydev-dev-dashboard 아래 세션 5017da19-4f2a-4c1e-9a3b-2c7d8e9f0011에서 같은 권한 에러가 반복됐어. 그 세션만 근거로 원인과 재발 방지책 정리해줘.",
+				"expected": {
+					"skills": [
+						"analyze-claude-sessions"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"analyze-claude-sessions\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/analyze-claude-sessions/SKILL.md\",\"description\":\"Claude Code 세션 분석 — sessio…",
+				"costUsd": 0.00042835800000000005,
+				"status": "routed",
+				"latencyMs": 464,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "최근 7일 decision 로그에서 find_skill이 frontend-consistency를 계속 놓쳤어. Find the prompts where it missed and fix the rule description or path glob.",
+				"expected": {
+					"skills": [
+						"improve-decision-workflow"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"improve-decision-workflow\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/improve-decision-workflow/SKILL.md\",\"description\":\"decision daemon misses…",
+				"costUsd": 0.00042642600000000004,
+				"status": "routed",
+				"latencyMs": 454,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "라우티드 규칙으로 'DB 마이그레이션은 항상 백업을 먼저 뜨고 실행한다'를 추가해줘. 어느 디렉터리에 어떤 description으로 둘지도 정해줘.",
+				"expected": {
+					"skills": [
+						"write-a-rule"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/write-a-rule/SKILL.md\",\"description\":\"Write or revise an agent rule file in ~/.agents/…",
+				"costUsd": 0.00042714000000000006,
+				"status": "routed",
+				"latencyMs": 453,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "~/.local/share/scripts/dev/init-server/deploy.py에 podman 배포용 plan/--apply 단계를 추가해줘. 기본은 plan만 출력하고, SSH는 기존 ControlMaster를 재사용하게.",
+				"expected": {
+					"skills": [
+						"write-server-script"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-server-script\",\"path\":\"/home/easydev/.agents/skills-routed/build/write-server-script/SKILL.md\",\"description\":\"Operator server scripts — init-server, …",
+				"costUsd": 0.00042705600000000004,
+				"status": "routed",
+				"latencyMs": 419,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "~/.local/share/scripts/dev/db-sync에 스냅샷 고르는 화살표 메뉴를 넣고, --help를 카테고리별로 묶어줘. 넘버 메뉴는 없애고.",
+				"expected": {
+					"skills": [
+						"build-terminal-script"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-terminal-script\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-terminal-script/SKILL.md\",\"description\":\"Terminal CLI scripts (터미널 스크립트, CLI…",
+				"costUsd": 0.00042705600000000004,
+				"status": "routed",
+				"latencyMs": 448,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "방금 고친 로그인 리다이렉트 두 줄만 commit하고 디버그 로그는 빼줘. Here's the diff. @@ -41,6 +41,9 @@ export async function load({ cookies }) { - return { user: null }; + const session = cookies.get('session'); + if (!session) return redirect(303, '/login'); + return { user: await getUser(session) }; + console.log('session…",
+				"expected": {
+					"skills": [
+						"stage-hunks"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"stage-hunks\",\"path\":\"/home/easydev/.agents/skills-routed/git/stage-hunks/SKILL.md\",\"description\":\"Stage or commit part of a file — gah, git add -p hunks, 이…",
+				"costUsd": 0.00042991200000000007,
+				"status": "routed",
+				"latencyMs": 429,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "npm 패키지에 source map이랑 테스트 파일까지 들어가는 것 같아. 실제 배포 tarball을 열어서 확인하고, 릴리스 스크립트에서 빠지게 고쳐줘. 비밀키는 당연히 없어야 하고.",
+				"expected": {
+					"skills": [
+						"release-hardening"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"release-hardening\",\"path\":\"/home/easydev/.agents/skills-routed/build/release-hardening/SKILL.md\",\"description\":\"Release hardening against reverse engineeri…",
+				"costUsd": 0.00042756000000000006,
+				"status": "routed",
+				"latencyMs": 422,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "CrowdSec 차단 알림이 지금 ERROR로 오는데 NOTICE로 내리고, 사용자 멘션은 진짜 장애일 때만 가게 해줘. VPS에는 아직 배포하지 말고 워크스테이션에서 테스트까지.",
+				"expected": {
+					"skills": [
+						"notifier"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"notifier\",\"path\":\"/home/easydev/.agents/skills-routed/system/notifier/SKILL.md\",\"description\":\"VPS Discord alerts — vps-alert, Discord webhooks, CrowdSec/F…",
+				"costUsd": 0.00042751800000000005,
+				"status": "routed",
+				"latencyMs": 412,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "카드 그리드로. 빈 상태 문구도 같이 넣어줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.2
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.00042777000000000006,
+				"status": "routed",
+				"latencyMs": 431,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "응, 그리드 켜고 같은 시드끼리 나란히 보이게 해줘. 점수는 1-5 그대로.",
+				"expected": {
+					"skills": [
+						"evaluate-image-preference"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.2
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.00042928200000000007,
+				"status": "routed",
+				"latencyMs": 477,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "Playwright랑 Puppeteer 중에 새 프로젝트 기준으로 뭐가 더 나아? 우리 코드는 아직 안 건드려.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042621600000000004,
+				"status": "routed",
+				"latencyMs": 883,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "What are the usual ways to shrink a Docker image? Just list the options, don't change our deploy scripts.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042579600000000004,
+				"status": "routed",
+				"latencyMs": 461,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "What's Reddit's API rate limit per minute these days? Just the docs link, nothing else.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042567000000000006,
+				"status": "routed",
+				"latencyMs": 495,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "CSS에서 flex랑 grid는 언제 각각 써? 한 줄로만.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042558600000000004,
+				"status": "routed",
+				"latencyMs": 409,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "against",
+		"holds": false,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.9,
+				"value": 0.96875,
+				"ok": true
+			}
+		],
+		"better": [
+			"precision"
+		],
+		"worse": [],
+		"guards": [
+			{
+				"name": "p95 latency ms",
+				"base": 883,
+				"value": 566,
+				"ok": true
+			},
+			{
+				"name": "cost USD",
+				"base": 0.006836970000000001,
+				"value": 0.007553322,
+				"ok": false
+			},
+			{
+				"name": "calibrated share",
+				"base": 1,
+				"value": 1,
+				"ok": true
+			}
+		],
+		"reasons": [
+			"cost $0.00755 > baseline $0.00684"
+		]
+	}
+}

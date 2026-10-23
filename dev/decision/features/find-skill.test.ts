@@ -13,6 +13,8 @@ import {
 	compose,
 	findSkill,
 	findSkills,
+	KEYWORD_P,
+	keywordHits,
 	loadFindSkillPrompt,
 	shortlist,
 } from "./find-skill.ts";
@@ -219,22 +221,65 @@ describe("findSkills", () => {
 		expect(r.rules.map((x) => x.name)).toEqual(["pi-print"]);
 	});
 
-	test("a backend failure is unavailable with empty lists, at either step", async () => {
+	test("a backend failure with no overlap stays unavailable at either step", async () => {
 		const first = await findSkills(
-			{ prompt: "fix the svelte effect" },
+			{ prompt: "zzz qqq" },
 			engine(decision({}, "unavailable")),
 			prompt,
 			reader(catalog),
 		);
 		expect(first).toMatchObject({ status: "unavailable", skills: [], rules: [] });
+		expect(first.fallback).toBeUndefined();
 		expect(first.notes).toEqual(["opencode/jev-test: error"]);
 		const second = await findSkills(
-			{ prompt: "fix the svelte effect" },
+			{ prompt: "zzz qqq" },
 			engine(decision({ pick: choice({ "skill:build-frontend": 0.9 }) }), decision({}, "unavailable")),
 			prompt,
 			reader(catalog),
 		);
 		expect(second).toMatchObject({ status: "unavailable", skills: [], rules: [], candidates: catalog.length });
+	});
+
+	test("a backend failure returns keyword hints with no bodies and a fallback flag", async () => {
+		const run = engine(decision({}, "unavailable"));
+		const r = await findSkills(
+			{ prompt: "fix the svelte effect" },
+			run,
+			prompt,
+			reader(catalog),
+		);
+		expect(r).toMatchObject({ status: "routed", reason: "fallback: keyword (Jev unavailable)", fallback: true });
+		expect(r.skills).toEqual([]);
+		expect(r.rules.map((x) => x.name)).toEqual(["svelte-effects"]);
+		expect(r.rules[0]?.p).toBe(KEYWORD_P);
+		expect(r.rules[0]?.p).toBeLessThan(prompt.limits.ruleThreshold);
+		expect(r.rules[0]?.body).toBe("");
+		expect(r.notes).toContain("rule svelte-effects hinted by keyword (score 4)");
+
+		const second = await findSkills(
+			{ prompt: "svelte effects please" },
+			engine(decision({ pick: choice({ "skill:build-frontend": 0.9 }) }), decision({}, "unavailable")),
+			prompt,
+			reader(catalog),
+		);
+		expect(second).toMatchObject({ status: "routed", fallback: true });
+		expect(second.rules.map((x) => [x.name, x.body])).toEqual([["svelte-effects", ""]]);
+	});
+
+	test("a Korean prompt reaches a skill hint, and a path rule keeps its body", async () => {
+		const entries = [
+			entry("skill", "dashboard-chat", { description: "대시보드 채팅 창의 오류를 재현하고 고친다", body: "# chat" }),
+			entry("rule", "대시보드-ui", { description: "대시보드 UI 규칙", body: "# ui" }),
+		];
+		const r = await findSkills(
+			{ prompt: "대시보드 chat 창에 입력시 에러 발생" },
+			engine(decision({}, "unavailable")),
+			prompt,
+			reader(entries),
+		);
+		expect(r).toMatchObject({ status: "routed", reason: "fallback: keyword (Jev unavailable)", fallback: true });
+		expect(r.skills.map((s) => [s.name, s.p, s.body])).toEqual([["dashboard-chat", KEYWORD_P, undefined]]);
+		expect(r.rules.map((x) => [x.name, x.p, x.body])).toEqual([["대시보드-ui", KEYWORD_P, ""]]);
 	});
 
 	test("skips share model_route's skip rules and an empty catalog", async () => {
@@ -330,6 +375,37 @@ describe("findSkills scriptFirst", () => {
 		const r = await findSkills({ prompt: "read docs/a.md", cwd: "/repo" }, run, v2, reader(pathCatalog));
 		expect(r.rules).toEqual([]);
 		expect(calls).toHaveLength(1);
+	});
+});
+
+describe("keywordHits", () => {
+	test("scores name tokens over description words, ignores stopwords and short latin", () => {
+		const entries = [
+			entry("skill", "build-frontend", { description: "shape the SPA screens" }),
+			entry("skill", "browse-site", { description: "read a page in a browser" }),
+		];
+		const hits = keywordHits("browse the page in a browser", entries);
+		expect(hits.map((h) => [h.entry.name, h.score])).toEqual([["browse-site", 5]]);
+		expect(keywordHits("the and for", entries)).toEqual([]);
+		expect(keywordHits("ab", entries)).toEqual([]);
+	});
+
+	test("Korean matches a name token inside a longer prompt word", () => {
+		const entries = [entry("skill", "대시보드-error", { description: "대시보드 오류를 재현한다" })];
+		expect(keywordHits("대시보드에서 에러가 났어", entries).map((h) => h.entry.name)).toEqual([
+			"대시보드-error",
+		]);
+		expect(keywordHits("오류를 재현해줘", entries).map((h) => h.entry.name)).toEqual([]);
+	});
+
+	test("caps skills and rules separately", () => {
+		const entries = [
+			...Array.from({ length: 6 }, (_, i) => entry("skill", `browse-${i}`, { description: "browse" })),
+			...Array.from({ length: 4 }, (_, i) => entry("rule", `browse-rule-${i}`, { description: "browse" })),
+		];
+		const hits = keywordHits("browse", entries);
+		expect(hits.filter((h) => h.entry.kind === "skill")).toHaveLength(3);
+		expect(hits.filter((h) => h.entry.kind === "rule")).toHaveLength(2);
 	});
 });
 

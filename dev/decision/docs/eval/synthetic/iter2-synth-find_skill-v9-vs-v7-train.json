@@ -1,0 +1,1179 @@
+{
+	"schema": 1,
+	"feature": "find_skill",
+	"version": "v9",
+	"against": "v7",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "evals/synthetic/train.jsonl",
+	"generatedAt": "2026-10-23T09:37:02.446Z",
+	"candidate": {
+		"summary": {
+			"version": "v9",
+			"cases": 24,
+			"answered": 24,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.4583333333333333,
+				"recall": 0.9791666666666666,
+				"precision": 0.6861111111111112,
+				"quiet": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 436,
+				"p95": 542,
+				"n": 24
+			},
+			"costUsd": 0.011327652000000002,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 24
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "프로젝트 목록 위에 있는 상태 필터가 15초쯤 지나면 자동으로 '전체'로 돌아가. 폴링이 도는 것 같은데, 고른 값이 유지되게 고쳐줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.00047203800000000004,
+				"status": "routed",
+				"latencyMs": 490,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "I moved our settings dialog into its own component and now the build fails with \"Cannot find module '$lib/components/ui/select'\". The repo uses shadcn-svelte; fix the imports and the component wiring.",
+				"expected": {
+					"skills": [
+						"shadcn-svelte"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.25
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"shadcn-svelte\",\"path\":\"/home/easydev/.agents/skills-routed/build/shadcn-svelte/SKILL.md\",\"description\":\"Fix or edit Svelte/SvelteKit component code with sh…",
+				"costUsd": 0.00047140800000000004,
+				"status": "routed",
+				"latencyMs": 464,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "예약 화면이랑 설정 화면을 나란히 열어보면 버튼 높이랑 아이콘 정렬이 서로 달라 보여. 두 화면 캡처를 라이트/다크로 비교해서 맞춰줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.4
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.0004717860000000001,
+				"status": "routed",
+				"latencyMs": 439,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "고객용 관리자 페이지에 같은 저장 버튼이 헤더랑 카드 안에 두 개 있어. 중복 컨트롤 정리하고, 바뀐 화면은 캡처로 다시 확인해줘.",
+				"expected": {
+					"skills": [
+						"improve-ux"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.4
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"improve-ux\",\"path\":\"/home/easydev/.agents/skills-routed/build/improve-ux/SKILL.md\",\"description\":\"UX cleanup of an existing frontend — dashboard simplifica…",
+				"costUsd": 0.00047166000000000005,
+				"status": "routed",
+				"latencyMs": 411,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "이 에러 좀 봐줘. 결제 수단 다이얼로그에서 저장 누르면 나오고, 화면은 그대로 멈춰 있어. TypeError: Cannot read properties of null (reading 'focus') at SelectContent.svelte:84:12 at tick (svelte/src/internal/client/runtime.js:512:9) 원인 찾아서 고쳐줘.",
+				"expected": {
+					"skills": [
+						"bun-webview",
+						"shadcn-svelte"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 1 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"shadcn-svelte\",\"path\":\"/home/easydev/.agents/skills-routed/build/shadcn-svelte/SKILL.md\",\"description\":\"Fix or edit Svelte/SvelteKit component code with sh…",
+				"costUsd": 0.00047355000000000005,
+				"status": "routed",
+				"latencyMs": 444,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "결제 내역 조회 API에 관리자 권한 체크를 걸고, CORS는 대시보드 origin만 허용하게 바꿔줘. 지금은 아무 origin이나 통과하는 것 같아.",
+				"expected": {
+					"skills": [
+						"build-backend"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-backend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-backend/SKILL.md\",\"description\":\"HTTP API + auth — Actix/Rust handlers, login/sessio…",
+				"costUsd": 0.00047191200000000006,
+				"status": "routed",
+				"latencyMs": 446,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "로컬 대시보드가 Chromium에 안 떠 있어. 9222로 열어서 로그인하고 프로젝트 목록으로 들어가면 화면이 하얗게만 나와. 붙어서 콘솔 에러부터 확인해줘.",
+				"expected": {
+					"skills": [
+						"browser",
+						"bun-webview"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"bun-webview\",\"path\":\"/home/easydev/.agents/skills-routed/web/bun-webview/SKILL.md\",\"description\":\"Diagnose a live UI bug with bun-webview — reproduce it in…",
+				"costUsd": 0.00047229000000000005,
+				"status": "routed",
+				"latencyMs": 428,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "매일 밤 청구서 PDF를 내려받는 걸 자동화하고 싶어. 일회성 클릭이 아니라 CI에서 다시 돌릴 수 있는 Bun 스크립트로 만들어줘. 로그인 세션은 이미 9222에 있어.",
+				"expected": {
+					"skills": [
+						"web-automation"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"web-automation\",\"path\":\"/home/easydev/.agents/skills-routed/web/web-automation/SKILL.md\",\"description\":\"Write reusable Bun TS Chrome/CDP automation scripts…",
+				"costUsd": 0.00047212200000000006,
+				"status": "routed",
+				"latencyMs": 479,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "지금 크롬 9222에 프로젝트 생성 모달이 떠 있어. '만들기'를 눌렀을 때 모달이 안 닫히는 것 같은데, 그 탭에서 직접 눌러보고 콘솔이랑 상태를 확인해줘.",
+				"expected": {
+					"skills": [
+						"bun-webview"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.25
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 1 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"bun-webview\",\"path\":\"/home/easydev/.agents/skills-routed/web/bun-webview/SKILL.md\",\"description\":\"Diagnose a live UI bug with bun-webview — reproduce it in…",
+				"costUsd": 0.0004724160000000001,
+				"status": "routed",
+				"latencyMs": 436,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "사내 위키가 세션 쿠키 없으면 로그인으로 튕겨. 저장된 로그인 세션으로 https://wiki.example.invalid/runbook/deploy 본문만 markdown으로 뽑아줄래?",
+				"expected": {
+					"skills": [
+						"browser"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"browser\",\"path\":\"/home/easydev/.agents/skills-routed/web/browser/SKILL.md\",\"description\":\"Fetch, scrape, or render a web page — browser CLI, obscura, Chrom…",
+				"costUsd": 0.00047187000000000005,
+				"status": "routed",
+				"latencyMs": 611,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "디시 컴퓨터 갤에서 RTX 4090 언급된 글 제목이랑 본문에 적힌 가격만 최근 30개 수집해줘. 댓글은 필요 없어.",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills-routed/web/browse-site/SKILL.md\",\"description\":\"Site collection — 당근 daangn, 번개장터, 중고나라, 2CPU, 다나와, 디시, R…",
+				"costUsd": 0.00047166000000000005,
+				"status": "routed",
+				"latencyMs": 542,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "이 Reddit 스레드에 우리 프로젝트 개발자 입장으로 답글 초안 3개만 써줘. 링크는 https://example.invalid/r/example/comments/abc123/thread/ 야. 게시물이랑 댓글은 네가 모아서 판단해.",
+				"expected": {
+					"skills": [
+						"reddit-reply"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"reddit-reply\",\"path\":\"/home/easydev/.agents/skills-routed/web/reddit-reply/SKILL.md\",\"description\":\"Reddit 답장 초안 — collect a Reddit post and comments, then…",
+				"costUsd": 0.00047229000000000005,
+				"status": "routed",
+				"latencyMs": 409,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "이번 주 pi 세션들 중에서 tool 에러가 같은 방식으로 반복된 것만 골라 원인 정리해줘. 세션 전체 스캔은 하지 말고 7일로 제한해.",
+				"expected": {
+					"skills": [
+						"analyze-pi-sessions"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"analyze-pi-sessions\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/analyze-pi-sessions/SKILL.md\",\"description\":\"pi 세션 분석 — pi --session, pi sessio…",
+				"costUsd": 0.00047170200000000006,
+				"status": "routed",
+				"latencyMs": 412,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "CSV를 정리해서 표준 스키마로 바꾸는 스킬을 새로 만들 거야. SKILL.md만 말고 references랑 scripts까지 같이 잡아줘. 이름도 제안해.",
+				"expected": {
+					"skills": [
+						"write-a-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-a-skill\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/write-a-skill/SKILL.md\",\"description\":\"Create a new agent skill or fix its format — S…",
+				"costUsd": 0.0004717860000000001,
+				"status": "routed",
+				"latencyMs": 420,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "build-tui 스킬대로 했는데 confirm modal에서 자꾸 키 이벤트만 처리하고 리사이즈를 놓쳐서 두 번 실패했어. 실제로 겪은 실패를 반영해서 SKILL.md를 보강해줘.",
+				"expected": {
+					"skills": [
+						"improve-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"improve-skill\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/improve-skill/SKILL.md\",\"description\":\"Repair a named skill/runbook after its steps f…",
+				"costUsd": 0.00047224800000000004,
+				"status": "routed",
+				"latencyMs": 416,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "청구서 화면 결정이 바뀌었어. docs/plan/261021-billing-screen.md에 바뀐 범위랑 중단 조건 반영해줘. 아직 구현은 시작하지 마.",
+				"expected": {
+					"skills": [
+						"write-plan"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-plan\",\"path\":\"/home/easydev/.agents/skills-routed/writing/write-plan/SKILL.md\",\"description\":\"Agent-facing plan docs (계획 문서, 기획, docs/plan, plan 갱신) …",
+				"costUsd": 0.00047182800000000004,
+				"status": "routed",
+				"latencyMs": 438,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "docs/ai/261018-gpu-market.md 내용을 일반 소비자용 구매 페이지 HTML로 만들어줘. 결론 먼저, 후보 카드, 표는 md 숫자 그대로.",
+				"expected": {
+					"skills": [
+						"convert-doc-to-html"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"convert-doc-to-html\",\"path\":\"/home/easydev/.agents/skills-routed/writing/convert-doc-to-html/SKILL.md\",\"description\":\"Convert a docs/*.md research or buyin…",
+				"costUsd": 0.00047149200000000006,
+				"status": "routed",
+				"latencyMs": 520,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "터미널 창을 포커스해서 한글 경로를 타이핑하고, 명령 결과를 클립보드로 다시 읽어와. wtype은 KDE에서 자꾸 실패해.",
+				"expected": {
+					"skills": [
+						"control-kde"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"control-kde\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-kde/SKILL.md\",\"description\":\"Drive the KDE/GNOME Wayland desktop — type keys (eityp…",
+				"costUsd": 0.00047161800000000004,
+				"status": "routed",
+				"latencyMs": 413,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "규칙 쪽으로. 담당 파일이랑 description까지 정해서 추가해줘.",
+				"expected": {
+					"skills": [
+						"write-a-rule"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/write-a-rule/SKILL.md\",\"description\":\"Write or revise an agent rule file in ~/.agents/…",
+				"costUsd": 0.0004741380000000001,
+				"status": "routed",
+				"latencyMs": 419,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "대시보드 홈이랑 프로젝트 목록부터. 둘 다 1440이랑 390으로 라이트/다크 캡처해줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.5,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 1 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"browser\",\"path\":\"/home/easydev/.agents/skills-routed/web/browser/SKILL.md\",\"description\":\"Fetch, scrape, or render a web page — browser CLI, obscura, Chrom…",
+				"costUsd": 0.0004739280000000001,
+				"status": "routed",
+				"latencyMs": 442,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "Why does React StrictMode run my useEffect twice? Our Svelte app doesn't do that, right?",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00047061000000000005,
+				"status": "routed",
+				"latencyMs": 425,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "docs/plan/261022-billing-screen.md에 오타 두 개만 고쳐줘. 내용이나 구조는 건드리지 마.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00047119800000000004,
+				"status": "routed",
+				"latencyMs": 410,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "source map이 정확히 뭐고, 프로덕션 번들에 남으면 왜 위험한지 설명해줘. 우리 빌드는 아직 건드리지 마.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.0004713660000000001,
+				"status": "routed",
+				"latencyMs": 420,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 23,
+				"prompt": "git add -p랑 git add . 차이만 알려줘. 지금 스테이징은 하지 마, just explain.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.0004707360000000001,
+				"status": "routed",
+				"latencyMs": 450,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"baseline": {
+		"summary": {
+			"version": "v7",
+			"cases": 24,
+			"answered": 24,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.4583333333333333,
+				"recall": 0.9791666666666666,
+				"precision": 0.6819444444444445,
+				"quiet": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 425,
+				"p95": 625,
+				"n": 24
+			},
+			"costUsd": 0.010253124000000002,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 24
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "프로젝트 목록 위에 있는 상태 필터가 15초쯤 지나면 자동으로 '전체'로 돌아가. 폴링이 도는 것 같은데, 고른 값이 유지되게 고쳐줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"svelte-effects"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.4
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.00042726600000000004,
+				"status": "routed",
+				"latencyMs": 439,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "I moved our settings dialog into its own component and now the build fails with \"Cannot find module '$lib/components/ui/select'\". The repo uses shadcn-svelte; fix the imports and the component wiring.",
+				"expected": {
+					"skills": [
+						"shadcn-svelte"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.25
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"shadcn-svelte\",\"path\":\"/home/easydev/.agents/skills-routed/build/shadcn-svelte/SKILL.md\",\"description\":\"Fix or edit Svelte/SvelteKit component code with sh…",
+				"costUsd": 0.00042663600000000004,
+				"status": "routed",
+				"latencyMs": 434,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "예약 화면이랑 설정 화면을 나란히 열어보면 버튼 높이랑 아이콘 정렬이 서로 달라 보여. 두 화면 캡처를 라이트/다크로 비교해서 맞춰줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.4
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or res…",
+				"costUsd": 0.0004270140000000001,
+				"status": "routed",
+				"latencyMs": 435,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "고객용 관리자 페이지에 같은 저장 버튼이 헤더랑 카드 안에 두 개 있어. 중복 컨트롤 정리하고, 바뀐 화면은 캡처로 다시 확인해줘.",
+				"expected": {
+					"skills": [
+						"improve-ux"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.4
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"improve-ux\",\"path\":\"/home/easydev/.agents/skills-routed/build/improve-ux/SKILL.md\",\"description\":\"UX cleanup of an existing frontend — dashboard simplifica…",
+				"costUsd": 0.00042688800000000005,
+				"status": "routed",
+				"latencyMs": 719,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "이 에러 좀 봐줘. 결제 수단 다이얼로그에서 저장 누르면 나오고, 화면은 그대로 멈춰 있어. TypeError: Cannot read properties of null (reading 'focus') at SelectContent.svelte:84:12 at tick (svelte/src/internal/client/runtime.js:512:9) 원인 찾아서 고쳐줘.",
+				"expected": {
+					"skills": [
+						"bun-webview",
+						"shadcn-svelte"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.6666666666666666
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 1 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"shadcn-svelte\",\"path\":\"/home/easydev/.agents/skills-routed/build/shadcn-svelte/SKILL.md\",\"description\":\"Fix or edit Svelte/SvelteKit component code with sh…",
+				"costUsd": 0.00042877800000000005,
+				"status": "routed",
+				"latencyMs": 625,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "결제 내역 조회 API에 관리자 권한 체크를 걸고, CORS는 대시보드 origin만 허용하게 바꿔줘. 지금은 아무 origin이나 통과하는 것 같아.",
+				"expected": {
+					"skills": [
+						"build-backend"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"build-backend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-backend/SKILL.md\",\"description\":\"HTTP API + auth — Actix/Rust handlers, login/sessio…",
+				"costUsd": 0.00042714000000000006,
+				"status": "routed",
+				"latencyMs": 406,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "로컬 대시보드가 Chromium에 안 떠 있어. 9222로 열어서 로그인하고 프로젝트 목록으로 들어가면 화면이 하얗게만 나와. 붙어서 콘솔 에러부터 확인해줘.",
+				"expected": {
+					"skills": [
+						"browser",
+						"bun-webview"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"bun-webview\",\"path\":\"/home/easydev/.agents/skills-routed/web/bun-webview/SKILL.md\",\"description\":\"Diagnose a live UI bug with bun-webview — reproduce it in…",
+				"costUsd": 0.00042751800000000005,
+				"status": "routed",
+				"latencyMs": 448,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "매일 밤 청구서 PDF를 내려받는 걸 자동화하고 싶어. 일회성 클릭이 아니라 CI에서 다시 돌릴 수 있는 Bun 스크립트로 만들어줘. 로그인 세션은 이미 9222에 있어.",
+				"expected": {
+					"skills": [
+						"web-automation"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"web-automation\",\"path\":\"/home/easydev/.agents/skills-routed/web/web-automation/SKILL.md\",\"description\":\"Write reusable Bun TS Chrome/CDP automation scripts…",
+				"costUsd": 0.00042735000000000006,
+				"status": "routed",
+				"latencyMs": 420,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "지금 크롬 9222에 프로젝트 생성 모달이 떠 있어. '만들기'를 눌렀을 때 모달이 안 닫히는 것 같은데, 그 탭에서 직접 눌러보고 콘솔이랑 상태를 확인해줘.",
+				"expected": {
+					"skills": [
+						"bun-webview"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.25
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 1 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"bun-webview\",\"path\":\"/home/easydev/.agents/skills-routed/web/bun-webview/SKILL.md\",\"description\":\"Diagnose a live UI bug with bun-webview — reproduce it in…",
+				"costUsd": 0.0004276440000000001,
+				"status": "routed",
+				"latencyMs": 408,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "사내 위키가 세션 쿠키 없으면 로그인으로 튕겨. 저장된 로그인 세션으로 https://wiki.example.invalid/runbook/deploy 본문만 markdown으로 뽑아줄래?",
+				"expected": {
+					"skills": [
+						"browser"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"browser\",\"path\":\"/home/easydev/.agents/skills-routed/web/browser/SKILL.md\",\"description\":\"Fetch, scrape, or render a web page — browser CLI, obscura, Chrom…",
+				"costUsd": 0.00042709800000000005,
+				"status": "routed",
+				"latencyMs": 407,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "디시 컴퓨터 갤에서 RTX 4090 언급된 글 제목이랑 본문에 적힌 가격만 최근 30개 수집해줘. 댓글은 필요 없어.",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills-routed/web/browse-site/SKILL.md\",\"description\":\"Site collection — 당근 daangn, 번개장터, 중고나라, 2CPU, 다나와, 디시, R…",
+				"costUsd": 0.00042688800000000005,
+				"status": "routed",
+				"latencyMs": 415,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "이 Reddit 스레드에 우리 프로젝트 개발자 입장으로 답글 초안 3개만 써줘. 링크는 https://example.invalid/r/example/comments/abc123/thread/ 야. 게시물이랑 댓글은 네가 모아서 판단해.",
+				"expected": {
+					"skills": [
+						"reddit-reply"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"reddit-reply\",\"path\":\"/home/easydev/.agents/skills-routed/web/reddit-reply/SKILL.md\",\"description\":\"Reddit 답장 초안 — collect a Reddit post and comments, then…",
+				"costUsd": 0.00042751800000000005,
+				"status": "routed",
+				"latencyMs": 419,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "이번 주 pi 세션들 중에서 tool 에러가 같은 방식으로 반복된 것만 골라 원인 정리해줘. 세션 전체 스캔은 하지 말고 7일로 제한해.",
+				"expected": {
+					"skills": [
+						"analyze-pi-sessions"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"analyze-pi-sessions\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/analyze-pi-sessions/SKILL.md\",\"description\":\"pi 세션 분석 — pi --session, pi sessio…",
+				"costUsd": 0.00042693000000000006,
+				"status": "routed",
+				"latencyMs": 428,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "CSV를 정리해서 표준 스키마로 바꾸는 스킬을 새로 만들 거야. SKILL.md만 말고 references랑 scripts까지 같이 잡아줘. 이름도 제안해.",
+				"expected": {
+					"skills": [
+						"write-a-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-a-skill\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/write-a-skill/SKILL.md\",\"description\":\"Create a new agent skill or fix its format — S…",
+				"costUsd": 0.0004270140000000001,
+				"status": "routed",
+				"latencyMs": 461,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "build-tui 스킬대로 했는데 confirm modal에서 자꾸 키 이벤트만 처리하고 리사이즈를 놓쳐서 두 번 실패했어. 실제로 겪은 실패를 반영해서 SKILL.md를 보강해줘.",
+				"expected": {
+					"skills": [
+						"improve-skill"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"improve-skill\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/improve-skill/SKILL.md\",\"description\":\"Repair a named skill/runbook after its steps f…",
+				"costUsd": 0.00042747600000000004,
+				"status": "routed",
+				"latencyMs": 423,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "청구서 화면 결정이 바뀌었어. docs/plan/261021-billing-screen.md에 바뀐 범위랑 중단 조건 반영해줘. 아직 구현은 시작하지 마.",
+				"expected": {
+					"skills": [
+						"write-plan"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-plan\",\"path\":\"/home/easydev/.agents/skills-routed/writing/write-plan/SKILL.md\",\"description\":\"Agent-facing plan docs (계획 문서, 기획, docs/plan, plan 갱신) …",
+				"costUsd": 0.00042705600000000004,
+				"status": "routed",
+				"latencyMs": 403,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "docs/ai/261018-gpu-market.md 내용을 일반 소비자용 구매 페이지 HTML로 만들어줘. 결론 먼저, 후보 카드, 표는 md 숫자 그대로.",
+				"expected": {
+					"skills": [
+						"convert-doc-to-html"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"convert-doc-to-html\",\"path\":\"/home/easydev/.agents/skills-routed/writing/convert-doc-to-html/SKILL.md\",\"description\":\"Convert a docs/*.md research or buyin…",
+				"costUsd": 0.00042672000000000006,
+				"status": "routed",
+				"latencyMs": 425,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "터미널 창을 포커스해서 한글 경로를 타이핑하고, 명령 결과를 클립보드로 다시 읽어와. wtype은 KDE에서 자꾸 실패해.",
+				"expected": {
+					"skills": [
+						"control-kde"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"control-kde\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-kde/SKILL.md\",\"description\":\"Drive the KDE/GNOME Wayland desktop — type keys (eityp…",
+				"costUsd": 0.00042684600000000004,
+				"status": "routed",
+				"latencyMs": 423,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "규칙 쪽으로. 담당 파일이랑 description까지 정해서 추가해줘.",
+				"expected": {
+					"skills": [
+						"write-a-rule"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"write-a-rule\",\"path\":\"/home/easydev/.agents/skills-routed/agent-meta/write-a-rule/SKILL.md\",\"description\":\"Write or revise an agent rule file in ~/.agents/…",
+				"costUsd": 0.00042936600000000004,
+				"status": "routed",
+				"latencyMs": 428,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "대시보드 홈이랑 프로젝트 목록부터. 둘 다 1440이랑 390으로 라이트/다크 캡처해줘.",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.5,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 1 rules (asked 41 of 41)\",\"skills\":[{\"name\":\"browser\",\"path\":\"/home/easydev/.agents/skills-routed/web/browser/SKILL.md\",\"description\":\"Fetch, scrape, or render a web page — browser CLI, obscura, Chrom…",
+				"costUsd": 0.00042915600000000004,
+				"status": "routed",
+				"latencyMs": 425,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "Why does React StrictMode run my useEffect twice? Our Svelte app doesn't do that, right?",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042583800000000005,
+				"status": "routed",
+				"latencyMs": 427,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "docs/plan/261022-billing-screen.md에 오타 두 개만 고쳐줘. 내용이나 구조는 건드리지 마.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042642600000000004,
+				"status": "routed",
+				"latencyMs": 418,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "source map이 정확히 뭐고, 프로덕션 번들에 남으면 왜 위험한지 설명해줘. 우리 빌드는 아직 건드리지 마.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042659400000000003,
+				"status": "routed",
+				"latencyMs": 460,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 23,
+				"prompt": "git add -p랑 git add . 차이만 알려줘. 지금 스테이징은 하지 마, just explain.",
+				"expected": {
+					"skills": [],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1,
+					"quiet": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 41 of 41)\",\"skills\":[],\"rules\":[],\"candidates\":41}",
+				"costUsd": 0.00042596400000000003,
+				"status": "routed",
+				"latencyMs": 413,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "against",
+		"holds": false,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.9,
+				"value": 0.9791666666666666,
+				"ok": true
+			}
+		],
+		"better": [
+			"precision"
+		],
+		"worse": [],
+		"guards": [
+			{
+				"name": "p95 latency ms",
+				"base": 625,
+				"value": 542,
+				"ok": true
+			},
+			{
+				"name": "cost USD",
+				"base": 0.010253124000000002,
+				"value": 0.011327652000000002,
+				"ok": false
+			},
+			{
+				"name": "calibrated share",
+				"base": 1,
+				"value": 1,
+				"ok": true
+			}
+		],
+		"reasons": [
+			"cost $0.01133 > baseline $0.01025"
+		]
+	}
+}

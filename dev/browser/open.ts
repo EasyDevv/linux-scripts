@@ -1,5 +1,5 @@
 import { printHelp } from "./ui.ts";
-import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdtempSync, openSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -35,7 +35,9 @@ import {
 	writeLaunchInfo,
 	resolveBinary,
 } from "./chrome-instance.ts";
-import { resetTabs, waitForChrome } from "./cdp.ts";
+import { type CDP, resetTabs, waitForChrome } from "./cdp.ts";
+import { startRecording } from "./browser-record.ts";
+import { NO_DISPLAY_MESSAGE, displayLaunchEnv } from "./display-env.ts";
 import { mergeExtensionDirs, readProfileConfig } from "./profiles.ts";
 import {
 	injectBrowserCookies,
@@ -57,6 +59,9 @@ export type OpenOptions = {
 	dryRun: boolean;
 	json: boolean;
 	loadExtension?: string;
+	android: boolean;
+	record: boolean;
+	recordFrames: number | null;
 	browserArgs: string[];
 	locale: string;
 };
@@ -87,6 +92,8 @@ Options
   --clean                  throwaway profile, removed on close
   --session <name>         inject a saved session's cookies after launch
   --load-extension <dir>   load an unpacked extension (comma list ok)
+  --android                emulate an Android phone (UA, touch, 412x915)
+  --record [N]             record N frames after focus; omit N to record until close
   --normal                 normal window (default on KDE Wayland: minimized)
   --minimize               start minimized
   --headless               no window
@@ -101,17 +108,122 @@ Examples
   browser open --port 9222 --url http://localhost:5180
   browser open --port 9223 --clean --session 9222    # parallel worker
   browser open --port 39225 --load-extension .output/chrome-mv3-dev
+  browser open --port 9224 --android --record 10 --url https://example.com
+  browser close --port 9224                         # also stops its recording
 
 Environment
   BROWSER_CHROMIUM_BIN     browser binary (default: chromium)
-  BROWSER_LOCALE           locale when --locale is not passed`;
+  BROWSER_LOCALE           locale when --locale is not passed
+
+Notes
+  Without a display (WAYLAND_DISPLAY/DISPLAY both unset) a non-headless launch
+  takes them from systemctl --user show-environment, and fails if that has none.
+  Recorded frames: ~/.cache/browser/state/captures/chrome-<port>-<time>/`;
+
+const ANDROID_USER_AGENT =
+	"Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36";
+
+const ANDROID_USER_AGENT_METADATA = {
+	brands: [
+		{ brand: "Google Chrome", version: "136" },
+		{ brand: "Chromium", version: "136" },
+	],
+	fullVersionList: [
+		{ brand: "Google Chrome", version: "136.0.0.0" },
+		{ brand: "Chromium", version: "136.0.0.0" },
+	],
+	platform: "Android",
+	platformVersion: "15",
+	architecture: "arm",
+	model: "Pixel 9",
+	mobile: true,
+	bitness: "64",
+	wow64: false,
+};
+
+const ANDROID_DEVICE_METRICS = {
+	width: 412,
+	height: 915,
+	deviceScaleFactor: 2.625,
+	mobile: true,
+};
+
+/** Browser-level flags that make the whole instance present itself as a phone. */
+export function androidLaunchArgs(android: boolean): string[] {
+	return android
+		? [`--user-agent=${ANDROID_USER_AGENT}`, "--touch-events=enabled"]
+		: [];
+}
+
+function buildAndroidNavigatorOverrideScript() {
+	const metadataJson = JSON.stringify(ANDROID_USER_AGENT_METADATA);
+
+	return `(() => {
+		const metadata = ${metadataJson};
+		const defineGetter = (target, key, value) => {
+			Object.defineProperty(target, key, {
+				configurable: true,
+				get: () => value,
+			});
+		};
+
+		const userAgentData = {
+			brands: metadata.brands,
+			mobile: metadata.mobile,
+			platform: metadata.platform,
+			getHighEntropyValues: async (hints) => {
+				const requested = Array.isArray(hints) ? hints : [];
+				const values = {
+					architecture: metadata.architecture,
+					bitness: metadata.bitness,
+					brands: metadata.brands,
+					fullVersionList: metadata.fullVersionList,
+					mobile: metadata.mobile,
+					model: metadata.model,
+					platform: metadata.platform,
+					platformVersion: metadata.platformVersion,
+					uaFullVersion: metadata.fullVersionList[0]?.version ?? "",
+					wow64: metadata.wow64,
+				};
+				return Object.fromEntries(requested.map((hint) => [hint, values[hint]]));
+			},
+			toJSON: () => ({
+				brands: metadata.brands,
+				mobile: metadata.mobile,
+				platform: metadata.platform,
+			}),
+		};
+
+		defineGetter(Navigator.prototype, "platform", metadata.platform);
+		defineGetter(Navigator.prototype, "maxTouchPoints", 5);
+		defineGetter(Navigator.prototype, "userAgentData", userAgentData);
+	})();`;
+}
+
+/** Applied on the focused tab, whether the browser was launched or attached to. */
+export async function configureAndroidTab(cdp: CDP) {
+	await cdp.send("Emulation.setDeviceMetricsOverride", ANDROID_DEVICE_METRICS);
+	await cdp.send("Emulation.setTouchEmulationEnabled", {
+		enabled: true,
+		maxTouchPoints: 5,
+	});
+	await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+		source: buildAndroidNavigatorOverrideScript(),
+	});
+	await cdp.send("Emulation.setUserAgentOverride", {
+		userAgent: ANDROID_USER_AGENT,
+		acceptLanguage: "en-US,en",
+		platform: "Android",
+		userAgentMetadata: ANDROID_USER_AGENT_METADATA,
+	});
+}
 
 function die(msg: string): never {
 	console.error(`✗ ${msg}`);
 	process.exit(1);
 }
 
-function parseArgs(argv: string[]): OpenOptions {
+export function parseArgs(argv: string[]): OpenOptions {
 	const options: OpenOptions = {
 		port: BROWSER_DEFAULTS.port,
 		url: BROWSER_DEFAULTS.url,
@@ -122,6 +234,9 @@ function parseArgs(argv: string[]): OpenOptions {
 		dryRun: false,
 		json: false,
 		clean: false,
+		android: false,
+		record: false,
+		recordFrames: null,
 		browserArgs: [],
 		locale: process.env.BROWSER_LOCALE?.trim() || DEFAULT_LOCALE,
 	};
@@ -149,6 +264,19 @@ function parseArgs(argv: string[]): OpenOptions {
 				break;
 			case "--headless":
 				options.headless = true;
+				break;
+			case "--android":
+				options.android = true;
+				break;
+			case "--record":
+				options.record = true;
+				if (argv[i + 1] && !argv[i + 1].startsWith("--")) {
+					const frames = +(argv[i + 1] ?? "");
+					if (!Number.isInteger(frames) || frames <= 0)
+						die("Usage: --record [N]");
+					options.recordFrames = frames;
+					i += 1;
+				}
 				break;
 			case "--status":
 				options.status = true;
@@ -190,6 +318,11 @@ function parseArgs(argv: string[]): OpenOptions {
 		die("Port must be a positive integer");
 	if (options.userDataDir && options.clean)
 		die("--user-data and --clean are mutually exclusive");
+	if (
+		options.recordFrames !== null &&
+		(!Number.isInteger(options.recordFrames) || options.recordFrames <= 0)
+	)
+		die("--record must use a positive integer when a frame count is provided");
 
 	if (
 		options.url &&
@@ -236,6 +369,17 @@ function renderOutput(output: Record<string, unknown>, json = false) {
 	if (output.locale) console.log(`  locale: ${output.locale}`);
 	if (output.acceptLanguage)
 		console.log(`  accept-language: ${output.acceptLanguage}`);
+	if (output.emulation) console.log(`  emulation: ${output.emulation}`);
+	if (output.recordStatus) console.log(`  record: ${output.recordStatus}`);
+	if (output.recordOutputDir)
+		console.log(`  record output dir: ${output.recordOutputDir}`);
+}
+
+function describeRecord(options: OpenOptions): string {
+	if (!options.record) return "off";
+	return options.recordFrames === null
+		? "will capture frames until stopped"
+		: `will capture ${options.recordFrames} frame(s) after focus`;
 }
 
 // One-line result for agents: port, url, profile; extras only when non-default.
@@ -247,14 +391,40 @@ function renderOpenSummary(info: {
 	defaultProfile: boolean;
 	windowState: string;
 	locale: string;
+	emulation: string;
+	record?: string;
 }) {
 	const parts = [
 		`:${info.port}${info.port !== info.requestedPort ? ` (${info.requestedPort} busy)` : ""} ${info.url.startsWith("data:text/html") ? "start page" : info.url}`,
 		info.defaultProfile ? "default profile" : `profile ${info.userDataDir}`,
 	];
 	parts.push(info.locale);
+	if (info.emulation !== "desktop") parts.push(info.emulation);
+	if (info.record) parts.push(`record ${info.record}`);
 	if (info.windowState !== "normal") parts.push(info.windowState);
 	console.log(`✓ ${parts.join(" · ")}`);
+}
+
+// Chromium's stderr is the only clue when it exits before opening its debugging
+// port. A file, not a pipe: the detached browser outlives this process.
+function chromeStderrLogPath(port: number): string {
+	return join(tmpdir(), `browser-chrome-${port}.stderr.log`);
+}
+
+async function reportStderrTail(path: string, lines = 10) {
+	const text = await Bun.file(path)
+		.text()
+		.catch(() => "");
+	const tail = text
+		.trimEnd()
+		.split("\n")
+		.filter((line) => line.trim());
+	if (!tail.length) return;
+	const shown = tail.slice(-lines);
+	console.error(
+		`Chromium stderr (last ${shown.length} lines, log: ${path}):`,
+	);
+	for (const line of shown) console.error(`  ${line}`);
 }
 
 function canUseKWinStartupMinimize() {
@@ -546,6 +716,16 @@ export async function main(argv: string[]): Promise<void> {
 	const plan = await buildOpenPlan(options.port);
 	if (!options.urlExplicit) options.url = portStartPageUrl(plan.actualPort);
 
+	// A non-headless Chromium needs a display. A shell started by a service has
+	// none, but the systemd user manager still holds the session's variables.
+	const displayEnv =
+		process.platform === "linux" &&
+		!options.headless &&
+		plan.browserAction === "launch-new-browser"
+			? await displayLaunchEnv()
+			: undefined;
+	if (displayEnv && !displayEnv.display) die(NO_DISPLAY_MESSAGE);
+
 	let userDataDir: string;
 	let usesDefaultProfile = false;
 	if (options.userDataDir) {
@@ -585,6 +765,8 @@ export async function main(argv: string[]): Promise<void> {
 			: options.minimize
 				? "minimized"
 				: "normal",
+		emulation: options.android ? "android" : "desktop",
+		recordStatus: describeRecord(options),
 		dryRun: options.dryRun,
 	};
 
@@ -597,6 +779,7 @@ export async function main(argv: string[]): Promise<void> {
 		const resolvedLocale = resolveLocale(options.locale);
 		const extraArgs: string[] = [
 			...localeLaunchArgs(resolvedLocale),
+			...androidLaunchArgs(options.android),
 			...options.browserArgs,
 		];
 		if (options.loadExtension) {
@@ -681,6 +864,7 @@ export async function main(argv: string[]): Promise<void> {
 
 			const extraArgs: string[] = [
 				...localeLaunchArgs(resolvedLocale),
+				...androidLaunchArgs(options.android),
 				...options.browserArgs,
 			];
 			if (options.loadExtension) {
@@ -697,15 +881,22 @@ export async function main(argv: string[]): Promise<void> {
 			});
 
 			const command = [binary!, ...chromeArgs];
+			const stderrLog = chromeStderrLogPath(actualPort);
+			const stderrFd = openSync(stderrLog, "w");
 			const proc = Bun.spawn({
 				cmd: command,
 				detached: true,
 				stdin: "ignore",
 				stdout: "ignore",
-				stderr: "ignore",
-				env: { ...process.env, ...localeSpawnEnv(resolvedLocale) },
+				stderr: stderrFd,
+				env: {
+					...process.env,
+					...localeSpawnEnv(resolvedLocale),
+					...(displayEnv?.env ?? {}),
+				},
 			});
 			proc.unref();
+			closeSync(stderrFd);
 			launchedPid = proc.pid;
 			outputBinary = binary!;
 			if (!options.headless) {
@@ -735,14 +926,20 @@ export async function main(argv: string[]): Promise<void> {
 				note: claimed.portNote,
 			});
 
-			await waitForChrome(actualPort);
+			await waitForChrome(actualPort, 10_000, () =>
+				reportStderrTail(stderrLog),
+			);
 			const inject = options.session ?? (freshProfile ? profileName : null);
 			if (inject) {
 				const saved = await readSession(inject).catch(() => null);
 				if (saved) await injectBrowserCookies(actualPort, saved);
 				else if (options.session) console.warn(`⚠ session ${inject} not found`);
 			}
-			const focused = await resetTabs(actualPort, options.url);
+			const focused = await resetTabs(
+				actualPort,
+				options.url,
+				options.android ? configureAndroidTab : undefined,
+			);
 			focusedUrl = focused.tab.url;
 
 			await writeLaunchInfo({
@@ -766,7 +963,11 @@ export async function main(argv: string[]): Promise<void> {
 			});
 		} else {
 			await waitForChrome(actualPort);
-			const focused = await resetTabs(actualPort, options.url);
+			const focused = await resetTabs(
+				actualPort,
+				options.url,
+				options.android ? configureAndroidTab : undefined,
+			);
 			focusedUrl = focused.tab.url;
 
 			const managedPid = previousLaunch?.pid;
@@ -824,6 +1025,26 @@ export async function main(argv: string[]): Promise<void> {
 		await kwinStartupMinimize?.dispose().catch(() => undefined);
 		kwinStartupMinimize = null;
 
+		let recordStatus = "off";
+		let recordOutputDir: string | undefined;
+		if (options.record) {
+			try {
+				const recording = await startRecording({
+					port: actualPort,
+					tabIndex: 0,
+					frames: options.recordFrames,
+					format: "png",
+				});
+				recordStatus =
+					recording.framesRequested === null
+						? "started (saving until stopped)"
+						: `started (${recording.framesRequested} frame(s))`;
+				recordOutputDir = recording.outputDir;
+			} catch (error) {
+				recordStatus = `not started: ${error instanceof Error ? error.message : String(error)}`;
+			}
+		}
+
 		if (options.json) {
 			renderOutput(
 				{
@@ -842,6 +1063,9 @@ export async function main(argv: string[]): Promise<void> {
 					locale: resolvedLocale.appLocale,
 					acceptLanguage: resolvedLocale.acceptLanguages,
 					defaultProfile: usesDefaultProfile,
+					emulation: options.android ? "android" : "desktop",
+					recordStatus,
+					recordOutputDir,
 				},
 				true,
 			);
@@ -854,6 +1078,11 @@ export async function main(argv: string[]): Promise<void> {
 				defaultProfile: usesDefaultProfile,
 				windowState,
 				locale: resolvedLocale.appLocale,
+				emulation: options.android ? "android" : "desktop",
+				record:
+					recordStatus === "off"
+						? undefined
+						: (recordOutputDir ?? recordStatus),
 			});
 		}
 	} catch (error) {

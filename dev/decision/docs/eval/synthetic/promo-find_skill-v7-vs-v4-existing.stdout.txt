@@ -1,0 +1,30 @@
+find_skill: running 63 of 63 cases
+find_skill: 63 cases · v7 vs v4 · backends openrouter/typesafe/jev-1.14
+
+metric                 v7       v4       Δ
+answered            1.000    1.000  +0.000
+exact               0.587    0.593  -0.005
+recall              0.873    0.850  +0.023
+precision           0.780    0.792  -0.011
+quiet               1.000    0.800  +0.200
+coverage            1.000    0.857  +0.143
+answered / cases    63/63    54/63
+unavailable             0        9
+p50 ms                418      726
+p95 ms                480      790
+cost USD          0.02744  0.00732
+calibrated            98%      72%
+
+WARNING v4: 9 of 63 cases UNAVAILABLE (no backend answered); excluded from the averages, coverage 0.86
+promotion rule (v7 vs v4): does not hold
+  floor recall ≥ 0.9: 0.873 FAIL
+  better on: recall, quiet, coverage
+  worse on:  exact, precision
+  guard p95 latency ms: 790.0000 → 480.0000 ok
+  guard cost USD: 0.0073 → 0.0274 FAIL
+  guard calibrated share: 0.7170 → 0.9839 ok
+  why not: recall 0.873 < floor 0.9; worse on exact, precision; cost $0.02744 > baseline $0.00732; baseline had 9 unavailable case(s); rerun when the backend answers
+
+report /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_skill-v7-vs-v4.md
+json   /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_skill-v7-vs-v4.json
+this run does not promote; use `decision promote <feature> <vN>` when satisfied

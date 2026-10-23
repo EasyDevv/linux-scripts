@@ -18,6 +18,7 @@ import {
 	terminateProcess,
 } from "./chrome-instance.ts";
 import { DEFAULT_PORT } from "./config.ts";
+import { type RecordState, stopRecording } from "./browser-record.ts";
 import { saveSessionFromPort, sessionNameForProfile } from "./session.ts";
 
 const PROFILE_FLUSH_GRACE_MS = 300;
@@ -44,6 +45,7 @@ Options
 
 Notes
   Global profiles (9222) save their session first; --clean profiles are deleted.
+  An active browser open --record is stopped first; its frames are kept.
   9201 belongs to chrome.service: stop it with systemctl, not here.`;
 
 function die(msg: string): never {
@@ -115,6 +117,22 @@ function renderOutput(output: Record<string, unknown>, json = false) {
 	if (output.pid) console.log(`  pid: ${output.pid}`);
 	if (output.signal) console.log(`  signal: ${output.signal}`);
 	if (output.note) console.log(`  note: ${output.note}`);
+	if (output.recordStatus)
+		console.log(
+			`  record: ${output.recordStatus} · ${output.recordFrames} frame(s) · ${output.recordOutputDir}`,
+		);
+}
+
+/** Recording is stopped with the browser; report where its frames went. */
+function recordingFields(
+	recording: RecordState | null,
+): Record<string, unknown> {
+	if (!recording) return {};
+	return {
+		recordStatus: recording.status,
+		recordFrames: recording.framesCaptured,
+		recordOutputDir: recording.outputDir,
+	};
 }
 
 async function waitForProcessExit(pid: number, timeoutMs: number) {
@@ -171,6 +189,7 @@ async function closeBrowserGracefully(
 
 export async function main(argv: string[]): Promise<void> {
 	const options = parseArgs(argv);
+	const recording = await stopRecording(options.port);
 	// The port lock remembers a --clean or --user-data profile the default would miss.
 	const lockedDir = (await readPortLock(options.port).catch(() => null))?.userDataDir;
 	const userDataDir =
@@ -206,20 +225,21 @@ export async function main(argv: string[]): Promise<void> {
 		await clearLaunchInfo(userDataDir);
 		await clearPortLock(options.port);
 
-		renderOutput(
-			{
-				status: closed ? "terminated" : "released-lock",
-				port: options.port,
-				userDataDir,
-				browserAction: closed
-					? "closed-browser-by-port"
-					: "cleared-stale-browser-lock",
-				note: closed
-					? "Closed the browser reachable on the requested debugging port because recorded launch metadata did not match that port."
-					: "Recorded launch metadata did not match the requested port, and the browser did not close via CDP before timeout.",
-			},
-			options.json,
-		);
+				renderOutput(
+				{
+					status: closed ? "terminated" : "released-lock",
+					port: options.port,
+					userDataDir,
+					browserAction: closed
+						? "closed-browser-by-port"
+						: "cleared-stale-browser-lock",
+					note: closed
+						? "Closed the browser reachable on the requested debugging port because recorded launch metadata did not match that port."
+						: "Recorded launch metadata did not match the requested port, and the browser did not close via CDP before timeout.",
+					...recordingFields(recording),
+				},
+				options.json,
+			);
 		return;
 	}
 
@@ -246,6 +266,7 @@ export async function main(argv: string[]): Promise<void> {
 						note: closed
 							? "Closed the browser reachable on the requested debugging port."
 							: "The browser reachable on the requested debugging port did not close via CDP before timeout.",
+						...recordingFields(recording),
 					},
 					options.json,
 				);
@@ -261,6 +282,7 @@ export async function main(argv: string[]): Promise<void> {
 					userDataDir,
 					browserAction: "cleared-stale-browser-lock",
 					note: "Only stale metadata was present, so it was cleared.",
+					...recordingFields(recording),
 				},
 				options.json,
 			);
@@ -327,6 +349,7 @@ export async function main(argv: string[]): Promise<void> {
 			pid: launchInfo.pid,
 			port: launchInfo.port,
 			userDataDir,
+			...recordingFields(recording),
 		},
 		options.json,
 	);

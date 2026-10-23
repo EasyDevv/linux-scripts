@@ -95,6 +95,86 @@ export interface FindSkillResult extends FeatureResult {
 	rules: FoundRule[];
 	/** Skills and rules that were candidates (everything visible minus `loaded`). */
 	candidates: number;
+	/** Set when Jev did not answer and code (paths, keywords) picked these candidates: hints only. */
+	fallback?: true;
+}
+
+/** Keyword fallback caps: a few of each kind, so a Jev outage stays quiet. */
+export const KEYWORD_LIMITS = { skills: 3, rules: 2 } as const;
+/** One name token match is enough; a description word alone is not. */
+export const KEYWORD_MIN_SCORE = 3;
+/** A keyword hit's p: below every `skillThreshold`/`ruleThreshold`, so it is never injected. */
+export const KEYWORD_P = 0.4;
+
+const STOPWORDS = new Set([
+	"the", "and", "for", "with", "this", "that", "from", "into", "when", "what", "how", "why", "who",
+	"fix", "add", "use", "using", "used", "not", "are", "was", "were", "has", "had", "have", "but", "you",
+	"your", "its", "can", "could", "does", "did", "all", "any", "one", "two", "out", "get", "set", "make",
+	"new", "run", "via", "per", "then", "than", "also", "just", "only", "more", "most", "some", "such", "over",
+	"after", "before", "again", "still", "there", "here", "them", "they", "should", "would", "will", "please",
+	"대한", "대해", "때문", "그리고", "합니다", "해줘", "해주세요", "에서", "으로", "하는", "있는", "없는", "이거",
+	"그거", "저거", "것을", "것은", "수가", "등", "및", "더", "잘", "안", "좀", "그", "이", "저", "수", "것",
+]);
+
+function words(text: string): string[] {
+	return text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+}
+
+function isHangul(token: string): boolean {
+	return /\p{Script=Hangul}/u.test(token);
+}
+
+function nameTokens(name: string): string[] {
+	return name.toLowerCase().split(/[-._/]+/).filter(Boolean);
+}
+
+/** Prompt tokens that can match: latin 3+ chars, Korean 2+; stopwords never. */
+function promptTokens(prompt: string): Set<string> {
+	const set = new Set<string>();
+	for (const token of words(prompt)) {
+		if (STOPWORDS.has(token)) continue;
+		if (token.length >= (isHangul(token) ? 2 : 3)) set.add(token);
+	}
+	return set;
+}
+
+/** Korean particles attach to a stem, so a 2+ char token also matches inside a longer word. */
+function hangulOverlap(token: string, prompt: Set<string>): boolean {
+	if (token.length < 2) return false;
+	for (const word of prompt) {
+		if (word.length >= 2 && (word === token || word.includes(token) || token.includes(word))) return true;
+	}
+	return false;
+}
+
+/**
+ * Code-only recall for a Jev outage: token overlap between the prompt and an entry's name +
+ * description, name tokens weighing more. Returns the highest scores per kind, above the floor.
+ */
+export function keywordHits(
+	prompt: string,
+	candidates: readonly CatalogEntry[],
+	limits: { skills: number; rules: number } = KEYWORD_LIMITS,
+): { entry: CatalogEntry; score: number }[] {
+	const tokens = promptTokens(prompt);
+	if (tokens.size === 0) return [];
+	const scored: { entry: CatalogEntry; score: number }[] = [];
+	for (const entry of candidates) {
+		let score = 0;
+		for (const token of nameTokens(entry.name)) {
+			if (token.length < 2) continue;
+			if (tokens.has(token) || (isHangul(token) && hangulOverlap(token, tokens))) score += 3;
+		}
+		for (const token of new Set(words(entry.description))) {
+			if (STOPWORDS.has(token) || token.length < (isHangul(token) ? 2 : 3)) continue;
+			if (tokens.has(token) || (isHangul(token) && hangulOverlap(token, tokens))) score += 1;
+		}
+		if (score >= KEYWORD_MIN_SCORE) scored.push({ entry, score });
+	}
+	scored.sort((a, b) => b.score - a.score);
+	const kind = (want: CatalogEntry["kind"], cap: number) =>
+		scored.filter((h) => h.entry.kind === want).slice(0, cap);
+	return [...kind("skill", limits.skills), ...kind("rule", limits.rules)];
 }
 
 type DecideFn = (request: DecideRequest) => Promise<Decision>;
@@ -328,6 +408,59 @@ export async function findSkills(
 			latencyMs: Date.now() - started,
 		};
 	};
+	// A Jev outage: path hits as ever, plus keyword-matched candidates as hints (no bodies).
+	const fallback = (decisions: Decision[]): FindSkillResult => {
+		const decision = decisions.at(-1);
+		const found = compose([], {}, candidates, prompt, ruleHits);
+		const taken = new Set([...ruleHits.map((h) => h.entry.name), ...skillHits.map((e) => e.name)]);
+		const keywords = keywordHits(
+			input.prompt,
+			candidates.filter((e) => !taken.has(e.name)),
+		);
+		if (keywords.length === 0) {
+			if (ruleHits.length > 0) return pathOnly(`${ruleHits.length} rules by path, Jev unavailable`, decision);
+			return unavailable(candidates.length, decisions, started);
+		}
+		return {
+			decisionId: decision?.decisionId,
+			status: "routed",
+			reason: "fallback: keyword (Jev unavailable)",
+			notes: [
+				...(decision?.skipped ?? []),
+				...found.notes,
+				...skillHits.map((e) => `skill ${e.name} hinted by path`),
+				...keywords.map((h) => `${h.entry.kind} ${h.entry.name} hinted by keyword (score ${h.score})`),
+			],
+			skills: [
+				...skillHits.map((e) => ({ name: e.name, path: e.path, description: e.description, p: 1 })),
+				...keywords
+					.filter((h) => h.entry.kind === "skill")
+					.map((h) => ({
+						name: h.entry.name,
+						path: h.entry.path,
+						description: h.entry.description,
+						p: KEYWORD_P,
+					})),
+			],
+			rules: [
+				...found.rules,
+				...keywords
+					.filter((h) => h.entry.kind === "rule")
+					.map((h) => ({
+						name: h.entry.name,
+						path: h.entry.path,
+						scope: h.entry.scope,
+						p: KEYWORD_P,
+						body: "",
+					})),
+			],
+			candidates: candidates.length,
+			fallback: true,
+			backend: decision?.backend,
+			calibrated: decision?.calibrated,
+			latencyMs: Date.now() - started,
+		};
+	};
 	if (touchOnly) return pathOnly(`${ruleHits.length} rules, ${skillHits.length} skills by path`);
 
 	// Rules a glob already selected are not asked again.
@@ -340,10 +473,8 @@ export async function findSkills(
 		const choose = await decide(buildChooseRequest(input, open, prompt));
 		decisions.push(choose);
 		if (choose.status !== "ok") {
-			// A glob match stands without Jev; fail-open only drops what Jev would have added.
-			if (ruleHits.length > 0)
-				return { ...pathOnly(`${ruleHits.length} rules by path, Jev unavailable`), notes: choose.skipped };
-			return unavailable(candidates.length, decisions, started);
+			// A glob or keyword match stands without Jev; fail-open only drops what Jev would have added.
+			return fallback(decisions);
 		}
 		const { picked, none } = shortlist(choose.answers.pick, open, prompt);
 		const pickedEntries = picked.map((c) => c.entry);
@@ -359,11 +490,7 @@ export async function findSkills(
 	}
 	const apply = await decide(buildApplyRequest(input, asked, prompt));
 	decisions.push(apply);
-	if (apply.status !== "ok") {
-		if (ruleHits.length > 0)
-			return { ...pathOnly(`${ruleHits.length} rules by path, Jev unavailable`), notes: apply.skipped };
-		return unavailable(candidates.length, decisions, started);
-	}
+	if (apply.status !== "ok") return fallback(decisions);
 	const found = compose(asked, apply.answers, candidates, prompt, ruleHits);
 	notes.push(`p ${askedProbabilities(asked, apply.answers)}`);
 	return {

@@ -1,0 +1,24 @@
+find_tool: running 12 of 12 cases
+find_tool: 12 cases · v1 · backends openrouter/typesafe/jev-1.14
+
+metric                 v1
+answered            1.000
+recall              0.708
+precision           1.000
+exact               0.583
+falseActivation     0.000
+coverage            1.000
+answered / cases    12/12
+unavailable             0
+p50 ms                374
+p95 ms                657
+cost USD          0.00050
+calibrated           100%
+
+promotion rule (v1 floor): does not hold
+  floor recall ≥ 0.95: 0.708 FAIL
+  why not: recall 0.708 < floor 0.95
+
+report /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_tool-v1.md
+json   /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_tool-v1.json
+this run does not promote; use `decision promote <feature> <vN>` when satisfied

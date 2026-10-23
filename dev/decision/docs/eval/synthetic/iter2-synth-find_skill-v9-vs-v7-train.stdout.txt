@@ -1,0 +1,29 @@
+find_skill: running 24 of 24 cases
+find_skill: 24 cases · v9 vs v7 · backends openrouter/typesafe/jev-1.14
+
+metric                 v9       v7       Δ
+answered            1.000    1.000  +0.000
+exact               0.458    0.458  +0.000
+recall              0.979    0.979  +0.000
+precision           0.686    0.682  +0.004
+quiet               1.000    1.000  +0.000
+coverage            1.000    1.000  +0.000
+answered / cases    24/24    24/24
+unavailable             0        0
+p50 ms                436      425
+p95 ms                542      625
+cost USD          0.01133  0.01025
+calibrated           100%     100%
+
+promotion rule (v9 vs v7): does not hold
+  floor recall ≥ 0.9: 0.979 ok
+  better on: precision
+  worse on:  none
+  guard p95 latency ms: 625.0000 → 542.0000 ok
+  guard cost USD: 0.0103 → 0.0113 FAIL
+  guard calibrated share: 1.0000 → 1.0000 ok
+  why not: cost $0.01133 > baseline $0.01025
+
+report /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_skill-v9-vs-v7.md
+json   /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_skill-v9-vs-v7.json
+this run does not promote; use `decision promote <feature> <vN>` when satisfied

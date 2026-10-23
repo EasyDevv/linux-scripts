@@ -1,0 +1,106 @@
+{
+	"schema": 1,
+	"feature": "find_skill",
+	"version": "v6",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "/tmp/claude-1000/-home-easydev-dev-dashboard/c9be3818-e32b-47e4-aa1b-566319eed5ca/scratchpad/two.jsonl",
+	"generatedAt": "2026-10-23T09:05:54.989Z",
+	"candidate": {
+		"summary": {
+			"version": "v6",
+			"cases": 2,
+			"answered": 2,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.5,
+				"recall": 0.875,
+				"precision": 0.75,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 775,
+				"p95": 855,
+				"n": 2
+			},
+			"costUsd": 0.00036695400000000006,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 2
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "{\"url\":\"/projects\",\"src\":\"apps/client/src/routes/projects/+page.svelte:L2162\",\"xpath\":\"//div[contains(@class,'board-main') and contains(@class,'flex') and contains(@class,'min-w-0')]\",\"task\":\"기본적으로 좌우 스플릿으로 구성\\n\\n터미널 bar 가 위로\"} 를 dashboard 의 chat 창에 입력시 에러 발생.",
+				"expected": {
+					"skills": [
+						"bun-webview",
+						"shadcn-svelte"
+					],
+					"rules": [
+						"cmd.executor",
+						"stack-svelte-tauri"
+					]
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0.75,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 4 rules (asked 3 of 56)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Shape Svelte SPA screens asked to be built or rest…",
+				"costUsd": 0.00019093200000000005,
+				"status": "routed",
+				"latencyMs": 775,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "1번, bun-webview 로 실제 수행해보고 판단",
+				"expected": {
+					"skills": [
+						"bun-webview"
+					],
+					"rules": []
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 1 of 56)\",\"skills\":[{\"name\":\"bun-webview\",\"path\":\"/home/easydev/.agents/skills-routed/web/bun-webview/SKILL.md\",\"description\":\"Diagnose a live UI bug with bun-webview — reproduce it in …",
+				"costUsd": 0.00017602200000000002,
+				"status": "routed",
+				"latencyMs": 855,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "floor",
+		"holds": false,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.9,
+				"value": 0.875,
+				"ok": false
+			}
+		],
+		"better": [],
+		"worse": [],
+		"guards": [],
+		"reasons": [
+			"recall 0.875 < floor 0.9"
+		]
+	}
+}

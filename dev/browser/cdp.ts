@@ -158,7 +158,11 @@ export async function listTabs(port: number): Promise<Tab[]> {
 	}
 }
 
-export async function waitForChrome(port: number, timeout = 10000) {
+export async function waitForChrome(
+	port: number,
+	timeout = 10000,
+	onTimeout?: () => void | Promise<void>,
+) {
 	const deadline = Date.now() + timeout;
 	while (Date.now() < deadline) {
 		try {
@@ -169,6 +173,7 @@ export async function waitForChrome(port: number, timeout = 10000) {
 		} catch {}
 		await Bun.sleep(100);
 	}
+	await onTimeout?.();
 	die(`Timed out waiting for Chrome on port ${port}`);
 }
 
@@ -268,7 +273,11 @@ export async function createTab(
 
 export async function getWsUrl(port: number, tabIndex = 0): Promise<string> {
 	const tabs = await listTabs(port);
-	const tab = tabs[tabIndex];
+	// `/json/list` also returns extension background pages and service workers.
+	// Page.captureScreenshot never answers on those targets, so the recorder must
+	// attach to a page; `tabIndex` counts pages, not every target.
+	const pages = tabs.filter((tab) => tab.type === "page");
+	const tab = pages[tabIndex];
 	if (!tab?.webSocketDebuggerUrl) {
 		die(
 			`No page tab found on port ${port}. Open a tab first or check the port.`,
@@ -311,7 +320,12 @@ export async function resetTabs(
 		const firstTab = pageTabs[0];
 		await fetch(`http://127.0.0.1:${port}/json/activate/${firstTab.id}`);
 
-		if (targetUrl !== firstTab.url && targetUrl !== "about:blank") {
+		const shouldNavigate =
+			targetUrl !== firstTab.url && targetUrl !== "about:blank";
+
+		// Emulation is a tab setting, so it is applied even when the tab already
+		// sits on about:blank and no navigation is needed.
+		if (shouldNavigate || configureTab) {
 			try {
 				const wsUrl = firstTab.webSocketDebuggerUrl;
 				if (wsUrl) {
@@ -365,45 +379,48 @@ export async function resetTabs(
 					await cdp.send("Runtime.enable");
 					await cdp.send("Log.enable");
 					await preparePageLeave(cdp);
+					if (configureTab) await configureTab(cdp);
 
-					const navResult = await cdp.send<{ frameId?: string }>(
-						"Page.navigate",
-						{ url: targetUrl },
-					);
+					if (shouldNavigate) {
+						const navResult = await cdp.send<{ frameId?: string }>(
+							"Page.navigate",
+							{ url: targetUrl },
+						);
 
-					const loadPromise = new Promise<void>((resolve) => {
-						cdp.on("Page.loadEventFired", () => resolve());
-					});
-					await Promise.race([loadPromise, Bun.sleep(15000)]);
+						const loadPromise = new Promise<void>((resolve) => {
+							cdp.on("Page.loadEventFired", () => resolve());
+						});
+						await Promise.race([loadPromise, Bun.sleep(15000)]);
 
-					const evalResult = await cdp.send<{
-						result?: { value?: Record<string, unknown> };
-					}>("Runtime.evaluate", {
-						expression: `JSON.stringify({
+						const evalResult = await cdp.send<{
+							result?: { value?: Record<string, unknown> };
+						}>("Runtime.evaluate", {
+							expression: `JSON.stringify({
               url: document.location.href,
               title: document.title,
               readyState: document.readyState
             })`,
-						returnByValue: false,
-					});
+							returnByValue: false,
+						});
 
-					let pageData: Record<string, unknown> | null = null;
-					if (evalResult?.result?.value) {
-						try {
-							pageData = JSON.parse(String(evalResult.result.value)) as Record<
-								string,
-								unknown
-							>;
-						} catch {}
+						let pageData: Record<string, unknown> | null = null;
+						if (evalResult?.result?.value) {
+							try {
+								pageData = JSON.parse(
+									String(evalResult.result.value),
+								) as Record<string, unknown>;
+							} catch {}
+						}
+
+						navigation = {
+							pageLocation: navResult?.frameId ? targetUrl : undefined,
+							pageStatus:
+								pageData?.readyState === "complete" ? "ok" : "loading",
+							pageStatusSummary: pageData
+								? `URL: ${pageData.url}, Title: ${pageData.title}, ReadyState: ${pageData.readyState}`
+								: "Unable to evaluate page state",
+						};
 					}
-
-					navigation = {
-						pageLocation: navResult?.frameId ? targetUrl : undefined,
-						pageStatus: pageData?.readyState === "complete" ? "ok" : "loading",
-						pageStatusSummary: pageData
-							? `URL: ${pageData.url}, Title: ${pageData.title}, ReadyState: ${pageData.readyState}`
-							: "Unable to evaluate page state",
-					};
 
 					cdp.close();
 				}

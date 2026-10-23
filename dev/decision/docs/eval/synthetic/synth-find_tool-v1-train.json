@@ -1,0 +1,292 @@
+{
+	"schema": 1,
+	"feature": "find_tool",
+	"version": "v1",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "evals/synthetic/tool-train.jsonl",
+	"generatedAt": "2026-10-23T09:24:16.805Z",
+	"candidate": {
+		"summary": {
+			"version": "v1",
+			"cases": 12,
+			"answered": 12,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"recall": 0.7083333333333334,
+				"precision": 1,
+				"exact": 0.5833333333333334,
+				"falseActivation": 0,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 374,
+				"p95": 657,
+				"n": 12
+			},
+			"costUsd": 0.0005025300000000001,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 12
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "README.md 12번째 줄에 'teh'로 잘못 적혀 있어. 'the'로 고치고 다른 줄은 건드리지 마.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.99 · needs 0.03 · done 0.02\"}",
+				"costUsd": 0.000040362000000000004,
+				"status": "routed",
+				"latencyMs": 596,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "NVIDIA 드라이버 설치 스크립트를 sudo로 돌려야 하는데 중간에 라이선스 동의를 물어봐. 설치 마저 진행해주고, 끝나면 이번 달 권장 드라이버 버전도 웹에서 확인해줘.",
+				"expected": [
+					"interactive_shell",
+					"web_search"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"interactive_shell\",\"p\":0.87}],\"done\":0.01,\"reason\":\"activate interactive_shell · none 0.04 · needs 0.77 · done 0.01\"}",
+				"costUsd": 0.000040950000000000006,
+				"status": "routed",
+				"latencyMs": 657,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "14군데 호출부 전부 새 시그니처에 맞게 바꿔줘. 시그니처는 (config, options) 두 인자로 바뀌었어.",
+				"expected": [
+					"lsp_references"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.94 · needs 0.06 · done 0.02\"}",
+				"costUsd": 0.00004288200000000001,
+				"status": "routed",
+				"latencyMs": 367,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "CI가 어제부터 이 에러로 죽는데 원인 찾아서 고쳐줘. ``` /home/runner/work/app/src/components/Cart.tsx 42:9 error React Hook useEffect has a missing dependency: 'refresh' react-hooks/exhaustive-deps 88:3 warning Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps') ✖ 2 problems (…",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.01,\"reason\":\"no extra tool · none 0.81 · needs 0.08 · done 0.01\"}",
+				"costUsd": 0.000046074000000000006,
+				"status": "routed",
+				"latencyMs": 374,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "Add a 30s timeout to the fetch call in src/http/client.ts and run that file's tests.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.01,\"reason\":\"no extra tool · none 0.97 · needs 0.10 · done 0.01\"}",
+				"costUsd": 0.00003864,
+				"status": "routed",
+				"latencyMs": 382,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "I bumped @types/node to 22.7.4 in package.json and regenerated the lockfile. Run the type-check and tell me what broke.",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.90 · needs 0.29 · done 0.02\"}",
+				"costUsd": 0.000040362000000000004,
+				"status": "routed",
+				"latencyMs": 367,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "Have a subagent bisect which commit broke the payments test, but ask me first whether to bisect against staging fixtures or the production snapshot.",
+				"expected": [
+					"subagent",
+					"ask_user_question"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"ask_user_question\",\"p\":0.98}],\"done\":0.01,\"reason\":\"activate ask_user_question · none 0.01 · needs 0.79 · done 0.01\"}",
+				"costUsd": 0.000041370000000000005,
+				"status": "routed",
+				"latencyMs": 377,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "Tests are green — put me back on main now.",
+				"expected": [
+					"ExitWorktree"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"ExitWorktree\",\"p\":0.72}],\"done\":0.08,\"reason\":\"activate ExitWorktree · none 0.27 · needs 0.32 · done 0.08\"}",
+				"costUsd": 0.000041706000000000004,
+				"status": "routed",
+				"latencyMs": 362,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "These are the tsc errors after the merge. Group them by root cause and fix them. ``` src/billing/invoice.ts(88,17): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'. src/billing/invoice.ts(104,9): error TS2304: Cannot find name 'TaxBreakdown'. src/…",
+				"expected": [],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.77 · needs 0.11 · done 0.02\"}",
+				"costUsd": 0.000047124000000000005,
+				"status": "routed",
+				"latencyMs": 376,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "analysis.ipynb에서 CSV 읽는 셀이 깨져. 그 셀 고치고, 고친 뒤에 타입 에러 남는지도 확인해줘.",
+				"expected": [
+					"NotebookEdit",
+					"LSP"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0.5,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"NotebookEdit\",\"p\":0.75}],\"done\":0.02,\"reason\":\"activate NotebookEdit · none 0.25 · needs 0.25 · done 0.02\"}",
+				"costUsd": 0.000040656000000000005,
+				"status": "routed",
+				"latencyMs": 370,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "새로 만든 useCart 훅이 어디서 쓰이는지 보고 싶어. 타입 에러 목록 말고, 사용처만 알려줘.",
+				"expected": [
+					"lsp_references"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 0,
+					"precision": 1,
+					"exact": 0,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[],\"done\":0.02,\"reason\":\"no extra tool · none 0.49 · needs 0.07 · done 0.02\"}",
+				"costUsd": 0.00003927,
+				"status": "routed",
+				"latencyMs": 372,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "그럼 셋 다 비교해서 인용 달린 보고서로 정리해줘.",
+				"expected": [
+					"deep_research"
+				],
+				"metrics": {
+					"answered": 1,
+					"recall": 1,
+					"precision": 1,
+					"exact": 1,
+					"falseActivation": 0
+				},
+				"got": "{\"status\":\"routed\",\"activate\":[{\"name\":\"deep_research\",\"p\":0.53}],\"done\":0.03,\"reason\":\"activate deep_research · none 0.31 · needs 0.38 · done 0.03\"}",
+				"costUsd": 0.000043134000000000004,
+				"status": "routed",
+				"latencyMs": 394,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "floor",
+		"holds": false,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.95,
+				"value": 0.7083333333333334,
+				"ok": false
+			}
+		],
+		"better": [],
+		"worse": [],
+		"guards": [],
+		"reasons": [
+			"recall 0.708 < floor 0.95"
+		]
+	}
+}

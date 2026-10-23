@@ -100,6 +100,16 @@ describe("find_tool compose", () => {
 		expect(r.notes[0]).toContain("needs_extra_tool");
 	});
 
+	test("v6 lets a confident choice override the gate; v1 is unchanged", () => {
+		const a = answers({ none: 0.2, web_search: 0.5, fetch_content: 0.1, interactive_shell: 0.1, lsp_references: 0.1 }, 0.1);
+		const v6 = loadToolPrompt("v6");
+		expect(compose(a, input, prompt).activate).toEqual([]);
+		expect(compose(a, input, v6).activate).toEqual([{ name: "web_search", p: 0.5 }]);
+		expect(compose(a, input, v6).notes[0]).toContain("overridden by web_search");
+		const shy = answers({ none: 0.2, web_search: 0.3, fetch_content: 0.1, interactive_shell: 0.1, lsp_references: 0.1 }, 0.1);
+		expect(compose(shy, input, v6).activate).toEqual([]);
+	});
+
 	test("labels outside the offered set are never activated; done is passed through", () => {
 		const r = compose(answers({ none: 0.1, ghost_tool: 0.9 }, 0.9, 0.82), input, prompt);
 		expect(r.activate).toEqual([]);

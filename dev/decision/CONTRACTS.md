@@ -59,6 +59,12 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   from `paths:` globs alone: matched rules, plus as hints (`p: 1`, no `body`) the skills whose glob
   matched and the skills a matched rule names in `skills:`. A prompt with a matched rule asks Jev
   about those paired skills too, past the shortlist. Clients append both to the tool result.
+- Jev down or slow: `paths:` globs answer as above, plus keyword-matched candidates from the prompt
+  (name + description token overlap, Korean by 2+ char substring), capped at 3 skills and 2 rules at
+  `p: 0.4`. They arrive as hints only: no `body` (rules too), and the result carries `fallback: true`
+  with reason `fallback: keyword (Jev unavailable)`. With no path or keyword match the answer stays
+  `unavailable`. Clients render fallback entries as name+path lines marked `[fallback]`, never as
+  bodies.
 - Exposure is the folder, not a frontmatter flag. `skills-routed/` is scanned by no harness, so a
   routed skill reaches the model only through this answer: a body, or a hint the model follows by
   reading the `SKILL.md` at `path` (not the Skill tool, which does not know it). `.agents/skills/`
@@ -70,6 +76,10 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   routed skills by root, once a session.
   A client shows `⚠ decision down · no skills` (pi footer, Claude Code status line) while
   find_skill gets no answer or `unavailable`; a skip clears it.
+- Human-text entry points routed — Claude: `prompt.submit` (typed or queued, composer origin),
+  `AskUserQuestion` answers (PostToolUse), auto-continuation feedback that is not `isMeta`; pi:
+  `input`/`before_agent_start`, `ask_user_question` answers (tool_result), `steer`/`followUp` while
+  streaming (`queued.ts`, delivered via `sendMessage`).
 
 ## `POST /v1/find_tool`
 
@@ -115,33 +125,9 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 
 ## `POST /v1/dispatch`
 
-The dashboard's composer and Footer Chat ask where one sentence goes (`~/dev/dashboard`,
-`docs/plan/261022-agent-composer.md`). Only the dashboard calls it; pi and Claude Code do not.
-
-- in: `{prompt, harness: "dashboard", scope?: {page?, project?, projects?: string[]},
-  fixed?: {kind?, mode?, scope?: string[]}, state?: {plainRunning?, plainPaths?: string[], tasks?,
-  projects?: string[], paths?: string[]}}` — `prompt` is the sentence with its `/kind` and `@scope`
-  tokens already read out by the client (those axes arrive in `fixed`); `state.projects` names the
-  registered projects; `state.paths` the selected project's top folders, the only `ownedPaths` Jev
-  may pick.
-- out: `{items: [{text, kind: task|goal|routine|org-edit|answer, projects: string[],
-  mode?: worktree|plain, ownedPaths: string[], when: now|schedule|watch-once|watch-each,
-  end: none|milestones|until|deadline, after?: number, p, choices: string[], reason}]}`.
-- Splitting is code, not Jev: a connector (`하고` · `그리고` · `끝나면` · `통과하면` · `and` ·
-  `then` · `;`) ends one item; `끝나면` · `통과하면` · `then` also set the next item's `after` to the
-  previous index. Each item is asked separately (kind, mode for a task, trigger, end, area).
-- A `fixed` axis is never asked and never changed; its share of `p` is 1. `p` is the lowest
-  confidence among the asked axes that decide the route (kind; mode when the item is a task).
-- `projects`: `fixed.scope`, else the `state.projects` names the item mentions, else
-  `scope.project`.
-- Skips: empty and acknowledgement (as model_route). A slash command does not skip: the tokens were
-  read out already. `unavailable` = the dashboard keeps its own mode chip.
-- `choices`: what to offer back when `p` is low — the two likeliest kinds, or `worktree` · `plain`
-  when the mode is the weaker axis. A goal or routine with no
-  target (`vague_target` ≥ `limits.vagueThreshold`, "improve it every week") offers goal · routine and
-  its `p` drops to `1 - vague`.
-- Eval label: `{kind, mode?, items?, asks?}`; metrics `kind`, `mode`, `items` (count), `asks` (some
-  item under 0.7), `answered`.
+Moved to the dashboard on 261023: `~/dev/dashboard/apps/server/src/workflow/dispatch/jev.rs`.
+The dashboard calls `POST /v1/decide` with feature `dispatch`, version `v1`, harness `dashboard`;
+the contract now lives in the dashboard's `docs/plan/261022-agent-composer.md`.
 
 ## `POST /v1/outcome`
 

@@ -35,6 +35,12 @@ export interface ToolPrompt {
 		/** v2+: `none` at or above this activates nothing, whatever the tools scored. */
 		noneCeiling?: number;
 		/**
+		 * v6+: a best candidate at or above this overrides a failed `needs_extra_tool` gate: the
+		 * gate answers "is a specialised capability required at all", the choice answers "which
+		 * tool, and how sure"; a confident choice is the more specific signal, so it wins.
+		 */
+		gateOverride?: number;
+		/**
 		 * v2+: tools used together (`browser_*` is a name prefix). One member passing the threshold
 		 * brings the other offered members along, within `topK`.
 		 */
@@ -153,12 +159,18 @@ export function compose(
 	const known = new Set(candidates(input, prompt).map((t) => t.name));
 
 	const none = probabilities[prompt.noneLabel];
+	const best = Object.entries(probabilities)
+		.filter(([name]) => known.has(name))
+		.sort((a, b) => b[1] - a[1])[0];
+	const override = c.gateOverride !== undefined && best !== undefined && best[1] >= c.gateOverride;
 	let activate: { name: string; p: number }[] = [];
-	if (needs !== undefined && needs < c.gate) {
+	if (needs !== undefined && needs < c.gate && !override) {
 		notes.push(`needs_extra_tool ${needs.toFixed(2)} < ${c.gate} → none`);
 	} else if (c.noneCeiling !== undefined && none !== undefined && none >= c.noneCeiling) {
 		notes.push(`none ${none.toFixed(2)} ≥ ${c.noneCeiling} → none`);
 	} else {
+		if (override && needs !== undefined && needs < c.gate)
+			notes.push(`needs_extra_tool ${needs.toFixed(2)} < ${c.gate}, overridden by ${best?.[0]} ${best?.[1].toFixed(2)} ≥ ${c.gateOverride}`);
 		activate = Object.entries(probabilities)
 			.filter(([name, p]) => known.has(name) && p >= c.threshold)
 			.sort((a, b) => b[1] - a[1])

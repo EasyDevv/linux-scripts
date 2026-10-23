@@ -1,0 +1,29 @@
+find_tool: running 26 of 26 cases
+find_tool: 26 cases · v5 vs v1 · backends openrouter/typesafe/jev-1.14
+
+metric                 v5       v1       Δ
+answered            1.000    1.000  +0.000
+recall              0.904    0.923  -0.019
+precision           0.929    0.929  +0.000
+exact               0.731    0.731  +0.000
+falseActivation     0.000    0.000  +0.000
+coverage            1.000    1.000  +0.000
+answered / cases    26/26    26/26
+unavailable             0        0
+p50 ms                382      370
+p95 ms                439      414
+cost USD          0.00111  0.00111
+calibrated           100%     100%
+
+promotion rule (v5 vs v1): does not hold
+  floor recall ≥ 0.95: 0.904 FAIL
+  better on: none
+  worse on:  recall
+  guard p95 latency ms: 414.0000 → 439.0000 ok
+  guard cost USD: 0.0011 → 0.0011 ok
+  guard calibrated share: 1.0000 → 1.0000 ok
+  why not: recall 0.904 < floor 0.95; worse on recall; not better on any metric
+
+report /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_tool-v5-vs-v1.md
+json   /home/easydev/.local/share/scripts/dev/decision/docs/eval/261023-find_tool-v5-vs-v1.json
+this run does not promote; use `decision promote <feature> <vN>` when satisfied

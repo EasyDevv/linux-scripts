@@ -45,7 +45,7 @@ browser close --port 9223                          # 임시 프로필까지 삭�
 ## Chromium
 
 ```bash
-browser open [--port 9222] [--url <url>] [--normal|--minimize] [--headless] [--clean] [--session <name>] [--load-extension <dir>]
+browser open [--port 9222] [--url <url>] [--normal|--minimize] [--headless] [--clean] [--session <name>] [--load-extension <dir>] [--android] [--record [N]]
 browser close [--port N]
 browser list            # obscura와 Chromium 전부. TTY면 j/k 이동, x 닫기(확인 기본 No), enter 탭 출력
 browser status | tabs --port N | minimize --port N
@@ -54,8 +54,12 @@ browser open-extension "<name>" --port 39225 --page popup.html
 ```
 
 - KDE Wayland에서는 기본 최소화(작업표시줄 5초 깜빡임). 창 구분: 시작 페이지 `CDP <port>`, app_id `cdp-<port>`, 포트별 테마 색.
+- `--android`: 포커스 탭에 Pixel 9 UA·터치·412x915 뷰포트와 `navigator.userAgentData`를 적용한다. 새 브라우저와 기존 브라우저 모두에 적용된다.
+- `--record [N]`: 포커스 직후부터 백그라운드로 PNG 프레임을 캡처한다. N을 생략하면 `browser close`까지 계속 저장하고, close는 중지 후 캡처 수와 디렉터리를 보고한다. 저장 위치: `~/.cache/browser/state/captures/chrome-<port>-<time>/`.
 - `open`(기존 탭)과 `close`는 `beforeunload`/confirm 대화상자를 자동 수락한다.
 - 실행 메타데이터: `<profile>/.browser-launch.json`, 포트 잠금: `~/.cache/browser/state/locks`.
+- 디스플레이: 비-headless 실행에 `WAYLAND_DISPLAY`/`DISPLAY`가 없으면 `systemctl --user show-environment`에서 빌려온다. 거기에도 없으면 `--headless`를 쓰라는 오류로 멈춘다.
+- Chromium이 디버깅 포트를 열기 전에 죽으면 stderr 마지막 10줄을 보여준다. 전체 로그: `/tmp/browser-chrome-<port>.stderr.log`.
 - 환경 변수: `BROWSER_CHROMIUM_BIN`(기본 `chromium`), `BROWSER_LOCALE`(기본 `en-US`), `BROWSER_SESSIONS_DIR`, `BROWSER_PROFILES_FILE`.
 
 `~/.local/share/applications/chromium.desktop`은 고정된 **Chromium** 버튼을 `~/.local/usr/bin/chromium-cdp`로 돌린다: 9222가 꺼져 있으면 `browser open --normal`, 켜져 있으면 그 브라우저에 새 창/탭을 넘긴다.

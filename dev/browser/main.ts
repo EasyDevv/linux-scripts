@@ -32,7 +32,7 @@ Sign in · a human, on Chromium
 
 Chromium · render, measure, capture, extensions
   open                    launch or attach (9222 = global profile)
-  close                   stop it (9222 saves its session first)
+  close                   stop it (9222 saves its session first; ends recording)
   list                    every obscura and Chromium browser; pick and close
   tabs                    page tabs of one port
   status                  reachability and locks of known ports
