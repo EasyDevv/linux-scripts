@@ -2,6 +2,7 @@
 	"name": "shared-lint",
 	"private": true,
 	"type": "module",
+	"packageManager": "bun@1.4.4",
 	"dependencies": {
 		"@eslint/js": "10.0.1",
 		"@shadcn/lint": "0.2.0",

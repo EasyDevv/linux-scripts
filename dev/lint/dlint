@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Shared format + lint with the central config: Prettier formats code files, then ESLint checks JS/TS/Svelte and the
-# shadcn design-system rules. JSON is never formatted: compact JSON keeps what agents read small.
+# Shared format + lint with the central config: `bun fmt` formats code files with the Prettier config, then ESLint
+# checks JS/TS/Svelte and the shadcn design-system rules. JSON is never formatted: compact JSON keeps what agents read small.
 #   dlint [paths]           check only (default: .)
 #   dlint --write [paths]   format, apply safe fixes, and prune fixed entries from eslint-suppressions.json
 #   dlint --quiet ...       report ESLint errors only (hooks)
@@ -9,8 +9,20 @@ set -u
 DIR=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 BIN="$DIR/node_modules/.bin"
 SUPPRESSIONS=eslint-suppressions.json
-[ -x "$BIN/prettier" ] && [ -x "$BIN/eslint" ] || {
-	echo "dlint: prettier/eslint are not installed; run 'bun install' in $DIR" >&2
+[ -x "$BIN/eslint" ] || {
+	echo "dlint: eslint is not installed; run 'bun install' in $DIR" >&2
+	exit 127
+}
+# Run on the Bun this package pins, not the project's: proto would otherwise pick the project's `packageManager` (or a
+# stale PROTO_BUN_VERSION from the shell), and `bun fmt` arrived in Bun 1.4.4; an older Bun looks for a `fmt` script.
+# A Bun parent (claude-hook.ts) puts its own bin dir first on PATH, so plain `bun` would be the caller's version: go
+# through proto's shim, which honours PROTO_BUN_VERSION.
+export PROTO_BUN_VERSION=$(sed -n 's/.*"packageManager": *"bun@\([^"]*\)".*/\1/p' "$DIR/package.json")
+BUN=bun
+[ -x "${PROTO_HOME:-$HOME/.proto}/shims/bun" ] && BUN="${PROTO_HOME:-$HOME/.proto}/shims/bun"
+bun_version=$("$BUN" --version 2>/dev/null)
+[ "$(printf '%s\n' 1.4.4 "$bun_version" | sort -V | head -1)" = 1.4.4 ] || {
+	echo "dlint: bun fmt needs Bun 1.4.4 or newer (found ${bun_version:-none}; try 'proto install bun $PROTO_BUN_VERSION')" >&2
 	exit 127
 }
 
@@ -37,7 +49,7 @@ eslint=("$BIN/eslint" --config "$DIR/eslint.config.js" --no-error-on-unmatched-p
 # ESLint writes the suppressions file indented; keep it on one line like the other JSON agents read.
 compact_suppressions() {
 	[ -f "$SUPPRESSIONS" ] || return 0
-	bun -e 'const p = process.argv[1]; const t = await Bun.file(p).text(); const c = JSON.stringify(JSON.parse(t));
+	"$BUN" -e 'const p = process.argv[1]; const t = await Bun.file(p).text(); const c = JSON.stringify(JSON.parse(t));
 if (t.trim() !== c) await Bun.write(p, `${c}\n`);' "$SUPPRESSIONS"
 }
 
@@ -90,7 +102,8 @@ if [ ${#format_targets[@]} -gt 0 ]; then
 	[ -f .gitignore ] && ignore+=(--ignore-path .gitignore)
 	mode=--check
 	[ $write -eq 1 ] && mode=--write
-	"$BIN/prettier" "$mode" --log-level warn --config "$DIR/prettier.config.js" "${ignore[@]}" \
+	# --no-script: a project's own `fmt` script would otherwise run in place of the formatter.
+	"$BUN" fmt --no-script "$mode" --log-level warn --config "$DIR/prettier.config.js" "${ignore[@]}" \
 		--no-error-on-unmatched-pattern "${format_targets[@]}" || status=1
 fi
 if [ ${#lint_targets[@]} -gt 0 ]; then

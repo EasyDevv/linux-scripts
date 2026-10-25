@@ -282,13 +282,17 @@ pub fn openrouter_api_key(
         })
 }
 
-/// Browser `Cookie:` header for `openrouter.ai` Activity. Overlay `.env` only;
-/// the global fish file is the API key, not the session.
-pub fn openrouter_cookie(
+/// OpenRouter Management API key for `/api/v1/analytics/query` and
+/// `/api/v1/activity`. Overlay `.env` first, then the process environment;
+/// `OPENROUTER_MANAGEMENT_API_KEY` is an alias for the process environment
+/// only. Unlike the inference key it does not fall back to Pi's `auth.json` or
+/// the global fish file.
+pub fn openrouter_management_key(
     env: &dyn Fn(&str) -> Option<String>,
     env_file: Option<&Path>,
 ) -> Option<String> {
-    env_override(env, env_file, &["OPENROUTER_COOKIE"])
+    env_override(env, env_file, &["OPENROUTER_MANAGEMENT_KEY"])
+        .or_else(|| first_env(env, &["OPENROUTER_MANAGEMENT_API_KEY"]))
 }
 
 pub fn opencode_cookie(
@@ -556,7 +560,7 @@ mod tests {
         // A pasted header carries `;`, which the file reader must keep whole.
         fs::write(
             agent.join(".env"),
-            "LITHOSAI_COOKIE=\"__Host-console_session=abc; __Host-console_csrf=def\"\nCLAUDE_COOKIE=sessionKey=sk-1; cf_clearance=cf-2\nOPENROUTER_COOKIE=\"__session=or-sess; __client=or-client\"\n",
+            "LITHOSAI_COOKIE=\"__Host-console_session=abc; __Host-console_csrf=def\"\nCLAUDE_COOKIE=sessionKey=sk-1; cf_clearance=cf-2\n",
         )
         .unwrap();
         // Neither the old cookie names, a Pi key, nor the CLI file is a source.
@@ -581,9 +585,70 @@ mod tests {
             claude_cookie(&env, None).as_deref(),
             Some("sessionKey=sk-1; cf_clearance=cf-2")
         );
+    }
+
+    #[test]
+    fn openrouter_management_key_comes_from_the_overlay_then_the_process_env() {
+        let dir = tempdir().unwrap();
+        let home = dir.path();
+        let agent = home.join(".pi").join("agent");
+        std::fs::create_dir_all(&agent).unwrap();
+        std::fs::create_dir_all(home.join(".config").join("fish")).unwrap();
+        std::fs::write(
+            agent.join(".env"),
+            "OPENROUTER_MANAGEMENT_KEY=overlay-mgmt\n",
+        )
+        .unwrap();
+        std::fs::write(
+            home.join(".config/fish/.env"),
+            "OPENROUTER_MANAGEMENT_KEY=fish-mgmt\n",
+        )
+        .unwrap();
+        std::fs::write(
+            agent.join("auth.json"),
+            r#"{"openrouter":{"type":"api_key","key":"pi-or-key"}}"#,
+        )
+        .unwrap();
+        let home_s = home.to_string_lossy().to_string();
+        let env = |key: &str| (key == "HOME").then(|| home_s.clone());
         assert_eq!(
-            openrouter_cookie(&env, None).as_deref(),
-            Some("__session=or-sess; __client=or-client")
+            openrouter_management_key(&env, None).as_deref(),
+            Some("overlay-mgmt")
+        );
+
+        // Neither the Pi inference key nor the fish file supplies it.
+        std::fs::remove_file(agent.join(".env")).unwrap();
+        assert_eq!(openrouter_management_key(&env, None), None);
+
+        let map: HashMap<String, String> = HashMap::from([
+            ("HOME".into(), home_s.clone()),
+            ("OPENROUTER_MANAGEMENT_KEY".into(), "env-mgmt".into()),
+        ]);
+        let with_env = |key: &str| map.get(key).cloned();
+        assert_eq!(
+            openrouter_management_key(&with_env, None).as_deref(),
+            Some("env-mgmt")
+        );
+
+        // The alias is a process-env-only spelling of the same key.
+        let alias: HashMap<String, String> = HashMap::from([
+            ("HOME".into(), home_s),
+            ("OPENROUTER_MANAGEMENT_API_KEY".into(), "alias-mgmt".into()),
+        ]);
+        let with_alias = |key: &str| alias.get(key).cloned();
+        assert_eq!(
+            openrouter_management_key(&with_alias, None).as_deref(),
+            Some("alias-mgmt")
+        );
+        // ...and the primary name wins when both are set.
+        let both: HashMap<String, String> = HashMap::from([
+            ("OPENROUTER_MANAGEMENT_KEY".into(), "primary".into()),
+            ("OPENROUTER_MANAGEMENT_API_KEY".into(), "alias".into()),
+        ]);
+        let with_both = |key: &str| both.get(key).cloned();
+        assert_eq!(
+            openrouter_management_key(&with_both, None).as_deref(),
+            Some("primary")
         );
     }
 

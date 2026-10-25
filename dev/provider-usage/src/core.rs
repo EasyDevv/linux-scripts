@@ -359,7 +359,7 @@ pub struct LiveProbes<H> {
     pub grok_team_id: Option<String>,
     pub lithosai_cookie: Option<String>,
     pub openrouter_key: Option<String>,
-    pub openrouter_cookie: Option<String>,
+    pub openrouter_management_key: Option<String>,
     pub claude_cookie: Option<String>,
     pub claude_base: String,
 }
@@ -379,7 +379,7 @@ impl LiveProbes<ReqwestHttp> {
             grok_team_id: auth::grok_team_id(&auth::env_lookup),
             lithosai_cookie: auth::lithosai_cookie(&auth::env_lookup, None),
             openrouter_key: auth::openrouter_api_key(&auth::env_lookup, None),
-            openrouter_cookie: auth::openrouter_cookie(&auth::env_lookup, None),
+            openrouter_management_key: auth::openrouter_management_key(&auth::env_lookup, None),
             claude_cookie: auth::claude_cookie(&auth::env_lookup, None),
             claude_base: DEFAULT_CLAUDE_BASE.to_string(),
         })
@@ -599,7 +599,7 @@ impl<H: Http> Probes for LiveProbes<H> {
             "openrouter" => openrouter::probe(
                 &self.http,
                 self.openrouter_key.as_deref(),
-                self.openrouter_cookie.as_deref(),
+                self.openrouter_management_key.as_deref(),
                 now,
             ),
             "claude" => claude::probe(&self.http, self.claude_cookie.as_deref(), &self.claude_base),

@@ -7,16 +7,26 @@
 //! difference. `total_credits` is therefore the purchase anchor for the card's
 //! `Credit` window: it is the only limit reference the key can read.
 //!
-//! Dated daily spend is the workspace Activity feed. `GET /api/v1/activity` is
-//! management-key only (403 for a normal key); the signed-in console answers
-//! the same series at `POST /api/frontend/v1/private/analytics-query`. The
-//! probe reads that with `OPENROUTER_COOKIE` and leaves the board's snapshot
-//! deltas unused when the cookie is present. A missing cookie keeps the
-//! balance (the key still works) and omits `spendDays` so LithosAI-style
-//! snapshots remain the fallback.
+//! Dated daily spend is the Management API's analytics query.
+//! `POST /api/v1/analytics/query` (management key) returns `total_usage` in USD
+//! per UTC day, today included; the probe keeps the `date__day` date part and
+//! converts each row to cents. The previous source was the signed-in console's
+//! version of the same query with the browser `OPENROUTER_COOKIE`, whose Clerk
+//! `__session` JWT expires after 60 seconds, so it silently stopped answering.
+//! A refused query (401/403) reports an empty day list, which keeps the board's
+//! last snapshot. Any other failure falls back to `GET /api/v1/activity`, which
+//! is management-key only (403 for a normal key) and returns one row per
+//! (date, model, endpoint) for the last 30 completed UTC days, summed per date.
+//! A per-key `usage_daily` from `GET /api/v1/keys` is not a substitute for
+//! today: it reads 0 while a session is running. A missing management key
+//! keeps the balance (the inference key still works) and omits `spendDays` so
+//! LithosAI-style snapshots remain the fallback.
 //!
 //! The key is `OPENROUTER_API_KEY`; a missing key is `config`, a rejected one
-//! is `key`.
+//! is `key`. The management key is `OPENROUTER_MANAGEMENT_KEY` (alias
+//! `OPENROUTER_MANAGEMENT_API_KEY`).
+
+use std::collections::BTreeMap;
 
 use serde_json::Value;
 
@@ -25,8 +35,8 @@ use crate::core::ProbeOutcome;
 use crate::http::Http;
 
 pub const API_BASE: &str = "https://openrouter.ai/api/v1";
-pub const ANALYTICS_URL: &str = "https://openrouter.ai/api/frontend/v1/private/analytics-query";
-const ACTIVITY_UA: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36";
+pub const ANALYTICS_URL: &str = "https://openrouter.ai/api/v1/analytics/query";
+pub const ACTIVITY_URL: &str = "https://openrouter.ai/api/v1/activity";
 const ACTIVITY_DAYS: i64 = 31;
 
 /// Lifetime credits bought and spent, in cents.
@@ -135,6 +145,7 @@ fn utc_date(secs: i64) -> String {
     format!("{y:04}-{m:02}-{d:02}")
 }
 
+/// Window the analytics query asks for: the last 31 days, ending today.
 fn activity_range(now: i64) -> (String, String) {
     let end = now.max(0);
     let start = end.saturating_sub(ACTIVITY_DAYS * 86_400);
@@ -151,25 +162,24 @@ fn activity_query_body(now: i64) -> String {
     )
 }
 
-fn row_day(row: &Value) -> Option<String> {
-    row.get("date__day")
-        .or_else(|| row.get("date"))
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|day| !day.is_empty())
-        .map(str::to_string)
+/// A JSON number, or a numeric string (the API returns count metrics as
+/// strings; accepting both keeps a spend value from silently dropping a row).
+fn usd(value: Option<&Value>) -> Option<f64> {
+    let value = value?;
+    let dollars = value
+        .as_f64()
+        .or_else(|| value.as_str()?.trim().parse::<f64>().ok())?;
+    dollars.is_finite().then_some(dollars)
 }
 
-fn row_cents(row: &Value) -> Option<i64> {
-    cents(
-        row.get("total_usage")
-            .or_else(|| row.get("usage"))?
-            .as_f64()?,
-    )
+/// UTC `YYYY-MM-DD` from a `date__day` instant, or from a bare date.
+fn date_part(value: &Value) -> Option<String> {
+    let day = value.as_str()?.trim().split('T').next()?.trim();
+    (!day.is_empty()).then(|| day.to_string())
 }
 
-/// Daily `total_usage` rows from the console analytics query, oldest first.
-pub fn parse_activity_days(body: &str) -> Option<Vec<DaySpend>> {
+/// `analytics/query` rows: one `DaySpend` per UTC date, oldest first.
+pub fn parse_analytics_days(body: &str) -> Option<Vec<DaySpend>> {
     let json: Value = serde_json::from_str(body).ok()?;
     let data = json.get("data")?;
     let rows = data
@@ -180,8 +190,8 @@ pub fn parse_activity_days(body: &str) -> Option<Vec<DaySpend>> {
         .iter()
         .filter_map(|row| {
             Some(DaySpend {
-                day: row_day(row)?,
-                cents: row_cents(row)?,
+                day: date_part(row.get("date__day").or_else(|| row.get("date"))?)?,
+                cents: cents(usd(row.get("total_usage").or_else(|| row.get("usage")))?)?,
             })
         })
         .collect();
@@ -189,23 +199,72 @@ pub fn parse_activity_days(body: &str) -> Option<Vec<DaySpend>> {
     Some(days)
 }
 
-fn fetch_activity_days(http: &dyn Http, cookie: &str, now: i64) -> Vec<DaySpend> {
-    let response = match http.post(
+/// `/activity` rows summed into one `DaySpend` per UTC date, oldest first.
+pub fn parse_activity_days(body: &str) -> Option<Vec<DaySpend>> {
+    let json: Value = serde_json::from_str(body).ok()?;
+    let rows = json.get("data")?.as_array()?;
+    let mut totals: BTreeMap<String, f64> = BTreeMap::new();
+    for row in rows {
+        if let (Some(day), Some(usage)) =
+            (row.get("date").and_then(date_part), usd(row.get("usage")))
+        {
+            *totals.entry(day).or_default() += usage;
+        }
+    }
+    Some(
+        totals
+            .into_iter()
+            .filter_map(|(day, usage)| {
+                Some(DaySpend {
+                    day,
+                    cents: cents(usage)?,
+                })
+            })
+            .collect(),
+    )
+}
+
+/// What the analytics query answered: days, a refusal, or a retryable failure.
+enum Spend {
+    Days(Vec<DaySpend>),
+    Refused,
+    Failed,
+}
+
+/// Live daily spend from the Management API, today included.
+fn analytics_days(http: &dyn Http, management_key: &str, now: i64) -> Spend {
+    let authorization = format!("Bearer {management_key}");
+    let Ok(response) = http.post(
         ANALYTICS_URL,
         &[
             ("accept", "application/json"),
-            ("cookie", cookie),
-            ("origin", "https://openrouter.ai"),
-            (
-                "referer",
-                "https://openrouter.ai/workspaces/default/activity",
-            ),
-            ("user-agent", ACTIVITY_UA),
+            ("authorization", &authorization),
         ],
         &activity_query_body(now),
-    ) {
-        Ok(response) => response,
-        Err(_) => return Vec::new(),
+    ) else {
+        return Spend::Failed;
+    };
+    match response.status {
+        200 => match parse_analytics_days(&response.body) {
+            Some(days) => Spend::Days(days),
+            None => Spend::Failed,
+        },
+        401 | 403 => Spend::Refused,
+        _ => Spend::Failed,
+    }
+}
+
+/// The last 30 completed UTC days, summed per date; it never covers today.
+fn activity_days(http: &dyn Http, management_key: &str) -> Vec<DaySpend> {
+    let authorization = format!("Bearer {management_key}");
+    let Ok(response) = http.get(
+        ACTIVITY_URL,
+        &[
+            ("accept", "application/json"),
+            ("authorization", &authorization),
+        ],
+    ) else {
+        return Vec::new();
     };
     if response.status != 200 {
         return Vec::new();
@@ -213,7 +272,22 @@ fn fetch_activity_days(http: &dyn Http, cookie: &str, now: i64) -> Vec<DaySpend>
     parse_activity_days(&response.body).unwrap_or_default()
 }
 
-pub fn probe(http: &dyn Http, key: Option<&str>, cookie: Option<&str>, now: i64) -> ProbeOutcome {
+/// Cents per day from the Management API; empty means "refused", which keeps
+/// the board's previous snapshot.
+fn fetch_spend_days(http: &dyn Http, management_key: &str, now: i64) -> Vec<DaySpend> {
+    match analytics_days(http, management_key, now) {
+        Spend::Days(days) => days,
+        Spend::Refused => Vec::new(),
+        Spend::Failed => activity_days(http, management_key),
+    }
+}
+
+pub fn probe(
+    http: &dyn Http,
+    key: Option<&str>,
+    management_key: Option<&str>,
+    now: i64,
+) -> ProbeOutcome {
     let cache_key = cache_key(key);
     let Some(key) = trimmed(key) else {
         return unknown(cache_key, "config");
@@ -239,7 +313,8 @@ pub fn probe(http: &dyn Http, key: Option<&str>, cookie: Option<&str>, now: i64)
     };
     let remaining = credits.remaining_cents();
     let exhausted = remaining <= 0;
-    let spend_days = trimmed(cookie).map(|cookie| fetch_activity_days(http, cookie, now));
+    let spend_days =
+        trimmed(management_key).map(|management_key| fetch_spend_days(http, management_key, now));
     outcome(
         cache_key,
         if exhausted {
@@ -270,8 +345,10 @@ mod tests {
 
     /// The live body observed 2026-10-18.
     const LIVE: &str = r#"{"data":{"total_credits":50,"total_usage":29.238142596}}"#;
+    /// The documented `/activity` shape: one row per (date, model, endpoint).
+    const LIVE_ACTIVITY: &str = r#"{"data":[{"date":"2026-10-20","model":"openai/gpt-4.1","endpoint_id":"a","usage":0.005997},{"date":"2026-10-19","model":"openai/gpt-4.1","endpoint_id":"a","usage":0.01},{"date":"2026-10-19","model":"anthropic/claude-sonnet-4","endpoint_id":"b","usage":0.003691},{"date":"2026-10-18","model":"openai/gpt-4.1","endpoint_id":"a","usage":0.124049},{"date":"2026-10-18","model":"google/gemini-2.5-pro","endpoint_id":"c","usage":0.001},{"date":"2026-09-21","model":"openai/gpt-4.1","endpoint_id":"a","usage":0.008993},{"date":"2026-09-20","model":"openai/gpt-4.1","endpoint_id":"a","usage":0.02344}]}"#;
     /// The live analytics body observed 2026-10-20 from the Activity page.
-    const LIVE_ACTIVITY: &str = r#"{"data":{"data":[{"date__day":"2026-10-20","total_usage":0.005997},{"date__day":"2026-10-19","total_usage":0.013691},{"date__day":"2026-10-18","total_usage":0.124049},{"date__day":"2026-09-21","total_usage":0.008993},{"date__day":"2026-09-20","total_usage":0.02344}],"metadata":{"query_time_ms":11,"row_count":5,"truncated":false}}}"#;
+    const LIVE_ANALYTICS: &str = r#"{"data":{"data":[{"date__day":"2026-10-20T00:00:00.000Z","total_usage":0.005997},{"date__day":"2026-10-19T00:00:00.000Z","total_usage":0.013691},{"date__day":"2026-10-18T00:00:00.000Z","total_usage":0.124049},{"date__day":"2026-09-21T00:00:00.000Z","total_usage":0.008993},{"date__day":"2026-09-20T00:00:00.000Z","total_usage":0.02344}],"metadata":{"query_time_ms":11,"row_count":5,"truncated":false}}}"#;
     const NOW: i64 = 1_792_460_808;
 
     #[test]
@@ -401,8 +478,24 @@ mod tests {
     }
 
     #[test]
-    fn activity_days_are_oldest_first_in_cents() {
+    fn activity_rows_are_summed_into_daily_cents() {
         let days = parse_activity_days(LIVE_ACTIVITY).unwrap();
+        let got: Vec<(&str, i64)> = days.iter().map(|d| (d.day.as_str(), d.cents)).collect();
+        assert_eq!(
+            got,
+            vec![
+                ("2026-09-20", 2),
+                ("2026-09-21", 1),
+                ("2026-10-18", 13),
+                ("2026-10-19", 1),
+                ("2026-10-20", 1),
+            ]
+        );
+    }
+
+    #[test]
+    fn analytics_rows_become_daily_cents_including_today() {
+        let days = parse_analytics_days(LIVE_ANALYTICS).unwrap();
         let got: Vec<(&str, i64)> = days.iter().map(|d| (d.day.as_str(), d.cents)).collect();
         assert_eq!(
             got,
@@ -417,37 +510,126 @@ mod tests {
     }
 
     #[test]
-    fn a_cookie_fills_spend_days_from_activity() {
+    fn the_query_asks_for_the_last_31_days_of_daily_usage() {
+        assert_eq!(
+            activity_query_body(NOW),
+            r#"{"dimensions":[],"granularity":"day","metrics":["total_usage"],"time_range":{"start":"2026-09-19T00:00:00.000Z","end":"2026-10-20T23:59:59.000Z"}}"#
+        );
+    }
+
+    #[test]
+    fn analytics_rows_are_parsed_defensively() {
+        // A bare date and a string-encoded amount still become a day.
+        let days = parse_analytics_days(
+            r#"{"data":{"data":[{"date__day":"2026-10-20","total_usage":"1.25"}]}}"#,
+        )
+        .unwrap();
+        assert_eq!(days.len(), 1);
+        assert_eq!(days[0].day, "2026-10-20");
+        assert_eq!(days[0].cents, 125);
+        // A row without a date or an amount is skipped, not fatal.
+        let days = parse_analytics_days(
+            r#"{"data":{"data":[{"date__day":""},{"date__day":"2026-10-19"}]}}"#,
+        )
+        .unwrap();
+        assert!(days.is_empty());
+        assert_eq!(parse_analytics_days("not json"), None);
+        assert_eq!(parse_analytics_days(r#"{"data":{}}"#), None);
+    }
+
+    #[test]
+    fn today_arrives_with_the_analytics_query() {
         let http = http(vec![
-            ("analytics-query", 200, LIVE_ACTIVITY),
+            ("analytics/query", 200, LIVE_ANALYTICS),
             ("openrouter.ai/api/v1/credits", 200, LIVE),
         ]);
-        let outcome = probe(&http, Some("sk-or-v1-abc"), Some("session=abc"), NOW);
+        let outcome = probe(&http, Some("sk-or-v1-abc"), Some("mgmt-key"), NOW);
         assert_eq!(outcome.state, ProviderState::Available);
+        assert_eq!(outcome.remaining_credits, Some(2076));
         let days = outcome.spend_days.unwrap();
-        assert_eq!(days.len(), 5);
-        assert_eq!(days[2].day, "2026-10-18");
-        assert_eq!(days[2].cents, 12);
+        let got: Vec<(&str, i64)> = days.iter().map(|d| (d.day.as_str(), d.cents)).collect();
+        assert_eq!(
+            got,
+            vec![
+                ("2026-09-20", 2),
+                ("2026-09-21", 1),
+                ("2026-10-18", 12),
+                ("2026-10-19", 1),
+                ("2026-10-20", 1),
+            ]
+        );
     }
 
     #[test]
-    fn a_missing_cookie_leaves_spend_days_unset() {
+    fn a_missing_management_key_leaves_spend_days_unset() {
         let http = http(vec![("openrouter.ai/api/v1/credits", 200, LIVE)]);
-        let outcome = probe(&http, Some("sk-or-v1-abc"), None, NOW);
-        assert_eq!(outcome.spend_days, None);
+        for management_key in [None, Some("   ")] {
+            let outcome = probe(&http, Some("sk-or-v1-abc"), management_key, NOW);
+            assert_eq!(outcome.state, ProviderState::Available);
+            assert_eq!(outcome.spend_days, None);
+        }
     }
 
     #[test]
-    fn a_rejected_cookie_keeps_the_balance_and_clears_spend_days() {
+    fn a_refused_analytics_query_keeps_the_balance_and_clears_spend_days() {
+        for status in [401, 403] {
+            let http = http(vec![
+                (
+                    "analytics/query",
+                    status,
+                    r#"{"error":{"code":401,"message":"No auth credentials found"}}"#,
+                ),
+                // A refusal must not fall through to `/activity`.
+                ("openrouter.ai/api/v1/activity", 200, LIVE_ACTIVITY),
+                ("openrouter.ai/api/v1/credits", 200, LIVE),
+            ]);
+            let outcome = probe(&http, Some("sk-or-v1-abc"), Some("mgmt-key"), NOW);
+            assert_eq!(outcome.state, ProviderState::Available);
+            assert_eq!(outcome.remaining_credits, Some(2076));
+            assert_eq!(outcome.spend_days.as_deref(), Some(&[][..]));
+        }
+    }
+
+    #[test]
+    fn a_failed_analytics_query_falls_back_to_activity() {
+        for status in [408, 500, 502] {
+            let http = http(vec![
+                ("analytics/query", status, ""),
+                ("openrouter.ai/api/v1/activity", 200, LIVE_ACTIVITY),
+                ("openrouter.ai/api/v1/credits", 200, LIVE),
+            ]);
+            let outcome = probe(&http, Some("sk-or-v1-abc"), Some("mgmt-key"), NOW);
+            let days = outcome.spend_days.unwrap();
+            let got: Vec<(&str, i64)> = days.iter().map(|d| (d.day.as_str(), d.cents)).collect();
+            assert_eq!(
+                got,
+                vec![
+                    ("2026-09-20", 2),
+                    ("2026-09-21", 1),
+                    ("2026-10-18", 13),
+                    ("2026-10-19", 1),
+                    ("2026-10-20", 1),
+                ]
+            );
+        }
+        // Unreadable JSON is a failure too, not a refusal.
         let http = http(vec![
-            (
-                "analytics-query",
-                401,
-                r#"{"error":{"message":"No cookie auth credentials found","code":401}}"#,
-            ),
+            ("analytics/query", 200, "not json"),
+            ("openrouter.ai/api/v1/activity", 200, LIVE_ACTIVITY),
             ("openrouter.ai/api/v1/credits", 200, LIVE),
         ]);
-        let outcome = probe(&http, Some("sk-or-v1-abc"), Some("session=stale"), NOW);
+        let outcome = probe(&http, Some("sk-or-v1-abc"), Some("mgmt-key"), NOW);
+        assert_eq!(outcome.spend_days.unwrap().len(), 5);
+    }
+
+    #[test]
+    fn both_sources_failing_clears_spend_days() {
+        let http = http(vec![
+            ("analytics/query", 500, ""),
+            ("openrouter.ai/api/v1/activity", 500, ""),
+            ("openrouter.ai/api/v1/credits", 200, LIVE),
+        ]);
+        let outcome = probe(&http, Some("sk-or-v1-abc"), Some("mgmt-key"), NOW);
         assert_eq!(outcome.state, ProviderState::Available);
         assert_eq!(outcome.remaining_credits, Some(2076));
         assert_eq!(outcome.spend_days.as_deref(), Some(&[][..]));
