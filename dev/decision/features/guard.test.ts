@@ -112,6 +112,42 @@ describe("wide_search", () => {
 	});
 });
 
+describe("wide_search on search tools", () => {
+	const tool = (name: string, args: Record<string, unknown>, cwd = "/home/user/chat") =>
+		guard({ phase: "call", tool: name, args, cwd }, HOME);
+
+	test("pi find and grep rooted at the home tree are denied like the shell commands", () => {
+		for (const [name, args] of [
+			["find", { path: "/home/user", pattern: "**/learn/**/SKILL.md" }],
+			["find", { path: "~", pattern: "*.md" }],
+			["find", { pattern: "/home/user/**/SKILL.md" }],
+			["grep", { pattern: "foo", path: "/" }],
+			["grep", { pattern: "foo", path: "$HOME/" }],
+		] as const) {
+			const r = tool(name, args);
+			expect(r.action).toBe("deny");
+			expect(r.rules).toEqual(["wide_search"]);
+			expect(r.message).toContain("fd <name> <dir>");
+		}
+	});
+
+	test("with no path the cwd is the root", () => {
+		expect(tool("grep", { pattern: "foo" }, "/home/user").action).toBe("deny");
+		expect(tool("grep", { pattern: "foo" }).action).toBe("none");
+	});
+
+	test("a named directory, a project, and other tools pass", () => {
+		for (const [name, args] of [
+			["find", { path: "/home/user/.agents", pattern: "**/SKILL.md" }],
+			["find", { path: "/home/user/chat", pattern: "**/SKILL.md" }],
+			["find", { pattern: "/home/user/.agents/**/SKILL.md" }],
+			["grep", { pattern: "foo", path: "/home/user/dev" }],
+			["read", { path: "/home/user" }],
+		] as const)
+			expect(tool(name, args).action).toBe("none");
+	});
+});
+
 describe("wait_loop", () => {
 	const poll =
 		"until [ -s /tmp/claude-1000/example/tasks/b0.output ]; do sleep 20; done; cat /tmp/claude-1000/example/tasks/b0.output";

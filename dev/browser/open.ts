@@ -22,7 +22,7 @@ import {
 	resolveLocale,
 } from "./locale.ts";
 import { minimizeWindow } from "./minimize.ts";
-import { applyPortTheme, portStartPageUrl } from "./port-identity.ts";
+import { applyPortTheme, portClass, portStartPageUrl } from "./port-identity.ts";
 import {
 	type LaunchInfo,
 	clearLaunchInfo,
@@ -75,8 +75,6 @@ type OpenPlan = {
 };
 
 type KWinStartupMinimizeHandle = {
-	/** True once the hook handled the window (the script unloads itself then). */
-	waitHandled: (timeoutMs: number) => Promise<boolean>;
 	dispose: () => Promise<void>;
 };
 
@@ -94,8 +92,8 @@ Options
   --load-extension <dir>   load an unpacked extension (comma list ok)
   --android                emulate an Android phone (UA, touch, 412x915)
   --record [N]             record N frames after focus; omit N to record until close
-  --normal                 normal window (default on KDE Wayland: minimized)
-  --minimize               start minimized
+  --normal                 normal window (default: minimized, so work is not interrupted)
+  --minimize               start minimized (the default)
   --headless               no window
   --locale <bcp47>         UI and Accept-Language (default: ${DEFAULT_LOCALE})
   --browser-arg <arg>      extra Chromium flag (repeatable)
@@ -230,7 +228,7 @@ export function parseArgs(argv: string[]): OpenOptions {
 		urlExplicit: false,
 		headless: false,
 		status: false,
-		minimize: canUseKWinStartupMinimize(),
+		minimize: true,
 		dryRun: false,
 		json: false,
 		clean: false,
@@ -427,10 +425,31 @@ async function reportStderrTail(path: string, lines = 10) {
 	for (const line of shown) console.error(`  ${line}`);
 }
 
+// An agent or service shell lacks the session variables; the systemd user manager keeps them.
+let sessionEnvCache: Record<string, string> | undefined;
+function sessionEnv(key: string): string {
+	if (process.env[key]) return process.env[key] ?? "";
+	sessionEnvCache ??= Object.fromEntries(
+		new TextDecoder()
+			.decode(
+				Bun.spawnSync({
+					cmd: ["systemctl", "--user", "show-environment"],
+					stdin: "ignore",
+					stdout: "pipe",
+					stderr: "ignore",
+				}).stdout,
+			)
+			.split("\n")
+			.filter((line) => line.includes("="))
+			.map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
+	);
+	return sessionEnvCache[key] ?? "";
+}
+
 function canUseKWinStartupMinimize() {
-	if (process.env.XDG_SESSION_TYPE !== "wayland") return false;
+	if (sessionEnv("XDG_SESSION_TYPE") !== "wayland") return false;
 	const desktop =
-		`${process.env.XDG_CURRENT_DESKTOP ?? ""} ${process.env.DESKTOP_SESSION ?? ""}`.toLowerCase();
+		`${sessionEnv("XDG_CURRENT_DESKTOP")} ${sessionEnv("DESKTOP_SESSION")}`.toLowerCase();
 	if (!desktop.includes("kde") && !desktop.includes("plasma")) return false;
 	return Boolean(Bun.which("gdbus"));
 }
@@ -511,35 +530,17 @@ sleep 1; rm -rf '${dir}'`;
 	}).unref();
 }
 
-async function installKWinStartupMinimize(
-	pid: number,
-	minimize: boolean,
-): Promise<KWinStartupMinimizeHandle | null> {
-	if (!canUseKWinStartupMinimize()) return null;
+function kwinClassLiteral(className: string): string {
+	return JSON.stringify(className);
+}
 
+async function loadKWinScript(
+	scriptSource: string,
+	pluginName: string,
+): Promise<{ scriptId: number; scriptDir: string }> {
 	const scriptDir = await mkdtemp(join(tmpdir(), "browser-kwin-"));
-	const scriptPath = join(scriptDir, "startup-minimize.js");
-	const pluginName = `browser-start-minimize-${pid}-${Date.now()}`;
-	const scriptSource = `let handled = false;
-
-function maybeHandle(window) {
-	if (handled || !window) return;
-	if (window.pid !== ${pid}) return;
-	if (!window.normalWindow) return;
-	handled = true;
-	${minimize ? "window.minimized = true;" : ""}
-	callDBus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript", "${pluginName}");
-}
-
-workspace.windowAdded.connect(maybeHandle);
-for (const window of workspace.stackingOrder) {
-	maybeHandle(window);
-}
-`;
-
+	const scriptPath = join(scriptDir, "script.js");
 	await Bun.write(scriptPath, scriptSource);
-
-	let scriptId: number | undefined;
 	try {
 		const loadOutput = callKWinDbus(
 			"/Scripting",
@@ -550,10 +551,11 @@ for (const window of workspace.stackingOrder) {
 		if (!match) {
 			throw new Error(`Unexpected loadScript output: ${loadOutput}`);
 		}
-		scriptId = Number(match[1]);
+		const scriptId = Number(match[1]);
 		callKWinDbus("/Scripting", "org.kde.kwin.Scripting.start");
 		const scriptObjectPath = await waitForKWinScriptObjectPath(scriptId);
 		callKWinDbus(scriptObjectPath, "org.kde.kwin.Script.run");
+		return { scriptId, scriptDir };
 	} catch (error) {
 		try {
 			callKWinDbus("/Scripting", "org.kde.kwin.Scripting.unloadScript", [
@@ -565,49 +567,154 @@ for (const window of workspace.stackingOrder) {
 		await rm(scriptDir, { recursive: true, force: true }).catch(
 			() => undefined,
 		);
+		throw error;
+	}
+}
+
+async function unloadKWinScript(
+	pluginName: string,
+	scriptId: number | undefined,
+	scriptDir: string,
+) {
+	if (scriptId !== undefined) {
+		try {
+			callKWinDbus(
+				`/Scripting/Script${scriptId}`,
+				"org.kde.kwin.Script.stop",
+			);
+		} catch {
+			// Best-effort cleanup only.
+		}
+	}
+	try {
+		callKWinDbus("/Scripting", "org.kde.kwin.Scripting.unloadScript", [
+			pluginName,
+		]);
+	} catch {
+		// Best-effort cleanup only.
+	}
+	await rm(scriptDir, { recursive: true, force: true }).catch(() => undefined);
+}
+
+async function waitUntilKWinScriptUnloaded(pluginName: string, timeoutMs: number) {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		const loaded = callKWinDbus(
+			"/Scripting",
+			"org.kde.kwin.Scripting.isScriptLoaded",
+			[pluginName],
+		);
+		if (loaded.includes("false")) return true;
+		await Bun.sleep(50);
+	}
+	return false;
+}
+
+/** Keep every matching window minimized at map time; do not unload on first match. */
+async function installKWinStartupMinimize(
+	className: string,
+): Promise<KWinStartupMinimizeHandle | null> {
+	if (!canUseKWinStartupMinimize()) return null;
+
+	const pluginName = `browser-start-minimize-${className}-${Date.now()}`;
+	const cls = kwinClassLiteral(className);
+	const scriptSource = `function maybeHandle(window) {
+	if (!window || !window.normalWindow) return;
+	if (String(window.resourceClass) !== ${cls}) return;
+	window.minimized = true;
+}
+workspace.windowAdded.connect(maybeHandle);
+for (const window of workspace.stackingOrder) maybeHandle(window);
+`;
+
+	try {
+		const loaded = await loadKWinScript(scriptSource, pluginName);
+		return {
+			dispose: () =>
+				unloadKWinScript(pluginName, loaded.scriptId, loaded.scriptDir),
+		};
+	} catch (error) {
 		console.warn(
 			`[open] KWin startup minimize hook unavailable: ${error instanceof Error ? error.message : String(error)}`,
 		);
 		return null;
 	}
+}
 
-	return {
-		waitHandled: async (timeoutMs) => {
-			const deadline = Date.now() + timeoutMs;
-			while (Date.now() < deadline) {
-				const loaded = callKWinDbus(
-					"/Scripting",
-					"org.kde.kwin.Scripting.isScriptLoaded",
-					[pluginName],
-				);
-				if (loaded.includes("false")) return true;
-				await Bun.sleep(50);
-			}
-			return false;
-		},
-		dispose: async () => {
-			if (scriptId !== undefined) {
-				try {
-					callKWinDbus(
-						`/Scripting/Script${scriptId}`,
-						"org.kde.kwin.Script.stop",
-					);
-				} catch {
-					// Best-effort cleanup only.
-				}
-			}
-			try {
-				callKWinDbus("/Scripting", "org.kde.kwin.Scripting.unloadScript", [
-					pluginName,
-				]);
-			} catch {
-				// Best-effort cleanup only.
-			}
-			await rm(scriptDir, { recursive: true, force: true }).catch(
+async function kwinMinimizeByClass(className: string): Promise<boolean> {
+	if (!canUseKWinStartupMinimize()) return false;
+	const pluginName = `browser-force-minimize-${className}-${Date.now()}`;
+	const cls = kwinClassLiteral(className);
+	const scriptSource = `for (const w of workspace.stackingOrder) {
+	if (!w.normalWindow) continue;
+	if (String(w.resourceClass) !== ${cls}) continue;
+	w.minimized = true;
+}
+callDBus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript", ${JSON.stringify(pluginName)});
+`;
+	try {
+		const loaded = await loadKWinScript(scriptSource, pluginName);
+		const finished = await waitUntilKWinScriptUnloaded(pluginName, 2000);
+		if (!finished) {
+			await unloadKWinScript(pluginName, loaded.scriptId, loaded.scriptDir);
+		} else {
+			await rm(loaded.scriptDir, { recursive: true, force: true }).catch(
 				() => undefined,
 			);
-		},
-	};
+		}
+		return true;
+	} catch (error) {
+		console.warn(
+			`[open] KWin minimize unavailable: ${error instanceof Error ? error.message : String(error)}`,
+		);
+		return false;
+	}
+}
+
+async function kwinClassIsMinimized(className: string): Promise<boolean | null> {
+	if (!canUseKWinStartupMinimize()) return null;
+	const tag = `KWINMIN$${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+	const pluginName = `browser-min-read-${className}-${Date.now()}`;
+	const cls = kwinClassLiteral(className);
+	const scriptSource = `const cls = ${cls};
+for (const w of workspace.stackingOrder) {
+	if (!w.normalWindow) continue;
+	if (String(w.resourceClass) !== cls) continue;
+	print(${JSON.stringify(tag)} + " min=" + w.minimized + " active=" + w.active);
+}
+callDBus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript", ${JSON.stringify(pluginName)});
+`;
+	try {
+		const loaded = await loadKWinScript(scriptSource, pluginName);
+		const finished = await waitUntilKWinScriptUnloaded(pluginName, 2000);
+		if (!finished) {
+			await unloadKWinScript(pluginName, loaded.scriptId, loaded.scriptDir);
+		} else {
+			await rm(loaded.scriptDir, { recursive: true, force: true }).catch(
+				() => undefined,
+			);
+		}
+		await Bun.sleep(300);
+		const log = Bun.spawnSync({
+			cmd: [
+				"journalctl",
+				"--user",
+				"--since",
+				"15 seconds ago",
+				"--no-pager",
+			],
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		const text = new TextDecoder().decode(log.stdout);
+		const lines = text.split("\n").filter((line) => line.includes(tag));
+		if (!lines.length) return null;
+		return lines.every(
+			(line) => line.includes("min=true") && !line.includes("active=true"),
+		);
+	} catch {
+		return null;
+	}
 }
 
 async function buildOpenPlan(requestedPort: number): Promise<OpenPlan> {
@@ -883,6 +990,11 @@ export async function main(argv: string[]): Promise<void> {
 			const command = [binary!, ...chromeArgs];
 			const stderrLog = chromeStderrLogPath(actualPort);
 			const stderrFd = openSync(stderrLog, "w");
+			if (!options.headless && options.minimize) {
+				kwinStartupMinimize = await installKWinStartupMinimize(
+					portClass(actualPort),
+				);
+			}
 			const proc = Bun.spawn({
 				cmd: command,
 				detached: true,
@@ -899,12 +1011,6 @@ export async function main(argv: string[]): Promise<void> {
 			closeSync(stderrFd);
 			launchedPid = proc.pid;
 			outputBinary = binary!;
-			if (!options.headless) {
-				kwinStartupMinimize = await installKWinStartupMinimize(
-					proc.pid,
-					options.minimize,
-				);
-			}
 
 			await writeLaunchInfo({
 				pid: proc.pid,
@@ -939,6 +1045,7 @@ export async function main(argv: string[]): Promise<void> {
 				actualPort,
 				options.url,
 				options.android ? configureAndroidTab : undefined,
+				{ activate: !options.minimize },
 			);
 			focusedUrl = focused.tab.url;
 
@@ -967,6 +1074,7 @@ export async function main(argv: string[]): Promise<void> {
 				actualPort,
 				options.url,
 				options.android ? configureAndroidTab : undefined,
+				{ activate: !options.minimize },
 			);
 			focusedUrl = focused.tab.url;
 
@@ -994,34 +1102,34 @@ export async function main(argv: string[]): Promise<void> {
 			});
 		}
 
-		// The KWin hook acts at map time; CDP keeps reporting "normal" for seconds.
-		const hookHandled =
-			(await kwinStartupMinimize?.waitHandled(3000).catch(() => false)) ??
-			false;
-		if (hookHandled && launchedPid) {
-			scheduleTaskbarFlash(launchedPid);
-		}
-
+		const className = portClass(actualPort);
 		if (!options.headless && options.minimize) {
-			let minimized = hookHandled;
-			if (!minimized) {
-				minimized = await minimizeWindow(actualPort, {
-					timeoutMs: 5000,
-					silent: true,
-				});
-			}
-			if (!minimized && claimed.browserAction === "launch-new-browser") {
+			await kwinMinimizeByClass(className);
+			let minimized = await minimizeWindow(actualPort, {
+				timeoutMs: 5000,
+				silent: true,
+			});
+			await kwinMinimizeByClass(className);
+			const kwinMinimized = await kwinClassIsMinimized(className);
+			if (kwinMinimized === false) {
 				await Bun.sleep(400);
+				await kwinMinimizeByClass(className);
 				minimized =
 					(await minimizeWindow(actualPort, {
 						timeoutMs: 2000,
 						silent: true,
 					})) || minimized;
+				const again = await kwinClassIsMinimized(className);
+				minimized = again ?? minimized;
+			} else if (kwinMinimized === true) {
+				minimized = true;
 			}
 			windowState = minimized ? "minimized" : "normal";
+			if (windowState === "minimized" && launchedPid) {
+				scheduleTaskbarFlash(launchedPid);
+			}
 		}
 
-		// Keep the hook until the window exists: CDP is up before the window maps.
 		await kwinStartupMinimize?.dispose().catch(() => undefined);
 		kwinStartupMinimize = null;
 

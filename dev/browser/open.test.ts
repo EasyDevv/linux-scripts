@@ -38,6 +38,13 @@ test("android and record are off by default", () => {
 	expect(options.recordFrames).toBeNull();
 });
 
+test("open starts minimized so it does not steal the desktop", () => {
+	expect(parseArgs([]).minimize).toBe(true);
+	expect(parseArgs(["--minimize"]).minimize).toBe(true);
+	expect(parseArgs(["--normal"]).minimize).toBe(false);
+	expect(parseArgs(["--no-minimize"]).minimize).toBe(false);
+});
+
 test("--android turns on phone emulation", () => {
 	expect(parseArgs(["--android"]).android).toBe(true);
 });

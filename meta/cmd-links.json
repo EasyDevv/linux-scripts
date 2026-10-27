@@ -426,6 +426,17 @@
       "description": "Firefox Android의 확장 관리 페이지(settings, manager, popup)를 ADB로 연다."
     },
     {
+      "name": "phone",
+      "mode": "symlink",
+      "category": "android",
+      "target": "android/phone.py",
+      "ownedPaths": [
+        "android/phone.py",
+        "android/phone_test.py"
+      ],
+      "description": "SM-S947N adb 짧은 CLI. 화면 유지·해제, AutoX push/run, Tasker start/smoke. PIN은 넣지 않는다."
+    },
+    {
       "name": "sunshine-display-failsafe",
       "mode": "symlink",
       "category": "sunshine",

@@ -9,7 +9,9 @@
  *   caller's ancestors and still kills the target.
  * - `quote_glob`: a glob meant for the program (`--include=*.ts`, `-name *.md`) is expanded by the
  *   shell first; zsh fails with "no matches found", bash may pass a wrong file list.
- * - `wide_search`: `find ~`, `grep -r … ~`, `rg … /` walk the whole tree and time out.
+ * - `wide_search`: `find ~`, `grep -r … ~`, `rg … /` walk the whole tree and time out; so do the
+ *   `find`/`grep` tools of pi rooted at `~` or `/` (a recursive SKILL.md glob over the home dir ran
+ *   44 min in a pi session). Claude Code searches through Bash, so both harnesses get the same answer.
  * - `wait_loop` (not pi, which has no background mode): `until grep -q done tasks/x.output; do
  *   sleep 20; done` in the foreground waits on a background task past the 120 s Bash timeout; the
  *   harness notifies on exit instead.
@@ -306,6 +308,48 @@ function wideSearch(groups: Word[][], home: string): string | undefined {
 	return undefined;
 }
 
+/** pi's search tools, which take `pattern` and `path`. Claude Code has none: its searches run through Bash. */
+const SEARCH_TOOLS = new Set(["find", "grep"]);
+
+/** `~`, `$HOME` and relative paths resolved to an absolute path without a trailing slash. */
+function absPath(p: string, home: string, cwd: string | undefined): string | undefined {
+	const h = home.replace(/\/+$/u, "");
+	const expanded = p.replace(/^(?:~|\$HOME|\$\{HOME\})(?=\/|$)/u, h);
+	if (!isAbsolute(expanded) && cwd === undefined) return undefined;
+	const abs = resolve(cwd ?? "/", expanded);
+	return abs.length > 1 ? abs.replace(/\/+$/u, "") : abs;
+}
+
+/**
+ * A search tool call rooted at `~`, `/` or `/home`, as `find /home/user`, else undefined. The root is
+ * `path`, else the static directory prefix of an absolute `find` pattern, else the cwd.
+ */
+function wideSearchTool(
+	tool: string,
+	args: Record<string, unknown>,
+	home: string,
+	cwd: string | undefined,
+): string | undefined {
+	const pattern = str(args.pattern) ?? "";
+	let base = str(args.path);
+	if (base === undefined && tool === "find" && /^(?:\/|~|\$HOME|\$\{HOME\})/u.test(pattern)) {
+		const wild = pattern.search(/[*?[{]/u);
+		const literal = wild === -1 ? pattern : pattern.slice(0, wild);
+		base = literal.slice(0, literal.lastIndexOf("/") + 1) || "/";
+	}
+	const root = absPath(base ?? ".", home, cwd);
+	if (root === undefined) return undefined;
+	const h = home.replace(/\/+$/u, "");
+	return new Set([h, "/", "/home"]).has(root) ? `${tool} ${base ?? root}` : undefined;
+}
+
+function wideDenied(wide: string, depthHint = ""): GuardResult {
+	return result("deny", ["wide_search"], {
+		message: `${MARKER} Blocked \`${wide}\`: it walks the whole tree and times out. Name the directories to search (~/.agents ~/.config ~/dev …), ${depthHint}or find a file by name with \`fd <name> <dir>\`.`,
+		notice: `guard: blocked ${wide} (whole-tree search)`,
+	});
+}
+
 const TASK_OUTPUT = /\/tasks\/|\.(?:output|out|log)\b/u;
 
 /** A foreground `until`/`while` loop that sleeps while polling a task output file. */
@@ -332,12 +376,7 @@ export function guardCall(command: string, home = homedir(), ctx: CallContext = 
 		});
 	}
 	const wide = wideSearch(groups, home);
-	if (wide !== undefined) {
-		return result("deny", ["wide_search"], {
-			message: `${MARKER} Blocked \`${wide}\`: it walks the whole tree and times out. Name the directories to search (~/.agents ~/.config ~/dev …), add -maxdepth ${MAX_DEPTH} / --max-depth ${MAX_DEPTH}, or find a file by name with \`fd <name> <dir>\`.`,
-			notice: `guard: blocked ${wide} (whole-tree search)`,
-		});
-	}
+	if (wide !== undefined) return wideDenied(wide, `add -maxdepth ${MAX_DEPTH} / --max-depth ${MAX_DEPTH}, or `);
 	const rules: GuardRule[] = [];
 	const splices: Splice[] = [];
 	/** For the model: what changed and why. */
@@ -514,6 +553,10 @@ export function guard(input: GuardInput, home = homedir()): GuardResult {
 			harness: input.harness,
 			background: input.args.run_in_background === true,
 		});
+	}
+	if (input.phase === "call" && SEARCH_TOOLS.has(input.tool)) {
+		const wide = wideSearchTool(input.tool, input.args, home, input.cwd);
+		return wide === undefined ? result("none", []) : wideDenied(wide);
 	}
 	if (input.phase === "result" && EDIT_TOOLS.has(input.tool) && input.isError) return guardEditResult(input, home);
 	return {

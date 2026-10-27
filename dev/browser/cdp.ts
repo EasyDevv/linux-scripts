@@ -300,6 +300,7 @@ export async function resetTabs(
 	port: number,
 	url: string,
 	configureTab?: (cdp: CDP) => Promise<void>,
+	opts: { activate?: boolean } = {},
 ): Promise<{
 	tab: Tab;
 	navigation?: NavigationReport;
@@ -318,7 +319,11 @@ export async function resetTabs(
 
 	if (pageTabs.length > 0) {
 		const firstTab = pageTabs[0];
-		await fetch(`http://127.0.0.1:${port}/json/activate/${firstTab.id}`);
+		// /json/activate restores and focuses the window on Wayland; skip it when
+		// the caller wants the browser to stay minimized in the background.
+		if (opts.activate !== false) {
+			await fetch(`http://127.0.0.1:${port}/json/activate/${firstTab.id}`);
+		}
 
 		const shouldNavigate =
 			targetUrl !== firstTab.url && targetUrl !== "about:blank";

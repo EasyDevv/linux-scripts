@@ -53,7 +53,7 @@ browser cdp --port N <Method> [params-json]
 browser open-extension "<name>" --port 39225 --page popup.html
 ```
 
-- KDE Wayland에서는 기본 최소화(작업표시줄 5초 깜빡임). 창 구분: 시작 페이지 `CDP <port>`, app_id `cdp-<port>`, 포트별 테마 색.
+- 창은 기본 최소화로 열린다(KDE Wayland는 KWin 시작 훅, 그 밖은 CDP 최소화; 에이전트 셸처럼 세션 변수가 없으면 `systemctl --user show-environment`에서 읽는다). 보이는 창은 `--normal`. KDE에서는 작업표시줄이 5초 깜빡인다. 창 구분: 시작 페이지 `CDP <port>`, app_id `cdp-<port>`, 포트별 테마 색. bun-webview는 창을 앞으로 가져오지 않는다.
 - `--android`: 포커스 탭에 Pixel 9 UA·터치·412x915 뷰포트와 `navigator.userAgentData`를 적용한다. 새 브라우저와 기존 브라우저 모두에 적용된다.
 - `--record [N]`: 포커스 직후부터 백그라운드로 PNG 프레임을 캡처한다. N을 생략하면 `browser close`까지 계속 저장하고, close는 중지 후 캡처 수와 디렉터리를 보고한다. 저장 위치: `~/.cache/browser/state/captures/chrome-<port>-<time>/`.
 - `open`(기존 탭)과 `close`는 `beforeunload`/confirm 대화상자를 자동 수락한다.

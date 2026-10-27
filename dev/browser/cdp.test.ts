@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { CDP } from "./cdp.ts";
+import { CDP, resetTabs } from "./cdp.ts";
 
 test("CDP commands time out when Chrome does not respond", async () => {
 	const server = Bun.serve({
@@ -53,6 +53,38 @@ test("getWsUrl ignores extension background pages", async () => {
 	try {
 		const { getWsUrl } = await import("./cdp.ts");
 		expect(await getWsUrl(server.port, 0)).toBe("ws://127.0.0.1:1/page");
+	} finally {
+		server.stop(true);
+	}
+});
+
+test("resetTabs skips /json/activate when the window should stay minimized", async () => {
+	const hits: string[] = [];
+	const page = {
+		id: "page",
+		type: "page",
+		title: "Example",
+		url: "https://example.com/",
+		webSocketDebuggerUrl: "ws://127.0.0.1:1/page",
+	};
+	const server = Bun.serve({
+		port: 0,
+		fetch(request) {
+			const url = new URL(request.url);
+			hits.push(`${request.method} ${url.pathname}`);
+			if (url.pathname === "/json/list") return Response.json([page]);
+			return new Response("ok");
+		},
+	});
+	try {
+		await resetTabs(server.port, "https://example.com/", undefined, {
+			activate: false,
+		});
+		expect(hits.some((hit) => hit.includes("/json/activate"))).toBe(false);
+
+		hits.length = 0;
+		await resetTabs(server.port, "https://example.com/");
+		expect(hits.some((hit) => hit.includes("/json/activate"))).toBe(true);
 	} finally {
 		server.stop(true);
 	}

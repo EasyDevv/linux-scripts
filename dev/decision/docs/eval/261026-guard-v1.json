@@ -1,0 +1,352 @@
+{
+	"schema": 1,
+	"feature": "guard",
+	"version": "v1",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "/home/easydev/.local/share/scripts/dev/decision/evals/guard.jsonl",
+	"generatedAt": "2026-10-26T06:53:18.061Z",
+	"candidate": {
+		"summary": {
+			"version": "v1",
+			"cases": 20,
+			"answered": 20,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"exact": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"n": 0
+			},
+			"costUsd": 0,
+			"calibratedShare": 0,
+			"backends": {}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"pkill -f target/debug/dashboard-native; sleep 1; cd ~/dev/dashboard && setsid target/debug/dashboard-native > /tmp/dn.log 2>&1 &\"}}",
+				"expected": {
+					"action": "rewrite",
+					"rules": [
+						"pkill_self"
+					],
+					"command": "pkill -A -f target/debug/dashboard-native; sleep 1; cd ~/dev/dashboard && setsid target/debug/dashboard-native > /tmp/dn.log 2>&1 &"
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"pkill_self\",\"action\":\"rewrite\",\"rules\":[\"pkill_self\"],\"args\":{\"command\":\"pkill -A -f target/debug/dashboard-native; sleep 1; cd ~/dev/dashboard && setsid target/debug/dashboard-native > /tmp/dn.log 2>&1 &\"},\"me…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 1,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"pkill -f '.install-flow.ts'; pkill tauri-driver; pkill WebKitWebDriver; cd ~/dev/dashboard\"}}",
+				"expected": {
+					"action": "rewrite",
+					"rules": [
+						"pkill_self"
+					],
+					"command": "pkill -A -f '.install-flow.ts'; pkill tauri-driver; pkill WebKitWebDriver; cd ~/dev/dashboard"
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"pkill_self\",\"action\":\"rewrite\",\"rules\":[\"pkill_self\"],\"args\":{\"command\":\"pkill -A -f '.install-flow.ts'; pkill tauri-driver; pkill WebKitWebDriver; cd ~/dev/dashboard\"},\"message\":\"[decision:guard] Ran with chan…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 2,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"pkill -f \\\"wl-copy\\\" ; cd ~/chat\"}}",
+				"expected": {
+					"action": "rewrite",
+					"rules": [
+						"pkill_self"
+					],
+					"command": "pkill -A -f \"wl-copy\" ; cd ~/chat"
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"pkill_self\",\"action\":\"rewrite\",\"rules\":[\"pkill_self\"],\"args\":{\"command\":\"pkill -A -f \\\"wl-copy\\\" ; cd ~/chat\"},\"message\":\"[decision:guard] Ran with changes: added -A to `pkill -f` so it cannot match and kill it…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 3,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"pkill -f verify-project-templates; sleep 2; pgrep -fa \\\"verify-project-templates|target/debug/dashboard$\\\" | head\"}}",
+				"expected": {
+					"action": "rewrite",
+					"rules": [
+						"pkill_self"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"pkill_self\",\"action\":\"rewrite\",\"rules\":[\"pkill_self\"],\"args\":{\"command\":\"pkill -A -f verify-project-templates; sleep 2; pgrep -fa \\\"verify-project-templates|target/debug/dashboard$\\\" | head\"},\"message\":\"[decisi…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 4,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"cd ~/dev/tampermonkey/projects/video && grep -rn \\\"resolveMedia\\\\|extractMediaUrls\\\" --include=*.ts --include=*.js .\"}}",
+				"expected": {
+					"action": "rewrite",
+					"rules": [
+						"quote_glob"
+					],
+					"command": "cd ~/dev/tampermonkey/projects/video && grep -rn \"resolveMedia\\|extractMediaUrls\" --include='*.ts' --include='*.js' ."
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"quote_glob\",\"action\":\"rewrite\",\"rules\":[\"quote_glob\"],\"args\":{\"command\":\"cd ~/dev/tampermonkey/projects/video && grep -rn \\\"resolveMedia\\\\|extractMediaUrls\\\" --include='*.ts' --include='*.js' .\"},\"message\":\"[de…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 5,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"grep -rn \\\"tier\\\\|effort\\\" ~/.agents/plugins/decision --include=*.ts -l 2>/dev/null\"}}",
+				"expected": {
+					"action": "rewrite",
+					"rules": [
+						"quote_glob"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"quote_glob\",\"action\":\"rewrite\",\"rules\":[\"quote_glob\"],\"args\":{\"command\":\"grep -rn \\\"tier\\\\|effort\\\" ~/.agents/plugins/decision --include='*.ts' -l 2>/dev/null\"},\"message\":\"[decision:guard] Ran with changes: quo…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 6,
+				"prompt": "{\"harness\":\"pi\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"grep -ril \\\"voxtype\\\" ~ --include=\\\"*\\\" --exclude-dir=.cache --exclude-dir=node_modules 2>/dev/null | head -50\"}}",
+				"expected": {
+					"action": "deny",
+					"rules": [
+						"wide_search"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"wide_search\",\"action\":\"deny\",\"rules\":[\"wide_search\"],\"message\":\"[decision:guard] Blocked `grep -r … ~`: it walks the whole tree and times out. Name the directories to search (~/.agents ~/.config ~/dev …), add -…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 7,
+				"prompt": "{\"harness\":\"pi\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"find ~ -type d -name \\\"explore-domains\\\" 2>/dev/null | head; find ~ -path \\\"*explore-domains/SKILL.md\\\" 2>/dev/null | head\"}}",
+				"expected": {
+					"action": "deny",
+					"rules": [
+						"wide_search"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"wide_search\",\"action\":\"deny\",\"rules\":[\"wide_search\"],\"message\":\"[decision:guard] Blocked `find ~`: it walks the whole tree and times out. Name the directories to search (~/.agents ~/.config ~/dev …), add -maxde…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 8,
+				"prompt": "{\"harness\":\"pi\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"ls ~/.agents/skills/bun-webview/scripts/ 2>/dev/null || find ~ -maxdepth 4 -name \\\"wv.ts\\\" 2>/dev/null | head -3\"}}",
+				"expected": {
+					"action": "deny",
+					"rules": [
+						"wide_search"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"wide_search\",\"action\":\"deny\",\"rules\":[\"wide_search\"],\"message\":\"[decision:guard] Blocked `find ~`: it walks the whole tree and times out. Name the directories to search (~/.agents ~/.config ~/dev …), add -maxde…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 9,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"find / -path '*pi-coding-agent/dist/core/extensions/types.d.ts' 2>/dev/null | head -2\"}}",
+				"expected": {
+					"action": "deny",
+					"rules": [
+						"wide_search"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"wide_search\",\"action\":\"deny\",\"rules\":[\"wide_search\"],\"message\":\"[decision:guard] Blocked `find /`: it walks the whole tree and times out. Name the directories to search (~/.agents ~/.config ~/dev …), add -maxde…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 10,
+				"prompt": "{\"harness\":\"pi\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"ls docs/*.md; grep -rn x --include='*.ts' src\"}}",
+				"expected": {
+					"action": "none",
+					"rules": []
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"clear\",\"action\":\"none\",\"rules\":[]}",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 11,
+				"prompt": "{\"harness\":\"pi\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"find ~/.agents -maxdepth 3 -name SKILL.md | head\"}}",
+				"expected": {
+					"action": "none",
+					"rules": []
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"clear\",\"action\":\"none\",\"rules\":[]}",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 12,
+				"prompt": "{\"harness\":\"pi\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"pkill spectacle; pgrep -a spectacle\"}}",
+				"expected": {
+					"action": "none",
+					"rules": []
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"clear\",\"action\":\"none\",\"rules\":[]}",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 13,
+				"prompt": "{\"harness\":\"pi\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"cat > /tmp/x.sh <<'EOF'\\npkill -f inside-heredoc\\nfind ~ -name x\\nEOF\\nbash -n /tmp/x.sh\"}}",
+				"expected": {
+					"action": "none",
+					"rules": []
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"clear\",\"action\":\"none\",\"rules\":[]}",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 14,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"until [ -s /tmp/claude-1000/example/tasks/b0.output ]; do sleep 20; done; cat /tmp/claude-1000/example/tasks/b0.output\"}}",
+				"expected": {
+					"action": "deny",
+					"rules": [
+						"wait_loop"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"wait_loop\",\"action\":\"deny\",\"rules\":[\"wait_loop\"],\"message\":\"[decision:guard] Blocked a foreground wait loop: it outlives the 120 s Bash timeout. A background task notifies you when it exits, so end the turn or …",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 15,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"until grep -q \\\"ALL_TERMINAL\\\" /tmp/claude-1000/example/scratchpad/watch2.out; do sleep 15; done; tail -5 /tmp/claude-1000/example/scratchpad/watch2.out\"}}",
+				"expected": {
+					"action": "deny",
+					"rules": [
+						"wait_loop"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"wait_loop\",\"action\":\"deny\",\"rules\":[\"wait_loop\"],\"message\":\"[decision:guard] Blocked a foreground wait loop: it outlives the 120 s Bash timeout. A background task notifies you when it exits, so end the turn or …",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 16,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"until grep -q done /tmp/claude-1000/example/tasks/b0.output; do sleep 20; done\",\"run_in_background\":true}}",
+				"expected": {
+					"action": "none",
+					"rules": []
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"clear\",\"action\":\"none\",\"rules\":[]}",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 17,
+				"prompt": "{\"harness\":\"claude\",\"phase\":\"call\",\"tool\":\"Bash\",\"args\":{\"command\":\"executor reload example >/dev/null 2>&1; until curl -sf http://example.invalid/health >/dev/null; do sleep 2; done; echo up\"}}",
+				"expected": {
+					"action": "none",
+					"rules": []
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"clear\",\"action\":\"none\",\"rules\":[]}",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 18,
+				"prompt": "{\"harness\":\"pi\",\"cwd\":\"/home/easydev/chat\",\"phase\":\"call\",\"tool\":\"find\",\"args\":{\"path\":\"/home/easydev\",\"pattern\":\"**/learn/**/SKILL.md\"}}",
+				"expected": {
+					"action": "deny",
+					"rules": [
+						"wide_search"
+					]
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"wide_search\",\"action\":\"deny\",\"rules\":[\"wide_search\"],\"message\":\"[decision:guard] Blocked `find /home/easydev`: it walks the whole tree and times out. Name the directories to search (~/.agents ~/.config ~/dev …)…",
+				"costUsd": 0,
+				"status": "routed"
+			},
+			{
+				"index": 19,
+				"prompt": "{\"harness\":\"pi\",\"cwd\":\"/home/easydev/chat\",\"phase\":\"call\",\"tool\":\"find\",\"args\":{\"path\":\"/home/easydev/.agents\",\"pattern\":\"**/SKILL.md\"}}",
+				"expected": {
+					"action": "none",
+					"rules": []
+				},
+				"metrics": {
+					"exact": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"clear\",\"action\":\"none\",\"rules\":[]}",
+				"costUsd": 0,
+				"status": "routed"
+			}
+		]
+	},
+	"verdict": {
+		"mode": "floor",
+		"holds": true,
+		"floors": [],
+		"better": [],
+		"worse": [],
+		"guards": [],
+		"reasons": []
+	}
+}

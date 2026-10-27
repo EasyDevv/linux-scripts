@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 import os
 import select
 import re
@@ -14,8 +15,14 @@ from pathlib import Path
 
 RULE_SOURCE_ROOT = Path("~/.agents/rules-optional").expanduser().resolve()
 SKILL_SOURCE_ROOT = Path("/home/easydev/.agents/skills-optional").expanduser().resolve()
-HELP_TEXT = "Inline selector | Arrow keys/jk move | Space toggle | a toggle all | Enter confirm | q quit"
+HELP_TEXT = (
+    "Inline selector | Arrow keys/jk move | Space toggle | a toggle all | "
+    "m mode always/routed | Enter confirm | q quit"
+)
 RULE_SUFFIXES = (".md",)
+ALWAYS_MODE = "always"
+ROUTED_MODE = "routed"
+RULE_MODE_DIRS = {ALWAYS_MODE: "rules", ROUTED_MODE: "rules-routed"}
 EXCLUSIVE_PREFIXES = ("stack-",)
 CHECKED_MARKER = "[✓]"
 UNCHECKED_MARKER = "[ ]"
@@ -56,26 +63,128 @@ def source_root_for(item: ManagedItem) -> Path:
     return RULE_SOURCE_ROOT if item.kind == "rule" else SKILL_SOURCE_ROOT
 
 
+@lru_cache(maxsize=None)
+def rule_frontmatter(item: ManagedItem) -> tuple[str, ...]:
+    lines = (RULE_SOURCE_ROOT / item.relative_path).read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0].rstrip() != "---":
+        return ()
+    frontmatter: list[str] = []
+    for line in lines[1:]:
+        if line.rstrip() == "---":
+            return tuple(frontmatter)
+        frontmatter.append(line)
+    return ()
+
+
+def rule_has_description(item: ManagedItem) -> bool:
+    return any(line.startswith("description:") for line in rule_frontmatter(item))
+
+
+def rule_load_override(item: ManagedItem) -> str | None:
+    for line in rule_frontmatter(item):
+        if line.startswith("load:"):
+            value = line.split(":", 1)[1].strip().strip("\"'").lower()
+            if value in RULE_MODE_DIRS:
+                return value
+    return None
+
+
+def rule_default_mode(item: ManagedItem) -> str:
+    # `load: always|routed` overrides the default; a rule without `description:` stays
+    # always, because the routed classifier keys on that description.
+    if not rule_has_description(item):
+        return ALWAYS_MODE
+    return rule_load_override(item) or ROUTED_MODE
+
+
 def rule_is_routed(item: ManagedItem) -> bool:
     # A rule with `description:` frontmatter is injected per prompt from rules-routed/;
     # any other rule (`paths:` glob or none) goes to rules/, which every harness loads.
-    lines = (RULE_SOURCE_ROOT / item.relative_path).read_text(encoding="utf-8").splitlines()
-    if not lines or lines[0].rstrip() != "---":
-        return False
-    for line in lines[1:]:
-        if line.rstrip() == "---":
-            return False
-        if line.startswith("description:"):
-            return True
-    return False
+    # `load: always|routed` overrides that default, and `load: routed` only counts when
+    # the rule has a `description:` (the routed classifier needs it).
+    return rule_default_mode(item) == ROUTED_MODE
 
 
-def target_root_for(project_root: Path, item: ManagedItem) -> Path:
+def rule_mode_targets(project_root: Path) -> dict[str, Path]:
+    return {
+        mode: project_root / ".agents" / dirname
+        for mode, dirname in RULE_MODE_DIRS.items()
+    }
+
+
+def target_root_for(
+    project_root: Path,
+    item: ManagedItem,
+    modes: dict[ManagedItem, str] | None = None,
+) -> Path:
     # An opt-in skill is routed for that project only: find_skill reads
-    # <project>/.agents/skills-routed/{<name>,<category>/<name>}.
+    # <project>/.agents/skills-routed/{<name>,<category>/<name>}. A rule goes to the
+    # directory of its mode, which the user can switch per rule with `m`.
     if item.kind == "skill":
         return project_root / ".agents" / "skills-routed"
-    return project_root / ".agents" / ("rules-routed" if rule_is_routed(item) else "rules")
+    mode = mode_for(item, modes)
+    return rule_mode_targets(project_root)[mode]
+
+
+def mode_for(item: ManagedItem, modes: dict[ManagedItem, str] | None = None) -> str:
+    return (modes or {}).get(item) or (
+        ROUTED_MODE if rule_is_routed(item) else ALWAYS_MODE
+    )
+
+
+def other_rule_root(
+    project_root: Path,
+    item: ManagedItem,
+    modes: dict[ManagedItem, str] | None = None,
+) -> Path:
+    other = ALWAYS_MODE if mode_for(item, modes) == ROUTED_MODE else ROUTED_MODE
+    return rule_mode_targets(project_root)[other]
+
+
+def stale_link_paths(
+    project_root: Path,
+    item: ManagedItem,
+    modes: dict[ManagedItem, str] | None = None,
+) -> list[Path]:
+    # The same rule linked in the other directory is stale: apply moves the link.
+    if item.kind != "rule":
+        return []
+    return [other_rule_root(project_root, item, modes) / item.relative_path]
+
+
+def rule_link_mode(project_root: Path, item: ManagedItem) -> str | None:
+    source_path = source_root_for(item) / item.relative_path
+    linked = [
+        mode
+        for mode, root in rule_mode_targets(project_root).items()
+        if symlink_resolves_to(root / item.relative_path, source_path)
+    ]
+    return linked[0] if len(linked) == 1 else None
+
+
+def initial_rule_modes(
+    project_root: Path, items: list[ManagedItem]
+) -> dict[ManagedItem, str]:
+    # An existing link keeps its directory as the mode; otherwise the frontmatter default.
+    modes: dict[ManagedItem, str] = {}
+    for item in items:
+        if item.kind != "rule":
+            continue
+        modes[item] = rule_link_mode(project_root, item) or rule_default_mode(item)
+    return modes
+
+
+def toggle_rule_mode(item: ManagedItem, modes: dict[ManagedItem, str]) -> str:
+    name = display_name_for(item)
+    if item.kind != "rule":
+        return "Skills are always routed; m applies to rules only."
+    if mode_for(item, modes) == ROUTED_MODE:
+        modes[item] = ALWAYS_MODE
+        return f"{name}: always (Enter applies)"
+    if not rule_has_description(item):
+        return f"{name}: always only, no description: frontmatter"
+    modes[item] = ROUTED_MODE
+    return f"{name}: routed (Enter applies)"
 
 
 def display_name_for(item: ManagedItem) -> str:
@@ -120,13 +229,30 @@ def list_instruction_items() -> list[ManagedItem]:
 
 
 def build_selection(
-    project_root: Path, items: list[ManagedItem]
+    project_root: Path,
+    items: list[ManagedItem],
+    modes: dict[ManagedItem, str] | None = None,
 ) -> dict[ManagedItem, bool]:
     selection: dict[ManagedItem, bool] = {}
     for item in items:
-        state, _ = inspect_destination_state(target_root_for(project_root, item), item)
+        state, _ = inspect_destination_state(
+            target_root_for(project_root, item, modes), item
+        )
         selection[item] = state == "linked"
     return selection
+
+
+def inspect_states(
+    project_root: Path,
+    items: list[ManagedItem],
+    modes: dict[ManagedItem, str] | None = None,
+) -> dict[ManagedItem, tuple[str, str]]:
+    return {
+        item: inspect_destination_state(
+            target_root_for(project_root, item, modes), item
+        )
+        for item in items
+    }
 
 
 def color_enabled() -> bool:
@@ -447,6 +573,7 @@ def render_lines(
     project_root: Path,
     items: list[ManagedItem],
     selection: dict[ManagedItem, bool],
+    modes: dict[ManagedItem, str],
     current_index: int,
     offset: int,
     message: str,
@@ -455,10 +582,7 @@ def render_lines(
     display_entries, item_display_index = build_display_entries(items)
     current_item = items[current_index]
     current_display_index = item_display_index[current_item]
-    states = {
-        item: inspect_destination_state(target_root_for(project_root, item), item)
-        for item in items
-    }
+    states = inspect_states(project_root, items, modes)
     selected_conflicts = sum(
         1 for item in items if selection[item] and states[item][0] == "conflict"
     )
@@ -514,6 +638,12 @@ def render_lines(
         item_text = display_name_for(item)
         action = planned_action(selection[item], state)
         status_parts: list[str] = []
+        if item.kind == "rule":
+            mode = modes.get(item, ALWAYS_MODE)
+            status_parts.append(paint(mode, MAGENTA if mode == ROUTED_MODE else BLUE))
+            if not rule_has_description(item):
+                note = "no description" if mode == ROUTED_MODE else "always only"
+                status_parts.append(paint(f"({note})", DIM))
         if action is not None:
             status_parts.append(paint(action, action_style(action)))
             if state in {"conflict", "relink"} and detail:
@@ -557,6 +687,8 @@ def read_key(file_descriptor: int) -> str | None:
         return "TOGGLE"
     if first in (b"a", b"A"):
         return "TOGGLE_ALL"
+    if first in (b"m", b"M"):
+        return "TOGGLE_MODE"
     if first in (b"q", b"Q"):
         return "QUIT"
     if first in (b"j", b"J"):
@@ -579,7 +711,10 @@ def read_key(file_descriptor: int) -> str | None:
 
 
 def choose_files(
-    project_root: Path, items: list[ManagedItem], selection: dict[ManagedItem, bool]
+    project_root: Path,
+    items: list[ManagedItem],
+    selection: dict[ManagedItem, bool],
+    modes: dict[ManagedItem, str],
 ) -> list[ManagedItem] | None:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise SystemExit("This script must run in an interactive terminal.")
@@ -592,10 +727,7 @@ def choose_files(
     result: list[ManagedItem] | None = None
     original_settings = termios.tcgetattr(file_descriptor)
 
-    states = {
-        item: inspect_destination_state(target_root_for(project_root, item), item)
-        for item in items
-    }
+    states = inspect_states(project_root, items, modes)
 
     normalize_selection(selection, items, states)
     for item in items:
@@ -608,7 +740,7 @@ def choose_files(
         tty.setraw(file_descriptor)
         while True:
             lines, offset = render_lines(
-                project_root, items, selection, current_index, offset, message
+                project_root, items, selection, modes, current_index, offset, message
             )
             previous_line_count = draw_lines(lines, previous_line_count)
             action = read_key(file_descriptor)
@@ -621,6 +753,16 @@ def choose_files(
                 selection[item] = not selection[item]
                 if selection[item]:
                     normalize_selection(selection, items, states, item)
+            elif action == "TOGGLE_MODE":
+                item = items[current_index]
+                previous_mode = modes.get(item)
+                message = toggle_rule_mode(item, modes)
+                if modes.get(item) != previous_mode:
+                    states = inspect_states(project_root, items, modes)
+                    if not selection[item]:
+                        selection[item] = True
+                    normalize_selection(selection, items, states, item)
+                continue
             elif action == "TOGGLE_ALL":
                 new_value = not all(selection.values())
                 for item in items:
@@ -632,7 +774,7 @@ def choose_files(
             elif action == "QUIT":
                 break
             else:
-                message = "Use arrows/jk, Space, a, Enter, or q."
+                message = "Use arrows/jk, Space, a, m, Enter, or q."
                 continue
             message = "Press Enter to apply the current selection."
     finally:
@@ -656,11 +798,13 @@ def symlink_resolves_to(link_path: Path, source_path: Path) -> bool:
 
 
 def collect_conflicts(
-    project_root: Path, selected_items: set[ManagedItem]
+    project_root: Path,
+    selected_items: set[ManagedItem],
+    modes: dict[ManagedItem, str] | None = None,
 ) -> list[Path]:
     conflicts: list[Path] = []
     for item in selected_items:
-        target_root = target_root_for(project_root, item)
+        target_root = target_root_for(project_root, item, modes)
         for ancestor in destination_ancestors(target_root, item.relative_path):
             blocking = first_blocking_path(ancestor)
             if blocking is not None:
@@ -681,14 +825,19 @@ def remove_path(path: Path) -> None:
 
 
 def apply_selection(
-    project_root: Path, items: list[ManagedItem], selected_items: set[ManagedItem]
-) -> tuple[list[ManagedItem], list[ManagedItem], list[ManagedItem]]:
+    project_root: Path,
+    items: list[ManagedItem],
+    selected_items: set[ManagedItem],
+    modes: dict[ManagedItem, str] | None = None,
+) -> tuple[
+    list[ManagedItem], list[ManagedItem], list[ManagedItem], list[ManagedItem]
+]:
     agents_dir = project_root / ".agents"
     if path_is_broken_symlink(agents_dir) or (
         agents_dir.exists() and not agents_dir.is_dir()
     ):
         raise SystemExit(f"Target path exists and is not a directory: {agents_dir}")
-    conflicts = collect_conflicts(project_root, selected_items)
+    conflicts = collect_conflicts(project_root, selected_items, modes)
     if conflicts:
         unique_conflicts = sorted(
             set(conflicts),
@@ -700,41 +849,61 @@ def apply_selection(
         )
 
     linked: list[ManagedItem] = []
+    moved: list[ManagedItem] = []
     removed: list[ManagedItem] = []
     unchanged: list[ManagedItem] = []
 
     for item in items:
+        if item not in selected_items:
+            continue
         source_path = source_root_for(item) / item.relative_path
-        destination = target_root_for(project_root, item) / item.relative_path
-        if item in selected_items:
+        destination = target_root_for(project_root, item, modes) / item.relative_path
+        created = False
+        if destination.is_symlink() and not symlink_resolves_to(destination, source_path):
+            destination.unlink()
+        elif destination.exists() and not destination.is_symlink():
+            raise SystemExit(
+                f"Refusing to overwrite existing non-symlink path: {destination}"
+            )
+        if not destination.is_symlink():
             destination.parent.mkdir(parents=True, exist_ok=True)
-            if destination.is_symlink():
-                if symlink_resolves_to(destination, source_path):
-                    unchanged.append(item)
-                    continue
-                destination.unlink()
-            elif destination.exists():
-                raise SystemExit(
-                    f"Refusing to overwrite existing non-symlink path: {destination}"
-                )
             destination.symlink_to(source_path)
+            created = True
+        stale_removed = False
+        for stale in stale_link_paths(project_root, item, modes):
+            if stale == destination:
+                continue
+            if stale.is_symlink() and symlink_resolves_to(stale, source_path):
+                remove_path(stale)
+                stale_removed = True
+        if stale_removed:
+            moved.append(item)
+        elif created:
             linked.append(item)
+        else:
+            unchanged.append(item)
 
     for item in items:
         if item in selected_items:
             continue
-        destination = target_root_for(project_root, item) / item.relative_path
         source_path = source_root_for(item) / item.relative_path
-        if destination.is_symlink() and symlink_resolves_to(destination, source_path):
-            remove_path(destination)
-            removed.append(item)
+        destinations = [
+            target_root_for(project_root, item, modes) / item.relative_path,
+            *stale_link_paths(project_root, item, modes),
+        ]
+        for destination in dict.fromkeys(destinations):
+            if destination.is_symlink() and symlink_resolves_to(destination, source_path):
+                remove_path(destination)
+                if item not in removed:
+                    removed.append(item)
 
-    return linked, removed, unchanged
+    return linked, moved, removed, unchanged
 
 
 def print_summary(
     project_root: Path,
     linked: list[ManagedItem],
+    moved: list[ManagedItem],
     removed: list[ManagedItem],
     unchanged: list[ManagedItem],
 ) -> None:
@@ -743,24 +912,20 @@ def print_summary(
     print(paint(f"Skill source: {SKILL_SOURCE_ROOT}", BOLD, BLUE))
     print(
         paint(
-            f"Linked: {len(linked)} | Removed: {len(removed)} | Unchanged: {len(unchanged)}",
+            f"Linked: {len(linked)} | Moved: {len(moved)} | "
+            f"Removed: {len(removed)} | Unchanged: {len(unchanged)}",
             BOLD,
         )
     )
-    for label, values in (
-        ("Linked", linked),
-        ("Removed", removed),
-        ("Unchanged", unchanged),
+    for label, values, style in (
+        ("Linked", linked, MAGENTA),
+        ("Moved", moved, GREEN),
+        ("Removed", removed, CYAN),
+        ("Unchanged", unchanged, DIM),
     ):
         if not values:
             continue
-        print(
-            paint(
-                f"{label}:",
-                BOLD,
-                MAGENTA if label == "Linked" else CYAN if label == "Removed" else DIM,
-            )
-        )
+        print(paint(f"{label}:", BOLD, style))
         for value in values:
             print(f"  - {value.kind}: {display_name_for(value)}")
 
@@ -768,14 +933,17 @@ def print_summary(
 def main(argv: list[str]) -> int:
     project_root = resolve_project_root(argv)
     items = group_instruction_items(list_instruction_items())
-    selection = build_selection(project_root, items)
-    chosen = choose_files(project_root, items, selection)
+    modes = initial_rule_modes(project_root, items)
+    selection = build_selection(project_root, items, modes)
+    chosen = choose_files(project_root, items, selection, modes)
     if chosen is None:
         print("Cancelled.")
         return 130
 
-    linked, removed, unchanged = apply_selection(project_root, items, set(chosen))
-    print_summary(project_root, linked, removed, unchanged)
+    linked, moved, removed, unchanged = apply_selection(
+        project_root, items, set(chosen), modes
+    )
+    print_summary(project_root, linked, moved, removed, unchanged)
     return 0
 
 

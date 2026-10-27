@@ -104,7 +104,8 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 ## `POST /v1/guard`
 
 - in: `{harness, sessionId?, cwd?, phase: "call" | "result", tool, args, output?, isError?}`. Clients ask
-  only where a rule can fire: `call` for a shell call (`bash`, `Bash`), `result` for a failed edit (`edit`,
+  only where a rule can fire: `call` for a shell call (`bash`, `Bash`) and, under pi, a search tool
+  (`find`, `grep`; Claude Code has none, it searches through Bash), `result` for a failed edit (`edit`,
   `Edit`). Code only, no Jev: one answer per shell call, so the daemon answers at once and the client
   waits at most `timeoutMs` (default 300), then runs the call unchanged.
 - out: `{action: none | rewrite | deny | hint, rules: string[], args?, message?, notice?}`.
@@ -114,7 +115,7 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   - `notice`: one line for the person (toast / notify), every action but `none`.
 - Rules: `pkill_self` (`pkill -f` without `-A` matches its own shell → add `-A`), `quote_glob` (a
   glob meant for the program, `--include=*.ts` or after `-name`/`--glob`, is single-quoted),
-  `wide_search` (`find`/`grep -r`/`rg` over `~` or `/` without a depth ≤ 3 → deny), `wait_loop`
+  `wide_search` (`find`/`grep -r`/`rg` over `~` or `/` without a depth ≤ 3 → deny; the pi `find`/`grep` tools rooted at `~`, `/` or `/home`, by `path`, an absolute `find` pattern, or the `cwd` → deny), `wait_loop`
   (not under `harness: pi`, which has no background mode: a foreground `until`/`while` loop with
   `sleep` polling a task output file, `/tasks/` or `*.output|*.out|*.log`, → deny toward
   `run_in_background`/Monitor; the client sends `args.run_in_background: true` for a background
