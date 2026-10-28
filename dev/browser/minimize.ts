@@ -245,3 +245,20 @@ export async function main(argv: string[]): Promise<void> {
 	});
 	process.exit(ok ? 0 : 1);
 }
+
+/** Restore the window to its normal state and raise its tab (`browser show`). */
+export async function restoreWindow(port: number): Promise<boolean> {
+	const deadline = Date.now() + 5000;
+	try {
+		const wsUrl = await getBrowserWsUrl(port);
+		if (!wsUrl) return false;
+		const targetId = await getPageTargetId(wsUrl);
+		const { windowId } = await getWindowForTarget(wsUrl, targetId);
+		await setWindowBounds(wsUrl, windowId, { windowState: "normal" });
+		const restored = await waitForWindowState(wsUrl, windowId, deadline, "normal");
+		if (targetId) await fetch(`http://127.0.0.1:${port}/json/activate/${targetId}`);
+		return restored;
+	} catch {
+		return false;
+	}
+}

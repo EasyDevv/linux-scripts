@@ -30,6 +30,9 @@ bun.lock
 !.env.example
 !.env.*.example
 
+# Peer names for ts-ssh-guard. The example file stays tracked.
+dev/ts-ssh-guard/.hosts.json
+
 # ─── Editor / OS ─────────────────────────────────────
 .DS_Store
 Thumbs.db

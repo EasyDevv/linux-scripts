@@ -536,6 +536,19 @@
         "dev/lint/dlint"
       ],
       "description": "공유 Prettier 설정의 bun fmt와 ESLint(shadcn 규칙 포함)로 경로를 검사한다. --write는 포맷·안전 수정, --baseline은 eslint-suppressions.json 기준선을 기록한다. JSON은 포맷하지 않는다."
+    },
+    {
+      "name": "ts-ssh-guard",
+      "mode": "wrapper",
+      "category": "dev",
+      "target": "dev/ts-ssh-guard/ts-ssh-guard.py",
+      "ownedPaths": [
+        "dev/ts-ssh-guard/ts-ssh-guard.py",
+        "dev/ts-ssh-guard/tests/test_ts_ssh_guard.py",
+        "dev/ts-ssh-guard/.hosts.example.json"
+      ],
+      "reason": "Sibling tests and a placeholder host-list example. The live host list is gitignored.",
+      "description": "Tailscale SSH 포워딩 차단을 계획·적용·복구한다. 기본은 계획이며, 복구는 이 도구가 만든 드롭인만 제거한다."
     }
   ]
 }

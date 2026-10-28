@@ -4,6 +4,7 @@ import { printHelp } from "./ui.ts";
 import { main as openMain } from "./open.ts";
 import { main as closeMain } from "./close.ts";
 import { main as minimizeMain } from "./minimize.ts";
+import { main as showMain } from "./show.ts";
 import { main as openExtensionMain } from "./open-extension.ts";
 import { main as listMain } from "./list.ts";
 import { main as loginMain } from "./login.ts";
@@ -36,6 +37,7 @@ Chromium · render, measure, capture, extensions
   list                    every obscura and Chromium browser; pick and close
   tabs                    page tabs of one port
   status                  reachability and locks of known ports
+  show                    restore a minimized window (and drop its keep-minimized guard)
   minimize | cdp | open-extension | identity
 
 More
@@ -80,6 +82,13 @@ Examples
 
 Usage
   browser minimize --port <N> [--timeout-ms <ms>] [--silent]`,
+	show: `browser show — restore a minimized Chromium window and drop its KWin guard
+
+Usage
+  browser show --port <N>
+
+The guard keeps a window minimized when a click restores it; \`show\` is the way
+to look at it. \`browser close\` also drops the guard.`,
 	identity: `browser identity — apply the per-port theme color and start page name
 
 Usage
@@ -290,6 +299,9 @@ async function main() {
 			break;
 		case "minimize":
 			await minimizeMain(rest);
+			break;
+		case "show":
+			await showMain(rest);
 			break;
 		case "tabs":
 			await cmdTabs(rest);

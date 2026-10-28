@@ -13,6 +13,10 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   own session id, so `decision audit` can join the log with the transcript).
 - Skips (slash command, acknowledgement, short continuation with history) come from
   `skipReason` in `features/model-route.ts`, so every feature skips the same prompts.
+- `history` is the last two user/assistant exchanges, each clipped to 600 chars. Both clients send it on
+  `find_skill` and `model_route` prompt calls: pi from the session branch (`historyExcerpt`), Claude Code
+  from `$.session.messages()` on `prompt.submit`, `AskUserQuestion` answers and auto-continuation
+  (`hooks/decision.ts` `historyExcerpt`). Without it a short continuation is routed as fresh work.
 - A feature is a `FeatureDef` (`features/types.ts`) registered in `features/index.ts`; its
   questions live in `prompts/<name>/vN.json`; its eval cases in `evals/<name>.jsonl`.
 

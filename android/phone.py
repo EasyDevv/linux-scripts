@@ -22,6 +22,8 @@ SMOKE_AUTOX = "org.androidmacro.SMOKE_AUTOX"
 DEFAULT_AWAKE_MS = 600_000
 DEFAULT_REST_MS = 60_000
 DEFAULT_ROOT = Path.home() / "dev/private/android-macro"
+ENDPOINT_FILE = Path.home() / ".cache" / "android-macro" / "phone-endpoint"
+RUN_LOCK = DEFAULT_ROOT / "data" / "karrot-due.lock"
 TIMEOUT_CACHE = Path.home() / ".cache" / "phone-screen-off-timeout"
 REMOTE_REC = "/sdcard/phone-rec.mp4"
 DEFAULT_REC_SECONDS = 180
@@ -101,10 +103,18 @@ class Phone:
 		run: AdbRun | None = None,
 		screencap: Callable[[str], bytes] | None = None,
 		spawn: Callable[[list[str]], subprocess.Popen] | None = None,
+		recover: bool = False,
+		sleep: Callable[[float], None] = time.sleep,
+		endpoint_file: Path = ENDPOINT_FILE,
+		lock_dir: Path = RUN_LOCK,
 	) -> None:
 		self._run = run or self._subprocess
 		self._screencap = screencap
 		self._spawn = spawn
+		self._recover = recover
+		self._sleep = sleep
+		self._endpoint_file = endpoint_file
+		self._lock_dir = lock_dir
 
 	@staticmethod
 	def _subprocess(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -133,17 +143,52 @@ class Phone:
 			raise SystemExit(out.strip() or f"adb failed: {' '.join(cmd)}")
 		return out
 
-	def serial(self) -> str:
+	def _pick(self) -> str | None:
 		mdns = self.adb(None, "mdns", "services", check=False)
 		devices = self.adb(None, "devices", "-l", check=False)
 
 		def model_of(serial: str) -> str:
 			return self.adb(serial, "shell", "getprop", "ro.product.model", check=False)
 
-		found = pick_serial(mdns, devices, model_of)
-		if not found:
-			raise SystemExit("SM-S947N adb를 못 찾았어요. 포트를 추측하지 않아요.")
-		return found
+		return pick_serial(mdns, devices, model_of)
+
+	def _remember(self, serial: str) -> str:
+		if IP_PORT.fullmatch(serial):
+			try:
+				self._endpoint_file.parent.mkdir(parents=True, exist_ok=True)
+				self._endpoint_file.write_text(serial + "\n", encoding="utf-8")
+			except OSError:
+				pass
+		return serial
+
+	def serial(self) -> str:
+		found = self._pick()
+		if found:
+			return self._remember(found) if self._recover else found
+		# 오래 떠 있던 adb 서버는 mdns 탐색이 멈춘다. 돌고 있는 회차가 없을 때만 되살린다.
+		if self._recover and not self._lock_dir.exists():
+			found = self._recover_serial()
+			if found:
+				return self._remember(found)
+		raise SystemExit("SM-S947N adb를 못 찾았어요. 포트를 추측하지 않아요.")
+
+	def _recover_serial(self) -> str | None:
+		try:
+			last = self._endpoint_file.read_text(encoding="utf-8").strip()
+		except OSError:
+			last = ""
+		if last:
+			self.adb(None, "connect", last, check=False)
+			if self.adb(last, "shell", "getprop", "ro.product.model", check=False).strip() == MODEL:
+				return last
+		self.adb(None, "kill-server", check=False)
+		self.adb(None, "start-server", check=False)
+		for _ in range(10):
+			self._sleep(1)
+			found = self._pick()
+			if found:
+				return found
+		return None
 
 	def shell(self, serial: str, *args: str, check: bool = True) -> str:
 		return self.adb(serial, "shell", *args, check=check)
@@ -548,7 +593,7 @@ def main(argv: list[str] | None = None, phone: Phone | None = None) -> int:
 		print_help()
 		return 0 if args.help else 2
 	try:
-		return int(args.handler(phone or Phone(), args))
+		return int(args.handler(phone or Phone(recover=True), args))
 	except SystemExit as exc:
 		if isinstance(exc.code, str):
 			print(paint(exc.code, RED), file=sys.stderr)

@@ -18,6 +18,8 @@ import {
 	terminateProcess,
 } from "./chrome-instance.ts";
 import { DEFAULT_PORT } from "./config.ts";
+import { releaseWindowGuard } from "./kwin.ts";
+import { portClass } from "./port-identity.ts";
 import { type RecordState, stopRecording } from "./browser-record.ts";
 import { saveSessionFromPort, sessionNameForProfile } from "./session.ts";
 
@@ -190,6 +192,7 @@ async function closeBrowserGracefully(
 export async function main(argv: string[]): Promise<void> {
 	const options = parseArgs(argv);
 	const recording = await stopRecording(options.port);
+	await releaseWindowGuard(portClass(options.port));
 	// The port lock remembers a --clean or --user-data profile the default would miss.
 	const lockedDir = (await readPortLock(options.port).catch(() => null))?.userDataDir;
 	const userDataDir =
@@ -332,6 +335,7 @@ export async function main(argv: string[]): Promise<void> {
 	} catch {
 		result = await terminateProcess(launchInfo.pid, options.timeout);
 	}
+	await releaseWindowGuard(portClass(launchInfo.port));
 	await clearLaunchInfo(userDataDir);
 	await clearPortLock(options.port);
 

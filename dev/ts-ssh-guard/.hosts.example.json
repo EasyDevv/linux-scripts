@@ -1,0 +1,6 @@
+{
+  "hosts": [
+    {"name": "local", "via": "local"},
+    {"name": "remote", "via": "ssh", "target": "admin@server.example.invalid"}
+  ]
+}

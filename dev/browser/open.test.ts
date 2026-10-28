@@ -38,11 +38,27 @@ test("android and record are off by default", () => {
 	expect(options.recordFrames).toBeNull();
 });
 
-test("open starts minimized so it does not steal the desktop", () => {
-	expect(parseArgs([]).minimize).toBe(true);
-	expect(parseArgs(["--minimize"]).minimize).toBe(true);
+test("open parks the window in the background by default so it does not steal the desktop", () => {
+	const options = parseArgs([]);
+	expect(options.minimize).toBe(true);
+	expect(options.park).toBe(true);
+});
+
+test("--minimize, --background and --normal pick the window mode", () => {
+	expect(parseArgs(["--minimize"])).toMatchObject({ minimize: true, park: false });
+	expect(parseArgs(["--background"])).toMatchObject({ minimize: true, park: true });
+	expect(parseArgs(["--normal"])).toMatchObject({ minimize: false, park: false });
+	expect(parseArgs(["--no-minimize"])).toMatchObject({ minimize: false, park: false });
+	expect(parseArgs(["--minimize", "--background"])).toMatchObject({ park: true });
+});
+
+
+test("--normal never turns the taskbar flash on, and the flash is opt-in", () => {
+	expect(parseArgs([]).flash).toBe(false);
+	expect(parseArgs(["--normal"]).flash).toBe(false);
 	expect(parseArgs(["--normal"]).minimize).toBe(false);
-	expect(parseArgs(["--no-minimize"]).minimize).toBe(false);
+	expect(parseArgs(["--flash"]).flash).toBe(true);
+	expect(parseArgs(["--flash"]).minimize).toBe(true);
 });
 
 test("--android turns on phone emulation", () => {

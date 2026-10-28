@@ -64,6 +64,19 @@ browser open-extension "<name>" --port 39225 --page popup.html
 
 `~/.local/share/applications/chromium.desktop`은 고정된 **Chromium** 버튼을 `~/.local/usr/bin/chromium-cdp`로 돌린다: 9222가 꺼져 있으면 `browser open --normal`, 켜져 있으면 그 브라우저에 새 창/탭을 넘긴다.
 
+## 조용한 창 (백그라운드 가드)
+
+에이전트가 일하는 동안 사람이 브라우저가 떠 있는지도 모르게 하는 것이 `browser open`의 기본이다. CDP 접속과 입력, 스크린샷은 그대로 동작한다.
+
+- **기본(`--background`)**: 창은 화면 안에 있되 **다른 모든 창 아래**(`keepBelow`)에 깔리고, 작업표시줄·Alt-Tab·페이저에서 숨는다(`skipTaskbar`, `skipSwitcher`, `skipPager`). 다른 창이 덮지 않는 영역에서만 보인다.
+- **포커스**: 클릭하면 Chromium이 창 활성화를 요청하고 KWin이 포커스를 넘긴다. 어떤 클라이언트(`wv.ts`, `web-automation`, Playwright)가 보내도 같다. 가드가 직전에 쓰던 창으로 포커스를 돌려주므로 타이핑 중인 창이 바뀌지 않는다. 클릭 자체는 페이지에 전달된다.
+- **왜 최소화가 아닌가**: KWin은 최소화된 창에 프레임을 보내지 않는다. 이미 그려진 화면을 찍는 것은 되지만 새 프레임이 필요한 작업(이동 후 캡처, 해상도·미디어 에뮬레이션 변경)은 멈춘다(`navigate` 후 `captureScreenshot` 0/4). 가려진 창과 아래에 깔린 창은 프레임을 계속 받아 정상이다.
+- **모드**: `--minimize`(최소화, 클릭해도 유지; 캡처가 멈출 수 있음), `--normal`(보이는 창, 가드 없음).
+- **보기/해제**: `browser show --port <N>`(가드 해제 + 일반 창으로 되돌려 앞으로), `browser close`, `browser open --normal`.
+- 가드는 포트별 KWin 스크립트(`browser-guard-cdp-<port>`)이고 KWin 세션에만 산다. 재부팅하거나 KWin이 재시작되면 사라지고, 다음 `open`이 다시 올린다.
+- KWin이 없으면(KDE Wayland가 아님) 최소화로 폴백한다.
+- KWin은 스크립트 id를 "로드된 개수"로 매긴다. 오래 사는 스크립트가 있으면 다른 스크립트가 같은 id를 받을 수 있으니 `Scripting.loadScript` 뒤에는 `Script<id>.run`이 아니라 `Scripting.start`를 쓴다(`kwin.ts`).
+
 ## Test
 
 ```bash

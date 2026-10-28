@@ -218,3 +218,42 @@ if __name__ == "__main__":
 				failed += 1
 				print("FAIL", name, exc)
 	raise SystemExit(failed)
+
+
+def test_serial_recover_restarts_adb_server_when_mdns_is_stale(tmp_path) -> None:
+	state = {"restarted": False}
+
+	def run(args: list[str]) -> CompletedProcess[str]:
+		key = " ".join(args)
+		if key == "adb start-server":
+			state["restarted"] = True
+		out = ""
+		if key == "adb mdns services" and state["restarted"]:
+			out = "x\t_adb-tls-connect._tcp\t192.168.0.29:46605\n"
+		if key.endswith("getprop ro.product.model"):
+			out = "SM-S947N\n"
+		return CompletedProcess(args, 0, out, "")
+
+	endpoint = tmp_path / "endpoint"
+	phone = Phone(run=run, recover=True, sleep=lambda _s: None, endpoint_file=endpoint, lock_dir=tmp_path / "lock")
+	assert phone.serial() == "192.168.0.29:46605"
+	assert endpoint.read_text().strip() == "192.168.0.29:46605"
+
+
+def test_serial_recover_does_not_restart_adb_during_a_run(tmp_path) -> None:
+	calls: list[str] = []
+
+	def run(args: list[str]) -> CompletedProcess[str]:
+		calls.append(" ".join(args))
+		return CompletedProcess(args, 0, "", "")
+
+	lock = tmp_path / "lock"
+	lock.mkdir()
+	phone = Phone(run=run, recover=True, sleep=lambda _s: None, endpoint_file=tmp_path / "endpoint", lock_dir=lock)
+	try:
+		phone.serial()
+	except SystemExit as exc:
+		assert "못 찾았어요" in str(exc.code)
+	else:
+		raise AssertionError("expected SystemExit")
+	assert "adb kill-server" not in calls
