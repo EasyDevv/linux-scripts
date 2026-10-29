@@ -85,15 +85,18 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   `input`/`before_agent_start`, `ask_user_question` answers (tool_result), `steer`/`followUp` while
   streaming (`queued.ts`, delivered via `sendMessage`).
 - Rows for what was injected (client-side, no daemon field; both harnesses). Injected context is
-  invisible in a transcript, so each client draws one dim line per rule or skill under the row that
-  carried it, in the same words: `⎿  Loaded rule: <name> (<~path>, <N> lines)`, `Loaded skill: …`,
-  `Reloaded rule|skill: …` (the same name injected again after a compaction cleared the claimed set),
-  `Suggested skill|rule: <name>` (a hint with no body); six lines at most, then `⎿  … and <n> more`.
-  Claude Code has no API for a native row (a plugin's `$.tool.call`, `session.append` and an `@path`
-  in the prompt were each tried: none is drawn), so `ui.render` decorates the `UserMessage` row (kept
-  by prompt text) and the `ToolResult` row (kept by `tool_use_id`) from `rows` in the session state
-  file (`render.tsx`; `/routed` and `/<name>` use the same words as their output). pi sends the hint
-  with `display: true` and a `registerMessageRenderer` that draws the lines, not the body.
+  invisible in a transcript, so each client draws what a native Skill call draws, per rule or skill,
+  under the row that carried it, in the same words: `● Skill(<name>)` over
+  `  ⎿  Successfully loaded skill · <~path> · <N> lines` (`Rule(<name>)` / `loaded rule` for a rule,
+  `Successfully reloaded …` for the same name injected again after a compaction cleared the claimed
+  set, `Suggested skill · <~path>` for a hint with no body); six entries at most, then `● … and <n> more`.
+  Only the look is borrowed: the model is not steered into a real Skill call (hints still say
+  "Read the SKILL.md"). Claude Code has no API for a native row (a plugin's `$.tool.call`,
+  `session.append` and an `@path` in the prompt were each tried: none is drawn), so `ui.render`
+  decorates the `UserMessage` row (kept by prompt text) and the `ToolResult` row (kept by
+  `tool_use_id`) from `rows` in the session state file (`render.tsx`; `/routed` and `/<name>` write the
+  same words as their output). pi sends the hint with `display: true` and a `registerMessageRenderer`
+  that draws the lines, not the body.
 
 ## `POST /v1/find_tool`
 
