@@ -84,6 +84,16 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   `AskUserQuestion` answers (PostToolUse), auto-continuation feedback that is not `isMeta`; pi:
   `input`/`before_agent_start`, `ask_user_question` answers (tool_result), `steer`/`followUp` while
   streaming (`queued.ts`, delivered via `sendMessage`).
+- Rows for what was injected (client-side, no daemon field; both harnesses). Injected context is
+  invisible in a transcript, so each client draws one dim line per rule or skill under the row that
+  carried it, in the same words: `⎿  Loaded rule: <name> (<~path>, <N> lines)`, `Loaded skill: …`,
+  `Reloaded rule|skill: …` (the same name injected again after a compaction cleared the claimed set),
+  `Suggested skill|rule: <name>` (a hint with no body); six lines at most, then `⎿  … and <n> more`.
+  Claude Code has no API for a native row (a plugin's `$.tool.call`, `session.append` and an `@path`
+  in the prompt were each tried: none is drawn), so `ui.render` decorates the `UserMessage` row (kept
+  by prompt text) and the `ToolResult` row (kept by `tool_use_id`) from `rows` in the session state
+  file (`render.tsx`; `/routed` and `/<name>` use the same words as their output). pi sends the hint
+  with `display: true` and a `registerMessageRenderer` that draws the lines, not the body.
 
 ## `POST /v1/find_tool`
 
@@ -108,12 +118,15 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 ## `POST /v1/guard`
 
 - in: `{harness, sessionId?, cwd?, phase: "call" | "result", tool, args, output?, isError?}`. Clients ask
-  only where a rule can fire: `call` for a shell call (`bash`, `Bash`) and, under pi, a search tool
-  (`find`, `grep`; Claude Code has none, it searches through Bash), `result` for a failed edit (`edit`,
-  `Edit`). Code only, no Jev: one answer per shell call, so the daemon answers at once and the client
+  only where a rule can fire: `call` for a shell call (`bash`, `Bash`), under pi a search tool
+  (`find`, `grep`; Claude Code has none, it searches through Bash), and a `read`/`edit`/`ls` (Claude
+  `Read`/`Edit`, `args.file_path`) whose path does not exist (the client checks the filesystem first, so
+  an existing path never waits for the daemon); `result` for a failed edit (`edit`, `Edit`) and a failed
+  `read`/`Read`/`find`/`grep`/`ls`. Code only, no Jev: one answer per shell call, so the daemon answers at once and the client
   waits at most `timeoutMs` (default 300), then runs the call unchanged.
 - out: `{action: none | rewrite | deny | hint, rules: string[], args?, message?, notice?}`.
-  - `rewrite`: run with `args` instead; `message` goes after the tool result for the model.
+  - `rewrite`: run with `args` instead (the whole argument set: `command` for a shell rule, `path` /
+    `file_path` for `path_resolve`; the client assigns every key); `message` goes after the tool result for the model.
   - `deny`: do not run; `message` is the block reason the model reads.
   - `hint`: append `message` to the failed result.
   - `notice`: one line for the person (toast / notify), every action but `none`.
@@ -124,7 +137,13 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   `sleep` polling a task output file, `/tasks/` or `*.output|*.out|*.log`, → deny toward
   `run_in_background`/Monitor; the client sends `args.run_in_background: true` for a background
   call, which is never denied), `edit_hint` (where
-  the oldText's closest match is and its first differing line; overlapping and repeated spans by line).
+  the oldText's closest match is and its first differing line; overlapping and repeated spans by line),
+  `path_resolve` (a `path`/`file_path` that does not exist. `call`: the path is a component of a skill
+  folder (`…/.agents/skills*/<group>/<skill>/…`) and the same skill, or the same file name inside it,
+  exists exactly once elsewhere (a copy under the `cwd` beats a global one) → `rewrite` with the whole
+  `args` and that path. `result` with `ENOENT`/`Path not found`/`File does not exist`: any other miss →
+  `hint` with the nearest existing directory's entries and same-name files below it. Filesystem only,
+  ≤ 10 ms; `write` is never checked).
 - Text the model reads is appended after the tool result, never in the system prompt (cache).
 - `none` results are not logged.
 

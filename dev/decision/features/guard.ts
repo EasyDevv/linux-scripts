@@ -17,15 +17,20 @@
  *   harness notifies on exit instead.
  * - `edit_hint`: "Could not find" alone sends the model into re-read/retry spirals; say where the
  *   closest match is and which line differs, escaped so tabs and backslashes show.
+ * - `path_resolve` (path-resolve.ts): a `read`/`edit`/`find`/`grep`/`ls` on a path that does not
+ *   exist. A skill file under the wrong `.agents/skills-*` folder is rewritten to where it lives
+ *   before the call runs; any other miss gets the nearest existing directory's entries appended to
+ *   the failure, so no `ls`/`find` turn follows.
  */
 
 import { readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, isAbsolute, resolve } from "node:path";
+import { describeMissing, resolveMissing } from "./path-resolve.ts";
 import type { FeatureDef, FeatureResult } from "./types.ts";
 import { isRecord, str } from "./types.ts";
 
-export type GuardRule = "pkill_self" | "quote_glob" | "wide_search" | "wait_loop" | "edit_hint";
+export type GuardRule = "pkill_self" | "quote_glob" | "wide_search" | "wait_loop" | "edit_hint" | "path_resolve";
 
 export interface GuardInput {
 	harness?: string;
@@ -48,6 +53,9 @@ export interface GuardResult extends FeatureResult {
 const MARKER = "[decision:guard]";
 const SHELL_TOOLS = new Set(["bash", "Bash"]);
 const EDIT_TOOLS = new Set(["edit", "Edit"]);
+/** Tools whose `path` / `file_path` must exist (`write` creates files, so it is not here). */
+const PATH_TOOLS = new Set(["read", "Read", "edit", "Edit", "find", "grep", "ls"]);
+const MISSING_OUTPUT = /ENOENT|Path not found|File does not exist|No such file or directory/u;
 
 // ── shell words ─────────────────────────────────────────────────────────────────────────────
 
@@ -532,6 +540,42 @@ export function guardEditResult(input: GuardInput, home = homedir()): GuardResul
 	});
 }
 
+// ── path resolve ────────────────────────────────────────────────────────────────────────────
+
+/** The path argument: pi `path`, Claude `file_path`. */
+function pathKey(args: Record<string, unknown>): "path" | "file_path" | undefined {
+	return str(args.path) ? "path" : str(args.file_path) ? "file_path" : undefined;
+}
+
+/** A call on a missing path whose skill lives elsewhere runs with the right path. */
+function guardPathCall(input: GuardInput, home: string): GuardResult {
+	const key = pathKey(input.args);
+	const raw = key && str(input.args[key]);
+	if (!key || !raw) return result("none", []);
+	const r = resolveMissing(raw, { home, cwd: input.cwd });
+	if (r?.kind !== "rewrite") return result("none", []);
+	return result("rewrite", ["path_resolve"], {
+		args: { ...input.args, [key]: r.path },
+		message: `${MARKER} \`${r.from}\` did not exist (${r.why}); ran with \`${r.path}\`. Use that path from now on.`,
+		notice: `guard: ${basename(r.from)} → ${r.path}`,
+	});
+}
+
+/** A failed call on a missing path learns where to look instead. */
+function guardPathResult(input: GuardInput, home: string): GuardResult {
+	const key = pathKey(input.args);
+	const raw = key && str(input.args[key]);
+	if (!key || !raw || !MISSING_OUTPUT.test(input.output ?? "")) return result("none", []);
+	const r = resolveMissing(raw, { home, cwd: input.cwd });
+	if (!r) return result("none", []);
+	const message =
+		r.kind === "rewrite" ? `\`${r.from}\` does not exist; \`${r.path}\` does (${r.why}).` : describeMissing(r);
+	return result("hint", ["path_resolve"], {
+		message: `${MARKER} ${message}`,
+		notice: `guard: path hint for ${basename(raw)}`,
+	});
+}
+
 // ── feature ─────────────────────────────────────────────────────────────────────────────────
 
 function result(action: GuardResult["action"], rules: GuardRule[], extra: Partial<GuardResult> = {}): GuardResult {
@@ -556,9 +600,13 @@ export function guard(input: GuardInput, home = homedir()): GuardResult {
 	}
 	if (input.phase === "call" && SEARCH_TOOLS.has(input.tool)) {
 		const wide = wideSearchTool(input.tool, input.args, home, input.cwd);
-		return wide === undefined ? result("none", []) : wideDenied(wide);
+		if (wide !== undefined) return wideDenied(wide);
 	}
-	if (input.phase === "result" && EDIT_TOOLS.has(input.tool) && input.isError) return guardEditResult(input, home);
+	if (input.phase === "call" && PATH_TOOLS.has(input.tool)) return guardPathCall(input, home);
+	if (input.phase === "result" && PATH_TOOLS.has(input.tool) && input.isError) {
+		const edit = EDIT_TOOLS.has(input.tool) ? guardEditResult(input, home) : result("none", []);
+		return edit.action === "none" ? guardPathResult(input, home) : edit;
+	}
 	return {
 		...result("none", []),
 		status: "skipped",
@@ -599,7 +647,8 @@ export const guardFeature: FeatureDef = {
 		const got = r as GuardResult;
 		const rules = Array.isArray(want.rules) ? JSON.stringify(want.rules) === JSON.stringify(got.rules) : true;
 		const command = typeof want.command === "string" ? want.command === str(got.args?.command) : true;
-		return { exact: Number(want.action === got.action && rules && command) };
+		const path = typeof want.path === "string" ? want.path === (str(got.args?.path) ?? str(got.args?.file_path)) : true;
+		return { exact: Number(want.action === got.action && rules && command && path) };
 	},
 	logs: (r) => (r as GuardResult).action !== "none",
 };

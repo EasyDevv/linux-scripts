@@ -245,6 +245,6 @@ describe("edit_hint", () => {
 });
 
 test("tools without a rule are skipped, not denied", () => {
-	const r = guard({ phase: "call", tool: "read", args: { path: "a" } }, HOME);
+	const r = guard({ phase: "call", tool: "write", args: { path: "a" } }, HOME);
 	expect(r).toMatchObject({ status: "skipped", action: "none" });
 });
