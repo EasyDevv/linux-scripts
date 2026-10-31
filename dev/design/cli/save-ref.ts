@@ -2,6 +2,8 @@
 /**
  * Capture the current (or --url) CDP tab into {DESIGN_THEMES}/ref/{host}/.
  * Writes viewport PNG, pages/{id}.mhtml, and merges index.json.
+ * --scroll-through wheels the page with real mouse input before capture so lazy media is
+ * included, then returns to scrollY 0.
  */
 
 import { mkdir } from "node:fs/promises";
@@ -39,10 +41,11 @@ const forcePng = args.includes("--png");
 const skipPngFlag = args.includes("--no-png");
 const pageIdArg = valueFor("--id");
 const keepTab = args.includes("--keep-tab");
+const scrollThrough = args.includes("--scroll-through");
 const waitMs = Number(valueFor("--wait-ms") ?? 4000);
 
 if (!targetUrl || !VIEWPORTS[viewportId]) {
-	console.error("usage: save-ref.ts --url <url> [--id <page>] [--viewport desktop|tablet|mobile] [--port N] [--png|--no-png]");
+	console.error("usage: save-ref.ts --url <url> [--id <page>] [--viewport desktop|tablet|mobile] [--port N] [--png|--no-png] [--scroll-through]");
 	process.exit(2);
 }
 
@@ -89,6 +92,62 @@ function command(method: string, params: Record<string, unknown> = {}) {
 	});
 }
 
+async function readScrollY() {
+	const evaluated = (await command("Runtime.evaluate", {
+		expression: "window.scrollY",
+		returnByValue: true,
+	})) as { result?: { value?: number } };
+	const value = Number(evaluated.result?.value ?? 0);
+	return Number.isFinite(value) ? value : 0;
+}
+
+/** Real mouseWheel input. Same step as inventory-page: 0.8 × viewport, stop after 3 stalls or 60 steps. */
+async function wheelThroughPage(pageWidth: number, pageHeight: number) {
+	const cx = Math.round(pageWidth / 2);
+	const cy = Math.round(pageHeight / 2);
+	const step = Math.max(1, Math.round(pageHeight * 0.8));
+	const wheel = (deltaY: number) =>
+		command("Input.dispatchMouseEvent", {
+			type: "mouseWheel",
+			x: cx,
+			y: cy,
+			deltaX: 0,
+			deltaY,
+			pointerType: "mouse",
+		});
+	await command("Input.dispatchMouseEvent", { type: "mouseMoved", x: cx, y: cy });
+	let last = await readScrollY();
+	let stalled = 0;
+	for (let i = 0; i < 60; i++) {
+		await wheel(step);
+		await Bun.sleep(250);
+		const y = await readScrollY();
+		if (y <= last + 1) {
+			stalled++;
+			if (stalled >= 3) break;
+		} else stalled = 0;
+		last = y;
+	}
+	let backStalled = 0;
+	let prev = await readScrollY();
+	for (let i = 0; i < 60; i++) {
+		if (prev <= 1) break;
+		await wheel(-step);
+		await Bun.sleep(100);
+		const y = await readScrollY();
+		if (y <= 1) break;
+		if (y >= prev - 1) {
+			backStalled++;
+			if (backStalled >= 3) break;
+		} else backStalled = 0;
+		prev = y;
+	}
+	for (let i = 0; i < 5 && (await readScrollY()) > 1; i++) {
+		await wheel(-Math.max(step * 8, 4000));
+		await Bun.sleep(80);
+	}
+}
+
 await command("Page.enable");
 await command("Runtime.enable");
 await command("Emulation.setDeviceMetricsOverride", {
@@ -102,6 +161,12 @@ if (targetUrl) {
 	await command("Page.navigate", { url: targetUrl });
 	await command("Page.waitForLifecycleEvent", { name: "networkIdle" }).catch(() => undefined);
 	await Bun.sleep(Number.isFinite(waitMs) ? waitMs : 4000);
+	if (scrollThrough) {
+		await command("Emulation.setFocusEmulationEnabled", { enabled: true });
+		await command("Page.bringToFront");
+		await wheelThroughPage(viewport.width, viewport.height);
+		await Bun.sleep(600);
+	}
 }
 
 const evaluated = (await command("Runtime.evaluate", {
@@ -112,7 +177,8 @@ const evaluated = (await command("Runtime.evaluate", {
 		htmlClass: document.documentElement.className,
 		innerWidth,
 		innerHeight,
-		devicePixelRatio
+		devicePixelRatio,
+		scrollY: window.scrollY
 	})`,
 	returnByValue: true,
 })) as { result?: { value?: string } };
@@ -121,6 +187,7 @@ const measured = JSON.parse(evaluated.result?.value ?? "{}") as {
 	url?: string;
 	title?: string;
 	htmlClass?: string;
+	scrollY?: number;
 };
 const pageUrl = measured.url ?? targetUrl;
 if (!pageUrl) {
@@ -218,6 +285,8 @@ const result = {
 	png: skipPng ? null : relative(dir, pngPath(dir, viewportId, pageId)),
 	snapshot: mhtmlRel ?? null,
 	title: measured.title,
+	scrollThrough,
+	scrollY: measured.scrollY ?? null,
 };
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 

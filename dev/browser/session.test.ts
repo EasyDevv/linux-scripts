@@ -3,7 +3,22 @@ import { mkdtemp, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { buildFetchArgs, isPrivateUrl } from "./fetch.ts";
+import {
+	FETCH_PORT_BASE,
+	FETCH_PORT_SPAN,
+	blocksToMarkdown,
+	decodeResponseBody,
+	deheadlessUserAgent,
+	fetchPortsIncludeReserved,
+	formatAssets,
+	formatEvalValue,
+	formatLinks,
+	mergeSessionCookies,
+	netIdleDone,
+	netIdleReady,
+	netIdleStart,
+	parseFetchArgs,
+} from "./fetch.ts";
 import { detectLogin, isLoginUrl } from "./login.ts";
 import { mergeExtensionDirs } from "./profiles.ts";
 import {
@@ -69,22 +84,194 @@ test("writeSession is private and summaries carry no values", async () => {
 	delete process.env.BROWSER_SESSIONS_DIR;
 });
 
-test("fetch args: stealth, quiet text dump, private network for local hosts", () => {
-	const args = buildFetchArgs({ url: "http://127.0.0.1:3000", pass: [], stealth: true, verbose: false });
-	expect(args).toEqual([
-		"fetch",
+test("parseFetchArgs defaults, scheme, and stealth no-ops", () => {
+	const opts = parseFetchArgs(["example.com", "--stealth", "--no-stealth"]);
+	expect(opts.url).toBe("https://example.com");
+	expect(opts.dump).toBe("text");
+	expect(opts.waitS).toBe(2);
+	expect(opts.waitUntil).toBe("load");
+	expect(opts.timeoutS).toBe(30);
+	expect(opts.eval).toBeUndefined();
+	expect(opts.verbose).toBe(false);
+});
+
+test("parseFetchArgs keeps the flags callers pass", () => {
+	const opts = parseFetchArgs([
 		"http://127.0.0.1:3000",
+		"--eval",
+		"1",
 		"--dump",
-		"text",
-		"--stealth",
-		"--allow-private-network",
-		"--quiet",
+		"links",
+		"--selector",
+		"h1",
+		"--wait",
+		"0",
+		"--wait-until",
+		"networkidle0",
+		"--timeout",
+		"10",
+		"--proxy",
+		"socks5://127.0.0.1:1080",
+		"--output",
+		"out.txt",
+		"--session",
+		"9222",
+		"--user-agent",
+		"ua",
+		"--verbose",
 	]);
+	expect(opts).toMatchObject({
+		url: "http://127.0.0.1:3000",
+		eval: "1",
+		dump: "links",
+		selector: "h1",
+		waitS: 0,
+		waitUntil: "networkidle0",
+		timeoutS: 10,
+		proxy: "socks5://127.0.0.1:1080",
+		output: "out.txt",
+		session: "9222",
+		userAgent: "ua",
+		verbose: true,
+	});
+});
+
+test("parseFetchArgs rejects unknown dump, unknown flag, and a missing url", () => {
+	expect(() => parseFetchArgs(["--dump", "pdf", "https://a.com"])).toThrow(/dump/i);
+	expect(() => parseFetchArgs(["https://a.com", "--nope"])).toThrow(/Unknown option/);
+	expect(() => parseFetchArgs([])).toThrow(/url/i);
+});
+
+test("formatLinks dedupes and keeps the first text", () => {
 	expect(
-		buildFetchArgs({ url: "https://a.com", pass: ["--eval", "1"], stealth: false, storageDir: "/s", verbose: true }),
-	).toEqual(["fetch", "https://a.com", "--eval", "1", "--storage-dir", "/s"]);
-	expect(isPrivateUrl("http://dashboard.localhost")).toBe(true);
-	expect(isPrivateUrl("https://172.32.0.1")).toBe(false);
+		formatLinks([
+			{ url: "https://a.com", text: "" },
+			{ url: "https://a.com", text: "A" },
+			{ url: "https://b.com/x", text: "go" },
+			{ url: "https://b.com/x", text: "other" },
+		]),
+	).toBe("https://a.com\tA\nhttps://b.com/x\tgo");
+});
+
+test("blocksToMarkdown covers headings, lists, code, tables, and images", () => {
+	const md = blocksToMarkdown([
+		{ t: "h", level: 2, inlines: [{ t: "text", s: "Title" }] },
+		{
+			t: "p",
+			inlines: [
+				{ t: "text", s: "See " },
+				{ t: "link", href: "https://a.com", s: "A" },
+				{ t: "text", s: " and " },
+				{ t: "code", s: "x" },
+			],
+		},
+		{ t: "ul", items: [[{ t: "text", s: "one" }], [{ t: "text", s: "two" }]] },
+		{ t: "pre", s: "code\n" },
+		{ t: "table", rows: [["a", "b"], ["1", "2"]] },
+		{ t: "img", alt: "pic", src: "https://a.com/i.png" },
+	]);
+	expect(md).toContain("## Title");
+	expect(md).toContain("[A](https://a.com)");
+	expect(md).toContain("`x`");
+	expect(md).toContain("- one");
+	expect(md).toContain("```");
+	expect(md).toContain("| a | b |");
+	expect(md).toContain("| --- | --- |");
+	expect(md).toContain("![pic](https://a.com/i.png)");
+});
+
+test("formatEvalValue prints strings raw and JSON otherwise", () => {
+	expect(formatEvalValue("string", "hi")).toBe("hi");
+	expect(formatEvalValue("number", 30)).toBe("30");
+	expect(formatEvalValue("boolean", true)).toBe("true");
+	expect(formatEvalValue("object", { a: 1 })).toBe('{"a":1}');
+	expect(formatEvalValue("undefined", undefined)).toBe("null");
+});
+
+test("deheadlessUserAgent rewrites HeadlessChrome", () => {
+	expect(deheadlessUserAgent("Mozilla HeadlessChrome/131.0 Safari")).toBe(
+		"Mozilla Chrome/131.0 Safari",
+	);
+	expect(deheadlessUserAgent("Chrome/131")).toBe("Chrome/131");
+});
+
+test("formatAssets is deduped NDJSON with a lowercased type", () => {
+	expect(
+		formatAssets([
+			{ url: "https://a.com/s.js", type: "Script" },
+			{ url: "https://a.com/s.js", type: "Script" },
+			{ url: "https://a.com/a.png", type: "Image" },
+		]),
+	).toBe('{"url":"https://a.com/s.js","type":"script"}\n{"url":"https://a.com/a.png","type":"image"}');
+});
+
+test("decodeResponseBody honors base64", () => {
+	expect(new TextDecoder().decode(decodeResponseBody("aGk=", true))).toBe("hi");
+	expect(new TextDecoder().decode(decodeResponseBody("hi", false))).toBe("hi");
+});
+
+test("fetch port window never includes 9201 or 9222", () => {
+	expect(fetchPortsIncludeReserved()).toBe(false);
+	expect(FETCH_PORT_BASE).toBeGreaterThan(9222);
+	expect(FETCH_PORT_BASE + FETCH_PORT_SPAN - 1).toBeLessThan(39225);
+});
+
+test("networkidle0 is 500ms with nothing in flight", () => {
+	let state = { inflight: 0, quietSince: null as number | null };
+	state = netIdleStart(state);
+	state = netIdleStart(state);
+	state = netIdleDone(state, 1000);
+	expect(netIdleReady(state, 1600)).toBe(false);
+	state = netIdleDone(state, 1100);
+	expect(state.quietSince).toBe(1100);
+	expect(netIdleReady(state, 1599)).toBe(false);
+	expect(netIdleReady(state, 1600)).toBe(true);
+	state = netIdleStart(state);
+	expect(netIdleReady(state, 2000)).toBe(false);
+});
+
+test("mergeSessionCookies keeps dropped cookies and applies updates", () => {
+	const original = [
+		{
+			name: "a",
+			value: "1",
+			domain: ".a.com",
+			path: "/",
+			secure: true,
+			httpOnly: true,
+			sameSite: "Lax" as const,
+			expires: 10,
+		},
+		{
+			name: "b",
+			value: "2",
+			domain: ".b.com",
+			path: "/",
+			secure: false,
+			httpOnly: false,
+			sameSite: "Lax" as const,
+			expires: null,
+		},
+	];
+	const live = [
+		{ ...original[1], value: "3" },
+		{
+			name: "c",
+			value: "4",
+			domain: ".c.com",
+			path: "/",
+			secure: false,
+			httpOnly: false,
+			sameSite: "None" as const,
+			expires: 20,
+		},
+	];
+	const merged = mergeSessionCookies(original, live);
+	expect(merged.map((c) => [c.name, c.value])).toEqual([
+		["a", "1"],
+		["b", "3"],
+		["c", "4"],
+	]);
 });
 
 test("mergeExtensionDirs dedupes comma lists", () => {

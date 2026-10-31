@@ -5,7 +5,8 @@ import { basename, dirname, join } from "node:path";
 import { CDP, getBrowserWsUrl } from "./cdp.ts";
 
 /**
- * A session is an obscura `--storage-dir`: `<root>/<name>/cookies.json`.
+ * A session is `cookies.json` used by `fetch --session` and `open --session`:
+ * `<root>/<name>/cookies.json`.
  * Chromium profiles are disposable caches; this file is what survives.
  * Cookie values never reach stdout — callers print names, domains, counts.
  */

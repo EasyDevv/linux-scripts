@@ -34,20 +34,16 @@ test("serviceUnit picks .service leaves only", () => {
 	expect(serviceUnit("0::/user.slice/user-1000.slice/user@1000.service")).toBeNull();
 });
 
-test("rowsFromProcs: one chromium row per port, unit from children, obscura engines", () => {
+test("rowsFromProcs: one chromium row per port, unit from children", () => {
 	const cg = (leaf: string) => `0::/user.slice/user@1000.service/app.slice/${leaf}`;
 	const rows = rowsFromProcs([
 		{ pid: 1, argv: ["/usr/bin/chrome", "--remote-debugging-port=9201", "--user-data-dir=/p"], cgroup: cg("app-chrome-1.scope"), cwd: "/" },
 		{ pid: 2, argv: ["/usr/bin/chrome", "--type=renderer", "--remote-debugging-port=9201"], cgroup: cg("chrome.service"), cwd: "/" },
 		{ pid: 3, argv: ["chromium", "--remote-debugging-port=9223", "--user-data-dir=/tmp/browser-clean-ab"], cgroup: cg("app-x.scope"), cwd: "/" },
-		{ pid: 4, argv: ["/home/u/.local/bin/obscura", "serve", "--stealth", "--port", "9300", "--storage-dir", "/s/9222"], cgroup: cg("app-y.scope"), cwd: "/" },
-		{ pid: 5, argv: ["obscura", "fetch", "https://a.com", "--stealth"], cgroup: "", cwd: "/" },
-		{ pid: 6, argv: ["obscura-worker"], cgroup: "", cwd: "/" },
+		{ pid: 6, argv: ["some-worker"], cgroup: "", cwd: "/" },
 	]);
 	expect(rows.map((r) => [r.engine, r.port, r.unit, r.kind, r.note])).toEqual([
 		["chromium", 9201, "chrome.service", "/p", null],
 		["chromium", 9223, null, "clean profile", null],
-		["obscura", 9300, null, "serve", "session 9222"],
-		["obscura", null, null, "fetch", "https://a.com"],
 	]);
 });

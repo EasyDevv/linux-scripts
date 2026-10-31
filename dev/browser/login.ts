@@ -16,7 +16,7 @@ import {
 
 export const LOGIN_DEFAULTS = Object.freeze({ timeoutS: 300, intervalS: 3 });
 
-const HELP = `browser login — a human signs in on Chromium; the session is saved for obscura
+const HELP = `browser login — a human signs in on Chromium; the session is saved for fetch --session
 
 Usage
   browser login <url> [options]

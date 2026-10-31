@@ -297,14 +297,7 @@
         "dev/browser/navigation.ts"
       ],
       "reason": "Uses sibling TypeScript modules under dev/browser/.",
-      "description": "obscura(읽기·추출)와 Chromium(렌더·캡처·로그인)을 묶은 브라우저 CLI — fetch/login/session/open/close/tabs/cdp"
-    },
-    {
-      "name": "open-extension",
-      "mode": "symlink",
-      "category": "browser",
-      "target": "browser/open-extension.sh",
-      "description": "Chrome 확장 프로그램 ID를 찾아 원하는 확장 페이지를 연다."
+      "description": "Chromium 브라우저 CLI — fetch(일회용 headless 읽기)·open --headless(스크립트 조작·캡처)·login(사람이 로그인)·session·close·tabs·cdp. 확장 페이지는 부명령 open-extension."
     },
     {
       "name": "path-cleaner",

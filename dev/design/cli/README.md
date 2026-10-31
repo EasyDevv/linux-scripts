@@ -8,6 +8,7 @@ bun ~/.local/share/scripts/dev/design/cli/compare-shadcn-theme.ts --project <lay
 bun ~/.local/share/scripts/dev/design/cli/check-theme-chrome.ts --theme <themes/<slug>>
 bun ~/.local/share/scripts/dev/design/cli/resolve-ref.ts <url-or-host> --json
 bun ~/.local/share/scripts/dev/design/cli/save-ref.ts --url <url> --id <page> --viewport desktop
+bun ~/.local/share/scripts/dev/design/cli/save-ref.ts --url <url> --id <page> --viewport desktop --scroll-through
 ```
 
 Override the store with `DESIGN_THEMES`.

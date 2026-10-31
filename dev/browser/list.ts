@@ -1,23 +1,22 @@
 import { readdir, readFile, readlink } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import type { Tab } from "./cdp.ts";
 import { globalProfileDir } from "./chrome-instance.ts";
 import { classifyKey, colorOn, interactive, paint, Term } from "./ui.ts";
 
-export type Engine = "chromium" | "obscura";
+export type Engine = "chromium";
 
 export type BrowserRow = {
 	engine: Engine;
 	pid: number;
 	port: number | null;
-	/** chromium: profile label · obscura: serve / fetch / scrape / mcp */
+	/** profile label */
 	kind: string;
 	userDataDir: string | null;
 	/** systemd unit that owns it (chrome.service); closing stops the unit */
 	unit: string | null;
-	/** obscura: --storage-dir session name, or the fetch URL */
 	note: string | null;
 	tabs: Array<Pick<Tab, "title" | "url">>;
 };
@@ -71,30 +70,11 @@ function profileLabel(port: number, dir: string | null): string {
 	return tilde(dir);
 }
 
-const OBSCURA_COMMANDS = new Set(["serve", "fetch", "scrape", "mcp"]);
-
 export function rowsFromProcs(procs: Proc[]): Omit<BrowserRow, "tabs">[] {
-	const others: Omit<BrowserRow, "tabs">[] = [];
 	const chromium = new Map<number, Omit<BrowserRow, "tabs">>();
 	const units = new Map<number, string>();
 
 	for (const p of procs) {
-		if (basename(p.argv[0] ?? "") === "obscura") {
-			const cmd = p.argv.slice(1).find((a) => OBSCURA_COMMANDS.has(a));
-			if (!cmd) continue;
-			const storage = flag(p.argv, "--storage-dir");
-			const url = cmd === "fetch" ? (p.argv[p.argv.indexOf("fetch") + 1] ?? null) : null;
-			others.push({
-				engine: "obscura",
-				pid: p.pid,
-				port: cmd === "serve" ? Number(flag(p.argv, "--port") ?? 9222) : null,
-				kind: cmd,
-				userDataDir: null,
-				unit: serviceUnit(p.cgroup),
-				note: storage ? `session ${basename(storage)}` : url,
-			});
-			continue;
-		}
 		const port = Number(flag(p.argv, "--remote-debugging-port"));
 		if (!port) continue;
 		// Chromium moves its main process into a scope; the unit shows on its children.
@@ -114,9 +94,7 @@ export function rowsFromProcs(procs: Proc[]): Omit<BrowserRow, "tabs">[] {
 		});
 	}
 	for (const [port, row] of chromium) row.unit = units.get(port) ?? null;
-	const order = (r: Omit<BrowserRow, "tabs">) =>
-		(r.engine === "chromium" ? 0 : 1e6) + (r.port ?? 99_999);
-	return [...chromium.values(), ...others].sort((a, b) => order(a) - order(b));
+	return [...chromium.values()].sort((a, b) => (a.port ?? 0) - (b.port ?? 0));
 }
 
 async function pageTabs(port: number | null): Promise<BrowserRow["tabs"]> {
@@ -138,7 +116,7 @@ export async function scanBrowsers(): Promise<BrowserRow[]> {
 
 // ── render ──────────────────────────────────────────────────────────
 
-const ENGINE_COLOR = { chromium: "blue", obscura: "magenta" } as const;
+const ENGINE_COLOR = { chromium: "blue" } as const;
 
 function cells(r: BrowserRow): { port: string; what: string; tabs: string } {
 	const what = [r.unit, r.kind, r.note].filter(Boolean).join(" · ");
@@ -171,11 +149,9 @@ function frame(rows: BrowserRow[], cursor: number, status: string): string[] {
 	const width = (process.stderr.columns || 100) - 3;
 	const lines = plainLines(rows, false, false);
 	const out: string[] = [];
-	for (const engine of ["chromium", "obscura"] as const) {
-		const idx = rows.flatMap((r, i) => (r.engine === engine ? [i] : []));
-		if (!idx.length) continue;
-		out.push(paint(`${engine === "chromium" ? "Chromium" : "obscura"} (${idx.length})`, ["bold", ENGINE_COLOR[engine]], on));
-		for (const i of idx) {
+	if (rows.length) {
+		out.push(paint(`Chromium (${rows.length})`, ["bold", "blue"], on));
+		for (let i = 0; i < rows.length; i++) {
 			const text = clip(lines[i], width);
 			out.push(i === cursor ? `${paint(">", ["bold"], on)} ${paint(text, ["bold"], on)}` : `  ${text}`);
 		}
@@ -305,7 +281,7 @@ export async function main(argv: string[]): Promise<void> {
 		return;
 	}
 	if (!rows.length) {
-		console.log("no browsers (obscura or Chromium)");
+		console.log("no browsers");
 		return;
 	}
 	if (argv.includes("--plain") || !interactive()) {

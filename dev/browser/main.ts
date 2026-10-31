@@ -8,7 +8,7 @@ import { main as showMain } from "./show.ts";
 import { main as openExtensionMain } from "./open-extension.ts";
 import { main as listMain } from "./list.ts";
 import { main as loginMain } from "./login.ts";
-import { fetchMain, OBSCURA_PORT_BASE, serveMain } from "./fetch.ts";
+import { fetchMain } from "./fetch.ts";
 import {
 	listSessions,
 	removeSession,
@@ -21,11 +21,10 @@ import { applyPortTheme } from "./port-identity.ts";
 import { browserReachable, resolvePortState } from "./browser-state.ts";
 import { listTabs } from "./cdp.ts";
 
-const HELP = `browser — obscura reads pages; Chromium shows them and lets a human sign in
+const HELP = `browser — Chromium reads pages, shows them, and lets a human sign in
 
-Read · obscura --stealth, headless, no paint
-  fetch <url>             text, markdown, html, links, or one --eval value
-  serve                   obscura CDP server for Playwright (ports ${OBSCURA_PORT_BASE}+)
+Read · headless Chromium
+  fetch <url>             text, markdown, html, links, assets, original, or one --eval value
 
 Sign in · a human, on Chromium
   login <url>             wait for sign-in, save the session for fetch --session
@@ -34,7 +33,7 @@ Sign in · a human, on Chromium
 Chromium · render, measure, capture, extensions
   open                    launch or attach (9222 = global profile)
   close                   stop it (9222 saves its session first; ends recording)
-  list                    every obscura and Chromium browser; pick and close
+  list                    every Chromium browser; pick and close
   tabs                    page tabs of one port
   status                  reachability and locks of known ports
   show                    restore a minimized window (and drop its keep-minimized guard)
@@ -45,7 +44,7 @@ More
   clicks, typing, snapshots: the bun-webview skill`;
 
 const SUB_HELP: Record<string, string> = {
-	list: `browser list — every obscura and Chromium browser on this machine
+	list: `browser list — every Chromium browser on this machine
 
 Usage
   browser list            pick a row; x closes it (TTY)
@@ -60,8 +59,8 @@ Keys
   q esc     quit
 
 Notes
-  Engine column: chromium or obscura. Service-owned rows (9201) stop their
-  systemd unit. Without a TTY it prints the plain list.`,
+  Service-owned rows (9201) stop their systemd unit. Without a TTY it prints
+  the plain list.`,
 	tabs: `browser tabs — page tabs of one Chromium
 
 Usage
@@ -204,7 +203,7 @@ async function cmdCdp(argv: string[]): Promise<void> {
 	}
 }
 
-const SESSION_HELP = `browser session — saved cookie sessions (obscura --storage-dir format)
+const SESSION_HELP = `browser session — saved cookie sessions (cookies.json for fetch --session and open --session)
 
 Usage
   browser session list                                 name, cookie and site counts
@@ -267,9 +266,6 @@ async function main() {
 	switch (cmd) {
 		case "fetch":
 			await fetchMain(rest);
-			break;
-		case "serve":
-			await serveMain(rest);
 			break;
 		case "login":
 			await loginMain(rest);

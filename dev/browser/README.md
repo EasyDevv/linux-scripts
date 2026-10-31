@@ -1,21 +1,19 @@
 # browser
 
-obscura(읽기·추출)와 Chromium(렌더·측정·캡처·확장·사람 확인·로그인)을 묶은 CLI. `browser --help` → `browser <command> --help` 순으로 내려간다.
+Chromium으로 페이지를 읽고, 렌더·측정·캡처하고, 사람이 로그인하게 하는 CLI. `browser --help` → `browser <command> --help` 순으로 내려간다.
 
-## 엔진 선택
+## 무엇을 쓰나
 
-| 작업 | 엔진 | 명령 |
-| --- | --- | --- |
-| 페이지 텍스트/마크다운/링크, JS 값 하나 | obscura `--stealth` | `browser fetch <url>` |
-| Playwright/Puppeteer가 붙을 CDP | obscura | `browser serve` (9300+) |
-| 로그인 | Chromium(사람) | `browser login <url>` |
-| 스크린샷, 레이아웃 측정, 클릭, 확장 | Chromium | `browser open` + bun-webview |
-
-obscura에는 레이아웃·페인트 엔진이 없다: 스크린샷, `getBoundingClientRect`, 클릭 좌표는 Chromium으로.
+| 작업 | 명령 |
+| --- | --- |
+| 페이지 텍스트/마크다운/링크, JS 값 하나 | `browser fetch <url>` (headless Chromium) |
+| Playwright/Puppeteer가 붙을 CDP | `browser open --headless --port N` |
+| 로그인 | `browser login <url>` |
+| 스크린샷, 레이아웃 측정, 클릭, 확장 | `browser open` + bun-webview |
 
 ## 세션과 프로필
 
-- 세션: `~/.local/share/browser/sessions/<name>/cookies.json` (dir 0700, file 0600). obscura `--storage-dir` 형식 그대로다.
+- 세션: `~/.local/share/browser/sessions/<name>/cookies.json` (dir 0700, file 0600). `fetch --session`과 `open --session`이 이 파일을 쓴다.
 - 전역 프로필: `~/.cache/browser/profiles/<port>` (9222, chrome.service의 9201). 지워도 되는 캐시다.
   - `open`: 프로필 폴더가 새로 생길 때만 같은 이름의 세션 쿠키를 넣는다. `profiles.json`의 unpacked 확장을 항상 `--load-extension`으로 붙인다.
   - `close`, `login`: 쿠키를 세션으로 내보낸다.
@@ -47,7 +45,7 @@ browser close --port 9223                          # 임시 프로필까지 삭�
 ```bash
 browser open [--port 9222] [--url <url>] [--normal|--minimize] [--headless] [--clean] [--session <name>] [--load-extension <dir>] [--android] [--record [N]]
 browser close [--port N]
-browser list            # obscura와 Chromium 전부. TTY면 j/k 이동, x 닫기(확인 기본 No), enter 탭 출력
+browser list            # Chromium 전부. TTY면 j/k 이동, x 닫기(확인 기본 No), enter 탭 출력
 browser status | tabs --port N | minimize --port N
 browser cdp --port N <Method> [params-json]
 browser open-extension "<name>" --port 39225 --page popup.html
