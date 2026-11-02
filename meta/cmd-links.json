@@ -261,21 +261,43 @@
     },
     {
       "name": "netbird-setup",
-      "mode": "symlink",
+      "mode": "wrapper",
       "category": "dev",
-      "target": "dev/netbird/netbird-setup.py",
+      "target": "dev/netbird/netbird-setup.sh",
       "ownedPaths": [
-        "dev/netbird/netbird-setup.py",
-        "dev/netbird/host-reconcile.py",
-        "dev/netbird/tests/test_netbird_setup.py",
-        "dev/netbird/tests/test_netbird_host_reconcile.py",
-        "dev/netbird/windows/install-netbird.ps1",
-        "dev/netbird/windows/install-netbird.cmd",
-        "dev/netbird/README.md",
         "dev/netbird/.env.netbird.example",
-        "dev/netbird/.env.netbird.setup-keys.example"
+        "dev/netbird/.env.netbird.setup-keys.example",
+        "dev/netbird/README.md",
+        "dev/netbird/go/README.md",
+        "dev/netbird/go/go.mod",
+        "dev/netbird/go/go.sum",
+        "dev/netbird/go/internal/app/api.go",
+        "dev/netbird/go/internal/app/app_test.go",
+        "dev/netbird/go/internal/app/args.go",
+        "dev/netbird/go/internal/app/commands.go",
+        "dev/netbird/go/internal/app/config.go",
+        "dev/netbird/go/internal/app/env.go",
+        "dev/netbird/go/internal/app/keys.go",
+        "dev/netbird/go/internal/app/paths.go",
+        "dev/netbird/go/internal/app/roster.go",
+        "dev/netbird/go/internal/app/run.go",
+        "dev/netbird/go/internal/app/usb.go",
+        "dev/netbird/go/internal/app/util.go",
+        "dev/netbird/go/internal/ui/picker.go",
+        "dev/netbird/go/internal/ui/secret.go",
+        "dev/netbird/go/internal/ui/ui_test.go",
+        "dev/netbird/go/main.go",
+        "dev/netbird/go/parity/run.sh",
+        "dev/netbird/host-reconcile.py",
+        "dev/netbird/netbird-setup.py",
+        "dev/netbird/netbird-setup.sh",
+        "dev/netbird/tests/test_netbird_host_reconcile.py",
+        "dev/netbird/tests/test_netbird_setup.py",
+        "dev/netbird/windows/install-netbird.cmd",
+        "dev/netbird/windows/install-netbird.ps1"
       ],
-      "description": "NetBird one-off setup 키를 발급하고 Windows 설치 스크립트를 USB에 담는다."
+      "description": "NetBird one-off setup 키를 발급하고 Windows 설치 스크립트를 USB에 담는다.",
+      "reason": "Builds and runs the Go module under dev/netbird/go/ (Python original kept for parity until retired)."
     },
     {
       "name": "init-vps",
@@ -428,21 +450,31 @@
     },
     {
       "name": "set-rules",
-      "mode": "symlink",
+      "mode": "wrapper",
       "category": "meta",
-      "target": "meta/set-rules.py",
-      "description": "프로젝트에 적용할 GitHub rule 링크 구성을 선택적으로 동기화한다."
-    },
-    {
-      "name": "swap-opencode",
-      "mode": "symlink",
-      "category": "meta",
-      "target": "meta/swap-opencode.py",
+      "target": "meta/set-rules.sh",
+      "description": "프로젝트에 적용할 GitHub rule 링크 구성을 선택적으로 동기화한다.",
       "ownedPaths": [
-        "meta/swap-opencode.py",
-        "meta/swap-opencode.presets.jsonc"
+        "meta/set-rules.py",
+        "meta/set-rules.sh",
+        "meta/set-rules/README.md",
+        "meta/set-rules/go.mod",
+        "meta/set-rules/go.sum",
+        "meta/set-rules/internal/app/apply.go",
+        "meta/set-rules/internal/app/items.go",
+        "meta/set-rules/internal/app/logic_test.go",
+        "meta/set-rules/internal/app/picker.go",
+        "meta/set-rules/internal/app/render.go",
+        "meta/set-rules/internal/app/render_test.go",
+        "meta/set-rules/internal/app/run.go",
+        "meta/set-rules/internal/app/state.go",
+        "meta/set-rules/internal/app/tty.go",
+        "meta/set-rules/internal/ui/picker.go",
+        "meta/set-rules/internal/ui/picker_test.go",
+        "meta/set-rules/main.go",
+        "meta/set-rules/parity/run.sh"
       ],
-      "description": "opencode 모델 티어를 JSONC 프리셋으로 전환한다."
+      "reason": "Builds and runs the Go module under meta/set-rules/ (Python original kept for parity until retired)."
     },
     {
       "name": "server",
@@ -515,27 +547,6 @@
       "category": "media",
       "target": "media/video-move.sh",
       "description": "조건에 맞는 큰 비디오 파일을 다운로드 폴더에서 최근 폴더로 이동한다."
-    },
-    {
-      "name": "wxt-run-targets",
-      "mode": "symlink",
-      "category": "wxt",
-      "target": "wxt/run-wxt-targets.mjs",
-      "description": "여러 WXT 타깃 작업을 순차 실행하며 환경 파일을 맞춘다."
-    },
-    {
-      "name": "wxt-submit",
-      "mode": "symlink",
-      "category": "wxt",
-      "target": "wxt/wxt-submit.mjs",
-      "description": "브라우저 확장 zip을 Chrome, Firefox, Edge 스토어에 제출한다."
-    },
-    {
-      "name": "wxt-zip-version",
-      "mode": "symlink",
-      "category": "wxt",
-      "target": "wxt/zip-version.mjs",
-      "description": "버전을 갱신하고 확장 배포용 zip 산출물을 준비한다."
     },
     {
       "name": "zju",

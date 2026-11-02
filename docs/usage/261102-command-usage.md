@@ -76,6 +76,6 @@
 
 1. **ship**: 완료(2026-11-02). `git/ship/`. 원본은 커밋 `66e3183`의 `git/ship-ts/` 이후 삭제. 동등성 21개 케이스 일치.
 2. **browser**: 피커(`ui.ts`, `list.ts`)만 옮기는 경우에 한해 조건부. 호출의 99%가 에이전트의 비대화형 경로이고, CDP websocket이 stdlib-only 규칙에 걸립니다.
-3. **swap-opencode, set-rules**: Python termios로 직접 만든 키 리더 → `tea.Model` 교체 효과가 가장 큽니다. 최근 사용이 적습니다.
-4. **netbird-setup, db-sync, wxt-zip-version**: 화면은 있으나 호출이 드뭅니다.
+3. **set-rules, netbird-setup**: 완료(2026-11-02). [plan](../plan/261102-go-port-pickers.md)
+4. **제거**: swap-opencode(소스 삭제), wxt-* manifest 항목 3개(링크가 깨져 있었음). **제외**: db-sync(Rust 유지), browser.
 5. **유지**: executor, dlint, phone, decision, provider-usage, port, server(비대화형이거나 이미 네이티브), zju·init-vps·atree(확인 프롬프트만).
