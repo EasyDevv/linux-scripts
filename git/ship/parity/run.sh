@@ -19,11 +19,11 @@ set -uo pipefail
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 module_dir=$(dirname "$script_dir")           # .../git/ship
 scripts_root=$(cd "$module_dir/../.." && pwd) # .../.local/share/scripts
-original="$scripts_root/git/ship-ts/ship.ts"
+original_rev=66e3183 # last commit with the TS original (git/ship-ts/)
 
 # Bun disables/colors its own output when it sniffs an agent environment;
 # drop the markers so both implementations see the same plain env.
-unset AI_AGENT PI_CODING_AGENT 2>/dev/null || true
+unset AI_AGENT PI_CODING_AGENT CLAUDECODE CLAUDE_CODE_ENTRYPOINT 2>/dev/null || true
 
 for tool in git bun; do
   command -v "$tool" >/dev/null 2>&1 || { echo "parity: $tool is required" >&2; exit 2; }
@@ -31,7 +31,11 @@ done
 
 work=$(mktemp -d "${TMPDIR:-/tmp}/ship-parity.XXXXXX") || exit 2
 trap 'rm -rf "$work"' EXIT
-mkdir -p "$work/home" "$work/logs" "$work/fakebin"
+mkdir -p "$work/home" "$work/logs" "$work/fakebin" "$work/orig"
+for f in ship.ts picker.ts; do
+  git -C "$scripts_root" show "$original_rev:git/ship-ts/$f" > "$work/orig/$f" || { echo "parity: cannot restore $f from $original_rev" >&2; exit 2; }
+done
+original="$work/orig/ship.ts"
 
 go build -C "$module_dir" -o "$work/ship" . || { echo "parity: go build failed" >&2; exit 2; }
 

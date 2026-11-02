@@ -1,8 +1,9 @@
 # ship (Go · Bubble Tea v2)
 
 `ship` stages everything, commits with a message, and pushes in one step; `ship repo` connects
-or creates a GitHub repository first. This is the Go port of `../ship.ts` (327 lines) and
-`../picker.ts`; the TypeScript original stays in place as the reference.
+or creates a GitHub repository first. This is the Go port of `git/ship.ts` (327 lines) and
+`git/picker.ts`. The TypeScript original was retired after parity; its last snapshot is
+`git/ship-ts/` in commit `66e3183` (`git show 66e3183:git/ship-ts/ship.ts`).
 
 ## Usage
 
@@ -59,7 +60,7 @@ git/ship/parity/run.sh        # original vs port, case by case
 - `internal/app/color_test.go` — the color switch (`NO_COLOR` empty vs set, `TERM=dumb`, one stream piped).
 - `internal/ui/picker_test.go` — ports `picker.test.ts`: key meanings, move clamps, abort, frame text, Hangul cell width.
 
-`parity/run.sh` runs `bun git/ship-ts/ship.ts` and the Go binary on identical fresh fixtures (temp `HOME`,
+`parity/run.sh` restores the original from commit `66e3183` into a temp dir, runs it with `bun`, and the Go binary on identical fresh fixtures (temp `HOME`,
 temp `GIT_CONFIG_GLOBAL`, fixed commit dates, local bare remotes, a fake `gh` first on `PATH`,
 `https://github.com/` rewritten to the local bare repos so nothing reaches the network) and diffs
 stdout, stderr, exit code, and post-state (HEAD subject, status, remotes, `gh` argv, bare refs).

@@ -74,7 +74,7 @@
 
 기준(`port-script-to-go`): 화면이나 게이트가 있어야 옮기고, 그중 호출 빈도가 높은 순서입니다.
 
-1. **ship**: 완료(2026-11-02). `git/ship/`, 원본은 `git/ship-ts/`에 동결. 동등성 21개 케이스 일치.
+1. **ship**: 완료(2026-11-02). `git/ship/`. 원본은 커밋 `66e3183`의 `git/ship-ts/` 이후 삭제. 동등성 21개 케이스 일치.
 2. **browser**: 피커(`ui.ts`, `list.ts`)만 옮기는 경우에 한해 조건부. 호출의 99%가 에이전트의 비대화형 경로이고, CDP websocket이 stdlib-only 규칙에 걸립니다.
 3. **swap-opencode, set-rules**: Python termios로 직접 만든 키 리더 → `tea.Model` 교체 효과가 가장 큽니다. 최근 사용이 적습니다.
 4. **netbird-setup, db-sync, wxt-zip-version**: 화면은 있으나 호출이 드뭅니다.
