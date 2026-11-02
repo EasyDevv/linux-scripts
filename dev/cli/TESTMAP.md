@@ -2,6 +2,8 @@
 
 Rust 파일::테스트명 | Go 테스트명 | 상태
 
+> Rust 원본은 커밋 `b37365d` 의 `dev/cli-rust/` 에 있다(`git show b37365d:dev/cli-rust/src/<파일>`).
+
 select.rs::splits_combined_reads_before_classifying | TestSplitsCombinedReadsBeforeClassifying, TestLineFeedAcceptsLikeRustNewline | 포팅 (키 분류). split_read 바이트 분할은 Bubble Tea가 소유하므로 생략
 select.rs::leaves_incomplete_escape_for_the_next_read | TestLeavesIncompleteEscapeForTheNextRead | 포팅 (빈 키는 상태 불변). 불완전 이스케이프 버퍼는 Bubble Tea가 유지하므로 파서 자체는 생략
 select.rs::maps_cancel_and_vim_keys | TestMapsCancelAndVimKeys | 포팅

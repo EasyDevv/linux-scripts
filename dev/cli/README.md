@@ -23,3 +23,5 @@ proto 위에 얹는 CLI 도구 설치·점검 관리자(Go · Bubble Tea). 목�
 구현: Go 1.26+ · Bubble Tea v2(`internal/ui` picker) · 표준 라이브러리. 래퍼 `../cli.sh`가 `go build -C dev/cli -o bin/cli .` 후 `CLI_ROOT`를 정하고 실행한다. 빌드 산출물 `bin/`은 git에서 제외된다.
 
 테스트: `cd dev/cli && go vet ./... && go test ./...`. Rust 원본 테스트와의 대응은 `TESTMAP.md`, 이전 계획은 `~/chat/docs/plan/261102-terminal-go-bubbletea.md`.
+
+소스 주석의 `cli-rust/src/*.rs` 는 포팅 원본이다. 삭제됐고 git 커밋 `b37365d`(`git show b37365d:dev/cli-rust/src/<파일>`)에 남아 있다. 단 `Cargo.lock` 은 `*.lock` 무시 규칙으로 커밋되지 않았다.
