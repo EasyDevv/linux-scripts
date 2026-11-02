@@ -1,0 +1,187 @@
+{
+  "pages": [
+    {
+      "id": "home",
+      "url": "https://publish.buffer.com/home"
+    },
+    {
+      "id": "create",
+      "url": "https://publish.buffer.com/create/ideas?view=board"
+    },
+    {
+      "id": "schedule",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/schedule"
+    },
+    {
+      "id": "insights",
+      "url": "https://publish.buffer.com/insights/6ae5eb212f1f5ed648313b53"
+    },
+    {
+      "id": "settings",
+      "url": "https://publish.buffer.com/settings/channels"
+    },
+    {
+      "id": "calendar",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week"
+    },
+    {
+      "id": "composer",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week"
+    },
+    {
+      "id": "composer-schedule",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week"
+    },
+    {
+      "id": "calendar-slots",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week"
+    },
+    {
+      "id": "composer-slot",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week"
+    },
+    {
+      "id": "calendar-month",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/month"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844,
+      "mobile": true
+    }
+  ],
+  "files": [
+    {
+      "page": "home",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/home",
+      "file": "desktop/home.png"
+    },
+    {
+      "page": "create",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/create/ideas?view=board",
+      "file": "desktop/create.png"
+    },
+    {
+      "page": "schedule",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/schedule",
+      "file": "desktop/schedule.png"
+    },
+    {
+      "page": "insights",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/insights/6ae5eb212f1f5ed648313b53",
+      "file": "desktop/insights.png"
+    },
+    {
+      "page": "settings",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/settings/channels",
+      "file": "desktop/settings.png"
+    },
+    {
+      "page": "home",
+      "viewport": "mobile",
+      "url": "https://publish.buffer.com/home",
+      "file": "mobile/home.png"
+    },
+    {
+      "page": "calendar",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "desktop/calendar.png"
+    },
+    {
+      "page": "composer",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "desktop/composer.png"
+    },
+    {
+      "page": "composer-schedule",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "desktop/composer-schedule.png"
+    },
+    {
+      "page": "calendar-slots",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "desktop/calendar-slots.png"
+    },
+    {
+      "page": "composer-slot",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "desktop/composer-slot.png"
+    },
+    {
+      "page": "calendar-month",
+      "viewport": "desktop",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/month",
+      "file": "desktop/calendar-month.png"
+    }
+  ],
+  "snapshots": [
+    {
+      "page": "create",
+      "url": "https://publish.buffer.com/create/ideas?view=board",
+      "file": "pages/create.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "schedule",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/schedule",
+      "file": "pages/schedule.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "insights",
+      "url": "https://publish.buffer.com/insights/6ae5eb212f1f5ed648313b53",
+      "file": "pages/insights.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "settings",
+      "url": "https://publish.buffer.com/settings/channels",
+      "file": "pages/settings.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "home",
+      "url": "https://publish.buffer.com/home",
+      "file": "pages/home.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "calendar",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "pages/calendar.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "composer",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "pages/composer.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "composer-schedule",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/calendar/week",
+      "file": "pages/composer-schedule.mhtml",
+      "format": "mhtml"
+    }
+  ],
+  "capturedAt": "2026-10-31T15:10:19.230Z"
+}

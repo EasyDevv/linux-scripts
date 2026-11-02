@@ -1,0 +1,133 @@
+{
+  "pages": [
+    {
+      "id": "home",
+      "url": "https://www.creem.io/dashboard/home"
+    },
+    {
+      "id": "products",
+      "url": "https://www.creem.io/dashboard/products"
+    },
+    {
+      "id": "payments",
+      "url": "https://www.creem.io/dashboard/payments"
+    },
+    {
+      "id": "customers",
+      "url": "https://www.creem.io/dashboard/customers"
+    },
+    {
+      "id": "settings",
+      "url": "https://www.creem.io/dashboard/settings"
+    }
+  ],
+  "viewports": [
+    {
+      "id": "desktop",
+      "width": 1440,
+      "height": 900,
+      "mobile": false
+    },
+    {
+      "id": "mobile",
+      "width": 390,
+      "height": 844,
+      "mobile": true
+    }
+  ],
+  "files": [
+    {
+      "page": "home",
+      "viewport": "desktop",
+      "url": "https://www.creem.io/dashboard/home",
+      "file": "desktop/home.png"
+    },
+    {
+      "page": "products",
+      "viewport": "desktop",
+      "url": "https://www.creem.io/dashboard/products",
+      "file": "desktop/products.png"
+    },
+    {
+      "page": "payments",
+      "viewport": "desktop",
+      "url": "https://www.creem.io/dashboard/payments",
+      "file": "desktop/payments.png"
+    },
+    {
+      "page": "customers",
+      "viewport": "desktop",
+      "url": "https://www.creem.io/dashboard/customers",
+      "file": "desktop/customers.png"
+    },
+    {
+      "page": "settings",
+      "viewport": "desktop",
+      "url": "https://www.creem.io/dashboard/settings",
+      "file": "desktop/settings.png"
+    },
+    {
+      "page": "home",
+      "viewport": "mobile",
+      "url": "https://www.creem.io/dashboard/home",
+      "file": "mobile/home.png"
+    },
+    {
+      "page": "products",
+      "viewport": "mobile",
+      "url": "https://www.creem.io/dashboard/products",
+      "file": "mobile/products.png"
+    },
+    {
+      "page": "payments",
+      "viewport": "mobile",
+      "url": "https://www.creem.io/dashboard/payments",
+      "file": "mobile/payments.png"
+    },
+    {
+      "page": "customers",
+      "viewport": "mobile",
+      "url": "https://www.creem.io/dashboard/customers",
+      "file": "mobile/customers.png"
+    },
+    {
+      "page": "settings",
+      "viewport": "mobile",
+      "url": "https://www.creem.io/dashboard/settings",
+      "file": "mobile/settings.png"
+    }
+  ],
+  "snapshots": [
+    {
+      "page": "products",
+      "url": "https://www.creem.io/dashboard/products",
+      "file": "pages/products.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "payments",
+      "url": "https://www.creem.io/dashboard/payments",
+      "file": "pages/payments.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "customers",
+      "url": "https://www.creem.io/dashboard/customers",
+      "file": "pages/customers.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "settings",
+      "url": "https://www.creem.io/dashboard/settings",
+      "file": "pages/settings.mhtml",
+      "format": "mhtml"
+    },
+    {
+      "page": "home",
+      "url": "https://www.creem.io/dashboard/home",
+      "file": "pages/home.mhtml",
+      "format": "mhtml"
+    }
+  ],
+  "capturedAt": "2026-11-01T11:16:16.041Z"
+}

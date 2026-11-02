@@ -1,0 +1,130 @@
+{
+  "slug": "buffer",
+  "measuredAt": "2026-10-23",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "scheme": "dark"
+  },
+  "live": "https://publish.buffer.com/",
+  "pages": [
+    {
+      "id": "home",
+      "url": "https://publish.buffer.com/home",
+      "family": "product",
+      "taught": ["shell", "sidebarNavItem", "primaryCta", "pageTitle", "card", "emptyState"]
+    },
+    {
+      "id": "create",
+      "url": "https://publish.buffer.com/create/ideas?view=board",
+      "family": "product",
+      "taught": ["boardCard", "pillTab"]
+    },
+    {
+      "id": "schedule",
+      "url": "https://publish.buffer.com/channels/6ae5eb212f1f5ed648313b53/schedule",
+      "family": "product",
+      "taught": ["listRow", "pillTab"]
+    },
+    {
+      "id": "insights",
+      "url": "https://publish.buffer.com/insights/6ae5eb212f1f5ed648313b53",
+      "family": "product",
+      "taught": ["shell"]
+    },
+    {
+      "id": "settings",
+      "url": "https://publish.buffer.com/settings/channels",
+      "family": "settings",
+      "taught": ["settingsNav", "settingsTitle", "formWell", "primaryCompact"]
+    }
+  ],
+  "roles": {
+    "shell": {
+      "canvas": "--background",
+      "sidebar": "--sidebar",
+      "sidebarWidth": "--sidebar-width",
+      "mainFill": "--background",
+      "mainInset": "--panel-inset",
+      "mainRadius": "--radius",
+      "mainBorder": "--border",
+      "hairline": "--hairline-width",
+      "note": "main panel fill matches canvas; the hairline and 8px inset separate them. Inner cards use --card."
+    },
+    "sidebarNavItem": {
+      "height": "--control-height-nav",
+      "radius": "--radius-sm",
+      "font": "--text-nav",
+      "idle": "--foreground",
+      "active": "--sidebar-accent-foreground",
+      "activeBg": "--sidebar-accent",
+      "measured": "Home aria-current=page, 32px, 8px radius, 14px"
+    },
+    "primaryCta": {
+      "fill": "--primary",
+      "ink": "--primary-foreground",
+      "radius": "--radius-pill",
+      "height": "--control-height-lg",
+      "font": "--text-nav",
+      "measured": "New button 40px tall, pill, 14px/500"
+    },
+    "primaryCompact": {
+      "fill": "--primary",
+      "ink": "--primary-foreground",
+      "radius": "--radius-sm",
+      "height": "--control-height",
+      "where": "settings Connect Channel, 32px, 8px radius"
+    },
+    "pageTitle": {
+      "font": "--text-title",
+      "leading": "--text-title-leading",
+      "weight": 400,
+      "color": "--foreground",
+      "family": "--font-heading",
+      "where": "home h1 Good Evening and settings h1 Channels, x past sidebar"
+    },
+    "card": {
+      "fill": "--card",
+      "border": "--border",
+      "radius": "--radius",
+      "hairline": "--hairline-width",
+      "where": "home empty states and score tiles; dark raised surface, light muted surface"
+    },
+    "settingsNav": {
+      "height": "--control-height-nav",
+      "radius": "--radius-sm",
+      "activeBg": "--sidebar-accent",
+      "active": "--sidebar-accent-foreground",
+      "weight": 500,
+      "where": "settings Channels row"
+    },
+    "settingsTitle": {
+      "font": "--text-title",
+      "color": "--foreground",
+      "column": "--content-column",
+      "where": "Channels h1 at x=536 inside a 600px column"
+    },
+    "formWell": {
+      "fill": "--card",
+      "border": "--border",
+      "radius": "--radius",
+      "where": "plan notice and channel row. No text input was on the captured pages."
+    },
+    "listRow": {
+      "fill": "--secondary",
+      "radius": "--radius",
+      "where": "schedule queue slots"
+    },
+    "boardCard": {
+      "fill": "--card",
+      "radius": "--radius-board",
+      "where": "create ideas cards, 6px radius"
+    },
+    "pillTab": {
+      "radius": "--radius-sm",
+      "active": "--foreground",
+      "idle": "--muted-foreground",
+      "where": "create Ideas/Templates and schedule Queue/List"
+    }
+  }
+}

@@ -48,5 +48,15 @@
 		"slug": "tradingview",
 		"label": "TradingView",
 		"scheme": "dark"
+	},
+	{
+		"slug": "buffer",
+		"label": "Buffer",
+		"scheme": "dark"
+	},
+	{
+		"slug": "creem",
+		"label": "Creem",
+		"scheme": "dark"
 	}
 ]

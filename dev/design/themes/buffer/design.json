@@ -1,0 +1,144 @@
+{
+  "slug": "buffer",
+  "measuredAt": "2026-10-23",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "scheme": "dark"
+  },
+  "thesis": "Near-black canvas, a floating main panel with an 8px inset and a 12px radius hairline, green pill primary. layout.css owns values.",
+  "applyOnto": "existing draft skeleton",
+  "doNotCopy": [
+    "wordmark",
+    "channel avatars",
+    "blog photography",
+    "promo card illustration",
+    "page IA"
+  ],
+  "families": [
+    "product",
+    "settings"
+  ],
+  "color": {
+    "darkMode": {
+      "status": "measured",
+      "policy": "publish.buffer.com ships :root and :root.dark. The logged-in session is html.dark. Light was read by removing that class on the dedicated tab. No visible appearance toggle on the captured nav.",
+      "source": "Computed CSS variables and painted controls on the dedicated home and settings tabs, 1440x900."
+    }
+  },
+  "shell": {
+    "model": "canvas-plus-floating-main",
+    "canvas": "--background",
+    "sidebar": {
+      "fill": "--sidebar",
+      "width": "--sidebar-width",
+      "onCanvas": true,
+      "borderAgainstCanvas": false,
+      "radius": false,
+      "collapsible": "offcanvas",
+      "collapse": {
+        "mode": "slide-start",
+        "duration": "--sidebar-collapse-duration",
+        "ease": "--sidebar-collapse-ease"
+      },
+      "gutterToMain": "--panel-inset",
+      "variant": "sidebar",
+      "nav": {
+        "height": "--control-height-nav",
+        "radius": "--radius-sm",
+        "font": "--text-nav",
+        "idle": "--foreground",
+        "active": "--foreground",
+        "activeBg": "--sidebar-accent",
+        "iconColor": "--muted-foreground"
+      }
+    },
+    "main": {
+      "fill": "--background",
+      "origin": ["--sidebar-width"],
+      "inset": "--panel-inset",
+      "radius": "--radius",
+      "border": "--border",
+      "hairline": "--hairline-width",
+      "clipToRadius": true
+    },
+    "footer": {
+      "fill": "--sidebar",
+      "insideMain": false,
+      "font": "--text-nav",
+      "color": "--muted-foreground"
+    }
+  },
+  "type": {
+    "font": "--font-sans",
+    "heading": "--font-heading",
+    "roles": [
+      {
+        "id": "pageTitle",
+        "font": "--text-title",
+        "weight": 400,
+        "color": "--foreground",
+        "where": "home greeting and settings page title, Stolzl 20/25"
+      },
+      {
+        "id": "navItem",
+        "font": "--text-nav",
+        "weight": 400,
+        "color": "--foreground",
+        "where": "product sidebar links"
+      },
+      {
+        "id": "sectionLabel",
+        "font": "--text-section",
+        "weight": 550,
+        "color": "--foreground",
+        "where": "settings rail heading and settings section title"
+      },
+      {
+        "id": "mutedMeta",
+        "font": "--text-nav",
+        "color": "--muted-foreground",
+        "where": "settings group labels and channel meta"
+      }
+    ]
+  },
+  "controls": {
+    "primary": {
+      "fill": "--primary",
+      "ink": "--primary-foreground",
+      "radius": "--radius-pill",
+      "height": "--control-height-lg",
+      "where": "sidebar New"
+    },
+    "primaryCompact": {
+      "fill": "--primary",
+      "ink": "--primary-foreground",
+      "radius": "--radius-sm",
+      "height": "--control-height",
+      "where": "settings Connect Channel"
+    },
+    "navActive": {
+      "fill": "--sidebar-accent",
+      "ink": "--sidebar-accent-foreground",
+      "radius": "--radius-sm",
+      "height": "--control-height-nav"
+    }
+  },
+  "surfaces": {
+    "card": {
+      "fill": "--card",
+      "border": "--border",
+      "radius": "--radius",
+      "hairline": "--hairline-width"
+    },
+    "popover": {
+      "fill": "--popover",
+      "ink": "--popover-foreground",
+      "shadow": "--shadow-lg"
+    },
+    "settingsColumn": {
+      "width": "--content-column",
+      "padding": "--main-padding-x"
+    }
+  }
+}

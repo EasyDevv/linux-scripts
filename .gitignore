@@ -73,3 +73,6 @@ dev/design/.cache/
 *.exe
 *.msi
 .claude/
+
+# ─── Go ──────────────────────────────────────────────
+dev/cli/bin/

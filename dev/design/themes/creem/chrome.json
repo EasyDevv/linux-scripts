@@ -1,0 +1,185 @@
+{
+  "slug": "creem",
+  "measuredAt": "2026-11-01",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "scheme": "dark"
+  },
+  "live": "https://www.creem.io/dashboard/home",
+  "pages": [
+    {
+      "id": "home",
+      "url": "https://www.creem.io/dashboard/home",
+      "family": "product",
+      "taught": [
+        "shell",
+        "sidebarNavItem",
+        "pageTitle",
+        "subtitle",
+        "primarySm",
+        "quietMd",
+        "card",
+        "composerField",
+        "cardHead",
+        "statTile",
+        "tableHead",
+        "iconTile",
+        "emptyState",
+        "checklistCard",
+        "railGroupLabel",
+        "iconQuiet",
+        "quietSm"
+      ]
+    },
+    {
+      "id": "products",
+      "url": "https://www.creem.io/dashboard/products",
+      "family": "product",
+      "taught": [
+        "accentMd",
+        "pageTitle",
+        "underlineTabs",
+        "pageActions"
+      ]
+    },
+    {
+      "id": "payments",
+      "url": "https://www.creem.io/dashboard/payments",
+      "family": "product",
+      "taught": [
+        "shell"
+      ]
+    },
+    {
+      "id": "customers",
+      "url": "https://www.creem.io/dashboard/customers",
+      "family": "product",
+      "taught": [
+        "shell"
+      ]
+    },
+    {
+      "id": "settings",
+      "url": "https://www.creem.io/dashboard/settings",
+      "family": "settings",
+      "taught": [
+        "settingsTitle",
+        "field",
+        "dangerQuiet",
+        "accentCallout"
+      ]
+    }
+  ],
+  "families": {
+    "product": {
+      "canvas": "--background",
+      "rail": "--sidebar",
+      "pageTitle": "--text-page",
+      "titleWeight": "--font-weight-title",
+      "titleTracking": "--tracking-title"
+    },
+    "settings": {
+      "canvas": "--background",
+      "rail": "--sidebar",
+      "pageTitle": "--text-page",
+      "titleWeight": "--font-weight-strong",
+      "field": "--input",
+      "dangerInk": "--destructive-text"
+    }
+  },
+  "roles": {
+    "shell": {
+      "canvas": "--background",
+      "sidebar": "--sidebar",
+      "sidebarWidth": "--sidebar-width",
+      "inset": "--panel-inset",
+      "sidebarRadius": "--radius-xl",
+      "measured": "rail 256×876 at x12 y12 on 1440×900; radius 12px"
+    },
+    "sidebarNavItem": {
+      "height": "--control-height-nav",
+      "radius": "--radius-md",
+      "font": "--text-nav",
+      "activeBg": "--sidebar-accent",
+      "active": "--sidebar-accent-foreground",
+      "measured": "Home 230×32, pad 0 10px, gap 8px, 14/20/500"
+    },
+    "pageTitle": {
+      "font": "--text-page",
+      "color": "--foreground",
+      "weight": "--font-weight-title",
+      "tracking": "--tracking-title",
+      "measured": "home h1 20/28/600, letter-spacing -0.5px, x300"
+    },
+    "settingsTitle": {
+      "font": "--text-page",
+      "color": "--foreground",
+      "weight": "--font-weight-strong",
+      "measured": "settings h1 20px/700, tracking normal, x300"
+    },
+    "subtitle": {
+      "font": "--text-subtitle",
+      "color": "--muted-foreground",
+      "measured": "14/20/400, 50% white"
+    },
+    "primarySm": {
+      "fill": "--primary",
+      "ink": "--primary-foreground",
+      "edge": "--primary-edge",
+      "height": "--control-height-sm",
+      "radius": "--radius-lg",
+      "font": "--text-control-sm",
+      "measured": "Add details 92×28, pad 0 12px, 12/16/600, 2px edge"
+    },
+    "accentMd": {
+      "fill": "--accent",
+      "ink": "--accent-foreground",
+      "edge": "--accent-edge",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "font": "--text-control",
+      "measured": "New product 36px, 14/20/600, peach fill, 2px peach edge"
+    },
+    "quietMd": {
+      "fill": "--input",
+      "ink": "--foreground",
+      "border": "--border",
+      "shadow": "--shadow",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "measured": "View all 83×36, pad 8px 14px. Fill is --input, not --secondary."
+    },
+    "card": {
+      "fill": "--card",
+      "radius": "--radius-card",
+      "border": "--border",
+      "hairline": "--hairline-width",
+      "shadow": "--shadow",
+      "pad": "--card-spacing",
+      "measured": "home card radius 16px, header padding 20px, edge 2px of --border"
+    },
+    "field": {
+      "fill": "--input",
+      "border": "--border",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "measured": "settings input 36px, pad 8px 14px, 14px, radius 8px"
+    },
+    "composerField": {
+      "fill": "--input",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "ink": "--muted-foreground",
+      "measured": "Ask Creemie 36px, placeholder at 50% white"
+    },
+    "dangerQuiet": {
+      "fill": "--input",
+      "ink": "--destructive-text",
+      "border": "--border",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "measured": "Delete store 36px, 14/600, red-400 ink on charcoal-500 fill"
+    }
+  }
+}

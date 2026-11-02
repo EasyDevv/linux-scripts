@@ -1,0 +1,24 @@
+# creem
+
+- Copied structure from: `themes/linear` (not `_core` alone). Every color, radius, and shadow value was replaced with the Creem dashboard measurement.
+- Date: 2026-10-23
+- Canonical URL named by the user: https://www.creem.io/
+- `resolve-ref` of https://www.creem.io/ missed (`ref/creem.io` missing). Durable captures were written by `save-ref.ts` under the page hostname `creem.io` (www.creem.io normalizes there).
+- Live URL (product shell): https://www.creem.io/dashboard/home
+- Live URL (commerce list): https://www.creem.io/dashboard/products
+- Live URL (finance table): https://www.creem.io/dashboard/payments
+- Live URL (insights list): https://www.creem.io/dashboard/customers
+- Live URL (settings family): https://www.creem.io/dashboard/settings
+- Captures: `{designDir}/ref/creem.io/` — desktop `home`, `products`, `payments`, `customers`, `settings`; mobile `home`. PNGs + `pages/*.mhtml` + `index.json`.
+- Viewport for durable desktop captures: 1440×900, device scale 1, set inside `save-ref.ts`. User tab at read time was 1303×1082, dpr 1.25, `html` class `__variable_281b6d dark`. Measurement tab after a fresh emulation session was 1440×900 @ dpr 1. `collect-computed-styles.ts` attached later, so its viewport field is the window size (1303×1082, dpr 1.25); token colors do not depend on that width.
+- Scheme policy: the dashboard stylesheet ships both `.light, :root` and `.dark`. The logged-in dashboard was dark (`html.dark`). Dark values are the measured computed tokens. Light values are the app's own `.light, :root` rules, confirmed by removing `dark` and adding `light` on the measurement tab only (not the user's tab). `color-scheme` on `html` stayed `dark` during that class toggle because the token sheet does not set it; this theme sets `color-scheme` explicitly. Not a derived unofficial scheme.
+- Docs: https://docs.creem.io/getting-started/introduction (Mintlify) stores `isDarkMode` as system/light/dark. That FAQ page does not state a dashboard-only-dark policy. Docs colors were not copied.
+- Font: live computed family is `GeistSans, "GeistSans Fallback"` (next/font, variable 100–900, loaded). `gasoekOne` is declared for marketing display and was unloaded on the dashboard. Portable theme names `GeistSans`, `Geist`, then Inter Variable. `@fontsource-variable/geist` is not installed here; the Inter import is the substitution fallback, not the measured face. Serif was not used on the measured screens.
+- Shadows: painted controls use a 2px hard edge (`0 2px 0 0`) in the edge color, plus a 0.8px border. No blur elevation was measured. `--shadow*` points at `var(--border)` so the edge follows the scheme.
+- `--chart-5` is their `--chart-other` (no fifth chart stop in the sheet).
+- `--elevated-ring` and `--card-footer` keep the core formulas; a separate elevation ring and card footer fill were not painted on the captured screens.
+- Inner scroll: `window.scrollY` stayed 0 (`windowScrolled: false`). Home and settings PNGs can show a scrolled content pane. Geometry for the page title was taken from the DOM, including off-screen boxes.
+- Popover: `save-overlay.ts --click "Last 30 days"` returned `no overlay`. No popover PNG.
+- Re-measured 2026-11-01 from the signed-in tab on port 9222, in a separate read-only tab at 1440×900 and 390×844 (no clicks). Every color token above matched. The gaps were structural and are now in `design.json`: rail anatomy, card head band, stat tiles, table head, icon tile, empty state, checklist card, `quietSm`, `iconQuiet`, underline tabs. New tokens: `--text-card-title`, `--text-stat`. `--sidebar-width` moved from 16rem to 16.75rem because the rail box is 256px at x=12 and main starts at 268.
+- `ref/creem.io/desktop/home.png` was a scrolled capture and is replaced by a top-of-page one. Mobile captures now cover all five pages.
+- Hangul: the live dashboard has no Hangul face. `--font-sans` places Pretendard after Geist for Korean products. It is a substitution, not a measurement.

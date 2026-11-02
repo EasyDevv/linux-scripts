@@ -1,0 +1,300 @@
+{
+  "slug": "creem",
+  "measuredAt": "2026-11-01",
+  "copiedFrom": "linear",
+  "viewport": {
+    "width": 1440,
+    "height": 900,
+    "scheme": "dark"
+  },
+  "thesis": "Charcoal canvas, inset card rail, hard 2px edges. Violet is primary, peach is the accent CTA. layout.css owns values.",
+  "applyOnto": "shadcn theme slug",
+  "doNotCopy": [
+    "wordmark",
+    "store name",
+    "Product Hunt banner",
+    "page IA",
+    "help widget"
+  ],
+  "families": [
+    "product",
+    "settings"
+  ],
+  "color": {
+    "darkMode": "shipped",
+    "measuredScheme": "dark",
+    "lightSource": "dashboard .light,:root rules, confirmed by class toggle on the measurement tab",
+    "docsNote": "docs.creem.io offers system/light/dark; FAQ does not say the dashboard is single-scheme. Docs colors were not used."
+  },
+  "shell": {
+    "model": "inset-rail-on-canvas",
+    "canvas": "--background",
+    "sidebar": {
+      "fill": "--sidebar",
+      "width": "--sidebar-width",
+      "onCanvas": true,
+      "inset": "--panel-inset",
+      "radius": "--radius-xl",
+      "border": "--sidebar-border",
+      "hairline": "--hairline-width",
+      "shadow": "--shadow",
+      "collapsible": "offcanvas",
+      "collapse": {
+        "duration": "--sidebar-collapse-duration",
+        "ease": "--sidebar-collapse-ease"
+      },
+      "note": "Rail is hidden at 768 and present at 1024. Exact hide width was not bisected, so no hide-below token is set. Rail inner box is 256px at x=12. --sidebar-width 16.75rem is that box plus the left inset; the container has no right padding, so main starts at 268px.",
+      "nav": {
+        "height": "--control-height-nav",
+        "radius": "--radius-md",
+        "font": "--text-nav",
+        "idle": "--foreground",
+        "active": "--sidebar-accent-foreground",
+        "activeBg": "--sidebar-accent",
+        "hover": "--nav-hover",
+        "icon": "--muted-icon"
+      },
+      "brandRow": {
+        "height": "56px",
+        "border": "--sidebar-border",
+        "foldControl": "controls.iconQuiet inside the rail, not in main",
+        "where": "wordmark row on every page"
+      },
+      "groupLabel": {
+        "font": "--text-control-sm",
+        "weight": 600,
+        "tracking": "0.3px",
+        "transform": "uppercase for Latin only",
+        "colors": [
+          "--primary-text",
+          "--accent-text",
+          "--info-text",
+          "--success-text"
+        ],
+        "where": "COMMERCE violet, FINANCE peach, INSIGHTS blue, GROWTH green"
+      }
+    },
+    "main": {
+      "fill": "--background",
+      "origin": "--sidebar-width",
+      "inset": "--panel-inset",
+      "title": "--text-page",
+      "subtitle": "--text-subtitle",
+      "padding": "32px",
+      "head": {
+        "titleY": "32px",
+        "subtitleGap": "4px",
+        "bottomGap": "24px",
+        "actions": "right end, centered on the title block, --control-height"
+      },
+      "tabs": {
+        "height": "40px",
+        "padInline": "12px",
+        "font": "--text-nav",
+        "weight": "--font-weight-nav",
+        "idle": "--muted-foreground",
+        "active": "--foreground + 2px underline",
+        "list": "--border hairline",
+        "gapBelow": "24px"
+      }
+    },
+    "header": {
+      "note": "No full-bleed app header. Brand row lives inside the rail. A div.flex.h-14 match was a hidden 0×0 grid layer with --surface fill."
+    }
+  },
+  "type": {
+    "font": "--font-sans",
+    "notMarketingDisplay": true,
+    "roles": [
+      {
+        "id": "pageTitle",
+        "font": "--text-page",
+        "weight": "--font-weight-title",
+        "tracking": "--tracking-title",
+        "color": "--foreground",
+        "where": "product store title on home"
+      },
+      {
+        "id": "settingsTitle",
+        "font": "--text-page",
+        "weight": "--font-weight-strong",
+        "color": "--foreground",
+        "where": "settings h1, tracking normal"
+      },
+      {
+        "id": "subtitle",
+        "font": "--text-subtitle",
+        "color": "--muted-foreground",
+        "where": "home lede under the store title"
+      },
+      {
+        "id": "navItem",
+        "font": "--text-nav",
+        "weight": "--font-weight-nav",
+        "color": "--foreground",
+        "where": "aside links"
+      },
+      {
+        "id": "cardTitle",
+        "font": "--text-card-title",
+        "weight": "--text-card-title--font-weight",
+        "color": "--foreground",
+        "where": "card head band titles"
+      },
+      {
+        "id": "statValue",
+        "font": "--text-stat",
+        "weight": "--text-stat--font-weight",
+        "tracking": "--text-stat--letter-spacing",
+        "color": "--foreground",
+        "where": "home stat tiles. Products strip uses 20px/700, a denser variant."
+      },
+      {
+        "id": "statLabel",
+        "font": "--text-subtitle",
+        "weight": 500,
+        "color": "--muted-foreground",
+        "where": "stat tile and overview labels"
+      }
+    ]
+  },
+  "controls": {
+    "primarySm": {
+      "fill": "--primary",
+      "ink": "--primary-foreground",
+      "edge": "--primary-edge",
+      "height": "--control-height-sm",
+      "radius": "--radius-lg",
+      "font": "--text-control-sm",
+      "where": "Add details on home"
+    },
+    "accentMd": {
+      "fill": "--accent",
+      "ink": "--accent-foreground",
+      "edge": "--accent-edge",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "font": "--text-control",
+      "where": "New product on products"
+    },
+    "quietMd": {
+      "fill": "--input",
+      "ink": "--foreground",
+      "border": "--border",
+      "shadow": "--shadow",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "font": "--text-control",
+      "where": "View all on home. Not --secondary."
+    },
+    "dangerQuiet": {
+      "fill": "--input",
+      "ink": "--destructive-text",
+      "border": "--border",
+      "height": "--control-height",
+      "where": "Delete store on settings. Not a solid --destructive fill."
+    },
+    "field": {
+      "fill": "--input",
+      "border": "--border",
+      "height": "--control-height",
+      "radius": "--radius-lg",
+      "padBlock": "--card-spacing-sm",
+      "where": "settings text fields and Ask Creemie"
+    },
+    "quietSm": {
+      "fill": "--secondary",
+      "ink": "--secondary-foreground",
+      "border": "--border",
+      "shadow": "--shadow",
+      "height": "--control-height-sm",
+      "radius": "--radius-lg",
+      "font": "--text-control-sm",
+      "where": "row actions inside cards, Create product on home"
+    },
+    "iconQuiet": {
+      "fill": "--input",
+      "ink": "--muted-icon",
+      "border": "--border",
+      "shadow": "--shadow",
+      "size": "32px",
+      "radius": "--radius-lg",
+      "where": "rail fold, bell, search"
+    }
+  },
+  "surfaces": {
+    "card": {
+      "fill": "--card",
+      "radius": "--radius-card",
+      "border": "--border",
+      "hairline": "--hairline-width",
+      "shadow": "--shadow",
+      "pad": "--card-spacing",
+      "head": {
+        "fill": "--popover",
+        "border": "--border",
+        "pad": "--card-spacing",
+        "titleRole": "cardTitle",
+        "subRole": "subtitle",
+        "where": "Payments, Customers, Top Countries, Store, Catalog. Body stays --card."
+      }
+    },
+    "popover": {
+      "fill": "--popover",
+      "note": "Token from the dashboard stylesheet. No overlay was captured."
+    },
+    "statTile": {
+      "fill": "--card",
+      "radius": "--radius-card",
+      "border": "--border",
+      "shadow": "--shadow",
+      "pad": "--card-spacing",
+      "gridGap": "16px",
+      "labelRole": "statLabel",
+      "valueRole": "statValue",
+      "where": "home row of four tiles"
+    },
+    "tableHead": {
+      "height": "40px",
+      "font": "--text-subtitle",
+      "weight": 500,
+      "color": "--muted-foreground",
+      "border": "--border",
+      "padFirst": "--card-spacing",
+      "where": "every card table"
+    },
+    "iconTile": {
+      "size": "44px",
+      "radius": "--radius-xl",
+      "fill": "--card",
+      "border": "--border",
+      "icon": "20px, tinted",
+      "where": "Path to your first payment"
+    },
+    "emptyState": {
+      "circle": "48px",
+      "circleFill": "--background",
+      "icon": "20px --muted-icon",
+      "title": "14/600",
+      "body": "14 --muted-foreground",
+      "action": "quietMd below",
+      "where": "table and chart empties"
+    },
+    "checklistCard": {
+      "head": "iconTile + cardTitle + --success-text count + 8px progress",
+      "rows": "hairline-split, quietSm at right end",
+      "where": "Path to your first payment"
+    },
+    "accentCallout": {
+      "fill": "--accent 15%",
+      "border": "--accent 40%",
+      "radius": "--radius-xl",
+      "where": "rail Next card"
+    }
+  },
+  "font": {
+    "measured": "GeistSans",
+    "stack": "--font-sans",
+    "note": "Theme build has no Geist package, so a consumer loads Geist Variable itself. Hangul has no measured face: Pretendard follows Geist in the stack."
+  }
+}
