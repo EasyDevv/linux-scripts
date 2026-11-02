@@ -1,0 +1,16 @@
+[package]
+name = "usage-stats"
+version = "0.1.0"
+edition = "2021"
+description = "Count how often each public command is invoked, to decide which scripts to port"
+publish = false
+
+[dependencies]
+serde_json = { version = "1", default-features = false, features = ["std"] }
+regex = { version = "1", default-features = false, features = ["std", "perf"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

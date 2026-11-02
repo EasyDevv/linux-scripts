@@ -177,10 +177,30 @@
     },
     {
       "name": "ship",
-      "mode": "symlink",
+      "mode": "wrapper",
       "category": "git",
-      "target": "git/ship.ts",
-      "description": "git add . → 변경 많은 파일 순 5개로 커밋메시지 생성 → commit → push까지 한 번에. remote 가 없으면 GitHub 저장소 구성(`--repo`, `ship repo`)"
+      "target": "git/ship.sh",
+      "description": "git add . → 변경 많은 파일 순 5개로 커밋메시지 생성 → commit → push까지 한 번에. remote 가 없으면 GitHub 저장소 구성(`--repo`, `ship repo`)",
+      "ownedPaths": [
+        "git/ship.sh",
+        "git/ship/README.md",
+        "git/ship/go.mod",
+        "git/ship/go.sum",
+        "git/ship/internal/app/args.go",
+        "git/ship/internal/app/args_test.go",
+        "git/ship/internal/app/color.go",
+        "git/ship/internal/app/color_test.go",
+        "git/ship/internal/app/commit.go",
+        "git/ship/internal/app/commit_test.go",
+        "git/ship/internal/app/git.go",
+        "git/ship/internal/app/github.go",
+        "git/ship/internal/app/run.go",
+        "git/ship/internal/ui/picker.go",
+        "git/ship/internal/ui/picker_test.go",
+        "git/ship/main.go",
+        "git/ship/parity/run.sh"
+      ],
+      "reason": "Builds and runs the Go module under git/ship/ (TS original frozen at git/ship-ts/)."
     },
     {
       "name": "git-delete",
@@ -581,6 +601,19 @@
       ],
       "reason": "Sibling tests and a placeholder host-list example. The live host list is gitignored.",
       "description": "Tailscale SSH 포워딩 차단을 계획·적용·복구한다. 기본은 계획이며, 복구는 이 도구가 만든 드롭인만 제거한다."
+    },
+    {
+      "name": "usage-stats",
+      "mode": "wrapper",
+      "category": "meta",
+      "target": "meta/usage-stats/usage-stats.sh",
+      "ownedPaths": [
+        "meta/usage-stats/Cargo.toml",
+        "meta/usage-stats/src/main.rs",
+        "meta/usage-stats/usage-stats.sh"
+      ],
+      "reason": "Builds and runs the Rust crate under meta/usage-stats/.",
+      "description": "fish 히스토리와 Claude/pi 세션 기록에서 공개 명령별 호출 빈도를 집계한다."
     }
   ]
 }

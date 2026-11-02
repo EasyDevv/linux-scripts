@@ -76,3 +76,4 @@ dev/design/.cache/
 
 # ─── Go ──────────────────────────────────────────────
 dev/cli/bin/
+git/ship/bin/
