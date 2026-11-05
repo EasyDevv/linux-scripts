@@ -57,6 +57,17 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   name never includes it);
   rules `~/.agents/rules-routed/*.md`, `{projectRoot}/.agents/rules-routed/*.md`. `projectRoot` is
   the nearest ancestor of `cwd` holding `.git`, else `cwd`.
+- Routed skill frontmatter may set `delegate: quick|standard|high`: the skill's work (computer use,
+  browsing, a phone or VM driven by script) runs well on a cheap worker, so every entry for it
+  carries `delegate` (body, hint, path and keyword hits alike; any other value is dropped). Both
+  clients append one delegation note after the skills they deliver: Claude Code → `mcp__pi__worker`
+  with that `tier`, pi → `subagent` with agent `worker-sub` and that `grade`; the brief names the
+  `SKILL.md` path, takes the report as the result (one cheap read-back at most) and keeps that tier.
+  The brief also tells the worker to stop and report after two failed tries when the browser,
+  desktop or device does not respond, instead of diagnosing it.
+  The parent keeps the work when it is one or two short commands, when the person asked to act on
+  their live screen or to confirm each step. Measured in `docs/backlog/261105-computer-use-quick-delegation.md`
+  (the scripts repo). A worker child (`PI_SUBAGENT=1`) never adds the note, so it does not re-delegate.
 - Routed rule frontmatter: `description:` (one line, what work it governs) and optional
   `skills: [a, b]` (also load this rule when one of those skills is selected).
 - A touch report (`paths` and an empty `prompt`, prompt version with `limits.scriptFirst`) answers

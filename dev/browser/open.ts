@@ -1,5 +1,5 @@
 import { printHelp } from "./ui.ts";
-import { closeSync, existsSync, mkdtempSync, openSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdtempSync, openSync, readlinkSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -40,6 +40,7 @@ import {
 	processExists,
 	processMatchesLaunchInfo,
 	readLaunchInfo,
+	globalProfileDir,
 	isDefaultProfilePort,
 	resolveDefaultProfileDir,
 	terminateProcess,
@@ -47,6 +48,7 @@ import {
 	resolveBinary,
 } from "./chrome-instance.ts";
 import { type CDP, resetTabs, waitForChrome } from "./cdp.ts";
+import { type PageCheck, describePageCheck, verifyPage } from "./page-check.ts";
 import { startRecording } from "./browser-record.ts";
 import { NO_DISPLAY_MESSAGE, displayLaunchEnv } from "./display-env.ts";
 import { mergeExtensionDirs, readProfileConfig } from "./profiles.ts";
@@ -62,6 +64,8 @@ export type OpenOptions = {
 	urlExplicit: boolean;
 	userDataDir?: string;
 	clean: boolean;
+	/** Wait this long for the first tab to load; 0 skips the check. */
+	loadTimeoutMs: number;
 	session?: string;
 	binary?: string;
 	headless: boolean;
@@ -98,10 +102,15 @@ Usage
   browser open [options]
 
 Options
-  --port <N>               CDP port (default: 9222)
+  --port <N>               CDP port (default: 9222). A port held by another profile's
+                           browser or lock is skipped: the output names the port used
   --url <url>              first tab; bare hosts get http:// (default: the "CDP <port>" page)
   --user-data <dir>        profile dir (default: global for 9222, else ./.user-data/chrome-{name})
   --clean                  throwaway profile, removed on close
+  --load-timeout <s>       wait for the first tab to finish loading (default 15; 0 skips).
+                           A page that does not load fails the open (exit 3) and closes
+                           the browser it launched; a hung renderer is retried once on a
+                           throwaway profile first
   --session <name>         inject a saved session's cookies after launch
   --load-extension <dir>   load an unpacked extension (comma list ok)
   --android                emulate an Android phone (UA, touch, 412x915)
@@ -251,6 +260,7 @@ export function parseArgs(argv: string[]): OpenOptions {
 		dryRun: false,
 		json: false,
 		clean: false,
+		loadTimeoutMs: 15_000,
 		android: false,
 		record: false,
 		recordFrames: null,
@@ -273,6 +283,12 @@ export function parseArgs(argv: string[]): OpenOptions {
 			case "--clean":
 				options.clean = true;
 				break;
+			case "--load-timeout": {
+				const secs = +(argv[++i] ?? die("Usage: --load-timeout <seconds>"));
+				if (!Number.isFinite(secs) || secs < 0) die("Usage: --load-timeout <seconds>");
+				options.loadTimeoutMs = secs * 1000;
+				break;
+			}
 			case "--session":
 				options.session = argv[++i] ?? die("Usage: --session <name>");
 				break;
@@ -418,6 +434,7 @@ function renderOpenSummary(info: {
 	windowState: string;
 	locale: string;
 	emulation: string;
+	page?: string;
 	record?: string;
 }) {
 	const parts = [
@@ -428,6 +445,7 @@ function renderOpenSummary(info: {
 	if (info.emulation !== "desktop") parts.push(info.emulation);
 	if (info.record) parts.push(`record ${info.record}`);
 	if (info.windowState !== "normal") parts.push(info.windowState);
+	if (info.page) parts.push(info.page);
 	console.log(`✓ ${parts.join(" · ")}`);
 }
 
@@ -595,7 +613,49 @@ callDBus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript",
 	}
 }
 
-async function buildOpenPlan(requestedPort: number): Promise<OpenPlan> {
+/**
+ * A browser already answering on the port is attached to (and its tabs reset)
+ * only when it is ours: a global-profile port, shared on purpose (9222, 9201),
+ * or one launched from the profile this call would use. Another project's or
+ * run's browser on that port is left alone and a free port is used instead.
+ */
+export async function ownsBrowserOn(
+	port: number,
+	options: Pick<OpenOptions, "clean" | "userDataDir">,
+): Promise<boolean> {
+	if (options.clean) return false;
+	const dir = options.userDataDir ?? resolveDefaultProfileDir(port);
+	if (dir === globalProfileDir(port)) return true;
+	const info = await readLaunchInfo(dir).catch(() => null);
+	if (!info?.pid || info.port !== port || !processExists(info.pid)) return false;
+	return (await processMatchesLaunchInfo({ pid: info.pid, port, userDataDir: dir })) !== false;
+}
+
+/**
+ * Script runs (`--headless`) start without extensions unless one is asked for:
+ * a force-installed blocker (a managed policy) holds the first navigation until
+ * its filter lists load, which left the tab on about:blank. Windowed runs keep them.
+ */
+export function extensionArgs(options: Pick<OpenOptions, "headless" | "loadExtension">): string[] {
+	if (options.loadExtension) return [`--load-extension=${options.loadExtension}`];
+	return options.headless ? ["--disable-extensions"] : [];
+}
+
+/** The live pid holding Chromium's SingletonLock (a `<host>-<pid>` symlink) on a profile, if any. */
+export function profileHolderPid(userDataDir: string): number | null {
+	try {
+		const target = readlinkSync(join(userDataDir, "SingletonLock"));
+		const pid = Number(target.slice(target.lastIndexOf("-") + 1));
+		return Number.isInteger(pid) && pid > 0 && processExists(pid) ? pid : null;
+	} catch {
+		return null;
+	}
+}
+
+async function buildOpenPlan(
+	requestedPort: number,
+	owns: (port: number) => Promise<boolean> = async () => true,
+): Promise<OpenPlan> {
 	const requested = await resolvePortState(requestedPort);
 	if (requested.lock) {
 		const actualPort = await findAvailablePort(requestedPort + 1);
@@ -604,6 +664,17 @@ async function buildOpenPlan(requestedPort: number): Promise<OpenPlan> {
 			actualPort,
 			browserAction: "launch-new-browser",
 			portNote: `Requested port ${requestedPort} is locked by another browser session, so Chrome will use ${actualPort}.`,
+			lockStatus: requested.lockStatus,
+		};
+	}
+
+	if (requested.browserReachable && !(await owns(requestedPort))) {
+		const actualPort = await findAvailablePort(requestedPort + 1);
+		return {
+			requestedPort,
+			actualPort,
+			browserAction: "launch-new-browser",
+			portNote: `Port ${requestedPort} has another profile's browser, so Chrome will use ${actualPort}.`,
 			lockStatus: requested.lockStatus,
 		};
 	}
@@ -696,9 +767,59 @@ async function maybeResolveExistingLaunch(userDataDir: string, port: number) {
 	return existing;
 }
 
+export class PageLoadError extends Error {
+	constructor(
+		readonly check: PageCheck,
+		readonly port: number,
+		readonly launched: boolean,
+	) {
+		super(describePageCheck(check));
+	}
+}
+
+/**
+ * One call gives a usable tab or a clear failure: a hung renderer on a launched
+ * browser is retried once on a throwaway profile; anything else exits 3 with
+ * what to do next, so a script never spends minutes probing a dead tab.
+ */
 export async function main(argv: string[]): Promise<void> {
+	try {
+		await openOnce(argv);
+	} catch (error) {
+		if (!(error instanceof PageLoadError)) throw error;
+		const options = parseArgs(argv);
+		// A timeout is the browser's fault only when the site answers a plain fetch.
+		const siteAnswers =
+			error.check.status === "timeout" && /^https?:/i.test(options.url)
+				? await fetch(options.url, { signal: AbortSignal.timeout(3000) }).then(
+						() => true,
+						() => false,
+					)
+				: error.check.status === "timeout";
+		const retry = siteAnswers && error.launched && !options.clean && !options.userDataDir;
+		if (retry) {
+			console.error(`⚠ :${error.port} ${error.message}; the site answers a fetch, retrying once on a throwaway profile`);
+			try {
+				await openOnce([...argv, "--clean"]);
+				return;
+			} catch (again) {
+				if (!(again instanceof PageLoadError)) throw again;
+				error = again;
+			}
+		}
+		const e = error as PageLoadError;
+		const where = e.launched ? "the browser it launched is closed" : "the attached browser is left as it was";
+		const next = !siteAnswers
+			? `the site did not answer (${options.url}): start or fix the server, then open again`
+			: "the site answers but the browser does not load it: stop and report this line, do not keep probing";
+		console.error(`✗ :${e.port} ${e.message} — ${where}; ${next}`);
+		process.exit(3);
+	}
+}
+
+async function openOnce(argv: string[]): Promise<void> {
 	const options = parseArgs(argv);
-	const plan = await buildOpenPlan(options.port);
+	const plan = await buildOpenPlan(options.port, (port) => ownsBrowserOn(port, options));
 	if (!options.urlExplicit) options.url = portStartPageUrl(plan.actualPort);
 
 	// A non-headless Chromium needs a display. A shell started by a service has
@@ -724,6 +845,24 @@ export async function main(argv: string[]): Promise<void> {
 	} else {
 		userDataDir = resolveDefaultProfileDir(plan.actualPort);
 		usesDefaultProfile = isDefaultProfilePort(plan.actualPort);
+	}
+
+	// Chromium allows one browser per profile: a second launch on it hands its URL
+	// to the running one and exits, so this port would never answer. A project
+	// profile already in use (another port, a parent and its worker in one dir)
+	// gives way to a throwaway profile.
+	let profileNote: string | undefined;
+	const holder =
+		plan.browserAction === "launch-new-browser" && !options.userDataDir && !options.clean
+			? profileHolderPid(userDataDir)
+			: null;
+	if (holder) {
+		options.clean = true;
+		usesDefaultProfile = false;
+		profileNote = `profile in use by pid ${holder}, throwaway profile`;
+		userDataDir = options.dryRun
+			? join(tmpdir(), "browser-clean-XXXXXX")
+			: await mkdtemp(join(tmpdir(), "browser-clean-"));
 	}
 
 	// Global profiles are caches: restore unpacked extensions always, and the
@@ -769,9 +908,7 @@ export async function main(argv: string[]): Promise<void> {
 			...androidLaunchArgs(options.android),
 			...options.browserArgs,
 		];
-		if (options.loadExtension) {
-			extraArgs.push(`--load-extension=${options.loadExtension}`);
-		}
+		extraArgs.push(...extensionArgs(options));
 
 		const previewCommand =
 			binary === "(existing browser)"
@@ -830,6 +967,7 @@ export async function main(argv: string[]): Promise<void> {
 	let focusedUrl = options.url;
 	let outputBinary = binary ?? "(existing browser)";
 	let kwinStartupMinimize: KWinStartupMinimizeHandle | null = null;
+	let pageCheck: PageCheck | undefined;
 	let windowState = options.headless
 		? "headless"
 		: options.park
@@ -862,9 +1000,7 @@ export async function main(argv: string[]): Promise<void> {
 				...androidLaunchArgs(options.android),
 				...options.browserArgs,
 			];
-			if (options.loadExtension) {
-				extraArgs.push(`--load-extension=${options.loadExtension}`);
-			}
+			extraArgs.push(...extensionArgs(options));
 
 			const chromeArgs = buildChromeLaunchArgs({
 				port: actualPort,
@@ -988,6 +1124,13 @@ export async function main(argv: string[]): Promise<void> {
 			});
 		}
 
+		if (options.loadTimeoutMs > 0) {
+			pageCheck = await verifyPage(actualPort, options.loadTimeoutMs);
+			if (pageCheck.status !== "ok") {
+				throw new PageLoadError(pageCheck, actualPort, Boolean(launchedPid));
+			}
+		}
+
 		if (!options.headless && options.minimize && !options.park) {
 			await kwinMinimizeByClass(className);
 			let minimized = await minimizeWindow(actualPort, {
@@ -1069,6 +1212,7 @@ export async function main(argv: string[]): Promise<void> {
 					emulation: options.android ? "android" : "desktop",
 					recordStatus,
 					recordOutputDir,
+					page: pageCheck,
 				},
 				true,
 			);
@@ -1077,11 +1221,12 @@ export async function main(argv: string[]): Promise<void> {
 				port: actualPort,
 				requestedPort: options.port,
 				url: focusedUrl,
-				userDataDir,
+				userDataDir: profileNote ? `${userDataDir} (${profileNote})` : userDataDir,
 				defaultProfile: usesDefaultProfile,
 				windowState,
 				locale: resolvedLocale.appLocale,
 				emulation: options.android ? "android" : "desktop",
+				page: pageCheck ? describePageCheck(pageCheck) : undefined,
 				record:
 					recordStatus === "off"
 						? undefined
@@ -1096,6 +1241,10 @@ export async function main(argv: string[]): Promise<void> {
 			await terminateProcess(launchedPid, 2000).catch(() => undefined);
 		}
 		await clearPortLock(actualPort);
+		// A throwaway profile made for this call goes with the failed browser.
+		if (options.clean && !options.userDataDir) {
+			await rm(userDataDir, { recursive: true, force: true }).catch(() => undefined);
+		}
 		throw error;
 	}
 }

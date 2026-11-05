@@ -18,7 +18,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ClassifierAnswer, ClassifierQuestion, JsonObject } from "@earendil-works/pi-ai";
-import { type CatalogEntry, CatalogReader, projectRoot } from "../catalog.ts";
+import { type CatalogEntry, CatalogReader, type DelegateTier, projectRoot } from "../catalog.ts";
 import type { DecideRequest, Decision } from "../engine.ts";
 import { skipReason } from "./model-route.ts";
 import { mentionedPaths, type PathHit, pathHits } from "./path-trigger.ts";
@@ -80,6 +80,19 @@ export interface FoundSkill {
 	p: number;
 	/** `SKILL.md` without frontmatter, set when the harness should load it into context itself. */
 	body?: string;
+	/** The worker tier the skill's work is handed to (`delegate:` frontmatter); absent = the parent does it. */
+	delegate?: DelegateTier;
+}
+
+/** A catalog skill as an answer entry: every path that returns one carries its `delegate`. */
+function foundSkill(entry: CatalogEntry, p: number): FoundSkill {
+	return {
+		name: entry.name,
+		path: entry.path,
+		description: entry.description,
+		p,
+		...(entry.delegate ? { delegate: entry.delegate } : {}),
+	};
 }
 
 export interface FoundRule {
@@ -107,17 +120,109 @@ export const KEYWORD_MIN_SCORE = 3;
 export const KEYWORD_P = 0.4;
 
 const STOPWORDS = new Set([
-	"the", "and", "for", "with", "this", "that", "from", "into", "when", "what", "how", "why", "who",
-	"fix", "add", "use", "using", "used", "not", "are", "was", "were", "has", "had", "have", "but", "you",
-	"your", "its", "can", "could", "does", "did", "all", "any", "one", "two", "out", "get", "set", "make",
-	"new", "run", "via", "per", "then", "than", "also", "just", "only", "more", "most", "some", "such", "over",
-	"after", "before", "again", "still", "there", "here", "them", "they", "should", "would", "will", "please",
-	"대한", "대해", "때문", "그리고", "합니다", "해줘", "해주세요", "에서", "으로", "하는", "있는", "없는", "이거",
-	"그거", "저거", "것을", "것은", "수가", "등", "및", "더", "잘", "안", "좀", "그", "이", "저", "수", "것",
+	"the",
+	"and",
+	"for",
+	"with",
+	"this",
+	"that",
+	"from",
+	"into",
+	"when",
+	"what",
+	"how",
+	"why",
+	"who",
+	"fix",
+	"add",
+	"use",
+	"using",
+	"used",
+	"not",
+	"are",
+	"was",
+	"were",
+	"has",
+	"had",
+	"have",
+	"but",
+	"you",
+	"your",
+	"its",
+	"can",
+	"could",
+	"does",
+	"did",
+	"all",
+	"any",
+	"one",
+	"two",
+	"out",
+	"get",
+	"set",
+	"make",
+	"new",
+	"run",
+	"via",
+	"per",
+	"then",
+	"than",
+	"also",
+	"just",
+	"only",
+	"more",
+	"most",
+	"some",
+	"such",
+	"over",
+	"after",
+	"before",
+	"again",
+	"still",
+	"there",
+	"here",
+	"them",
+	"they",
+	"should",
+	"would",
+	"will",
+	"please",
+	"대한",
+	"대해",
+	"때문",
+	"그리고",
+	"합니다",
+	"해줘",
+	"해주세요",
+	"에서",
+	"으로",
+	"하는",
+	"있는",
+	"없는",
+	"이거",
+	"그거",
+	"저거",
+	"것을",
+	"것은",
+	"수가",
+	"등",
+	"및",
+	"더",
+	"잘",
+	"안",
+	"좀",
+	"그",
+	"이",
+	"저",
+	"수",
+	"것",
 ]);
 
 function words(text: string): string[] {
-	return text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+	return text
+		.toLowerCase()
+		.split(/[^\p{L}\p{N}]+/u)
+		.filter(Boolean);
 }
 
 function isHangul(token: string): boolean {
@@ -125,7 +230,10 @@ function isHangul(token: string): boolean {
 }
 
 function nameTokens(name: string): string[] {
-	return name.toLowerCase().split(/[-._/]+/).filter(Boolean);
+	return name
+		.toLowerCase()
+		.split(/[-._/]+/)
+		.filter(Boolean);
 }
 
 /** Prompt tokens that can match: latin 3+ chars, Korean 2+; stopwords never. */
@@ -172,8 +280,7 @@ export function keywordHits(
 		if (score >= KEYWORD_MIN_SCORE) scored.push({ entry, score });
 	}
 	scored.sort((a, b) => b.score - a.score);
-	const kind = (want: CatalogEntry["kind"], cap: number) =>
-		scored.filter((h) => h.entry.kind === want).slice(0, cap);
+	const kind = (want: CatalogEntry["kind"], cap: number) => scored.filter((h) => h.entry.kind === want).slice(0, cap);
 	return [...kind("skill", limits.skills), ...kind("rule", limits.rules)];
 }
 
@@ -314,7 +421,7 @@ export function compose(
 	}
 	return {
 		skills: skills.map(({ entry, p }, index) => {
-			const found: FoundSkill = { name: entry.name, path: entry.path, description: entry.description, p: round(p) };
+			const found = foundSkill(entry, round(p));
 			const body = entry.body ?? "";
 			const forced =
 				l.injectThreshold !== undefined &&
@@ -400,7 +507,7 @@ export async function findSkills(
 			status: "routed",
 			reason,
 			notes: [...found.notes, ...skillHits.map((e) => `skill ${e.name} hinted by path`)],
-			skills: skillHits.map((e) => ({ name: e.name, path: e.path, description: e.description, p: 1 })),
+			skills: skillHits.map((e) => foundSkill(e, 1)),
 			rules: found.rules,
 			candidates: candidates.length,
 			backend: decision?.backend,
@@ -432,15 +539,8 @@ export async function findSkills(
 				...keywords.map((h) => `${h.entry.kind} ${h.entry.name} hinted by keyword (score ${h.score})`),
 			],
 			skills: [
-				...skillHits.map((e) => ({ name: e.name, path: e.path, description: e.description, p: 1 })),
-				...keywords
-					.filter((h) => h.entry.kind === "skill")
-					.map((h) => ({
-						name: h.entry.name,
-						path: h.entry.path,
-						description: h.entry.description,
-						p: KEYWORD_P,
-					})),
+				...skillHits.map((e) => foundSkill(e, 1)),
+				...keywords.filter((h) => h.entry.kind === "skill").map((h) => foundSkill(h.entry, KEYWORD_P)),
 			],
 			rules: [
 				...found.rules,
@@ -543,10 +643,14 @@ export const findSkill: FeatureDef = {
 			run: (input, decide) => findSkills(input as FindSkillInput, decide, prompt, catalog),
 		};
 	},
-	/** `expected` is `{skills, rules}` names; metrics are over the union of both kinds. */
+	/**
+	 * `expected` is `{skills, rules}` names; metrics are over the union of both kinds. A label with
+	 * `delegate: {name: tier}` also scores `delegate`: of the expected skills returned, the share whose
+	 * `delegate` matches (a name the map leaves out expects none).
+	 */
 	score(expected, result): Record<string, number> {
 		if (typeof expected !== "object" || expected === null) return {};
-		const e = expected as { skills?: string[]; rules?: string[] };
+		const e = expected as { skills?: string[]; rules?: string[]; delegate?: Record<string, string> };
 		const want = selected(e.skills, e.rules);
 		if (result.status === "unavailable") {
 			return { answered: 0, exact: 0, recall: 0, precision: 0, ...(want.size === 0 ? { quiet: 0 } : {}) };
@@ -557,7 +661,13 @@ export const findSkill: FeatureDef = {
 			r.rules?.map((x) => x.name),
 		);
 		const hit = [...got].filter((g) => want.has(g)).length;
+		const hitSkills = (r.skills ?? []).filter((s) => e.skills?.includes(s.name));
+		const delegate =
+			e.delegate !== undefined && hitSkills.length > 0
+				? { delegate: hitSkills.filter((s) => s.delegate === e.delegate?.[s.name]).length / hitSkills.length }
+				: {};
 		return {
+			...delegate,
 			answered: 1,
 			exact: Number(hit === want.size && got.size === want.size),
 			recall: want.size === 0 ? 1 : hit / want.size,

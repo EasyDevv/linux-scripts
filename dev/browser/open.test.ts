@@ -99,3 +99,38 @@ test("android launch flags carry the mobile user agent and touch", () => {
 	expect(touch).toBe("--touch-events=enabled");
 	expect(androidLaunchArgs(false)).toEqual([]);
 });
+
+test("--load-timeout takes seconds; 0 skips the page check", () => {
+	expect(parseArgs([]).loadTimeoutMs).toBe(15_000);
+	expect(parseArgs(["--load-timeout", "0"]).loadTimeoutMs).toBe(0);
+	expect(parseArgs(["--load-timeout", "2.5"]).loadTimeoutMs).toBe(2500);
+	expect(captureExit(() => parseArgs(["--load-timeout", "x"])).code).not.toBe(0);
+});
+
+test("a clean open never attaches to a browser already on the port", async () => {
+	const { ownsBrowserOn } = await import("./open.ts");
+	expect(await ownsBrowserOn(9222, { clean: true, userDataDir: undefined })).toBe(false);
+});
+
+test("a profile whose SingletonLock names a live pid is reported as held", async () => {
+	const { profileHolderPid } = await import("./open.ts");
+	const { mkdtempSync, symlinkSync, rmSync } = await import("node:fs");
+	const { join } = await import("node:path");
+	const { tmpdir } = await import("node:os");
+	const live = mkdtempSync(join(tmpdir(), "holder-"));
+	symlinkSync(`host-${process.pid}`, join(live, "SingletonLock"));
+	expect(profileHolderPid(live)).toBe(process.pid);
+	const dead = mkdtempSync(join(tmpdir(), "holder-"));
+	symlinkSync("host-999999999", join(dead, "SingletonLock"));
+	expect(profileHolderPid(dead)).toBeNull();
+	expect(profileHolderPid(join(tmpdir(), "no-such-profile"))).toBeNull();
+	rmSync(live, { recursive: true });
+	rmSync(dead, { recursive: true });
+});
+
+test("headless runs start without extensions unless one is loaded", async () => {
+	const { extensionArgs } = await import("./open.ts");
+	expect(extensionArgs({ headless: true, loadExtension: undefined })).toEqual(["--disable-extensions"]);
+	expect(extensionArgs({ headless: false, loadExtension: undefined })).toEqual([]);
+	expect(extensionArgs({ headless: true, loadExtension: "/x" })).toEqual(["--load-extension=/x"]);
+});

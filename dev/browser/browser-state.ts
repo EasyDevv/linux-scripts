@@ -1,4 +1,4 @@
-import { mkdir, open, unlink } from "node:fs/promises";
+import { link, mkdir, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { hostname, homedir } from "node:os";
 import { join } from "node:path";
@@ -38,7 +38,7 @@ type ClaimResult =
 const PORT_SCAN_LIMIT = 100;
 
 export function stateRootDir(): string {
-	return join(homedir(), ".cache", "browser", "state");
+	return process.env.BROWSER_STATE_DIR ?? join(homedir(), ".cache", "browser", "state");
 }
 
 function locksDir(): string {
@@ -66,8 +66,15 @@ async function readJsonFile<T>(path: string): Promise<T | null> {
 	}
 }
 
+function tempPath(path: string): string {
+	return `${path}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
+}
+
+// A reader never sees a half-written file: write aside, then rename over it.
 async function writeJsonFile(path: string, value: unknown): Promise<void> {
-	await Bun.write(path, `${JSON.stringify(value, null, 2)}\n`);
+	const tmp = tempPath(path);
+	await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`);
+	await rename(tmp, path);
 }
 
 export async function browserReachable(port: number): Promise<boolean> {
@@ -133,8 +140,34 @@ function lockIsStale(lock: PortLock, reachable: boolean): boolean {
 	return now - lastUsedAt > resolveIdleTimeoutMs(lock);
 }
 
+/**
+ * A lock that does not parse is being written by another `open` (or was left
+ * torn): treat it as held, so the caller moves to the next port instead of failing.
+ */
 export async function readPortLock(port: number): Promise<PortLock | null> {
-	return await readJsonFile<PortLock>(portLockPath(port));
+	for (let attempt = 0; ; attempt++) {
+		try {
+			return await readJsonFile<PortLock>(portLockPath(port));
+		} catch {
+			if (attempt >= 2) break;
+			await Bun.sleep(50);
+		}
+	}
+	// Its age is the file's mtime, so a lock torn by a crash still goes stale.
+	const mtime = await stat(portLockPath(port)).then((s) => s.mtime.toISOString(), () => null);
+	if (!mtime) return null;
+	return {
+		version: 1,
+		port,
+		requestedPort: port,
+		owner: "unreadable-lock",
+		userDataDir: "",
+		url: "",
+		browserSource: "launching",
+		createdAt: mtime,
+		updatedAt: mtime,
+		lastUsedAt: mtime,
+	};
 }
 
 export async function writePortLock(lock: PortLock): Promise<void> {
@@ -182,16 +215,20 @@ export async function claimPortLock(
 		idleTimeoutMs: seed.idleTimeoutMs ?? LOCK_DEFAULTS.idleTimeoutMs,
 	};
 
+	// link() is the exclusive create: the lock appears whole or not at all.
+	const path = portLockPath(seed.port);
+	const tmp = tempPath(path);
+	await writeFile(tmp, `${JSON.stringify(lock, null, 2)}\n`);
 	try {
-		const handle = await open(portLockPath(seed.port), "wx");
-		await handle.writeFile(`${JSON.stringify(lock, null, 2)}\n`);
-		await handle.close();
+		await link(tmp, path);
 		return { acquired: true, lock };
 	} catch (error) {
 		if ((error as NodeJS.ErrnoException)?.code !== "EEXIST") throw error;
 		const state = await resolvePortState(seed.port);
 		if (state.lockStatus === "stale-cleared") return await claimPortLock(seed);
 		return { acquired: false, state };
+	} finally {
+		await unlink(tmp).catch(() => undefined);
 	}
 }
 

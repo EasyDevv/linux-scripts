@@ -1,0 +1,659 @@
+{
+	"schema": 1,
+	"feature": "find_skill",
+	"version": "v7",
+	"backend": "default",
+	"ladder": [
+		"openrouter/typesafe/jev-1.14"
+	],
+	"casesPath": "/tmp/claude-1000/-home-easydev--local-share-scripts/34d9a19b-c4f3-4474-aaa1-2b70aaf3e4a7/scratchpad/fs-delegate.jsonl",
+	"generatedAt": "2026-11-04T15:59:47.314Z",
+	"candidate": {
+		"summary": {
+			"version": "v7",
+			"cases": 23,
+			"answered": 23,
+			"unavailable": 0,
+			"skipped": 0,
+			"invalid": 0,
+			"metrics": {
+				"answered": 1,
+				"exact": 0.34782608695652173,
+				"recall": 0.9565217391304348,
+				"precision": 0.6579710144927536,
+				"delegate": 1,
+				"coverage": 1
+			},
+			"latency": {
+				"p50": 460,
+				"p95": 635,
+				"n": 23
+			},
+			"costUsd": 0.013840974000000006,
+			"calibratedShare": 1,
+			"backends": {
+				"openrouter/typesafe/jev-1.14": 23
+			}
+		},
+		"outcomes": [
+			{
+				"index": 0,
+				"prompt": "svelte 컴포넌트에서 $effect가 몇 초마다 리셋돼",
+				"expected": {
+					"skills": [
+						"build-frontend"
+					],
+					"rules": [
+						"frontend-consistency",
+						"svelte-effects"
+					],
+					"delegate": {}
+				},
+				"metrics": {
+					"answered": 1,
+					"exact": 0,
+					"recall": 0,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"nothing applies (asked 51 of 51)\",\"skills\":[],\"rules\":[],\"candidates\":51}",
+				"costUsd": 0.000520968,
+				"status": "routed",
+				"latencyMs": 635,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 1,
+				"prompt": "당근에서 RTX 3090 시세 수집해줘",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": [],
+					"delegate": {
+						"browse-site": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 51 of 51)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills-routed/web/browse-site/SKILL.md\",\"description\":\"Site collection — 당근 daangn, 번개장터, 중고나라, 2CPU, 다나와, 디시, R…",
+				"costUsd": 0.0005207580000000001,
+				"status": "routed",
+				"latencyMs": 624,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 2,
+				"prompt": "CGV 용산 취소표 좌석 확인해줘",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": [],
+					"delegate": {
+						"browse-site": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 51 of 51)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills-routed/web/browse-site/SKILL.md\",\"description\":\"Site collection — 당근 daangn, 번개장터, 중고나라, 2CPU, 다나와, 디시, R…",
+				"costUsd": 0.0005207160000000001,
+				"status": "routed",
+				"latencyMs": 633,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 3,
+				"prompt": "Collect the top posts from this Reddit thread and summarize",
+				"expected": {
+					"skills": [
+						"browse-site"
+					],
+					"rules": [],
+					"delegate": {
+						"browse-site": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 51 of 51)\",\"skills\":[{\"name\":\"browse-site\",\"path\":\"/home/easydev/.agents/skills-routed/web/browse-site/SKILL.md\",\"description\":\"Site collection — 당근 daangn, 번개장터, 중고나라, 2CPU, 다나와, 디시, R…",
+				"costUsd": 0.0005205060000000001,
+				"status": "routed",
+				"latencyMs": 650,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 4,
+				"prompt": "로그인이 필요한 페이지를 로그인 세션 저장해서 읽어와줘",
+				"expected": {
+					"skills": [
+						"browser"
+					],
+					"rules": [],
+					"delegate": {
+						"browser": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 51 of 51)\",\"skills\":[{\"name\":\"browser\",\"path\":\"/home/easydev/.agents/skills-routed/web/browser/SKILL.md\",\"description\":\"Fetch, scrape, or render a web page with the `browser` CLI (headl…",
+				"costUsd": 0.0005209260000000001,
+				"status": "routed",
+				"latencyMs": 472,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 5,
+				"prompt": "KDE 에서 한글을 클립보드로 붙여넣는 키 입력 자동화해줘",
+				"expected": {
+					"skills": [
+						"operate-kde-desktop"
+					],
+					"rules": [],
+					"delegate": {
+						"operate-kde-desktop": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 51 of 51)\",\"skills\":[{\"name\":\"operate-kde-desktop\",\"path\":\"/home/easydev/.agents/skills-routed/system/operate-kde-desktop/SKILL.md\",\"description\":\"Computer use on KDE Plasma Wayland wit…",
+				"costUsd": 0.000521094,
+				"status": "routed",
+				"latencyMs": 417,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 6,
+				"prompt": "{\"url\":\"/projects\",\"src\":\"apps/client/src/routes/projects/+page.svelte:L2162\",\"xpath\":\"//div[contains(@class,'board-main') and contains(@class,'flex') and contains(@class,'min-w-0')]\",\"task\":\"기본적으로 좌우 스플릿으로 구성\\n\\n터미널 bar 가 위로\"} 를 dashboard 의 chat 창에 입력시 에러 발생.",
+				"expected": {
+					"skills": [
+						"bun-webview",
+						"shadcn-svelte"
+					],
+					"rules": [
+						"cmd.executor",
+						"stack-svelte-tauri"
+					],
+					"delegate": {
+						"bun-webview": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.8
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 2 rules (asked 65 of 67)\",\"skills\":[{\"name\":\"build-frontend\",\"path\":\"/home/easydev/.agents/skills-routed/build/build-frontend/SKILL.md\",\"description\":\"Builds and fixes Svelte SPA screens. Use when bui…",
+				"costUsd": 0.00065877,
+				"status": "routed",
+				"latencyMs": 460,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 7,
+				"prompt": "1번, bun-webview 로 실제 수행해보고 판단",
+				"expected": {
+					"skills": [
+						"bun-webview"
+					],
+					"rules": [],
+					"delegate": {
+						"bun-webview": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 67 of 67)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006725040000000001,
+				"status": "routed",
+				"latencyMs": 490,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 8,
+				"prompt": "폰을 adb 로 연결, dry Run 을 돌려보고 보완한다.",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 51 of 51)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0005233620000000001,
+				"status": "routed",
+				"latencyMs": 492,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 9,
+				"prompt": "이제 실제 폰에서 dry run 을 돌려 확인해 보자.",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006352920000000001,
+				"status": "routed",
+				"latencyMs": 442,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 10,
+				"prompt": "35211 포트에서 열림. 다시 시도",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 1 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006345780000000001,
+				"status": "routed",
+				"latencyMs": 436,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 11,
+				"prompt": "폰 화면 캡처해서 지금 어떻게 보이는지 확인해줘",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006319740000000001,
+				"status": "routed",
+				"latencyMs": 430,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 12,
+				"prompt": "에뮬레이터 띄우고 앱 실행해서 입력창에 한글이 제대로 들어가는지 테스트해줘",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"3 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006326880000000001,
+				"status": "routed",
+				"latencyMs": 450,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 13,
+				"prompt": "adb input swipe 로 목록 스크롤이 안 돼. 왜 이래?",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006319740000000001,
+				"status": "routed",
+				"latencyMs": 491,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 14,
+				"prompt": "Run the macro on my phone and screenshot the result to verify it",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006318060000000001,
+				"status": "routed",
+				"latencyMs": 466,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 15,
+				"prompt": "스크린샷이 어둡게 나와. 폰에 깔린 조광기 오버레이가 원인인지 adb 로 확인해줘",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006328140000000001,
+				"status": "routed",
+				"latencyMs": 474,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 16,
+				"prompt": "uiautomator dump 로 현재 화면 요소 좌표 뽑아서 확인 버튼 눌러봐",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.000632184,
+				"status": "routed",
+				"latencyMs": 450,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 17,
+				"prompt": "실제 기기에서 한번 돌려보고 결과 알려줘",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.5
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006332760000000001,
+				"status": "routed",
+				"latencyMs": 455,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 18,
+				"prompt": "폰 알림창 내리고 설정 앱에서 와이파이 상태 보여줘",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006320580000000001,
+				"status": "routed",
+				"latencyMs": 441,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 19,
+				"prompt": "무선 디버깅 켰어. 이제 해보자",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006336540000000001,
+				"status": "routed",
+				"latencyMs": 451,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 20,
+				"prompt": "아까 실패한 부분 폰에서 다시 눌러보면서 확인해",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006341160000000001,
+				"status": "routed",
+				"latencyMs": 449,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 21,
+				"prompt": "앱이 폰에 설치돼 있는지 보고 실행해서 logcat 에러 확인해줘",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 0,
+					"recall": 1,
+					"precision": 0.3333333333333333
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"2 skills, 1 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006323100000000001,
+				"status": "routed",
+				"latencyMs": 463,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			},
+			{
+				"index": 22,
+				"prompt": "screenrecord 로 실행 과정을 녹화하고 프레임별로 어떤 탭이 일어났는지 봐줘",
+				"expected": {
+					"skills": [
+						"control-android"
+					],
+					"rules": [],
+					"delegate": {
+						"control-android": "quick"
+					}
+				},
+				"metrics": {
+					"delegate": 1,
+					"answered": 1,
+					"exact": 1,
+					"recall": 1,
+					"precision": 1
+				},
+				"got": "{\"status\":\"routed\",\"reason\":\"1 skills, 0 rules (asked 63 of 63)\",\"skills\":[{\"name\":\"control-android\",\"path\":\"/home/easydev/.agents/skills-routed/system/control-android/SKILL.md\",\"description\":\"Drive a real phone or an Android emulator over…",
+				"costUsd": 0.0006326460000000001,
+				"status": "routed",
+				"latencyMs": 454,
+				"backend": "openrouter/typesafe/jev-1.14",
+				"calibrated": true
+			}
+		]
+	},
+	"verdict": {
+		"mode": "floor",
+		"holds": true,
+		"floors": [
+			{
+				"metric": "recall",
+				"floor": 0.9,
+				"value": 0.9565217391304348,
+				"ok": true
+			}
+		],
+		"better": [],
+		"worse": [],
+		"guards": [],
+		"reasons": []
+	}
+}

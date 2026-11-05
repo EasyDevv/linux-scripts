@@ -25,6 +25,15 @@ export interface CatalogEntry {
 	paths: string[];
 	/** The text without frontmatter: a rule is sent whole, a skill only past `injectThreshold` (find_skill). */
 	body?: string;
+	/** Skills only: the worker tier this skill's work is handed to (`delegate:` frontmatter). */
+	delegate?: DelegateTier;
+}
+
+export const DELEGATE_TIERS = ["quick", "standard", "high"] as const;
+export type DelegateTier = (typeof DELEGATE_TIERS)[number];
+
+function delegateOf(value: string): DelegateTier | undefined {
+	return (DELEGATE_TIERS as readonly string[]).includes(value) ? (value as DelegateTier) : undefined;
 }
 
 interface Frontmatter {
@@ -129,6 +138,7 @@ function parseSkill(path: string, dirName: string, scope: CatalogEntry["scope"])
 	const { meta, body } = parseFrontmatter(readFileSync(path, "utf8"));
 	const description = scalar(meta.description);
 	if (!description) return undefined;
+	const delegate = delegateOf(scalar(meta.delegate));
 	return {
 		kind: "skill",
 		name: scalar(meta.name) || dirName,
@@ -138,6 +148,7 @@ function parseSkill(path: string, dirName: string, scope: CatalogEntry["scope"])
 		skills: [],
 		paths: listOf(meta.paths),
 		body: body.trim(),
+		...(delegate ? { delegate } : {}),
 	};
 }
 

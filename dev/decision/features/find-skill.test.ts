@@ -79,6 +79,7 @@ function reader(entries: readonly CatalogEntry[]): CatalogReader {
 		const front = [
 			`description: ${e.description}`,
 			...(e.skills.length ? [`skills: [${e.skills.join(", ")}]`] : []),
+			...(e.delegate ? [`delegate: ${e.delegate}`] : []),
 			...(e.paths.length ? ["paths:", ...e.paths.map((g) => `  - "${g}"`)] : []),
 		];
 		const file =
@@ -174,6 +175,23 @@ describe("find_skill shortlist and compose", () => {
 		expect(compose(asked.slice(0, 1), { c0: bool(0.99) }, catalog, prompt).skills[0]?.body).toBeUndefined();
 	});
 
+	test("a skill's delegate tier rides on its entry, with or without a body", () => {
+		const forced = { ...prompt, limits: { ...prompt.limits, injectThreshold: 0.85, injectMax: 1 } };
+		const asked = [
+			entry("skill", "browse-site", { body: "# browse", delegate: "quick" }),
+			entry("skill", "build-frontend", { body: "# frontend" }),
+		];
+		const r = compose(asked, { c0: bool(0.95), c1: bool(0.9) }, catalog, forced);
+		expect(r.skills.map((s) => [s.name, s.delegate, s.body !== undefined])).toEqual([
+			["browse-site", "quick", true],
+			["build-frontend", undefined, false],
+		]);
+		const hint = compose(asked.slice(0, 1), { c0: bool(0.7) }, catalog, prompt);
+		expect(hint.skills[0]).toMatchObject({ name: "browse-site", delegate: "quick" });
+		expect(hint.skills[0]?.body).toBeUndefined();
+		expect("delegate" in (r.skills[1] ?? {})).toBe(false);
+	});
+
 	test("a linked rule that is already loaded is not returned", () => {
 		const rest = candidatesOf(catalog, ["svelte-effects"]);
 		const r = compose([entry("skill", "build-frontend")], { c0: bool(0.9) }, rest, prompt);
@@ -222,12 +240,7 @@ describe("findSkills", () => {
 	});
 
 	test("a backend failure with no overlap stays unavailable at either step", async () => {
-		const first = await findSkills(
-			{ prompt: "zzz qqq" },
-			engine(decision({}, "unavailable")),
-			prompt,
-			reader(catalog),
-		);
+		const first = await findSkills({ prompt: "zzz qqq" }, engine(decision({}, "unavailable")), prompt, reader(catalog));
 		expect(first).toMatchObject({ status: "unavailable", skills: [], rules: [] });
 		expect(first.fallback).toBeUndefined();
 		expect(first.notes).toEqual(["opencode/jev-test: error"]);
@@ -242,12 +255,7 @@ describe("findSkills", () => {
 
 	test("a backend failure returns keyword hints with no bodies and a fallback flag", async () => {
 		const run = engine(decision({}, "unavailable"));
-		const r = await findSkills(
-			{ prompt: "fix the svelte effect" },
-			run,
-			prompt,
-			reader(catalog),
-		);
+		const r = await findSkills({ prompt: "fix the svelte effect" }, run, prompt, reader(catalog));
 		expect(r).toMatchObject({ status: "routed", reason: "fallback: keyword (Jev unavailable)", fallback: true });
 		expect(r.skills).toEqual([]);
 		expect(r.rules.map((x) => x.name)).toEqual(["svelte-effects"]);
@@ -268,7 +276,11 @@ describe("findSkills", () => {
 
 	test("a Korean prompt reaches a skill hint, and a path rule keeps its body", async () => {
 		const entries = [
-			entry("skill", "dashboard-chat", { description: "대시보드 채팅 창의 오류를 재현하고 고친다", body: "# chat" }),
+			entry("skill", "dashboard-chat", {
+				description: "대시보드 채팅 창의 오류를 재현하고 고친다",
+				body: "# chat",
+				delegate: "quick",
+			}),
 			entry("rule", "대시보드-ui", { description: "대시보드 UI 규칙", body: "# ui" }),
 		];
 		const r = await findSkills(
@@ -279,6 +291,7 @@ describe("findSkills", () => {
 		);
 		expect(r).toMatchObject({ status: "routed", reason: "fallback: keyword (Jev unavailable)", fallback: true });
 		expect(r.skills.map((s) => [s.name, s.p, s.body])).toEqual([["dashboard-chat", KEYWORD_P, undefined]]);
+		expect(r.skills[0]?.delegate).toBe("quick");
 		expect(r.rules.map((x) => [x.name, x.p, x.body])).toEqual([["대시보드-ui", KEYWORD_P, ""]]);
 	});
 
@@ -392,9 +405,7 @@ describe("keywordHits", () => {
 
 	test("Korean matches a name token inside a longer prompt word", () => {
 		const entries = [entry("skill", "대시보드-error", { description: "대시보드 오류를 재현한다" })];
-		expect(keywordHits("대시보드에서 에러가 났어", entries).map((h) => h.entry.name)).toEqual([
-			"대시보드-error",
-		]);
+		expect(keywordHits("대시보드에서 에러가 났어", entries).map((h) => h.entry.name)).toEqual(["대시보드-error"]);
 		expect(keywordHits("오류를 재현해줘", entries).map((h) => h.entry.name)).toEqual([]);
 	});
 
@@ -442,5 +453,19 @@ describe("find_skill parse and score", () => {
 			answered: 0,
 			recall: 0,
 		});
+	});
+
+	test("a delegate label scores the returned skills' tiers; without one, no delegate metric", () => {
+		const base = { status: "routed" as const, reason: "", notes: [] };
+		const got = {
+			...base,
+			skills: [{ name: "browse-site", delegate: "quick" }, { name: "plain" }, { name: "other", delegate: "quick" }],
+			rules: [],
+		};
+		const label = { skills: ["browse-site", "plain", "other"], rules: [], delegate: { "browse-site": "quick" } };
+		expect(findSkill.score(label, got).delegate).toBeCloseTo(2 / 3);
+		expect(findSkill.score({ ...label, delegate: { "browse-site": "quick", other: "quick" } }, got).delegate).toBe(1);
+		expect(findSkill.score({ skills: ["browse-site"], rules: [] }, got)).not.toHaveProperty("delegate");
+		expect(findSkill.score({ skills: ["missing"], rules: [], delegate: {} }, got)).not.toHaveProperty("delegate");
 	});
 });

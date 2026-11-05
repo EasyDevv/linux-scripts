@@ -112,6 +112,20 @@ describe("CatalogReader", () => {
 		);
 	});
 
+	test("a skill's delegate: frontmatter is kept for a known tier only", () => {
+		const home = temp();
+		write(
+			join(home, ".agents/skills-routed/web/drive/SKILL.md"),
+			"---\ndescription: Drive.\ndelegate: quick\n---\n# D",
+		);
+		write(join(home, ".agents/skills-routed/odd/SKILL.md"), "---\ndescription: Odd.\ndelegate: always\n---\n");
+		write(join(home, ".agents/skills-routed/plain/SKILL.md"), "---\ndescription: Plain.\n---\n");
+		const byName = new Map(new CatalogReader(home).read().map((e) => [e.name, e]));
+		expect(byName.get("drive")?.delegate).toBe("quick");
+		expect(byName.get("odd")?.delegate).toBeUndefined();
+		expect(byName.get("plain")?.delegate).toBeUndefined();
+	});
+
 	test("a project entry replaces the global one of the same name", () => {
 		const home = temp();
 		const repo = temp();
