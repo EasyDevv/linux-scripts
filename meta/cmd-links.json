@@ -510,15 +510,36 @@
       "description": "Firefox Android의 확장 관리 페이지(settings, manager, popup)를 ADB로 연다."
     },
     {
-      "name": "phone",
+      "name": "droid",
       "mode": "symlink",
       "category": "android",
-      "target": "android/phone.py",
+      "target": "dev/droid.sh",
       "ownedPaths": [
-        "android/phone.py",
-        "android/phone_test.py"
+        "dev/droid.sh",
+        "dev/droid/CONTRACT.md",
+        "dev/droid/awake.go",
+        "dev/droid/connect.go",
+        "dev/droid/connect_test.go",
+        "dev/droid/device.go",
+        "dev/droid/droid",
+        "dev/droid/droid_test.go",
+        "dev/droid/go.mod",
+        "dev/droid/java/ClipSet.java",
+        "dev/droid/java/NodeDump.java",
+        "dev/droid/java/build-dex.sh",
+        "dev/droid/java/clipset.dex",
+        "dev/droid/java/nodedump.dex",
+        "dev/droid/main.go",
+        "dev/droid/nodes.go",
+        "dev/droid/nodes_test.go",
+        "dev/droid/overlay.go",
+        "dev/droid/overlay_test.go",
+        "dev/droid/rec.go",
+        "dev/droid/rec_test.go",
+        "dev/droid/smoke.sh",
+        "dev/droid/ui.go"
       ],
-      "description": "SM-S947N adb 짧은 CLI. 화면 유지·해제, AutoX push/run, Tasker start/smoke. PIN은 넣지 않는다."
+      "description": "adb 폰·emulator 조작 공통 CLI (Go). serial·connect·lock·dump·tap·swipe·type·awake·overlay·rec·shot·media·adb. --json, --model. 계약: dev/droid/CONTRACT.md"
     },
     {
       "name": "sunshine-display-failsafe",

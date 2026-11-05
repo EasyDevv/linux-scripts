@@ -76,6 +76,7 @@ dev/design/.cache/
 
 # ─── Go ──────────────────────────────────────────────
 dev/cli/bin/
+dev/droid/bin/
 git/ship/bin/
 meta/set-rules/bin/
 dev/netbird/go/bin/
