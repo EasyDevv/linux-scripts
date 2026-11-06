@@ -68,6 +68,13 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   The parent keeps the work when it is one or two short commands, when the person asked to act on
   their live screen or to confirm each step. Measured in `docs/backlog/261105-computer-use-quick-delegation.md`
   (the scripts repo). A worker child (`PI_SUBAGENT=1`) never adds the note, so it does not re-delegate.
+  Claude Code only: while `~/.config/pi-worker/config.json` has `enabled: false` (what `/worker off`
+  writes, kept for every session until `/worker skills|on`), the prompt carries nothing of the
+  worker: the client sends no note, and the pi plugin does not register `mcp__pi__worker` (nor its
+  delegation section). Claude has no tool unregister, so after a mid-session `/worker off` the tool
+  stays listed and refuses until a restart. Unreadable or malformed config keeps the note
+  (fail-open). The Agent tool works as usual while off. pi has no worker switch (its `subagent` has
+  none to read), so its note is unconditional.
 - Routed rule frontmatter: `description:` (one line, what work it governs) and optional
   `skills: [a, b]` (also load this rule when one of those skills is selected).
 - A touch report (`paths` and an empty `prompt`, prompt version with `limits.scriptFirst`) answers
