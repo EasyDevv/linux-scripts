@@ -95,6 +95,21 @@ test("findCargoPackageDir stops at [package], not workspace", () => {
 	}
 });
 
+test("findCargoPackageDir skips a template crate instead of climbing to the crate around it", () => {
+	const cwd = tempDir();
+	try {
+		const template = join(cwd, "projects", "stack", "apps", "server");
+		writeFileSync(join(cwd, "Cargo.toml"), '[package]\nname = "host"\nversion = "0.1.0"\n');
+		mkdirSync(join(template, "src"), { recursive: true });
+		writeFileSync(join(template, "Cargo.toml"), '[package]\nname = "{{CARGO_PACKAGE_NAME}}"\nversion = "0.1.0"\n');
+		writeFileSync(join(template, "src", "lib.rs"), "");
+		expect(findCargoPackageDir(join(template, "src", "lib.rs"))).toBe(undefined);
+		expect(findCargoPackageDir(join(cwd, "src", "lib.rs"))).toBe(cwd);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 test("planLint runs dlint --write --quiet per package dir and clippy with CLIPPY_CONF_DIR", () => {
 	const root = tempDir();
 	try {

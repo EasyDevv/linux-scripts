@@ -78,6 +78,12 @@ export function hasPackageTable(toml: string): boolean {
 	return /^\[package\]\s*$/m.test(toml);
 }
 
+/** A project-template manifest (`name = "{{CARGO_PACKAGE_NAME}}"`) that cargo cannot parse until generated. */
+export function hasTemplatePlaceholder(toml: string): boolean {
+	return /\{\{[A-Z0-9_]+\}\}/.test(toml);
+}
+
+/** The crate to clippy for `filePath`, or undefined when it has none or sits in a template crate. */
 export function findCargoPackageDir(
 	filePath: string,
 	exists: Exists = existsSync,
@@ -85,7 +91,10 @@ export function findCargoPackageDir(
 ): string | undefined {
 	for (let dir = dirname(filePath); ; dir = dirname(dir)) {
 		const manifest = join(dir, "Cargo.toml");
-		if (exists(manifest) && hasPackageTable(readFile(manifest))) return dir;
+		if (exists(manifest)) {
+			const toml = readFile(manifest);
+			if (hasPackageTable(toml)) return hasTemplatePlaceholder(toml) ? undefined : dir;
+		}
 		if (dirname(dir) === dir) return undefined;
 	}
 }
