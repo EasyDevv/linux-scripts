@@ -50,6 +50,11 @@
 		"scheme": "dark"
 	},
 	{
+		"slug": "quant-lab",
+		"label": "Quant Lab",
+		"scheme": "dark"
+	},
+	{
 		"slug": "buffer",
 		"label": "Buffer",
 		"scheme": "dark"

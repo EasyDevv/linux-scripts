@@ -50,6 +50,33 @@
       "description": "proto 위에서 CLI 도구를 게이트 검증 후 설치·삭제·업데이트하고 audit·doctor로 점검한다."
     },
     {
+      "name": "pk",
+      "mode": "symlink",
+      "category": "dev",
+      "target": "dev/pk.sh",
+      "description": "package.json 스크립트를 인라인 목록으로 골라 실행하고, 자주 쓴 스크립트를 Recent 5개로 위에 둔다.",
+      "ownedPaths": [
+        "dev/pk.sh",
+        "dev/pk/README.md",
+        "dev/pk/go.mod",
+        "dev/pk/go.sum",
+        "dev/pk/main.go",
+        "dev/pk/internal/app/args.go",
+        "dev/pk/internal/app/args_test.go",
+        "dev/pk/internal/app/list.go",
+        "dev/pk/internal/app/project.go",
+        "dev/pk/internal/app/project_test.go",
+        "dev/pk/internal/app/recent.go",
+        "dev/pk/internal/app/recent_test.go",
+        "dev/pk/internal/app/run.go",
+        "dev/pk/internal/app/run_test.go",
+        "dev/pk/internal/ui/model.go",
+        "dev/pk/internal/ui/model_test.go",
+        "dev/pk/internal/ui/render.go",
+        "dev/pk/internal/ui/run.go"
+      ]
+    },
+    {
       "name": "clean-empty-dir",
       "mode": "symlink",
       "category": "meta",
