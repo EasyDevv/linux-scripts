@@ -55,6 +55,10 @@ const LOCALE_RELAUNCH = readBooleanEnv(
 	"WXT_CHROME_LOCALE_RELAUNCH",
 	CHROME_CONFIG.localeRelaunch,
 );
+// The dev window runs with only the extension under development. A blocker
+// installed by a managed policy (uBlock, say) holds page loads until its own
+// filter lists settle, so it stays out unless asked for.
+const KEEP_EXTENSIONS = readBooleanEnv("WXT_CHROME_KEEP_EXTENSIONS", false);
 const DEFAULT_WXT_PORT = CHROME_CONFIG.defaultWxtPort;
 const DETACHED_CHILD_ENV = "WXTU_DEV_CHROME_DETACHED_CHILD";
 const DEFAULT_START_URL = CHROME_CONFIG.defaultStartUrl;
@@ -80,6 +84,7 @@ const BROWSER_OPEN_BOOLEAN_FLAGS = new Set([
 	"--headless",
 	"--help",
 	"--json",
+	"--keep-extensions",
 	"--minimize",
 	"--status",
 ]);
@@ -397,6 +402,10 @@ async function launchChrome() {
 
 	if (process.env.WXT_CHROME_DATA_DIR) {
 		ctrlArgs.push("--user-data", CHROMIUM_DATA_DIR);
+	}
+
+	if (KEEP_EXTENSIONS) {
+		ctrlArgs.push("--keep-extensions");
 	}
 
 	ctrlArgs.push(...browserArgs);

@@ -77,6 +77,8 @@ export type OpenOptions = {
 	dryRun: boolean;
 	json: boolean;
 	loadExtension?: string;
+	/** Keep extensions already installed in the profile (a managed blocker, say). Off by default. */
+	keepExtensions: boolean;
 	android: boolean;
 	record: boolean;
 	recordFrames: number | null;
@@ -113,6 +115,8 @@ Options
                            throwaway profile first
   --session <name>         inject a saved session's cookies after launch
   --load-extension <dir>   load an unpacked extension (comma list ok)
+  --keep-extensions        keep the profile's other extensions too (a managed
+                           blocker holds page loads until its lists settle; off by default)
   --android                emulate an Android phone (UA, touch, 412x915)
   --record [N]             record N frames after focus; omit N to record until close
   --background             the default: below all your windows, hidden from the taskbar and
@@ -260,6 +264,7 @@ export function parseArgs(argv: string[]): OpenOptions {
 		dryRun: false,
 		json: false,
 		clean: false,
+		keepExtensions: false,
 		loadTimeoutMs: 15_000,
 		android: false,
 		record: false,
@@ -317,6 +322,9 @@ export function parseArgs(argv: string[]): OpenOptions {
 			case "--load-extension":
 				options.loadExtension =
 					argv[++i] ?? die("Usage: --load-extension <dir>");
+				break;
+			case "--keep-extensions":
+				options.keepExtensions = true;
 				break;
 			case "--browser-arg":
 				options.browserArgs.push(
@@ -632,13 +640,23 @@ export async function ownsBrowserOn(
 }
 
 /**
- * Script runs (`--headless`) start without extensions unless one is asked for:
- * a force-installed blocker (a managed policy) holds the first navigation until
- * its filter lists load, which left the tab on about:blank. Windowed runs keep them.
+ * A run starts with only the extension it asks for, if any: a force-installed
+ * blocker (a managed policy) holds a site's subresources until its own filter
+ * lists settle, which left the tab on about:blank or "loading" forever.
+ *
+ * `--keep-extensions` opts back into the profile's extensions when a run needs
+ * them; everything else stays isolated by default.
  */
-export function extensionArgs(options: Pick<OpenOptions, "headless" | "loadExtension">): string[] {
-	if (options.loadExtension) return [`--load-extension=${options.loadExtension}`];
-	return options.headless ? ["--disable-extensions"] : [];
+export function extensionArgs(
+	options: Pick<OpenOptions, "loadExtension" | "keepExtensions">,
+): string[] {
+	const args: string[] = [];
+	if (options.loadExtension) args.push(`--load-extension=${options.loadExtension}`);
+	if (options.keepExtensions) return args;
+	if (options.loadExtension)
+		args.push(`--disable-extensions-except=${options.loadExtension}`);
+	else args.push("--disable-extensions");
+	return args;
 }
 
 /** The live pid holding Chromium's SingletonLock (a `<host>-<pid>` symlink) on a profile, if any. */

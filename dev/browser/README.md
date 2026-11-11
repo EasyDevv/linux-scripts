@@ -19,6 +19,7 @@ Chromium으로 페이지를 읽고, 렌더·측정·캡처하고, 사람이 로�
   - `close`, `login`: 쿠키를 세션으로 내보낸다.
 - 프로젝트 프로필: 그 외 포트는 `./.user-data/chrome-{package name}` (세션 자동 연결 없음, `--session`으로 명시).
 - `~/.local/share/browser/profiles.json`: `{ "9222": { "extensions": ["/abs/unpacked"] } }`
+- 확장: 기본은 `--load-extension`으로 지정한 확장만 쓴다(`--disable-extensions-except`). managed policy로 강제 설치된 blocker(예: uBlock)는 필터 리스트가 준비될 때까지 페이지 로드를 붙잡아 탭이 `loading`에 머무른다. 그 확장까지 필요한 실행만 `--keep-extensions`로 켠다.
 
 ## 로그인
 
@@ -43,7 +44,7 @@ browser close --port 9223                          # 임시 프로필까지 삭�
 ## Chromium
 
 ```bash
-browser open [--port 9222] [--url <url>] [--normal|--minimize] [--headless] [--clean] [--session <name>] [--load-extension <dir>] [--android] [--record [N]]
+browser open [--port 9222] [--url <url>] [--normal|--minimize] [--headless] [--clean] [--session <name>] [--load-extension <dir>] [--keep-extensions] [--android] [--record [N]]
 browser close [--port N]
 browser list            # Chromium 전부. TTY면 j/k 이동, x 닫기(확인 기본 No), enter 탭 출력
 browser status | tabs --port N | minimize --port N

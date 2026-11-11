@@ -392,10 +392,24 @@ export async function resetTabs(
 							{ url: targetUrl },
 						);
 
-						const loadPromise = new Promise<void>((resolve) => {
-							cdp.on("Page.loadEventFired", () => resolve());
-						});
-						await Promise.race([loadPromise, Bun.sleep(15000)]);
+						// A cross-process navigation does not reliably deliver
+						// Page.loadEventFired to this session, and waiting for it cost a
+						// flat 15s on every page that had already finished. Poll the
+						// document instead: done the moment it reads "complete".
+						const deadline = Date.now() + 15000;
+						while (Date.now() < deadline) {
+							const probe = await cdp
+								.send<{ result?: { value?: unknown } }>(
+									"Runtime.evaluate",
+									{
+										expression: "document.readyState",
+										returnByValue: true,
+									},
+								)
+								.catch(() => null);
+							if (probe?.result?.value === "complete") break;
+							await Bun.sleep(150);
+						}
 
 						const evalResult = await cdp.send<{
 							result?: { value?: Record<string, unknown> };

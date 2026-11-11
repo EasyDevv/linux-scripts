@@ -128,9 +128,21 @@ test("a profile whose SingletonLock names a live pid is reported as held", async
 	rmSync(dead, { recursive: true });
 });
 
-test("headless runs start without extensions unless one is loaded", async () => {
+test("script runs only keep the extension they load", async () => {
 	const { extensionArgs } = await import("./open.ts");
-	expect(extensionArgs({ headless: true, loadExtension: undefined })).toEqual(["--disable-extensions"]);
-	expect(extensionArgs({ headless: false, loadExtension: undefined })).toEqual([]);
-	expect(extensionArgs({ headless: true, loadExtension: "/x" })).toEqual(["--load-extension=/x"]);
+	expect(extensionArgs({ loadExtension: undefined, keepExtensions: false })).toEqual([
+		"--disable-extensions",
+	]);
+	expect(extensionArgs({ loadExtension: "/x", keepExtensions: false })).toEqual([
+		"--load-extension=/x",
+		"--disable-extensions-except=/x",
+	]);
+});
+
+test("--keep-extensions leaves the profile's extensions alone", async () => {
+	const { extensionArgs } = await import("./open.ts");
+	expect(extensionArgs({ loadExtension: undefined, keepExtensions: true })).toEqual([]);
+	expect(extensionArgs({ loadExtension: "/x", keepExtensions: true })).toEqual([
+		"--load-extension=/x",
+	]);
 });
