@@ -30,8 +30,10 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 - model_route's demand (0–3) picks, in each list, the tier on whose band holds it. `enabled: false`
   switches a tier off: its band goes to the nearest tier on below it, else the lowest tier on.
 - pi reads `pi[].models` as that name's `models.profiles` ladder (a `config.jsonc` profile of the same
-  name wins); Claude Code reads `claude[].model` as the catch-all Agent `model`. Claude's effort is
-  model_route's `effort`, never a tier's.
+  name wins). Claude Code no longer applies `claude[]` to subagents (261111): Agent models are
+  Claude Code's own, and cc-proxy (`~/.local/share/scripts/dev/cc-proxy`) maps an alias to another
+  provider; the dashboard's Lead role still reads `claude[]`. Claude's effort is model_route's
+  `effort`, never a tier's.
 - `route.holdAboveTokens`: past this context size a harness keeps its current model **and effort**
   in both directions (an effort change can bust the provider's prompt cache). Subagents and new
   sessions start with an empty context, so the hold never applies to them.
@@ -59,21 +61,16 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   the nearest ancestor of `cwd` holding `.git`, else `cwd`.
 - Routed skill frontmatter may set `delegate: quick|standard|high`: the skill's work (computer use,
   browsing, a phone or VM driven by script) runs well on a cheap worker, so every entry for it
-  carries `delegate` (body, hint, path and keyword hits alike; any other value is dropped). Both
-  clients append one delegation note after the skills they deliver: Claude Code → `mcp__pi__worker`
-  with that `tier`, pi → `subagent` with agent `worker-sub` and that `grade`; the brief names the
+  carries `delegate` (body, hint, path and keyword hits alike; any other value is dropped). pi
+  appends one delegation note after the skills it delivers: `subagent` with agent `worker-sub` and
+  that `grade` (Claude Code adds none: its pi worker plugin was removed 261111); the brief names the
   `SKILL.md` path, takes the report as the result (one cheap read-back at most) and keeps that tier.
   The brief also tells the worker to stop and report after two failed tries when the browser,
   desktop or device does not respond, instead of diagnosing it.
   The parent keeps the work when it is one or two short commands, when the person asked to act on
   their live screen or to confirm each step. Measured in `docs/backlog/261105-computer-use-quick-delegation.md`
   (the scripts repo). A worker child (`PI_SUBAGENT=1`) never adds the note, so it does not re-delegate.
-  Claude Code only: while `~/.config/pi-worker/config.json` has `enabled: false` (what `/worker off`
-  writes, kept for every session until `/worker skills|on`), the prompt carries nothing of the
-  worker: the client sends no note, and the pi plugin does not register `mcp__pi__worker` (nor its
-  delegation section). Claude has no tool unregister, so after a mid-session `/worker off` the tool
-  stays listed and refuses until a restart. Unreadable or malformed config keeps the note
-  (fail-open). The Agent tool works as usual while off. pi has no worker switch (its `subagent` has
+  pi has no worker switch (its `subagent` has
   none to read), so its note is unconditional.
 - Routed rule frontmatter: `description:` (one line, what work it governs) and optional
   `skills: [a, b]` (also load this rule when one of those skills is selected).
