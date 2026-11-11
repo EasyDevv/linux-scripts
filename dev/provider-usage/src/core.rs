@@ -711,6 +711,8 @@ mod tests {
                 label: None,
                 resets_left: 1,
                 expires_at: 9,
+                scope: "all".into(),
+                model: None,
             }],
             renews_at: None,
             spend_days: None,

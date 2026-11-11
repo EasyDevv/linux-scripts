@@ -245,6 +245,12 @@ pub fn parse_windows(json: &Value) -> Vec<UsageWindow> {
 /// Reset-ticket grants from the `cedar_ember` block of a usage response. A
 /// spent grant (`resets_left` 0) is not a card row, and a grant without an
 /// expiry carries none.
+///
+/// A grant whose `clears` leaves out `seven_day` is a model reset (live shape
+/// 2026-11-11: the Fable launch grant clears `five_hour` and
+/// `seven_day_overage_included` and sets `gives_back_weekly`). The grant itself
+/// never names the model, so the name comes from the per-model weekly limit
+/// (`weekly_scoped`) whose display name the label mentions, or the only one.
 pub fn parse_tickets(json: &Value) -> Vec<ResetTicket> {
     let Some(grants) = json
         .get(RESET_PROGRAM)
@@ -253,6 +259,7 @@ pub fn parse_tickets(json: &Value) -> Vec<ResetTicket> {
     else {
         return Vec::new();
     };
+    let models = scoped_models(json);
     grants
         .iter()
         .filter_map(|grant| {
@@ -261,21 +268,57 @@ pub fn parse_tickets(json: &Value) -> Vec<ResetTicket> {
             if resets_left == 0 {
                 return None;
             }
+            let label = grant
+                .get("label")
+                .and_then(Value::as_str)
+                .map(str::to_string);
+            let clears_weekly = grant
+                .get("clears")
+                .and_then(Value::as_array)
+                .is_none_or(|clears| clears.iter().any(|c| c.as_str() == Some("seven_day")));
+            let model = (!clears_weekly)
+                .then(|| model_of(label.as_deref(), &models))
+                .flatten();
             Some(ResetTicket {
                 id,
-                label: grant
-                    .get("label")
-                    .and_then(Value::as_str)
-                    .map(str::to_string),
+                label,
                 resets_left,
                 expires_at: grant
                     .get("ends_at")
                     .and_then(Value::as_str)
                     .and_then(parse_iso_unix)
                     .unwrap_or(i64::MAX),
+                scope: if clears_weekly { "all" } else { "model" }.into(),
+                model,
             })
         })
         .collect()
+}
+
+/// Display names of the per-model weekly limits (`Fable`).
+fn scoped_models(json: &Value) -> Vec<String> {
+    json.get("limits")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|limit| {
+            limit
+                .get("scope")?
+                .get("model")?
+                .get("display_name")?
+                .as_str()
+                .map(str::to_string)
+        })
+        .collect()
+}
+
+fn model_of(label: Option<&str>, models: &[String]) -> Option<String> {
+    let label = label.unwrap_or_default().to_lowercase();
+    models
+        .iter()
+        .find(|name| label.contains(&name.to_lowercase()))
+        .or_else(|| (models.len() == 1).then(|| &models[0]))
+        .cloned()
 }
 
 fn authed_get(http: &dyn Http, cookie: &str, url: &str) -> Result<crate::http::HttpResponse> {
@@ -764,6 +807,43 @@ mod tests {
         );
         assert_eq!(tickets[1].expires_at, i64::MAX);
         assert_eq!(parse_tickets(&json!({})).len(), 0);
+    }
+
+    #[test]
+    fn a_grant_that_keeps_the_weekly_usage_is_a_model_reset() {
+        // Live shape 2026-11-11: a Fable reset and a full reset side by side.
+        let json = json!({
+            "cedar_ember": { "grants": [
+                {
+                    "id": "launch-2610-fable-week",
+                    "label": "New model launch: one Fable reset for Pro and Team Standard, launch week only",
+                    "clears": ["five_hour", "seven_day_overage_included"],
+                    "gives_back_weekly": true,
+                    "resets_left": 1,
+                    "ends_at": "2026-11-17T07:59:00+00:00"
+                },
+                {
+                    "id": "full-reset-2611",
+                    "label": "One full limit reset (November 2026)",
+                    "clears": ["five_hour", "seven_day", "seven_day_overage_included"],
+                    "resets_left": 1,
+                    "ends_at": "2026-12-10T22:00:00+00:00"
+                }
+            ]},
+            "limits": [
+                { "kind": "session", "percent": 28, "scope": null },
+                { "kind": "weekly_scoped", "percent": 0,
+                  "scope": { "model": { "display_name": "Fable", "id": null }, "surface": null } }
+            ]
+        });
+        let tickets = parse_tickets(&json);
+        assert_eq!(tickets[0].scope, "model");
+        assert_eq!(tickets[0].model.as_deref(), Some("Fable"));
+        assert_eq!(tickets[1].scope, "all");
+        assert_eq!(tickets[1].model, None);
+        // A grant that predates `clears` is a full reset, as it always was.
+        let old = parse_tickets(&serde_json::from_str(&tickets_body()).unwrap());
+        assert_eq!(old[0].scope, "all");
     }
 
     #[test]

@@ -38,7 +38,7 @@ pub struct PlanState {
 
 /// A usage-limit reset the account holds ("reset ticket"). Anthropic reports a
 /// grant with a remaining count and, when the promo carries one, an expiry.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResetTicket {
     /// Provider grant id, echoed back when the reset is redeemed.
@@ -48,6 +48,18 @@ pub struct ResetTicket {
     pub resets_left: u32,
     /// Instant the ticket stops being redeemable.
     pub expires_at: i64,
+    /// `all` clears every limit, weekly included. `model` refills the session
+    /// and one model's allowance and gives that model's share of the weekly
+    /// usage back, but leaves the rest of the weekly usage in place.
+    #[serde(default = "scope_all")]
+    pub scope: String,
+    /// The model a `model` ticket is for (`Fable`), when the response names it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+}
+
+fn scope_all() -> String {
+    "all".into()
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
