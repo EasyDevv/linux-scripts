@@ -16,6 +16,7 @@ import {
 	aliasOf,
 	type Config,
 	PORT,
+	proxiable,
 	readConfig,
 	splitTarget,
 	type Target,
@@ -24,6 +25,7 @@ import {
 	configPath,
 	writeConfig,
 } from "./config.ts";
+import { catalogAllowsOff, commonText, sendEffort } from "./levels.ts";
 import { forForeign, forNative, rewriteJson, StreamRewriter, UsageTap } from "./normalize.ts";
 import * as statsStore from "./stats.ts";
 import { credentialFor, loggedIn, PROVIDER_NAMES, PROVIDERS } from "./upstreams.ts";
@@ -125,7 +127,17 @@ async function toForeign(
 		return fail("auth", cause instanceof Error ? cause.message : String(cause));
 	}
 	const requested = String(body.model);
-	const payload = JSON.stringify(forForeign(body, split.provider, split.id, target.effort));
+	const effort = sendEffort(target.effort, catalogAllowsOff(split.provider, split.id));
+	const alias = aliasOf(body.model);
+	const common = alias && config.routes[alias].common === false ? "" : commonText();
+	const sent = forForeign(body, split.provider, split.id, effort, common);
+	const payload = JSON.stringify(sent);
+	// journal 한 줄: 무엇을 보냈는지(과추론 설정이 실제로 들어갔는지 확인용). 내용은 남기지 않는다.
+	const sentThinking = (sent.thinking as { type?: string } | undefined)?.type ?? "-";
+	const sentEffort = (sent.output_config as { effort?: string } | undefined)?.effort ?? "-";
+	console.log(
+		`→ ${target.model} (${requested}) thinking=${sentThinking} effort=${sentEffort} common=${common && JSON.stringify(sent.system).includes(JSON.stringify(common).slice(1, -1)) ? "yes" : "no"}`,
+	);
 	const timer = new AbortController();
 	const timeout = setTimeout(() => timer.abort(new Error("no response headers")), FIRST_BYTE_MS);
 	let upstream: Response;
@@ -190,7 +202,7 @@ async function messages(req: Request, url: URL): Promise<Response> {
 	const config = currentConfig();
 	const alias = aliasOf(body.model);
 	const session = req.headers.get("x-claude-code-session-id") ?? undefined;
-	const chain = config.enabled && alias ? config.routes[alias].chain : [];
+	const chain = config.enabled && alias && proxiable(config, req.headers) ? config.routes[alias].chain : [];
 	const record = (outcome: Omit<statsStore.Outcome, "session" | "alias">) => {
 		statsStore.record(stats, { session, alias: alias ?? "other", ...outcome });
 		dirty = true;

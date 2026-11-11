@@ -100,8 +100,23 @@ export function forNative(body: Json): Json {
 	return touched ? { ...body, messages: mergeRuns(next) } : body;
 }
 
-/** 다른 업체용 표준 Messages 요청. `provider`는 thinking 서명 태그, `model`은 업체 쪽 ID. */
-export function forForeign(body: Json, provider: string, model: string, effort?: Effort): Json {
+/** system 끝에 공통 층을 한 번 붙인다(이미 들어 있으면 그대로). 늘 같은 문구라 캐시 접두사는 안정적이다. */
+export function withCommon(system: unknown, common: string): unknown {
+	if (!common) return system;
+	if (typeof system === "string") return system.includes(common) ? system : `${system}\n\n${common}`;
+	if (Array.isArray(system)) {
+		if ((system as Block[]).some((block) => typeof block.text === "string" && block.text.includes(common))) return system;
+		return [...system, { type: "text", text: common }];
+	}
+	return [{ type: "text", text: common }];
+}
+
+/**
+ * 다른 업체용 표준 Messages 요청. `provider`는 thinking 서명 태그, `model`은 업체 쪽 ID.
+ * `effort`가 `off`면 thinking을 끈다(off를 받는지는 호출하는 쪽이 카탈로그로 이미 걸렀다).
+ * `common`은 system 끝에 붙일 공통 층("" = 없음).
+ */
+export function forForeign(body: Json, provider: string, model: string, effort?: Effort, common = ""): Json {
 	const tools: Block[] = [];
 	const toolNames = new Set<string>();
 	const addTool = (tool: unknown) => {
@@ -160,8 +175,13 @@ export function forForeign(body: Json, provider: string, model: string, effort?:
 		if (body[key] !== undefined) out[key] = body[key];
 	}
 	if (Array.isArray(out.system)) out.system = (out.system as Block[]).map(plainCache);
+	if (common) out.system = withCommon(out.system, common);
 	if (tools.length > 0) out.tools = tools;
 	else delete out.tool_choice;
+	if (effort === "off") {
+		out.thinking = { type: "disabled" };
+		return out;
+	}
 	const thinking = body.thinking as Json | undefined;
 	if (thinking && typeof thinking === "object") {
 		const { display: _display, ...rest } = thinking;

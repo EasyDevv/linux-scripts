@@ -11,20 +11,33 @@ import { homedir } from "node:os";
 
 export const ALIASES = ["haiku", "sonnet", "opus", "fable"] as const;
 export type Alias = (typeof ALIASES)[number];
-export const EFFORTS = ["low", "medium", "high", "xhigh", "max"] as const;
+/** `off` = `thinking: {type: "disabled"}`. pi 카탈로그에 off가 없는 모델이면 low로 보낸다(`levels.ts`). */
+export const EFFORTS = ["off", "low", "medium", "high", "xhigh", "max"] as const;
 export type Effort = (typeof EFFORTS)[number];
 
 /** 체인 한 칸: `provider/model`. `effort`가 있으면 Claude Code가 보낸 effort 대신 이 값을 보낸다. */
 export type Target = { model: string; effort?: Effort };
-export type Route = { chain: Target[] };
+/** `common: false`면 그 별칭은 공통 층(`levels.ts` `commonText`)을 붙이지 않는다. 기본은 붙인다. */
+export type Route = { chain: Target[]; common?: false };
 export type Config = {
 	enabled: boolean;
 	routes: Record<Alias, Route>;
 	/** 429·5xx·연결·인증 실패 뒤 그 대상을 건너뛰는 시간. */
 	cooldownSeconds: number;
+	/** true(기본)면 서브에이전트 요청(`x-claude-code-agent-id` 헤더)만 체인을 탄다. 메인 대화와 보조 호출은
+	 *  모델이 무엇이든 Anthropic 직행이다(`proxiable`). */
+	subagentsOnly: boolean;
 };
 
 export const PORT = Number(process.env.CC_PROXY_PORT ?? 45870);
+
+/** Claude Code 2.1.322는 서브에이전트의 API 요청에만 `x-claude-code-agent-id`를 붙인다(메인에는 없음, 261111 실측). */
+export const AGENT_HEADER = "x-claude-code-agent-id";
+
+/** 체인을 탈 요청인가: `subagentsOnly`면 서브에이전트 요청만. */
+export function proxiable(config: Config, headers: Headers): boolean {
+	return !config.subagentsOnly || headers.has(AGENT_HEADER);
+}
 
 export const DEFAULT_CONFIG: Config = {
 	enabled: true,
@@ -35,6 +48,7 @@ export const DEFAULT_CONFIG: Config = {
 		fable: { chain: [] },
 	},
 	cooldownSeconds: 60,
+	subagentsOnly: true,
 };
 
 export function configDir(): string {
@@ -65,7 +79,10 @@ export function validate(input: unknown, providers: readonly string[]): Config {
 		if (!Array.isArray(chain)) throw new Error(`${alias}: chain must be a list`);
 		if (chain.length > 8) throw new Error(`${alias}: at most 8 targets`);
 		const seen = new Set<string>();
+		const common = raw.routes?.[alias]?.common;
+		if (common !== undefined && typeof common !== "boolean") throw new Error(`${alias}: common is true/false`);
 		routes[alias] = {
+			...(common === false ? { common: false as const } : {}),
 			chain: chain.map((target) => {
 				if (!target || typeof target.model !== "string") throw new Error(`${alias}: target needs a model`);
 				const split = splitTarget(target.model);
@@ -86,7 +103,9 @@ export function validate(input: unknown, providers: readonly string[]): Config {
 	if (!(Number.isFinite(cooldownSeconds) && cooldownSeconds >= 0 && cooldownSeconds <= 3600)) {
 		throw new Error("cooldownSeconds is 0–3600");
 	}
-	return { enabled: raw.enabled ?? DEFAULT_CONFIG.enabled, routes, cooldownSeconds };
+	const subagentsOnly = raw.subagentsOnly ?? DEFAULT_CONFIG.subagentsOnly;
+	if (typeof subagentsOnly !== "boolean") throw new Error("subagentsOnly is true/false");
+	return { enabled: raw.enabled ?? DEFAULT_CONFIG.enabled, routes, cooldownSeconds, subagentsOnly };
 }
 
 /** 파일 버전: 저장할 때 읽은 버전과 다르면(그 사이 손으로 고쳤으면) 거절한다. */
