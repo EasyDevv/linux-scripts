@@ -19,7 +19,7 @@ Chromium으로 페이지를 읽고, 렌더·측정·캡처하고, 사람이 로�
   - `close`, `login`: 쿠키를 세션으로 내보낸다.
 - 프로젝트 프로필: 그 외 포트는 `./.user-data/chrome-{package name}` (세션 자동 연결 없음, `--session`으로 명시).
 - `~/.local/share/browser/profiles.json`: `{ "9222": { "extensions": ["/abs/unpacked"] } }`
-- 확장: 기본은 `--load-extension`으로 지정한 확장만 쓴다(`--disable-extensions-except`). managed policy로 강제 설치된 blocker(예: uBlock)는 필터 리스트가 준비될 때까지 페이지 로드를 붙잡아 탭이 `loading`에 머무른다. 그 확장까지 필요한 실행만 `--keep-extensions`로 켠다.
+- 확장: `--load-extension`으로 지정한 확장이 있으면 그 확장만 쓴다(`--disable-extensions-except`). managed policy로 강제 설치된 blocker(예: uBlock)는 필터 리스트가 준비될 때까지 페이지 로드를 붙잡아 탭이 `loading`에 머무른다. 그 확장까지 필요한 실행만 `--keep-extensions`로 켠다. 지정한 확장이 없으면 프로필에 설치된 확장을 그대로 쓴다(예: 12345 프로필의 Tampermonkey). 단 `--headless`는 예전처럼 `--disable-extensions`로 맨몸으로 뜬다.
 
 ## 로그인
 

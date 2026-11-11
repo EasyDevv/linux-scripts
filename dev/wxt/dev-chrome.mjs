@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 import { startSampleServer, SAMPLE_REGISTRY } from "./sample-dev.mjs";
 import { consumeCommonDevArg } from "./dev-wxt-utils.mjs";
 import { WXTU_CONFIG } from "./config.mjs";
-import { getPageTab } from "../browser/cdp.ts";
 
 function readBooleanEnv(name, fallback) {
 	const value = process.env[name];
@@ -51,10 +50,6 @@ const DEV_LOCALE =
 	process.env.WXT_CHROME_LOCALE?.trim() ||
 	process.env.BROWSER_LOCALE?.trim() ||
 	CHROME_CONFIG.defaultLocale;
-const LOCALE_RELAUNCH = readBooleanEnv(
-	"WXT_CHROME_LOCALE_RELAUNCH",
-	CHROME_CONFIG.localeRelaunch,
-);
 // The dev window runs with only the extension under development. A blocker
 // installed by a managed policy (uBlock, say) holds page loads until its own
 // filter lists settle, so it stays out unless asked for.
@@ -303,77 +298,20 @@ function watchChromeExit(port) {
 	}, 2000);
 }
 
-async function readNavigatorLanguage(port) {
-	let tab;
-	try {
-		tab = await getPageTab(port);
-	} catch {
-		return null;
-	}
-	const ws = new WebSocket(tab.webSocketDebuggerUrl);
-	await new Promise((resolve, reject) => {
-		ws.onopen = () => resolve();
-		ws.onerror = () => reject(new Error("ws error"));
-	});
-	const id = 1;
-	const result = await new Promise((resolve) => {
-		ws.onmessage = (event) => {
-			const msg = JSON.parse(event.data);
-			if (msg.id === id) resolve(msg.result);
-		};
-		ws.send(
-			JSON.stringify({
-				id,
-				method: "Runtime.evaluate",
-				params: {
-					expression: "navigator.language || ''",
-					returnByValue: true,
-					awaitPromise: true,
-				},
-			}),
-		);
-	});
-	ws.close();
-	const value = result?.result?.value;
-	return typeof value === "string" ? value : null;
-}
-
-function localeMatches(actual, expected) {
-	if (!actual) return false;
-	return actual.toLowerCase().startsWith(expected.toLowerCase());
-}
-
-async function terminateExistingChrome(port) {
-	try {
-		execFileSync("browser", ["close", "--port", String(port)], {
-			stdio: "ignore",
-			timeout: 10_000,
-		});
-	} catch {}
-}
-
 async function launchChrome() {
 	const outDir = resolveOutDir();
 	const sessionOptions = resolveChromeSessionOptions();
 	const url = sessionOptions.url;
 
+	// --normal is a person asking to look at the dev build: it gets a window of
+	// its own instead of a reused background browser. A second Chromium cannot
+	// share a profile dir, so it runs on its own port with a sibling profile.
+	const wantsVisibleWindow = browserArgs.includes("--normal");
+	let launchPort = sessionOptions.port;
+	let separateWindow = false;
+
 	if (await isChromeDebugEndpointAlive(sessionOptions.port)) {
-		if (LOCALE_RELAUNCH) {
-			const actual = await readNavigatorLanguage(sessionOptions.port);
-			if (!localeMatches(actual, sessionOptions.locale)) {
-				console.log(
-					`\nℹ Existing Chromium reports navigator.language=${actual ?? "<unknown>"}; expected ${sessionOptions.locale}. Relaunching…`,
-				);
-				await terminateExistingChrome(sessionOptions.port);
-			} else {
-				console.log(
-					`\nℹ Browser already running on port ${sessionOptions.port} with locale ${actual}; reusing existing Chromium session`,
-				);
-				console.log(`  profile: ${sessionOptions.userDataDir}`);
-				watchChromeExit(sessionOptions.port);
-				return;
-			}
-		} else {
+		if (!wantsVisibleWindow) {
 			console.log(
 				`\nℹ Browser already running on port ${sessionOptions.port}; reusing existing Chromium session`,
 			);
@@ -381,12 +319,18 @@ async function launchChrome() {
 			watchChromeExit(sessionOptions.port);
 			return;
 		}
+
+		launchPort = await findAvailablePort(sessionOptions.port + 1);
+		separateWindow = true;
+		console.log(
+			`\nℹ Browser on port ${sessionOptions.port} stays; opening a separate visible window on ${launchPort}`,
+		);
 	}
 
 	const ctrlArgs = [
 		"open",
 		"--port",
-		String(sessionOptions.port),
+		String(launchPort),
 		"--load-extension",
 		outDir,
 		"--locale",
@@ -400,7 +344,9 @@ async function launchChrome() {
 		ctrlArgs.push("--minimize");
 	}
 
-	if (process.env.WXT_CHROME_DATA_DIR) {
+	if (separateWindow) {
+		ctrlArgs.push("--user-data", `${sessionOptions.userDataDir}-view`);
+	} else if (process.env.WXT_CHROME_DATA_DIR) {
 		ctrlArgs.push("--user-data", CHROMIUM_DATA_DIR);
 	}
 
@@ -427,7 +373,13 @@ async function launchChrome() {
 		console.log(`  locale: ${output.locale ?? sessionOptions.locale}`);
 		console.log(`  window state: ${output.windowState}`);
 
-		watchChromeExit(output.port ?? sessionOptions.port);
+		// A separate window is not the dev session's browser: its own lifecycle
+		// stays tied to the background browser the run is developing against.
+		watchChromeExit(
+			separateWindow
+				? sessionOptions.port
+				: (output.port ?? launchPort),
+		);
 	} catch (error) {
 		console.error(`Failed to launch browser: ${error.stderr || error.message}`);
 		wxt.kill();

@@ -8,7 +8,6 @@
 		"defaultWxtPort": 3000,
 		"browserBinary": "chromium",
 		"defaultLocale": "en-US",
-		"localeRelaunch": true,
 		"defaultStartUrl": "https://m.youtube.com",
 		"startMinimized": false,
 		"devLogPath": ".user-data/logs/dev-chrome.log",

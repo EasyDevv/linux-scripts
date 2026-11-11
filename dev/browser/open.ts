@@ -114,9 +114,11 @@ Options
                            the browser it launched; a hung renderer is retried once on a
                            throwaway profile first
   --session <name>         inject a saved session's cookies after launch
-  --load-extension <dir>   load an unpacked extension (comma list ok)
-  --keep-extensions        keep the profile's other extensions too (a managed
-                           blocker holds page loads until its lists settle; off by default)
+  --load-extension <dir>   load an unpacked extension (comma list ok). A run that
+                           loads one uses only it; a run that loads none (and is not
+                           --headless) keeps the profile's own extensions
+  --keep-extensions        with --load-extension: keep the profile's extensions too
+                           (a managed blocker holds page loads until its lists settle)
   --android                emulate an Android phone (UA, touch, 412x915)
   --record [N]             record N frames after focus; omit N to record until close
   --background             the default: below all your windows, hidden from the taskbar and
@@ -640,22 +642,24 @@ export async function ownsBrowserOn(
 }
 
 /**
- * A run starts with only the extension it asks for, if any: a force-installed
+ * A run that loads an extension starts with only that one: a force-installed
  * blocker (a managed policy) holds a site's subresources until its own filter
  * lists settle, which left the tab on about:blank or "loading" forever.
  *
- * `--keep-extensions` opts back into the profile's extensions when a run needs
- * them; everything else stays isolated by default.
+ * A run that loads none keeps the profile's extensions, because they are the
+ * reason it pointed at that profile — a signed-in Tampermonkey on port 12345
+ * is the tool being driven, not noise. Headless runs stay bare by default
+ * (`--disable-extensions`), as before. `--keep-extensions` opts a
+ * `--load-extension` run back into the profile's extensions too.
  */
 export function extensionArgs(
-	options: Pick<OpenOptions, "loadExtension" | "keepExtensions">,
+	options: Pick<OpenOptions, "loadExtension" | "keepExtensions" | "headless">,
 ): string[] {
 	const args: string[] = [];
 	if (options.loadExtension) args.push(`--load-extension=${options.loadExtension}`);
 	if (options.keepExtensions) return args;
-	if (options.loadExtension)
-		args.push(`--disable-extensions-except=${options.loadExtension}`);
-	else args.push("--disable-extensions");
+	if (options.loadExtension) args.push(`--disable-extensions-except=${options.loadExtension}`);
+	else if (options.headless) args.push("--disable-extensions");
 	return args;
 }
 

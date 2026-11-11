@@ -130,19 +130,27 @@ test("a profile whose SingletonLock names a live pid is reported as held", async
 
 test("script runs only keep the extension they load", async () => {
 	const { extensionArgs } = await import("./open.ts");
-	expect(extensionArgs({ loadExtension: undefined, keepExtensions: false })).toEqual([
-		"--disable-extensions",
-	]);
-	expect(extensionArgs({ loadExtension: "/x", keepExtensions: false })).toEqual([
-		"--load-extension=/x",
-		"--disable-extensions-except=/x",
-	]);
+	expect(
+		extensionArgs({ loadExtension: undefined, keepExtensions: false, headless: true }),
+	).toEqual(["--disable-extensions"]);
+	expect(
+		extensionArgs({ loadExtension: "/x", keepExtensions: false, headless: false }),
+	).toEqual(["--load-extension=/x", "--disable-extensions-except=/x"]);
+});
+
+test("a windowed run that loads nothing keeps the profile's extensions", async () => {
+	const { extensionArgs } = await import("./open.ts");
+	expect(
+		extensionArgs({ loadExtension: undefined, keepExtensions: false, headless: false }),
+	).toEqual([]);
 });
 
 test("--keep-extensions leaves the profile's extensions alone", async () => {
 	const { extensionArgs } = await import("./open.ts");
-	expect(extensionArgs({ loadExtension: undefined, keepExtensions: true })).toEqual([]);
-	expect(extensionArgs({ loadExtension: "/x", keepExtensions: true })).toEqual([
-		"--load-extension=/x",
-	]);
+	expect(
+		extensionArgs({ loadExtension: undefined, keepExtensions: true, headless: false }),
+	).toEqual([]);
+	expect(
+		extensionArgs({ loadExtension: "/x", keepExtensions: true, headless: false }),
+	).toEqual(["--load-extension=/x"]);
 });
