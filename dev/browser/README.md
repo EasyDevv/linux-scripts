@@ -20,6 +20,7 @@ Chromium으로 페이지를 읽고, 렌더·측정·캡처하고, 사람이 로�
 - 프로젝트 프로필: 그 외 포트는 `./.user-data/chrome-{package name}` (세션 자동 연결 없음, `--session`으로 명시).
 - `~/.local/share/browser/profiles.json`: `{ "9222": { "extensions": ["/abs/unpacked"] } }`
 - 확장: `--load-extension`으로 지정한 확장이 있으면 그 확장만 쓴다(`--disable-extensions-except`). managed policy로 강제 설치된 blocker(예: uBlock)는 필터 리스트가 준비될 때까지 페이지 로드를 붙잡아 탭이 `loading`에 머무른다. 그 확장까지 필요한 실행만 `--keep-extensions`로 켠다. 지정한 확장이 없으면 프로필에 설치된 확장을 그대로 쓴다(예: 12345 프로필의 Tampermonkey). 단 `--headless`는 예전처럼 `--disable-extensions`로 맨몸으로 뜬다.
+- `--dev-selector`: 개발용 섹션 선택 도구 Dev Selector(`~/dev/extensions/dev-selector`, 경로는 `DEV_SELECTOR_DIR`)를 **추가로** 로드한다. `.output/chrome-mv3`와 `chrome-mv3-dev` 중 더 최근 빌드를 쓰고, 둘 다 없으면 `bun run build:chrome`을 안내하며 멈춘다. 다른 확장을 지정하지 않은 창 실행에서는 프로필 확장(Tampermonkey 등)을 그대로 두고 이것만 얹는다. 이미 떠 있는 브라우저에는 적용되지 않으니 `browser close` 후 다시 연다.
 
 ## 로그인
 
@@ -44,7 +45,7 @@ browser close --port 9223                          # 임시 프로필까지 삭�
 ## Chromium
 
 ```bash
-browser open [--port 9222] [--url <url>] [--normal|--minimize] [--headless] [--clean] [--session <name>] [--load-extension <dir>] [--keep-extensions] [--android] [--record [N]]
+browser open [--port 9222] [--url <url>] [--normal|--minimize] [--headless] [--clean] [--session <name>] [--load-extension <dir>] [--keep-extensions] [--dev-selector] [--android] [--record [N]]
 browser close [--port N]
 browser list            # Chromium 전부. TTY면 j/k 이동, x 닫기(확인 기본 No), enter 탭 출력
 browser status | tabs --port N | minimize --port N

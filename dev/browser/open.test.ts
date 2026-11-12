@@ -154,3 +154,33 @@ test("--keep-extensions leaves the profile's extensions alone", async () => {
 		extensionArgs({ loadExtension: "/x", keepExtensions: true, headless: false }),
 	).toEqual(["--load-extension=/x"]);
 });
+
+test("--dev-selector adds Dev Selector without isolating a windowed profile", async () => {
+	const { extensionArgs } = await import("./open.ts");
+	expect(
+		extensionArgs({ loadExtension: undefined, keepExtensions: false, headless: false, selectorDir: "/s" }),
+	).toEqual(["--load-extension=/s"]);
+	expect(
+		extensionArgs({ loadExtension: "/x", keepExtensions: false, headless: false, selectorDir: "/s" }),
+	).toEqual(["--load-extension=/x,/s", "--disable-extensions-except=/x,/s"]);
+	expect(
+		extensionArgs({ loadExtension: undefined, keepExtensions: false, headless: true, selectorDir: "/s" }),
+	).toEqual(["--load-extension=/s", "--disable-extensions-except=/s"]);
+});
+
+test("resolveDevSelectorDir picks the newer build and names a missing one", async () => {
+	const { resolveDevSelectorDir } = await import("./open.ts");
+	const { mkdtempSync, mkdirSync, writeFileSync, utimesSync, rmSync } = await import("node:fs");
+	const { join } = await import("node:path");
+	const { tmpdir } = await import("node:os");
+	const root = mkdtempSync(join(tmpdir(), "ds-"));
+	for (const [name, age] of [["chrome-mv3", 10], ["chrome-mv3-dev", 1000]] as const) {
+		const dir = join(root, ".output", name);
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(join(dir, "manifest.json"), "{}");
+		const t = new Date(Date.now() - age * 1000);
+		utimesSync(join(dir, "manifest.json"), t, t);
+	}
+	expect(resolveDevSelectorDir(root)).toBe(join(root, ".output", "chrome-mv3"));
+	rmSync(root, { recursive: true });
+});

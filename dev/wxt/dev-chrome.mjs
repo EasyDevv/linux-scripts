@@ -75,6 +75,7 @@ const BROWSER_OPEN_VALUE_FLAGS = new Set([
 ]);
 const BROWSER_OPEN_BOOLEAN_FLAGS = new Set([
 	"--clean",
+	"--dev-selector",
 	"--dry-run",
 	"--headless",
 	"--help",

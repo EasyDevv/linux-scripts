@@ -12,8 +12,9 @@ Browser lifecycle (launch, stop, minimize) is managed by the global
 
 - `wxtu dev chrome`: start the Chrome WXT dev server.
 - `wxtu dev chrome` forwards unknown flags to `browser open`; use `--` to pass through overlapping flags such as `--port`.
-- The dev window loads only the extension under development. A blocker installed by a managed policy holds page loads until its own lists settle, so it — and every other profile extension — stays out unless `WXT_CHROME_KEEP_EXTENSIONS=1` (or `--keep-extensions`) asks for it.
+- The dev window loads only the extension under development. A blocker installed by a managed policy holds page loads until its own lists settle, so it — and every other profile extension — stays out unless `WXT_CHROME_KEEP_EXTENSIONS=1` (or `--keep-extensions`) asks for it. `--dev-selector` adds the Dev Selector extension (a section-picking dev tool) next to it; it is forwarded to `browser open`, so it applies only when the run launches a new browser.
 - A run reuses the browser already on the CDP port. `--normal` is a person asking to look at the build, so it leaves that browser alone and opens a separate visible window on the next free port with a `<profile>-view` profile; the dev server's lifecycle stays tied to the original browser.
+- Parallel dev sessions each start their own WXT server (3000, 3001, …) but write the same `.output/<browser>-mv3-dev`. The background bakes in the ws port of whichever server built last; once that server stops, every browser on that output misses the content-script handshake on its next extension reload or launch.
 - `wxtu dev firefox`: start the Firefox WXT dev server.
 - `wxtu build`: build Chrome and Firefox bundles in parallel.
 - `wxtu zip`: create Chrome and Firefox zip artifacts in parallel.

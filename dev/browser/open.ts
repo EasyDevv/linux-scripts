@@ -1,7 +1,7 @@
 import { printHelp } from "./ui.ts";
-import { closeSync, existsSync, mkdtempSync, openSync, readlinkSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, mkdtempSync, openSync, readlinkSync, statSync, writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
@@ -79,6 +79,10 @@ export type OpenOptions = {
 	loadExtension?: string;
 	/** Keep extensions already installed in the profile (a managed blocker, say). Off by default. */
 	keepExtensions: boolean;
+	/** `--dev-selector`: also load the Dev Selector extension (a dev tool for picking page sections). */
+	devSelector: boolean;
+	/** Resolved unpacked dir of Dev Selector when `devSelector` is set. */
+	selectorDir?: string;
 	android: boolean;
 	record: boolean;
 	recordFrames: number | null;
@@ -117,6 +121,9 @@ Options
   --load-extension <dir>   load an unpacked extension (comma list ok). A run that
                            loads one uses only it; a run that loads none (and is not
                            --headless) keeps the profile's own extensions
+  --dev-selector           also load the Dev Selector extension (click a page section to
+                           copy its selector); adds to whatever else the run loads.
+                           Dir: $DEV_SELECTOR_DIR or ~/dev/extensions/dev-selector
   --keep-extensions        with --load-extension: keep the profile's extensions too
                            (a managed blocker holds page loads until its lists settle)
   --android                emulate an Android phone (UA, touch, 412x915)
@@ -267,6 +274,7 @@ export function parseArgs(argv: string[]): OpenOptions {
 		json: false,
 		clean: false,
 		keepExtensions: false,
+		devSelector: false,
 		loadTimeoutMs: 15_000,
 		android: false,
 		record: false,
@@ -327,6 +335,9 @@ export function parseArgs(argv: string[]): OpenOptions {
 				break;
 			case "--keep-extensions":
 				options.keepExtensions = true;
+				break;
+			case "--dev-selector":
+				options.devSelector = true;
 				break;
 			case "--browser-arg":
 				options.browserArgs.push(
@@ -653,14 +664,41 @@ export async function ownsBrowserOn(
  * `--load-extension` run back into the profile's extensions too.
  */
 export function extensionArgs(
-	options: Pick<OpenOptions, "loadExtension" | "keepExtensions" | "headless">,
+	options: Pick<OpenOptions, "loadExtension" | "keepExtensions" | "headless" | "selectorDir">,
 ): string[] {
-	const args: string[] = [];
-	if (options.loadExtension) args.push(`--load-extension=${options.loadExtension}`);
+	const dirs = mergeExtensionDirs(options.loadExtension, options.selectorDir);
+	const args: string[] = dirs ? [`--load-extension=${dirs}`] : [];
 	if (options.keepExtensions) return args;
-	if (options.loadExtension) args.push(`--disable-extensions-except=${options.loadExtension}`);
+	// Dev Selector alone adds to a windowed profile; it only isolates when something
+	// else already did (an explicit extension, or a headless run).
+	if (dirs && (options.loadExtension || options.headless))
+		args.push(`--disable-extensions-except=${dirs}`);
 	else if (options.headless) args.push("--disable-extensions");
 	return args;
+}
+
+/**
+ * Where Dev Selector's unpacked build lives: `$DEV_SELECTOR_DIR`, else the sibling
+ * project. Its production build runs without a dev server, so the newer of the two
+ * outputs wins (the dev build is only fresh while its own `bun run dev` has run).
+ */
+export function resolveDevSelectorDir(
+	root = process.env.DEV_SELECTOR_DIR?.trim() || join(homedir(), "dev", "extensions", "dev-selector"),
+): string {
+	const mtime = (dir: string) => {
+		try {
+			return statSync(join(dir, "manifest.json")).mtimeMs;
+		} catch {
+			return -1;
+		}
+	};
+	const outs = ["chrome-mv3", "chrome-mv3-dev"]
+		.map((name) => join(root, ".output", name))
+		.filter((dir) => mtime(dir) >= 0)
+		.sort((a, b) => mtime(b) - mtime(a));
+	if (!outs[0])
+		die(`--dev-selector: no build under ${root}/.output. Run \`bun run build:chrome\` there first.`);
+	return outs[0];
 }
 
 /** The live pid holding Chromium's SingletonLock (a `<host>-<pid>` symlink) on a profile, if any. */
@@ -895,6 +933,8 @@ async function openOnce(argv: string[]): Promise<void> {
 		const { extensions } = await readProfileConfig(profileName);
 		options.loadExtension = mergeExtensionDirs(options.loadExtension, extensions);
 	}
+
+	if (options.devSelector) options.selectorDir = resolveDevSelectorDir();
 
 	const statusOutput = {
 		headline: "browser status",
