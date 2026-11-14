@@ -103,6 +103,8 @@
 	--hairline-width: 1px;
 	/* Card board (quant-lab, 261108): the research lab's card grid, card chrome and step tile. */
 	--board-max: 2400px;
+	/* Experiment workspace (two columns of ≈1600px, the widest block read at once at 3840). */
+	--board-max-split: 3280px;
 	--board-gap: 16px;
 	--board-gap-wide: 20px;
 	--card-pad-top: 16px;
