@@ -7,6 +7,9 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 
 - Daemon: `http://127.0.0.1:45130` (`DECISION_URL` overrides). Every client is fail-open: no answer,
   timeout, non-2xx, or `status != "routed"` changes nothing.
+- Which classifiers exist: the central model catalog (`../models-catalog/CONTRACTS.md`, the list Settings › Models
+  shows), then pi-ai's built-in list. A `config.json` `backends` entry the daemon cannot resolve is logged as
+  `skipped: "<model>: not in catalog"` and the next entry answers; check `skipped` after pinning a model.
 - Every feature result carries `FeatureResult` (`features/types.ts`): `decisionId?`, `status:
   routed | skipped | unavailable`, `reason`, `notes[]`, `backend?`, `calibrated?`, `latencyMs?`.
 - Every body may carry `harness` (`pi` | `claude` | `cli` | `eval`) and `sessionId` (the harness's

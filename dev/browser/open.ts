@@ -41,6 +41,7 @@ import {
 	processMatchesLaunchInfo,
 	readLaunchInfo,
 	globalProfileDir,
+	ensureUserDataGitignored,
 	isDefaultProfilePort,
 	resolveDefaultProfileDir,
 	terminateProcess,
@@ -1013,6 +1014,11 @@ async function openOnce(argv: string[]): Promise<void> {
 
 	if (!options.clean) {
 		await mkdir(userDataDir, { recursive: true });
+		await ensureUserDataGitignored(userDataDir).catch((error) =>
+			console.warn(
+				`Warning: could not add /.user-data/ to .gitignore: ${error instanceof Error ? error.message : String(error)}`,
+			),
+		);
 	}
 
 	const resolvedLocale = resolveLocale(options.locale);

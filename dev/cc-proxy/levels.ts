@@ -2,7 +2,8 @@
  * pi와 공유하는 두 가지: 모델이 thinking off를 받는지(pi 카탈로그), 다른 업체로 보낼 때 system 끝에 붙일
  * 공통 층(easy-harness `sources/common.md`).
  *
- * off: pi의 `models-store.json`에 `models.json` `modelOverrides`를 겹친 `thinkingLevelMap.off`를 본다.
+ * off: 중앙 모델 카탈로그(`~/.config/models/catalog.json`, 대시보드 서버가 갱신; 없으면 pi의
+ * `models-store.json`)에 pi `models.json`의 `modelOverrides`를 겹친 `thinkingLevelMap.off`를 본다.
  * `null`이면 그 모델은 off가 없다(xAI grok-4.7은 `thinking: disabled`를 200으로 받지만 무시하고 생각한다,
  * 261111 실측). 그러면 pi `clampThinkingLevel`처럼 low로 올린다. 업체 이름이 아니라 카탈로그로 판단한다.
  *
@@ -12,6 +13,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { defaultCatalogPath } from "../models-catalog/central-catalog.ts";
 import type { Effort } from "./config.ts";
 
 type Json = Record<string, unknown>;
@@ -62,8 +64,14 @@ const parse = (text: string | undefined): unknown => {
 	}
 };
 
+/** 중앙 카탈로그. 아직 없는 머신(서버가 한 번도 안 돈 경우)만 pi 스토어를 쓴다. */
+export function storePath(): string {
+	const central = process.env.CC_PROXY_CATALOG_FILE ?? defaultCatalogPath();
+	return existsSync(central) ? central : join(piDir(), "models-store.json");
+}
+
 const catalog = cached(
-	() => [join(piDir(), "models-store.json"), join(piDir(), "models.json")],
+	() => [storePath(), join(piDir(), "models.json")],
 	([store, overrides]) => ({ store: parse(store), overrides: parse(overrides) }),
 );
 

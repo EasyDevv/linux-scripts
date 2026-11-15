@@ -42,6 +42,7 @@ No environment override. The file is the one source; `import --from-env-file` co
 - cc-proxy `upstreams.ts` → `credentialFor`, `loggedIn`.
 - decision `auth.ts` → `CentralAuthStore` (pi-ai `CredentialStore`, read-only), `/health` `keyOrigin`, `authProblem`.
 - dashboard `GET /api/pi/models?auth=central` (Settings › Models). The projects composer runs pi itself and keeps pi's `auth.json` (`?auth` omitted).
+- The dashboard never reads secrets. It still lists xAI and Anthropic models: it reads pi's public remote catalog (`pi.dev`), which needs no key; see `../models-catalog/CONTRACTS.md`.
 - Not migrated: `dev/provider-usage` (usage cards: cookies, management keys, Codex/Command Code OAuth).
 
 ## Exit codes

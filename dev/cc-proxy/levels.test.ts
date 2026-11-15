@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { AGENT_HEADER, DEFAULT_CONFIG, proxiable, validate } from "./config.ts";
-import { offAllowed, sendEffort } from "./levels.ts";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { offAllowed, sendEffort, storePath } from "./levels.ts";
 import { forForeign, withCommon } from "./normalize.ts";
 
 const store = {
@@ -64,5 +67,25 @@ describe("subagentsOnly", () => {
 		expect(proxiable(DEFAULT_CONFIG, subagent)).toBe(true);
 		expect(proxiable({ ...DEFAULT_CONFIG, subagentsOnly: false }, new Headers())).toBe(true);
 		expect(() => validate({ subagentsOnly: "yes" }, ["opencode-go", "xai"])).toThrow(/subagentsOnly/);
+	});
+});
+
+describe("storePath", () => {
+	test("the central catalog wins; without it pi's store is the fallback", () => {
+		const dir = mkdtempSync(join(tmpdir(), "levels-"));
+		const central = join(dir, "catalog.json");
+		const saved = { catalog: process.env.CC_PROXY_CATALOG_FILE, pi: process.env.CC_PROXY_PI_DIR };
+		try {
+			process.env.CC_PROXY_PI_DIR = dir;
+			process.env.CC_PROXY_CATALOG_FILE = central;
+			expect(storePath()).toBe(join(dir, "models-store.json"));
+			writeFileSync(central, "{}");
+			expect(storePath()).toBe(central);
+		} finally {
+			for (const [key, value] of [["CC_PROXY_CATALOG_FILE", saved.catalog], ["CC_PROXY_PI_DIR", saved.pi]] as const) {
+				if (value === undefined) delete process.env[key];
+				else process.env[key] = value;
+			}
+		}
 	});
 });

@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, readlink, unlink } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { DEFAULT_BINARY, DEFAULT_PORT } from "./config.ts";
 
 export type LaunchInfo = {
@@ -47,6 +47,51 @@ export function resolveProjectProfileDir(projectRoot = process.cwd()): string {
 
 export function globalProfileDir(port: number): string {
 	return join(homedir(), ".cache", "browser", "profiles", String(port));
+}
+
+export const USER_DATA_GITIGNORE_ENTRY = "/.user-data/";
+
+/**
+ * The project root that owns a project-local profile
+ * (`<root>/.user-data/chrome-*`), or null for global and custom profiles.
+ */
+export function projectRootForUserDataDir(userDataDir: string): string | null {
+	const parent = dirname(resolve(userDataDir));
+	if (basename(parent) !== ".user-data") return null;
+	return dirname(parent);
+}
+
+/**
+ * Adds `/.user-data/` to the project `.gitignore` when a project-local
+ * profile is created, so browser state is never committed. Idempotent and
+ * a no-op outside a git repo or for non-project profiles. Returns true
+ * only when the entry was appended.
+ */
+export async function ensureUserDataGitignored(
+	userDataDir: string,
+): Promise<boolean> {
+	const root = projectRootForUserDataDir(userDataDir);
+	if (!root || !existsSync(join(root, ".git"))) return false;
+	const gitignorePath = join(root, ".gitignore");
+	const existing = existsSync(gitignorePath)
+		? await readFile(gitignorePath, "utf-8")
+		: "";
+	const entries = new Set([
+		USER_DATA_GITIGNORE_ENTRY,
+		".user-data/",
+		"/.user-data",
+		".user-data",
+	]);
+	if (existing.split(/\r?\n/).some((line) => entries.has(line.trim()))) {
+		return false;
+	}
+	const prefix =
+		existing && !existing.endsWith("\n") ? "\n" : "";
+	await Bun.write(
+		gitignorePath,
+		`${existing}${prefix}${USER_DATA_GITIGNORE_ENTRY}\n`,
+	);
+	return true;
 }
 
 export function isDefaultProfilePort(port: number): boolean {
