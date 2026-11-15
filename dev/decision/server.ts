@@ -72,6 +72,7 @@ export function startServer(config: DaemonConfig = readConfig(), runtime = creat
 						pid: process.pid,
 						backends: engine.status(),
 						keyOrigin: { openrouter: auth.origin("openrouter") ?? null, opencode: auth.origin("opencode") ?? null },
+						authProblem: auth.problem ?? null,
 						budget: budget.snapshot(),
 						prompts: versions,
 						stateDir: STATE_DIR,

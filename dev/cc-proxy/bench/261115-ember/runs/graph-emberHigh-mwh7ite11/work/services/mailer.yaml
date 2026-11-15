@@ -1,0 +1,4 @@
+name: mailer
+# old: depends_on cache (removed)
+depends_on:
+  - queue

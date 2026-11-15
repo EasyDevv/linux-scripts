@@ -11,7 +11,7 @@ UI가 없는 데몬이라 화면 초안(`page.svelte`)은 만들지 않는다. �
 | **판정은 Jev만** | OpenRouter `typesafe/jev-1.14` → Zen `jev-1.13-free` → Zen `jev-1.13` → `unavailable`. 채팅 LLM 폴백은 쓰지 않는다(사용자 결정). |
 | **fail-open** | 데몬이 없거나 느리거나 `unavailable`이면 하네스는 아무것도 바꾸지 않는다. 데몬은 systemd user unit `decision.service`(`127.0.0.1:45130`)가 관리하고, 클라이언트는 띄우지 않는다. |
 | **Jev가 판단, 코드가 조합** | 임계값·tier 조합·상한은 `prompts/<feature>/vN.json`의 코드 값이다. 모델 이름은 데몬이 정하지 않는다(tier는 하네스의 `models.profiles` 사다리). |
-| **공통 auth 한 곳** | 키는 데몬 안에서만 읽는다(`OPENROUTER_API_KEY`, pi `auth.json`). 하네스와 패키지는 키를 모른다. |
+| **공통 auth 한 곳** | 키는 데몬 안에서만 읽는다(중앙 `auth` 저장소 `~/.config/auth/credentials.json`, pi `auth.json`과 무관). 하네스와 패키지는 키를 모른다. |
 | **버전 승격은 eval로만** | 질문 프롬프트는 버전 파일이고, `config.json` `prompts` 포인터가 현재 버전이다. 기준선 이상일 때만 `decision promote`. |
 | **초기 컨텍스트 축소** | always-on rule은 최소로, 나머지는 `rules-routed/`에 두고 프롬프트 의미로 주입한다. skill 카탈로그는 pi `trimCatalog`로 줄인다. |
 

@@ -50,6 +50,32 @@
       "description": "proto 위에서 CLI 도구를 게이트 검증 후 설치·삭제·업데이트하고 audit·doctor로 점검한다."
     },
     {
+      "name": "auth",
+      "mode": "symlink",
+      "category": "dev",
+      "target": "dev/auth.sh",
+      "ownedPaths": [
+        "dev/auth.sh",
+        "dev/auth/AGENTS.md",
+        "dev/auth/CONTRACTS.md",
+        "dev/auth/README.md",
+        "dev/auth/client/central-auth.test.ts",
+        "dev/auth/client/central-auth.ts",
+        "dev/auth/go.mod",
+        "dev/auth/internal/auth/importer.go",
+        "dev/auth/internal/auth/service.go",
+        "dev/auth/internal/auth/service_test.go",
+        "dev/auth/internal/cli/cli.go",
+        "dev/auth/internal/cli/cli_test.go",
+        "dev/auth/internal/oauth/xai.go",
+        "dev/auth/internal/oauth/xai_test.go",
+        "dev/auth/internal/store/store.go",
+        "dev/auth/internal/store/store_test.go",
+        "dev/auth/main.go"
+      ],
+      "description": "중앙 credential 저장소(~/.config/auth)와 로그인 CLI (Go). list·get·set·login·logout·refresh·import. pi auth.json과 독립. 계약: dev/auth/CONTRACTS.md"
+    },
+    {
       "name": "pk",
       "mode": "symlink",
       "category": "dev",

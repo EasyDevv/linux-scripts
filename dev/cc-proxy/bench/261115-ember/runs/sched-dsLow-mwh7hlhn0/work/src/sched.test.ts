@@ -1,0 +1,12 @@
+import { expect, test } from "bun:test";
+import { merge, freeSlots, firstCommon } from "./sched";
+test("merge unsorted", () => expect(merge([[5, 8], [1, 3], [2, 4]])).toEqual([[1, 4], [5, 8]]));
+test("merge touching", () => expect(merge([[1, 3], [3, 5]])).toEqual([[1, 5]]));
+test("merge contained", () => expect(merge([[1, 10], [2, 3], [4, 12]])).toEqual([[1, 12]]));
+test("merge does not mutate input", () => { const a: [number, number][] = [[3, 4], [1, 2]]; merge(a); expect(a).toEqual([[3, 4], [1, 2]]); });
+test("free exact fit", () => expect(freeSlots([[60, 120]], 0, 180, 60)).toEqual([[0, 60], [120, 180]]));
+test("free busy outside day", () => expect(freeSlots([[-30, 30], [170, 400]], 0, 180, 30)).toEqual([[30, 170]]));
+test("free none", () => expect(freeSlots([[0, 180]], 0, 180, 1)).toEqual([]));
+test("common", () => expect(firstCommon([[[0, 50]], [[60, 100]]], 0, 200, 30)).toBe(100));
+test("common gap too small", () => expect(firstCommon([[[0, 50]], [[70, 200]]], 0, 200, 30)).toBeNull());
+test("common exact", () => expect(firstCommon([[[0, 50]], [[80, 200]]], 0, 200, 30)).toBe(50));

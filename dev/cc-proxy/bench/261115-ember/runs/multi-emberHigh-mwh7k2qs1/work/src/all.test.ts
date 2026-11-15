@@ -1,0 +1,11 @@
+import { expect, test } from "bun:test";
+import { applyDiscount } from "./discount";
+import { taxFor } from "./tax";
+import { subtotal, total } from "./cart";
+import { reserve, release } from "./inventory";
+import { orderId } from "./ids";
+test("discount tiers", () => { expect(applyDiscount(1000, 9)).toBe(1000); expect(applyDiscount(1000, 10)).toBe(950); expect(applyDiscount(1000, 49)).toBe(950); expect(applyDiscount(1000, 50)).toBe(900); expect(applyDiscount(999, 10)).toBe(949); });
+test("tax case-insensitive", () => { expect(taxFor("ca")).toBe(0.0725); expect(taxFor("Tx")).toBe(0.0625); expect(() => taxFor("ZZ")).toThrow(); });
+test("cart", () => { const L = [{ sku: "a", qty: 10, unit: 1000, region: "ny" }, { sku: "b", qty: 1, unit: 333, region: "OR" }]; expect(subtotal(L)).toBe(9833); expect(total(L)).toBe(9833 + 380); });
+test("reserve insufficient leaves stock", () => { const s = new Map([["a", 3]]); expect(reserve(s, "a", 5)).toBe(false); expect(s.get("a")).toBe(3); expect(reserve(s, "a", 3)).toBe(true); expect(s.get("a")).toBe(0); release(s, "a", 2); expect(s.get("a")).toBe(2); });
+test("ids", () => expect(orderId(42)).toBe("ORD-000042"));

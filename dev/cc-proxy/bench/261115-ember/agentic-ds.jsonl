@@ -1,0 +1,45 @@
+{"id":"env-emberHigh-mwh7e74v0","s":"env","arm":"emberHigh","r":0,"code":0,"ms":4703,"cost":0.001339004,"outTok":989,"tools":7,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-dsHigh-mwh7e7lj2","s":"env","arm":"dsHigh","r":0,"code":0,"ms":7149,"cost":0.0007977239999999999,"outTok":568,"tools":2,"turns":3,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-dsLow-mwh7e7d71","s":"env","arm":"dsLow","r":0,"code":0,"ms":8825,"cost":0.000858024,"outTok":681,"tools":2,"turns":3,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"graph-dsLow-mwh7eees1","s":"graph","arm":"dsLow","r":0,"code":0,"ms":9880,"cost":0.00063849,"outTok":300,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberHigh-mwh7ee6g0","s":"graph","arm":"emberHigh","r":0,"code":0,"ms":10505,"cost":0.0010317999999999998,"outTok":525,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-dsHigh-mwh7een42","s":"graph","arm":"dsHigh","r":0,"code":0,"ms":16034,"cost":0.0009515219999999998,"outTok":630,"tools":3,"turns":4,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"bug-dsHigh-mwh7erhb2","s":"bug","arm":"dsHigh","r":0,"code":0,"ms":12439,"cost":0.000854904,"outTok":521,"tools":3,"turns":4,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberHigh-mwh7er0n0","s":"bug","arm":"emberHigh","r":0,"code":0,"ms":15598,"cost":0.0012018640000000002,"outTok":692,"tools":5,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-dsLow-mwh7er8z1","s":"bug","arm":"dsLow","r":0,"code":0,"ms":18277,"cost":0.0009654539999999999,"outTok":634,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberHigh-mwh7f5cy0","s":"sched","arm":"emberHigh","r":0,"code":0,"ms":9693,"cost":0.002239748,"outTok":1909,"tools":7,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-dsLow-mwh7f5la1","s":"sched","arm":"dsLow","r":0,"code":0,"ms":21791,"cost":0.001446198,"outTok":1216,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-dsHigh-mwh7f5tm2","s":"sched","arm":"dsHigh","r":0,"code":0,"ms":25222,"cost":0.001607598,"outTok":1420,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberHigh-mwh7fpah0","s":"multi","arm":"emberHigh","r":0,"code":0,"ms":7249,"cost":0.0019909,"outTok":1368,"tools":12,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-dsLow-mwh7fpit1","s":"multi","arm":"dsLow","r":0,"code":0,"ms":23355,"cost":0.00193983,"outTok":1339,"tools":7,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-dsHigh-mwh7fpr52","s":"multi","arm":"dsHigh","r":0,"code":0,"ms":30278,"cost":0.00213759,"outTok":1775,"tools":7,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"env-emberHigh-mwh7gdl82","s":"env","arm":"emberHigh","r":1,"code":0,"ms":5435,"cost":0.001498468,"outTok":1134,"tools":9,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-dsLow-mwh7gd4i0","s":"env","arm":"dsLow","r":1,"code":0,"ms":9055,"cost":0.000728058,"outTok":392,"tools":3,"turns":3,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-dsHigh-mwh7gdcw1","s":"env","arm":"dsHigh","r":1,"code":0,"ms":21719,"cost":0.000934722,"outTok":667,"tools":4,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"graph-emberHigh-mwh7gul02","s":"graph","arm":"emberHigh","r":1,"code":0,"ms":6634,"cost":0.00101518,"outTok":1422,"tools":5,"turns":4,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-dsLow-mwh7gu4b0","s":"graph","arm":"dsLow","r":1,"code":0,"ms":11336,"cost":0.00069564,"outTok":397,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-dsHigh-mwh7gucp1","s":"graph","arm":"dsHigh","r":1,"code":0,"ms":15816,"cost":0.0007653899999999999,"outTok":485,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"bug-emberHigh-mwh7h70v2","s":"bug","arm":"emberHigh","r":1,"code":0,"ms":16356,"cost":0.001958924,"outTok":789,"tools":6,"turns":7,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-dsHigh-mwh7h6sj1","s":"bug","arm":"dsHigh","r":1,"code":0,"ms":16870,"cost":0.0009539039999999999,"outTok":661,"tools":3,"turns":4,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-dsLow-mwh7h6k50","s":"bug","arm":"dsLow","r":1,"code":0,"ms":19341,"cost":0.0008007359999999999,"outTok":401,"tools":4,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberHigh-mwh7hlyd2","s":"sched","arm":"emberHigh","r":1,"code":0,"ms":8481,"cost":0.0020626039999999996,"outTok":1892,"tools":5,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-dsLow-mwh7hlhn0","s":"sched","arm":"dsLow","r":1,"code":0,"ms":23479,"cost":0.001871982,"outTok":1735,"tools":4,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-dsHigh-mwh7hlq11","s":"sched","arm":"dsHigh","r":1,"code":0,"ms":25029,"cost":0.002349468,"outTok":2375,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberHigh-mwh7i5i82","s":"multi","arm":"emberHigh","r":1,"code":0,"ms":5515,"cost":0.0018657,"outTok":1249,"tools":11,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-dsLow-mwh7i51j0","s":"multi","arm":"dsLow","r":1,"code":0,"ms":16992,"cost":0.0012543839999999999,"outTok":708,"tools":4,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-dsHigh-mwh7i59x1","s":"multi","arm":"dsHigh","r":1,"code":0,"ms":19700,"cost":0.0020903759999999997,"outTok":1703,"tools":12,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"env-dsHigh-mwh7ikhe0","s":"env","arm":"dsHigh","r":2,"code":0,"ms":9501,"cost":0.000864954,"outTok":640,"tools":3,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberHigh-mwh7ikpr1","s":"env","arm":"emberHigh","r":2,"code":0,"ms":10033,"cost":0.0016122760000000002,"outTok":1621,"tools":11,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-dsLow-mwh7iky32","s":"env","arm":"dsLow","r":2,"code":0,"ms":10637,"cost":0.0007576619999999999,"outTok":596,"tools":4,"turns":3,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"graph-emberHigh-mwh7ite11","s":"graph","arm":"emberHigh","r":2,"code":0,"ms":5140,"cost":0.0011477,"outTok":808,"tools":4,"turns":5,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-dsLow-mwh7itmd2","s":"graph","arm":"dsLow","r":2,"code":0,"ms":8738,"cost":0.000733758,"outTok":405,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-dsHigh-mwh7it5o0","s":"graph","arm":"dsHigh","r":2,"code":0,"ms":9501,"cost":0.00059151,"outTok":379,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"bug-emberHigh-mwh7j0q11","s":"bug","arm":"emberHigh","r":2,"code":0,"ms":6815,"cost":0.0011011200000000001,"outTok":809,"tools":7,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-dsLow-mwh7j0yd2","s":"bug","arm":"dsLow","r":2,"code":0,"ms":15399,"cost":0.000873504,"outTok":550,"tools":3,"turns":4,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-dsHigh-mwh7j0hn0","s":"bug","arm":"dsHigh","r":2,"code":0,"ms":16350,"cost":0.000997524,"outTok":792,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberHigh-mwh7jdcf1","s":"sched","arm":"emberHigh","r":2,"code":0,"ms":17990,"cost":0.00257808,"outTok":1955,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-dsLow-mwh7jdkr2","s":"sched","arm":"dsLow","r":2,"code":0,"ms":20588,"cost":0.001413198,"outTok":1060,"tools":4,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-dsHigh-mwh7jd420","s":"sched","arm":"dsHigh","r":2,"code":0,"ms":32908,"cost":0.0019528079999999999,"outTok":1921,"tools":7,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberHigh-mwh7k2qs1","s":"multi","arm":"emberHigh","r":2,"code":0,"ms":8343,"cost":0.001826412,"outTok":1394,"tools":12,"turns":7,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-dsLow-mwh7k2z42","s":"multi","arm":"dsLow","r":2,"code":0,"ms":17179,"cost":0.001214154,"outTok":622,"tools":3,"turns":4,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-dsHigh-mwh7k2ie0","s":"multi","arm":"dsHigh","r":2,"code":0,"ms":20340,"cost":0.0016611540000000002,"outTok":1091,"tools":9,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}

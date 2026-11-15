@@ -11,7 +11,7 @@
 
 import type { ClassifierApi, ClassifierModel, JsonObject, MutableModels } from "@earendil-works/pi-ai";
 import { builtinModels, getBuiltinClassifierModels } from "@earendil-works/pi-ai/providers/all";
-import type { PiAuthStore } from "./auth.ts";
+import type { CentralAuthStore } from "./auth.ts";
 import type { Backend, ModelsPort } from "./engine.ts";
 
 /** Parse `jev-<major>.<minor>[-free]` (OpenRouter prefixes `typesafe/`); other ids are not Jev SKUs. */
@@ -58,7 +58,7 @@ function splitRef(ref: string): [string, string] {
 export class PiModels implements ModelsPort {
 	readonly models: MutableModels;
 
-	constructor(auth: PiAuthStore) {
+	constructor(auth: CentralAuthStore) {
 		this.models = builtinModels({ credentials: auth });
 	}
 

@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { PiAuthStore } from "./auth.ts";
+import { CentralAuthStore } from "./auth.ts";
 import { BackendLadder, PiModels } from "./backends.ts";
 import { type Backend, Engine } from "./engine.ts";
 import { FileBudget, FileLog } from "./state.ts";
@@ -47,7 +47,7 @@ export function promptVersion(config: DaemonConfig, feature: string): string {
 }
 
 export function createRuntime(config: DaemonConfig, log = new FileLog()) {
-	const auth = new PiAuthStore();
+	const auth = new CentralAuthStore();
 	const ladder = new BackendLadder(config.backends);
 	const budget = new FileBudget(config.dailyBudgetUsd);
 	const engine = new Engine({

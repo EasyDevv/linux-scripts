@@ -17,6 +17,7 @@ import {
 	type Config,
 	PORT,
 	proxiable,
+	commonOn,
 	readConfig,
 	splitTarget,
 	type Target,
@@ -129,7 +130,7 @@ async function toForeign(
 	const requested = String(body.model);
 	const effort = sendEffort(target.effort, catalogAllowsOff(split.provider, split.id));
 	const alias = aliasOf(body.model);
-	const common = alias && config.routes[alias].common === false ? "" : commonText();
+	const common = commonOn(config, alias) ? commonText() : "";
 	const sent = forForeign(body, split.provider, split.id, effort, common);
 	const payload = JSON.stringify(sent);
 	// journal 한 줄: 무엇을 보냈는지(과추론 설정이 실제로 들어갔는지 확인용). 내용은 남기지 않는다.

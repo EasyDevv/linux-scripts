@@ -1,0 +1,60 @@
+{"id":"env-emberOff-mwh2jd963","s":"env","arm":"emberOff","r":0,"code":0,"ms":4131,"cost":0.001138768,"outTok":526,"tools":3,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberHigh-mwh2jd0u2","s":"env","arm":"emberHigh","r":0,"code":0,"ms":5204,"cost":0.0010643879999999999,"outTok":1232,"tools":7,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberMedium-mwh2jcsi1","s":"env","arm":"emberMedium","r":0,"code":0,"ms":8652,"cost":0.001324932,"outTok":860,"tools":7,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberLow-mwh2jck50","s":"env","arm":"emberLow","r":0,"code":0,"ms":12606,"cost":0.00161082,"outTok":1111,"tools":8,"turns":5,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"graph-emberMedium-mwh2jmir1","s":"graph","arm":"emberMedium","r":0,"code":0,"ms":2923,"cost":0.0008746799999999999,"outTok":578,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberLow-mwh2jmaf0","s":"graph","arm":"emberLow","r":0,"code":0,"ms":3601,"cost":0.0008896679999999999,"outTok":637,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberOff-mwh2jmzf3","s":"graph","arm":"emberOff","r":0,"code":0,"ms":3244,"cost":0.00076298,"outTok":412,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberHigh-mwh2jmr32","s":"graph","arm":"emberHigh","r":0,"code":0,"ms":3673,"cost":0.0008401799999999999,"outTok":445,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"bug-emberLow-mwh2jpl80","s":"bug","arm":"emberLow","r":0,"code":0,"ms":4605,"cost":0.0010427120000000001,"outTok":716,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberOff-mwh2jqa83","s":"bug","arm":"emberOff","r":0,"code":0,"ms":5040,"cost":0.00101058,"outTok":582,"tools":5,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberMedium-mwh2jptk1","s":"bug","arm":"emberMedium","r":0,"code":0,"ms":5905,"cost":0.0015144520000000001,"outTok":898,"tools":5,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberHigh-mwh2jq1w2","s":"bug","arm":"emberHigh","r":0,"code":0,"ms":6378,"cost":0.0011597440000000003,"outTok":793,"tools":6,"turns":7,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberOff-mwh2jvob3","s":"sched","arm":"emberOff","r":0,"code":0,"ms":5299,"cost":0.0012751680000000001,"outTok":1018,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberHigh-mwh2jvfz2","s":"sched","arm":"emberHigh","r":0,"code":0,"ms":6596,"cost":0.001656528,"outTok":1247,"tools":5,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberMedium-mwh2jv7n1","s":"sched","arm":"emberMedium","r":0,"code":0,"ms":10891,"cost":0.001989244,"outTok":1539,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberLow-mwh2juza0","s":"sched","arm":"emberLow","r":0,"code":0,"ms":19930,"cost":0.002102088,"outTok":1851,"tools":7,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberLow-mwh2kad40","s":"multi","arm":"emberLow","r":0,"code":0,"ms":4911,"cost":0.0019421479999999999,"outTok":843,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberMedium-mwh2kalg1","s":"multi","arm":"emberMedium","r":0,"code":0,"ms":5764,"cost":0.002371992,"outTok":1157,"tools":11,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberOff-mwh2kb243","s":"multi","arm":"emberOff","r":0,"code":0,"ms":6016,"cost":0.002034524,"outTok":820,"tools":7,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberHigh-mwh2kats2","s":"multi","arm":"emberHigh","r":0,"code":0,"ms":8173,"cost":0.0022745720000000003,"outTok":1209,"tools":12,"turns":9,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"env-emberHigh-mwh2khde1","s":"env","arm":"emberHigh","r":1,"code":0,"ms":4663,"cost":0.0011688599999999999,"outTok":978,"tools":7,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberOff-mwh2khlr2","s":"env","arm":"emberOff","r":1,"code":0,"ms":4479,"cost":0.001097368,"outTok":508,"tools":3,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberMedium-mwh2kh520","s":"env","arm":"emberMedium","r":1,"code":0,"ms":5186,"cost":0.0011652639999999998,"outTok":861,"tools":6,"turns":5,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberLow-mwh2khu23","s":"env","arm":"emberLow","r":1,"code":0,"ms":9815,"cost":0.00171438,"outTok":976,"tools":8,"turns":5,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"graph-emberMedium-mwh2kpeu0","s":"graph","arm":"emberMedium","r":1,"code":0,"ms":2945,"cost":0.0008157679999999999,"outTok":447,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberOff-mwh2kpvi2","s":"graph","arm":"emberOff","r":1,"code":0,"ms":2630,"cost":0.0007589680000000001,"outTok":337,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberHigh-mwh2kpn61","s":"graph","arm":"emberHigh","r":1,"code":0,"ms":2986,"cost":0.00082088,"outTok":554,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberLow-mwh2kq3u3","s":"graph","arm":"emberLow","r":1,"code":0,"ms":5171,"cost":0.000780368,"outTok":378,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"bug-emberLow-mwh2kusm3","s":"bug","arm":"emberLow","r":1,"code":0,"ms":5264,"cost":0.001294304,"outTok":817,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberOff-mwh2kuka2","s":"bug","arm":"emberOff","r":1,"code":0,"ms":5871,"cost":0.0012107519999999998,"outTok":855,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberHigh-mwh2kuby1","s":"bug","arm":"emberHigh","r":1,"code":0,"ms":6205,"cost":0.0012502639999999998,"outTok":968,"tools":7,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberMedium-mwh2ku3l0","s":"bug","arm":"emberMedium","r":1,"code":0,"ms":16078,"cost":0.001091276,"outTok":723,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberOff-mwh2l6z42","s":"sched","arm":"emberOff","r":1,"code":0,"ms":5224,"cost":0.0016106319999999999,"outTok":1002,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberHigh-mwh2l6qs1","s":"sched","arm":"emberHigh","r":1,"code":0,"ms":7083,"cost":0.0022097320000000003,"outTok":1832,"tools":7,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberLow-mwh2l77g3","s":"sched","arm":"emberLow","r":1,"code":0,"ms":7791,"cost":0.002204224,"outTok":1557,"tools":6,"turns":7,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberMedium-mwh2l6if0","s":"sched","arm":"emberMedium","r":1,"code":0,"ms":11964,"cost":0.0019887,"outTok":1454,"tools":6,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberLow-mwh2lgg03","s":"multi","arm":"emberLow","r":1,"code":0,"ms":4327,"cost":0.001537192,"outTok":834,"tools":3,"turns":4,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberMedium-mwh2lfqz0","s":"multi","arm":"emberMedium","r":1,"code":0,"ms":5939,"cost":0.002205364,"outTok":1144,"tools":11,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberOff-mwh2lg7n2","s":"multi","arm":"emberOff","r":1,"code":0,"ms":7571,"cost":0.0017841360000000002,"outTok":547,"tools":4,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberHigh-mwh2lfzb1","s":"multi","arm":"emberHigh","r":1,"code":0,"ms":10018,"cost":0.002528032,"outTok":1017,"tools":11,"turns":7,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"env-emberHigh-mwh2lnpu0","s":"env","arm":"emberHigh","r":2,"code":0,"ms":5091,"cost":0.0014993440000000001,"outTok":1030,"tools":8,"turns":5,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberLow-mwh2lo6j2","s":"env","arm":"emberLow","r":2,"code":0,"ms":4655,"cost":0.001419468,"outTok":921,"tools":7,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberOff-mwh2lny61","s":"env","arm":"emberOff","r":2,"code":0,"ms":5271,"cost":0.0009242479999999999,"outTok":564,"tools":7,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"env-emberMedium-mwh2loeu3","s":"env","arm":"emberMedium","r":2,"code":0,"ms":4809,"cost":0.001176848,"outTok":942,"tools":7,"turns":4,"ok":true,"detail":"hit=7 wrong= missed="}
+{"id":"graph-emberLow-mwh2lsl72","s":"graph","arm":"emberLow","r":2,"code":0,"ms":2903,"cost":0.000802768,"outTok":419,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberOff-mwh2lscv1","s":"graph","arm":"emberOff","r":2,"code":0,"ms":3822,"cost":0.0009448999999999999,"outTok":272,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberHigh-mwh2ls4j0","s":"graph","arm":"emberHigh","r":2,"code":0,"ms":4702,"cost":0.0011082960000000002,"outTok":887,"tools":3,"turns":4,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"graph-emberMedium-mwh2lstj3","s":"graph","arm":"emberMedium","r":2,"code":0,"ms":4663,"cost":0.000836568,"outTok":492,"tools":2,"turns":3,"ok":true,"detail":"hit=6 wrong= missed="}
+{"id":"bug-emberHigh-mwh2lwf60","s":"bug","arm":"emberHigh","r":2,"code":0,"ms":4929,"cost":0.0012459599999999997,"outTok":987,"tools":7,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberLow-mwh2lwvv2","s":"bug","arm":"emberLow","r":2,"code":0,"ms":5037,"cost":0.001297332,"outTok":718,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberOff-mwh2lwnj1","s":"bug","arm":"emberOff","r":2,"code":0,"ms":5766,"cost":0.001292152,"outTok":586,"tools":5,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"bug-emberMedium-mwh2lx473","s":"bug","arm":"emberMedium","r":2,"code":0,"ms":7573,"cost":0.001033476,"outTok":634,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberHigh-mwh2m2ys0","s":"sched","arm":"emberHigh","r":2,"code":0,"ms":6494,"cost":0.001744944,"outTok":1718,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberMedium-mwh2m3ns3","s":"sched","arm":"emberMedium","r":2,"code":0,"ms":5768,"cost":0.0018282959999999999,"outTok":1519,"tools":6,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberLow-mwh2m3fh2","s":"sched","arm":"emberLow","r":2,"code":0,"ms":6352,"cost":0.001931348,"outTok":1377,"tools":5,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"sched-emberOff-mwh2m3741","s":"sched","arm":"emberOff","r":2,"code":0,"ms":7103,"cost":0.0018520680000000001,"outTok":896,"tools":5,"turns":5,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberHigh-mwh2m8op0","s":"multi","arm":"emberHigh","r":2,"code":0,"ms":6059,"cost":0.0018955920000000002,"outTok":986,"tools":7,"turns":6,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberLow-mwh2m95d2","s":"multi","arm":"emberLow","r":2,"code":0,"ms":6521,"cost":0.0021388600000000002,"outTok":981,"tools":10,"turns":7,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberOff-mwh2m8x11","s":"multi","arm":"emberOff","r":2,"code":0,"ms":7190,"cost":0.0016932240000000001,"outTok":752,"tools":3,"turns":4,"ok":true,"detail":"tests=true testUnchanged=true"}
+{"id":"multi-emberMedium-mwh2m9dp3","s":"multi","arm":"emberMedium","r":2,"code":0,"ms":6955,"cost":0.00232968,"outTok":1012,"tools":8,"turns":7,"ok":true,"detail":"tests=true testUnchanged=true"}

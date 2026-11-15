@@ -1,0 +1,5 @@
+name: admin
+# old: depends_on cache (removed)
+depends_on:
+  - web
+  - search

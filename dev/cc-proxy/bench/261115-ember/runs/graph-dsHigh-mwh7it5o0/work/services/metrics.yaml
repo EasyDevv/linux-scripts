@@ -1,0 +1,3 @@
+name: metrics
+# old: depends_on cache (removed)
+depends_on: []

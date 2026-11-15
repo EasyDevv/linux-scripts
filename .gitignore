@@ -75,6 +75,7 @@ dev/design/.cache/
 .claude/
 
 # ─── Go ──────────────────────────────────────────────
+dev/auth/bin/
 dev/cli/bin/
 dev/droid/bin/
 dev/pk/bin/

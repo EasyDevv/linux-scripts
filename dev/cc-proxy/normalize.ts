@@ -9,7 +9,8 @@
  *
  * thinking 블록의 서명은 업체마다 다르고 서로 검증하지 못한다. 그래서 다른 업체가 만든 thinking의
  * 서명 앞에 `ccproxy:<provider>:`를 붙여 두고, 다음 요청에서 그 업체로 갈 때만 원래 서명으로
- * 되돌려 남기고 나머지 대상(Anthropic 포함)에게서는 그 블록을 뺀다.
+ * 되돌려 남기고 나머지 대상(Anthropic 포함)에게서는 그 블록을 뺀다. `redacted_thinking`(서명 대신 암호화된
+ * `data`, OpenRouter meta/muse-ember가 보낸다)도 같은 태그를 `data` 앞에 단다.
  */
 import type { Effort } from "./config.ts";
 
@@ -64,13 +65,13 @@ function plainCache(block: Block): Block {
 
 /** 이 대상(`native`면 Anthropic)이 받을 thinking 블록만 남긴다. */
 export function keepThinking(block: Block, target: string | "native"): Block | null {
-	if (block.type === "redacted_thinking") return target === "native" ? block : null;
-	if (block.type !== "thinking") return block;
-	const signature = typeof block.signature === "string" ? block.signature : "";
-	if (target === "native") return signature.startsWith(TAG) ? null : block;
+	if (block.type !== "thinking" && block.type !== "redacted_thinking") return block;
+	const key = block.type === "thinking" ? "signature" : "data";
+	const value = typeof block[key] === "string" ? (block[key] as string) : "";
+	if (target === "native") return value.startsWith(TAG) ? null : block;
 	const tag = tagOf(target);
-	if (!signature.startsWith(tag)) return null;
-	return { ...block, signature: signature.slice(tag.length) };
+	if (!value.startsWith(tag)) return null;
+	return { ...block, [key]: value.slice(tag.length) };
 }
 
 /** 같은 역할이 이어지면 한 메시지로 합친다(블록을 지우고 나면 생길 수 있다). 빈 메시지는 뺀다. */
@@ -254,6 +255,8 @@ export class StreamRewriter {
 				break;
 			case "content_block_start": {
 				const block = data.content_block as Block | undefined;
+				// redacted_thinking은 data가 시작 이벤트에 통째로 온다.
+				if (block?.type === "redacted_thinking") block.data = this.#tag + String(block.data ?? "");
 				if (block?.type === "thinking") {
 					this.#thinking.add(index);
 					if (typeof block.signature === "string" && block.signature) {
@@ -303,7 +306,11 @@ export function rewriteJson(body: Json, provider: string, requestedModel: string
 	const tag = tagOf(provider);
 	const content = Array.isArray(body.content)
 		? (body.content as Block[]).map((block) =>
-				block.type === "thinking" ? { ...block, signature: tag + String(block.signature ?? "") } : block,
+				block.type === "thinking"
+					? { ...block, signature: tag + String(block.signature ?? "") }
+					: block.type === "redacted_thinking"
+						? { ...block, data: tag + String(block.data ?? "") }
+						: block,
 			)
 		: body.content;
 	const usage = (body.usage as Json | undefined) ?? {};

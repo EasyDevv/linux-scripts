@@ -7,7 +7,7 @@ Anthropic-compatible endpoints with fallbacks, ending at Claude. Guide and measu
 - Pure logic lives in `config.ts`, `normalize.ts`, `stats.ts` (`bun test`); `server.ts` is I/O.
 - One request transform for every non-Anthropic provider (strictest wins); provider differences are only
   URL, auth and extra headers in `upstreams.ts`. Do not branch routing on a provider name.
-- Credentials come from pi's `~/.pi/agent/auth.json`; OAuth refresh takes pi's `auth.json.lock`.
+- Credentials come from the central `auth` store (`dev/auth`, `~/.config/auth/credentials.json`), read via `../auth/client/central-auth.ts`; an expired OAuth token is refreshed by `auth refresh`. Never pi's `auth.json`.
 - Consumers: Claude Code plugin `~/.agents/plugins/proxy`, dashboard `apps/server/src/cc_proxy.rs` +
   `apps/client/src/lib/settings/cc-proxy-section.svelte`. Keep `/_proxy/*` shapes in step with them.
 - After a change: `bun test`, `bunx tsc -p .`, `systemctl --user restart cc-proxy`, then

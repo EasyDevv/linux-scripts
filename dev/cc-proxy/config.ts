@@ -27,7 +27,14 @@ export type Config = {
 	/** true(기본)면 서브에이전트 요청(`x-claude-code-agent-id` 헤더)만 체인을 탄다. 메인 대화와 보조 호출은
 	 *  모델이 무엇이든 Anthropic 직행이다(`proxiable`). */
 	subagentsOnly: boolean;
+	/** 공통 층(과추론을 막는 두 줄) 전체 스위치. 기본 true. 끄면 별칭 설정과 무관하게 붙이지 않는다. */
+	common: boolean;
 };
+
+/** 이 별칭의 요청에 공통 층을 붙이는가: 전체 스위치가 켜져 있고 별칭이 끄지 않았을 때. */
+export function commonOn(config: Config, alias: Alias | null): boolean {
+	return config.common && !(alias && config.routes[alias].common === false);
+}
 
 export const PORT = Number(process.env.CC_PROXY_PORT ?? 45870);
 
@@ -49,6 +56,7 @@ export const DEFAULT_CONFIG: Config = {
 	},
 	cooldownSeconds: 60,
 	subagentsOnly: true,
+	common: true,
 };
 
 export function configDir(): string {
@@ -105,7 +113,9 @@ export function validate(input: unknown, providers: readonly string[]): Config {
 	}
 	const subagentsOnly = raw.subagentsOnly ?? DEFAULT_CONFIG.subagentsOnly;
 	if (typeof subagentsOnly !== "boolean") throw new Error("subagentsOnly is true/false");
-	return { enabled: raw.enabled ?? DEFAULT_CONFIG.enabled, routes, cooldownSeconds, subagentsOnly };
+	const common = raw.common ?? DEFAULT_CONFIG.common;
+	if (typeof common !== "boolean") throw new Error("common is true/false");
+	return { enabled: raw.enabled ?? DEFAULT_CONFIG.enabled, routes, cooldownSeconds, subagentsOnly, common };
 }
 
 /** 파일 버전: 저장할 때 읽은 버전과 다르면(그 사이 손으로 고쳤으면) 거절한다. */

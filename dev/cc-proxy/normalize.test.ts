@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { aliasOf, DEFAULT_CONFIG, validate } from "./config.ts";
+import { ALIASES, aliasOf, commonOn, DEFAULT_CONFIG, validate } from "./config.ts";
 import { forForeign, forNative, keepThinking, rewriteJson, StreamRewriter, strictSchema, UsageTap } from "./normalize.ts";
 
 describe("aliasOf", () => {
@@ -25,6 +25,15 @@ describe("validate", () => {
 		expect(() => validate({ routes: { haiku: { chain: [{ model: "xai/grok-4.7", effort: "ultra" }] } } }, providers)).toThrow(
 			/effort/,
 		);
+	});
+	test("common: a global switch, on by default, and a per-alias off", () => {
+		expect(DEFAULT_CONFIG.common).toBe(true);
+		expect(() => validate({ common: "off" }, providers)).toThrow(/common/);
+		const off = validate({ common: false }, providers);
+		expect(ALIASES.map((alias) => commonOn(off, alias))).toEqual([false, false, false, false]);
+		const perAlias = validate({ routes: { sonnet: { chain: [], common: false } } }, providers);
+		expect(ALIASES.map((alias) => commonOn(perAlias, alias))).toEqual([true, false, true, true]);
+		expect(commonOn(perAlias, null)).toBe(true);
 	});
 });
 
@@ -154,6 +163,54 @@ describe("StreamRewriter", () => {
 		expect(body.model).toBe("claude-sonnet-5-5");
 		expect((body.content as any)[0].signature).toBe("ccproxy:xai:z");
 		expect(usage).toEqual({ input: 3, output: 4, cacheRead: 0 });
+	});
+});
+
+// OpenRouter meta/muse-ember answers with redacted_thinking (261115 실측). Untagged, it went to Anthropic
+// on a mid-conversation fallback (Anthropic cannot decrypt another provider's data) and was dropped on the
+// way back to the provider that made it.
+describe("redacted_thinking round trip", () => {
+	const sse = (data: object) => `event: x\ndata: ${JSON.stringify(data)}\n\n`;
+	const events = (raw: string) =>
+		raw
+			.split("\n\n")
+			.filter(Boolean)
+			.map((part) => JSON.parse(part.split("\n").find((l) => l.startsWith("data:"))!.slice(5)));
+	const history = (block: object) => ({
+		model: "claude-haiku-5-5",
+		messages: [
+			{ role: "user", content: [{ type: "text", text: "find it" }] },
+			{ role: "assistant", content: [block, { type: "text", text: "looking" }] },
+			{ role: "user", content: [{ type: "text", text: "go on" }] },
+		],
+	});
+
+	test("the stream tags a foreign redacted_thinking", () => {
+		const rewriter = new StreamRewriter("openrouter", "claude-haiku-5-5");
+		const out = events(
+			rewriter.push(sse({ type: "content_block_start", index: 0, content_block: { type: "redacted_thinking", data: "enc" } })) +
+				rewriter.flush(),
+		);
+		expect(out[0].content_block.data).toBe("ccproxy:openrouter:enc");
+	});
+	test("rewriteJson tags a foreign redacted_thinking", () => {
+		const { body } = rewriteJson({ content: [{ type: "redacted_thinking", data: "enc" }] }, "openrouter", "claude-haiku-5-5");
+		expect((body.content as any)[0].data).toBe("ccproxy:openrouter:enc");
+	});
+	test("a fallback to Anthropic drops it", () => {
+		const out = forNative(history({ type: "redacted_thinking", data: "ccproxy:openrouter:enc" })) as any;
+		expect(out.messages[1].content.map((b: any) => b.type)).toEqual(["text"]);
+	});
+	test("Anthropic's own redacted_thinking stays on the native path", () => {
+		const out = forNative(history({ type: "redacted_thinking", data: "anthropicEnc" })) as any;
+		expect(out.messages[1].content[0]).toEqual({ type: "redacted_thinking", data: "anthropicEnc" });
+	});
+	test("the provider that made it gets it back untagged; others do not", () => {
+		const block = { type: "redacted_thinking", data: "ccproxy:openrouter:enc" };
+		expect(keepThinking(block, "openrouter")).toEqual({ type: "redacted_thinking", data: "enc" });
+		expect(keepThinking(block, "xai")).toBeNull();
+		const sent = forForeign(history(block), "openrouter", "meta/muse-ember", "low") as any;
+		expect(sent.messages[1].content[0]).toEqual({ type: "redacted_thinking", data: "enc" });
 	});
 });
 

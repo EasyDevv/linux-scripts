@@ -1,0 +1,5 @@
+name: reports
+# old: depends_on cache (removed)
+depends_on:
+  - mailer
+  - search

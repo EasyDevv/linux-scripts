@@ -1,0 +1,45 @@
+attempts 1200  total $1.394
+
+## per variant (all 40 cases × reps)
+effort common n succ% quality p50s out_tok m$/job errors
+low off 120 100.0 100 3.2 1466 0.827 0
+low on  120 99.2 99.62 2.6 1030 0.608 0
+medium off 120 100.0 100 4.0 2042 1.12 0
+medium on  120 100.0 100 3.1 1281 0.727 0
+high off 120 99.2 99.17 4.7 2622 1.401 0
+high on  120 100.0 100 3.3 1616 0.89 0
+xhigh off 120 100.0 100 5.4 3226 1.716 0
+xhigh on  120 98.3 99.13 4.0 2038 1.126 0
+max off 120 99.2 99.17 5.3 3753 1.985 0
+max on  120 99.2 99.17 3.9 2240 1.215 1
+
+## per effort × workload (common on and off pooled): success% / quality / out_tok
+effort read summary code worker hard-code hard-worker
+low 100.0/100/231 100.0/100/226 97.2/98.75/776 100.0/100/956 100.0/100/2406 100.0/100/2192
+medium 100.0/100/262 100.0/100/271 100.0/100/1140 100.0/100/1443 100.0/100/3336 100.0/100/2633
+high 100.0/100/291 100.0/100/297 100.0/100/1453 100.0/100/1294 97.9/97.92/4546 100.0/100/3548
+xhigh 100.0/100/307 100.0/100/308 100.0/100/1682 100.0/100/1514 95.8/97.84/6073 100.0/100/4228
+max 100.0/100/308 100.0/100/320 100.0/100/2034 100.0/100/1520 97.9/97.92/7368 97.9/97.92/4479
+
+## common on vs off, paired by (workload, case, rep) at each effort
+effort pairs Δquality[95%CI] out_ratio_on/off[95%CI] cost_ratio[95%CI] Δsucc_pp
+low 120 -0.38[-1.12,0.00] 0.702[0.652,0.756] 0.735[0.680,0.797] -0.8
+medium 120 0.00[0.00,0.00] 0.627[0.568,0.697] 0.648[0.591,0.718] 0.0
+high 120 0.83[0.00,2.50] 0.616[0.569,0.673] 0.635[0.590,0.688] 0.8
+xhigh 120 -0.87[-2.48,0.00] 0.632[0.569,0.708] 0.657[0.595,0.729] -1.7
+max 120 0.00[-2.50,2.50] 0.597[0.523,0.684] 0.612[0.538,0.698] 0.0
+ALL 600 -0.08[-0.72,0.57] 0.626[0.595,0.659] 0.648[0.616,0.682] -0.3
+
+## effort vs low on the hard set (pooled common), paired by (workload, case, rep, common)
+medium 96 Δquality 0.00[0.00,0.00] out_ratio 1.30[1.20,1.40]
+high 96 Δquality -1.04[-3.12,0.00] out_ratio 1.76[1.61,1.91]
+xhigh 96 Δquality -1.08[-3.10,0.00] out_ratio 2.24[2.04,2.46]
+max 96 Δquality -2.08[-5.21,0.00] out_ratio 2.58[2.27,2.90]
+
+## failures (key, quality, error/reason)
+hard-code|semver|0|high|off 0 
+hard-code|glob|0|xhigh|on 86.15 
+hard-worker|semver|0|max|on 0 Error: 404 {"type":"error","error":{"type":"not_found_error","message":"The requested mode
+code|aggregate|1|low|on 55 
+hard-code|glob|1|xhigh|on 10 
+hard-code|semver|1|max|off 0 
