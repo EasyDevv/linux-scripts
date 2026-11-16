@@ -37,3 +37,13 @@ fn status_reports_blocked() {
     assert!(stdout.contains("runtime: blocked"), "{stdout}");
     assert!(stdout.contains("last error: working directory is unavailable"), "{stdout}");
 }
+
+#[test]
+fn log_tags_read_each_line_once() {
+    use executor::cli::log_tags;
+    assert_eq!(log_tags("base", "app"), vec!["executor/app"]);
+    assert_eq!(log_tags("web", "app"), vec!["executor/app/web"]);
+    assert_eq!(log_tags("api", "app"), vec!["executor/app/api"]);
+    // dev-stack mirrors the sub-tags into the base tag, so `--all` must not list them again.
+    assert_eq!(log_tags("all", "app"), vec!["executor/app"]);
+}

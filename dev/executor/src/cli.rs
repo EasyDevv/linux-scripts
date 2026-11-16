@@ -215,6 +215,17 @@ pub async fn run_command(command: Option<&str>, args: Vec<String>) -> Result<(),
     }
 }
 
+/// Journal tags `executor log` reads. dev-stack writes every `[web]`/`[api]`/`[sys]` line to
+/// `executor/<name>` and again to `executor/<name>/web|api`, so the base tag is already the whole
+/// log: `--all` reads it alone (listing the sub-tags too printed every line twice).
+pub fn log_tags(target: &str, name: &str) -> Vec<String> {
+    match target {
+        "web" => vec![format!("executor/{name}/web")],
+        "api" => vec![format!("executor/{name}/api")],
+        _ => vec![format!("executor/{name}")],
+    }
+}
+
 async fn command_log(
     args: &[String],
     recent_only: bool,
@@ -246,16 +257,7 @@ async fn command_log(
     }
     let name = resolved_instance_name(&config, name_arg.as_deref()).await?;
     print_port_suffix(&config, &name, pm).await;
-    let tags: Vec<String> = match target {
-        "web" => vec![format!("executor/{name}/web")],
-        "api" => vec![format!("executor/{name}/api")],
-        "all" => vec![
-            format!("executor/{name}"),
-            format!("executor/{name}/web"),
-            format!("executor/{name}/api"),
-        ],
-        _ => vec![format!("executor/{name}")],
-    };
+    let tags = log_tags(target, &name);
     let mut command = vec![
         "/usr/bin/journalctl".into(),
         "--user".into(),

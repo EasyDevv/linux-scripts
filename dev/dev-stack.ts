@@ -127,6 +127,12 @@ async function journalLine(tag: string, line: string): Promise<void> {
 	await proc.exited;
 }
 
+/** True from the moment executor (SIGTERM/SIGINT) asks the stack to stop: that exit is expected, not a failure. */
+let stopping = false;
+/** `bun run <script>` reports the SIGTERM we sent it as `error: script "dev" was terminated by signal SIGTERM` or `... exited with code 143` (130 for SIGINT). */
+const EXPECTED_STOP_LINE =
+	/^error: script ".*" (?:was terminated by signal SIG(?:TERM|INT)|exited with code (?:130|143))\b/;
+
 async function pipeLines(
 	stream: ReadableStream<Uint8Array> | null,
 	name: ChildName,
@@ -147,7 +153,7 @@ async function pipeLines(
 		while (newline >= 0) {
 			const line = buffer.slice(0, newline).replace(/\r$/, "");
 			buffer = buffer.slice(newline + 1);
-			if (line.length > 0) {
+			if (line.length > 0 && !(stopping && EXPECTED_STOP_LINE.test(line))) {
 				const output = `[${name}] ${line}`;
 				console.log(output);
 				void journalLine(tag, output);
@@ -247,22 +253,27 @@ async function main(): Promise<void> {
 	const web = startChild("web", webDir, webCmd, `${tag}/web`, env);
 	const children = [api, web];
 
-	let shuttingDown = false;
-	async function shutdown(): Promise<void> {
-		if (shuttingDown) return;
-		shuttingDown = true;
-		console.log("[sys] shutting down");
-		for (const child of children) {
-			try {
-				child.kill("SIGTERM");
-			} catch {}
-		}
-		await Bun.sleep(5_000);
-		for (const child of children) {
-			try {
-				child.kill("SIGKILL");
-			} catch {}
-		}
+	let shutdownRun: Promise<void> | null = null;
+	function shutdown(): Promise<void> {
+		shutdownRun ??= (async () => {
+			stopping = true;
+			console.log("[sys] shutting down");
+			for (const child of children) {
+				try {
+					child.kill("SIGTERM");
+				} catch {}
+			}
+			await Promise.race([
+				Promise.all(children.map((child) => child.exited)),
+				Bun.sleep(5_000),
+			]);
+			for (const child of children) {
+				try {
+					child.kill("SIGKILL");
+				} catch {}
+			}
+		})();
+		return shutdownRun;
 	}
 
 	process.on("SIGINT", () => void shutdown());
@@ -273,6 +284,12 @@ async function main(): Promise<void> {
 		web.exited.then((code) => ({ name: "web", code })),
 	]);
 
+	if (stopping) {
+		/* executor stop / reload: a clean stop, so no "exited code=143" and exit 0. */
+		await shutdown();
+		console.log("[sys] stopped");
+		process.exit(0);
+	}
 	console.log(`[sys] ${result.name} exited code=${result.code}`);
 	await shutdown();
 	process.exit(result.code ?? 0);
