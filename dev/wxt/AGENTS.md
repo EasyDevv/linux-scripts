@@ -22,8 +22,7 @@ Browser lifecycle (launch, stop, minimize) is managed by the global
 - `wxtu submit`: submit extension packages to browser stores.
 - `wxtu minimize cdp`: minimize a Chromium window via CDP.
 - `wxtu minimize kwin`: minimize the active window via KWin.
-- `wxtu listing firefox`: fill Firefox Add-on (AMO) listing fields via CDP automation.
-- `wxtu listing chrome`: fill Chrome Web Store listing fields.
+- `wxtu listing chrome|firefox [--dry-run] [--locale a,b] [--only text|media]`: push `.marketing/output` copy and images to the Chrome Web Store dashboard (draft save only) or AMO (live) through a logged-in CDP browser (default port 9222). Targets come from `.marketing/listing.json`; the `publish-store-listing` skill documents the flow.
 - `wxtu android emulator`: start an Android emulator with stable defaults.
 - `wxtu android firefox install`: build and reinstall the extension on Firefox Android.
 - `wxtu android firefox manager`: open Firefox Android's add-ons/settings surface.
@@ -38,3 +37,4 @@ Browser lifecycle (launch, stop, minimize) is managed by the global
 - `android-emu.mjs`: Android emulator launcher.
 - `android-firefox.mjs`: Firefox Android install and page helpers.
 - `run-wxt-targets.mjs`: shared parallel build/zip runner.
+- `listing-lib.mjs`: shared marketing-dir discovery, description.xml parsing, CDP and session-log helpers for the two `*-fill-listings.mjs` scripts.

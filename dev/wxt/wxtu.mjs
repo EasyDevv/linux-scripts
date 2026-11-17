@@ -38,9 +38,13 @@ const COMMANDS = {
 		},
 	},
 	listing: {
-		usage: "wxtu listing chrome|firefox",
+		usage: "wxtu listing chrome|firefox [--dry-run] [--locale a,b] [--only text|media]",
 		sub: {
-			chrome: { script: "chrome-fill-listings.mjs", passArgs: true },
+			chrome: {
+				script: "chrome-fill-listings.mjs",
+				passArgs: true,
+				runtime: "bun",
+			},
 			firefox: {
 				script: "firefox-fill-listings.mjs",
 				passArgs: true,
