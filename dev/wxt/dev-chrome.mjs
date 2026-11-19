@@ -33,33 +33,20 @@ function getDefaultChromiumDataDir() {
 	return path.resolve(".user-data", `chrome-${safeName}`);
 }
 
-const CHROMIUM_DATA_DIR = path.resolve(
-	process.env.WXT_CHROME_DATA_DIR ?? getDefaultChromiumDataDir(),
-);
+const CHROMIUM_DATA_DIR = path.resolve(process.env.WXT_CHROME_DATA_DIR ?? getDefaultChromiumDataDir());
 const CHROME_CONFIG = WXTU_CONFIG.chrome;
-const CHROME_DEBUG_PORT = parseInt(
-	process.env.WXT_CHROME_DEBUG_PORT ?? String(CHROME_CONFIG.defaultCdpPort),
-	10,
-);
+const CHROME_DEBUG_PORT = parseInt(process.env.WXT_CHROME_DEBUG_PORT ?? String(CHROME_CONFIG.defaultCdpPort), 10);
 const CHROME_BIN = process.env.WXT_CHROME_BIN || CHROME_CONFIG.browserBinary;
-const START_MINIMIZED = readBooleanEnv(
-	"WXT_CHROME_MINIMIZE",
-	CHROME_CONFIG.startMinimized,
-);
+const START_MINIMIZED = readBooleanEnv("WXT_CHROME_MINIMIZE", CHROME_CONFIG.startMinimized);
 const DEV_LOCALE =
-	process.env.WXT_CHROME_LOCALE?.trim() ||
-	process.env.BROWSER_LOCALE?.trim() ||
-	CHROME_CONFIG.defaultLocale;
-// The dev window runs with only the extension under development. A blocker
-// installed by a managed policy (uBlock, say) holds page loads until its own
-// filter lists settle, so it stays out unless asked for.
+	process.env.WXT_CHROME_LOCALE?.trim() || process.env.BROWSER_LOCALE?.trim() || CHROME_CONFIG.defaultLocale;
+// The dev window runs with only the extension under development; the
+// profile's other extensions stay out unless asked for.
 const KEEP_EXTENSIONS = readBooleanEnv("WXT_CHROME_KEEP_EXTENSIONS", false);
 const DEFAULT_WXT_PORT = CHROME_CONFIG.defaultWxtPort;
 const DETACHED_CHILD_ENV = "WXTU_DEV_CHROME_DETACHED_CHILD";
 const DEFAULT_START_URL = CHROME_CONFIG.defaultStartUrl;
-const DEV_CHROME_LOG = path.resolve(
-	process.env.WXT_DEV_CHROME_LOG ?? CHROME_CONFIG.devLogPath,
-);
+const DEV_CHROME_LOG = path.resolve(process.env.WXT_DEV_CHROME_LOG ?? CHROME_CONFIG.devLogPath);
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const SCRIPT_DIR = path.dirname(SCRIPT_PATH);
 const WXT_CHROME_SERVER_SCRIPT = path.join(SCRIPT_DIR, "dev-chrome-wxt.mjs");
@@ -120,9 +107,7 @@ function resolveChromeSessionOptions() {
 				options.url = browserArgs[++i] ?? options.url;
 				break;
 			case "--user-data":
-				options.userDataDir = path.resolve(
-					browserArgs[++i] ?? options.userDataDir,
-				);
+				options.userDataDir = path.resolve(browserArgs[++i] ?? options.userDataDir);
 				break;
 			case "--locale":
 				options.locale = browserArgs[++i] ?? options.locale;
@@ -152,9 +137,7 @@ for (let i = 0; i < args.length; i++) {
 	} else if (arg === "--sample") {
 		sampleName = args[++i];
 		if (!sampleName || !SAMPLE_REGISTRY[sampleName]) {
-			console.error(
-				`--sample requires one of: ${Object.keys(SAMPLE_REGISTRY).join(", ")}`,
-			);
+			console.error(`--sample requires one of: ${Object.keys(SAMPLE_REGISTRY).join(", ")}`);
 			process.exit(1);
 		}
 		scriptArgs.push(arg, sampleName);
@@ -252,9 +235,7 @@ function startDetachedChild() {
 	console.log(`Started detached dev session: ${child.pid}`);
 	console.log(`Log file: ${DEV_CHROME_LOG}`);
 	const sessionOptions = resolveChromeSessionOptions();
-	console.log(
-		`CDP port: ${sessionOptions.port} (browser close still stops WXT)`,
-	);
+	console.log(`CDP port: ${sessionOptions.port} (browser close still stops WXT)`);
 }
 
 function isChromeDebugEndpointAlive(port) {
@@ -313,9 +294,7 @@ async function launchChrome() {
 
 	if (await isChromeDebugEndpointAlive(sessionOptions.port)) {
 		if (!wantsVisibleWindow) {
-			console.log(
-				`\nℹ Browser already running on port ${sessionOptions.port}; reusing existing Chromium session`,
-			);
+			console.log(`\nℹ Browser already running on port ${sessionOptions.port}; reusing existing Chromium session`);
 			console.log(`  profile: ${sessionOptions.userDataDir}`);
 			watchChromeExit(sessionOptions.port);
 			return;
@@ -323,9 +302,7 @@ async function launchChrome() {
 
 		launchPort = await findAvailablePort(sessionOptions.port + 1);
 		separateWindow = true;
-		console.log(
-			`\nℹ Browser on port ${sessionOptions.port} stays; opening a separate visible window on ${launchPort}`,
-		);
+		console.log(`\nℹ Browser on port ${sessionOptions.port} stays; opening a separate visible window on ${launchPort}`);
 	}
 
 	const ctrlArgs = [
@@ -364,23 +341,15 @@ async function launchChrome() {
 		});
 		const output = JSON.parse(result.trim());
 
-		console.log(
-			`\n✓ Browser launched (chromium) on port ${output.port} → ${url}`,
-		);
-		console.log(
-			`  profile: ${output.userDataDir ?? sessionOptions.userDataDir}`,
-		);
+		console.log(`\n✓ Browser launched (chromium) on port ${output.port} → ${url}`);
+		console.log(`  profile: ${output.userDataDir ?? sessionOptions.userDataDir}`);
 		console.log(`  extension: ${outDir}`);
 		console.log(`  locale: ${output.locale ?? sessionOptions.locale}`);
 		console.log(`  window state: ${output.windowState}`);
 
 		// A separate window is not the dev session's browser: its own lifecycle
 		// stays tied to the background browser the run is developing against.
-		watchChromeExit(
-			separateWindow
-				? sessionOptions.port
-				: (output.port ?? launchPort),
-		);
+		watchChromeExit(separateWindow ? sessionOptions.port : (output.port ?? launchPort));
 	} catch (error) {
 		console.error(`Failed to launch browser: ${error.stderr || error.message}`);
 		wxt.kill();
@@ -450,21 +419,15 @@ async function main() {
 		CHOKIDAR_USEPOLLING: process.env.CHOKIDAR_USEPOLLING ?? "1",
 	};
 
-	wxt = spawn(
-		process.execPath,
-		[WXT_CHROME_SERVER_SCRIPT, "--port", String(wxtPort), ...serverArgs],
-		{
-			cwd: process.cwd(),
-			stdio: [detachedMode ? "pipe" : "inherit", "pipe", "pipe"],
-			env: wxtEnv,
-		},
-	);
+	wxt = spawn(process.execPath, [WXT_CHROME_SERVER_SCRIPT, "--port", String(wxtPort), ...serverArgs], {
+		cwd: process.cwd(),
+		stdio: [detachedMode ? "pipe" : "inherit", "pipe", "pipe"],
+		env: wxtEnv,
+	});
 
 	wxt.stdout?.on("data", (data) => {
 		const text = String(data);
-		const portLine = text.match(
-			/Started dev server @ http:\/\/localhost:(\d+)/,
-		);
+		const portLine = text.match(/Started dev server @ http:\/\/localhost:(\d+)/);
 		if (portLine) {
 			const actualPort = portLine[1];
 			if (actualPort !== String(wxtPort)) {
