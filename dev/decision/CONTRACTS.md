@@ -7,6 +7,10 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 
 - Daemon: `http://127.0.0.1:45130` (`DECISION_URL` overrides). Every client is fail-open: no answer,
   timeout, non-2xx, or `status != "routed"` changes nothing.
+- A backend that fails with a connection error (EPROTO, ECONNRESET, EAI_AGAIN, TLS handshake …) is
+  tried once more at once while the call is under 1.2 s and parked for 10 s, a timeout or abort for 10 s,
+  another classifier error for 60 s, a thrown non-network error for 10 min (`engine.ts`). A blip must
+  not make every harness show `unavailable` for minutes (261121).
 - Which classifiers exist: the central model catalog (`../models-catalog/CONTRACTS.md`, the list Settings › Models
   shows), then pi-ai's built-in list. A `config.json` `backends` entry the daemon cannot resolve is logged as
   `skipped: "<model>: not in catalog"` and the next entry answers; check `skipped` after pinning a model.
@@ -96,8 +100,13 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   register each routed skill as a command (`/<name> [request]` in Claude Code, `/skill:<name>` in
   pi) that loads it and sends the request; on a turn find_skill does not answer they list the
   routed skills by root, once a session.
-  A client shows `⚠ decision down · no skills` (pi footer, Claude Code status line) while
-  find_skill gets no answer or `unavailable`; a skip clears it.
+  A client shows its link state in the footer (pi) or status line (Claude Code): `decision: on`
+  while the daemon answers (at session start `GET /health` with `ok: true` stands in until the first
+  prompt; after that find_skill's answer, a skip counts as one), `⚠ decision down · no skills` (Claude
+  Code: `decision: ⚠ down · no skills`, the engine adds the prefix) while find_skill gets no answer or
+  `unavailable`. Each such miss is also appended, best effort and capped at 200 lines, to
+  `~/.local/state/decision/<harness>-down.jsonl` (`claude-down.jsonl`, `pi-down.jsonl`): the daemon
+  logs only calls it received, so a client timeout or refused connection shows up only there.
 - Human-text entry points routed — Claude: `prompt.submit` (typed or queued, composer origin),
   `AskUserQuestion` answers (PostToolUse), auto-continuation feedback that is not `isMeta`; pi:
   `input`/`before_agent_start`, `ask_user_question` answers (tool_result), `steer`/`followUp` while
@@ -138,7 +147,9 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
 
 ## `POST /v1/guard`
 
-- in: `{harness, sessionId?, cwd?, phase: "call" | "result", tool, args, output?, isError?}`. Clients ask
+- in: `{harness, gateHarness?, sessionId?, cwd?, phase: "call" | "result", tool, args, output?, isError?}`.
+  `gateHarness` (guard-replay, `decision eval`) is the harness the call stands for: rules gated on a
+  harness read it, while the log keeps `harness: "eval"`. Clients ask
   only where a rule can fire: `call` for a shell call (`bash`, `Bash`), under pi a search tool
   (`find`, `grep`; Claude Code has none, it searches through Bash), and a `read`/`edit`/`ls` (Claude
   `Read`/`Edit`, `args.file_path`) whose path does not exist (the client checks the filesystem first, so
@@ -152,7 +163,14 @@ plugin (`~/.agents/plugins/decision/`), and `decision eval` / `decision audit`. 
   - `hint`: append `message` to the failed result.
   - `notice`: one line for the person (toast / notify), every action but `none`.
 - Rules: `pkill_self` (`pkill -f` without `-A` matches its own shell → add `-A`), `quote_glob` (a
-  glob meant for the program, `--include=*.ts` or after `-name`/`--glob`, is single-quoted),
+  glob meant for the program as its own word, after `-name`/`-path`/`--glob`/`-g`/`--include`, is
+  single-quoted; a glob glued to an option, `--include=*.ts`, matches no file and passes as typed: pi
+  runs bash and Claude Code's zsh sets `no_nomatch` in `~/.zshenv`), `rm_trash` (not under
+  `harness: claude`: `rm` with only flags trash-put takes, `-rRfidv`/`--recursive|force|dir|verbose|interactive`,
+  and a path not under `/tmp` → the command word becomes `trash-put`; `sudo`/`command`/`exec rm`, `\rm`,
+  `git rm`, `find -exec rm` stay. Claude Code gets it from an `rm` function in `~/.zshenv`, because a hook
+  rewrite is not covered by the auto mode review: a rewritten Bash call must be sent again, a rewritten
+  REPL call is refused. `cwd` resolves relative paths),
   `wide_search` (`find`/`grep -r`/`rg` over `~` or `/` without a depth ≤ 3 → deny; the pi `find`/`grep` tools rooted at `~`, `/` or `/home`, by `path`, an absolute `find` pattern, or the `cwd` → deny), `wait_loop`
   (not under `harness: pi`, which has no background mode: a foreground `until`/`while` loop with
   `sleep` polling a task output file, `/tasks/` or `*.output|*.out|*.log`, → deny toward

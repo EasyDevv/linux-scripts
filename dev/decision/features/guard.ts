@@ -7,8 +7,16 @@
  * - `pkill_self`: `pkill -f <pat>` also matches the shell running it (its argv holds `<pat>`), so the
  *   shell dies with 143/144 before the rest of the command runs. `-A` (procps-ng ≥ 4.0.3) skips the
  *   caller's ancestors and still kills the target.
- * - `quote_glob`: a glob meant for the program (`--include=*.ts`, `-name *.md`) is expanded by the
- *   shell first; zsh fails with "no matches found", bash may pass a wrong file list.
+ * - `quote_glob`: a glob meant for the program as its own word (`-name *.md`, `-g *.ts`) is expanded
+ *   by the shell first when it matches files in the cwd, so the program gets a wrong file list. A glob
+ *   glued to an option (`--include=*.ts`) matches no file and passes through as typed: pi runs bash,
+ *   and Claude Code's zsh sets `no_nomatch` (~/.zshenv), so it is left alone. Rewriting it cost a
+ *   re-issued call each time under Claude auto mode (57 of 83 rewrites, week to 261121).
+ * - `rm_trash` (pi only): `rm` becomes `trash-put` (trash-cli), so a deletion can be restored with
+ *   `trash-restore`; paths all under /tmp, flags trash-put lacks, and `command rm`/`\rm` stay `rm`.
+ *   Claude Code gets the same from an `rm` function in ~/.zshenv: there a hook rewrite is not covered
+ *   by the auto mode review, so a rewritten Bash call has to be sent again and a rewritten REPL call
+ *   is refused.
  * - `wide_search`: `find ~`, `grep -r … ~`, `rg … /` walk the whole tree and time out; so do the
  *   `find`/`grep` tools of pi rooted at `~` or `/` (a recursive SKILL.md glob over the home dir ran
  *   44 min in a pi session). Claude Code searches through Bash, so both harnesses get the same answer.
@@ -30,7 +38,14 @@ import { describeMissing, resolveMissing } from "./path-resolve.ts";
 import type { FeatureDef, FeatureResult } from "./types.ts";
 import { isRecord, str } from "./types.ts";
 
-export type GuardRule = "pkill_self" | "quote_glob" | "wide_search" | "wait_loop" | "edit_hint" | "path_resolve";
+export type GuardRule =
+	| "pkill_self"
+	| "quote_glob"
+	| "rm_trash"
+	| "wide_search"
+	| "wait_loop"
+	| "edit_hint"
+	| "path_resolve";
 
 export interface GuardInput {
 	harness?: string;
@@ -263,14 +278,44 @@ function quoteGlob(groups: Word[][]): Splice[] {
 		for (let i = at + 1; at >= 0 && i < words.length; i++) {
 			const w = words[i] as Word;
 			if (!w.plain || !/[*?]/u.test(w.raw)) continue;
-			const option = /^--?[A-Za-z][\w-]*=/u.exec(w.raw)?.[0] ?? "";
-			if (option !== "" || PATTERN_OPTS.has(words[i - 1]?.value ?? ""))
-				out.push({
-					start: w.start + option.length,
-					end: w.end,
-					text: `'${w.raw.slice(option.length)}'`,
-				});
+			if (PATTERN_OPTS.has(words[i - 1]?.value ?? "")) out.push({ start: w.start, end: w.end, text: `'${w.raw}'` });
 		}
+	}
+	return out;
+}
+
+/** rm flags trash-put takes as well (`-r`/`-d` are no-ops there: it trashes directories whole). */
+const TRASH_SHORT = /^-[rRfidv]+$/u;
+const TRASH_LONG = new Set(["--recursive", "--force", "--dir", "--verbose", "--interactive"]);
+const REDIRECT = /^\d*(?:>>?|<|>&|&>)/u;
+let trashPut: boolean | undefined;
+const hasTrashPut = () => (trashPut ??= Bun.which("trash-put") !== null);
+
+/** Each `rm` whose flags trash-put takes and whose paths are not all under /tmp → `trash-put`. */
+export function rmTrash(groups: Word[][], cwd?: string): Splice[] {
+	const out: Splice[] = [];
+	for (const words of groups) {
+		const at = commandIndex(words);
+		const cmd = words[at];
+		if (cmd === undefined || cmd.raw !== "rm") continue;
+		if (words.slice(0, at).some((w) => w.value === "sudo" || w.value === "command" || w.value === "exec")) continue;
+		const paths: string[] = [];
+		let opts = true;
+		let ok = true;
+		for (let i = at + 1; i < words.length; i++) {
+			const v = (words[i] as Word).value;
+			if (REDIRECT.test(v)) {
+				if (/^\d*(?:>>?|<|>&|&>)$/u.test(v)) i++; // the target is the next word
+				continue;
+			}
+			if (opts && v === "--") opts = false;
+			else if (opts && v.startsWith("-") && v !== "-") ok &&= TRASH_SHORT.test(v) || TRASH_LONG.has(v);
+			else paths.push(v);
+		}
+		if (!ok || paths.length === 0) continue;
+		const under = (p: string) => (isAbsolute(p) ? p : resolve(cwd ?? "/", p)).startsWith("/tmp/");
+		if (paths.every(under)) continue;
+		out.push({ start: cmd.start, end: cmd.end, text: "trash-put" });
 	}
 	return out;
 }
@@ -371,6 +416,7 @@ function waitLoop(groups: Word[][]): boolean {
 
 export interface CallContext {
 	harness?: string;
+	cwd?: string;
 	/** Claude `run_in_background: true`: the call cannot hit the foreground timeout. */
 	background?: boolean;
 }
@@ -405,6 +451,14 @@ export function guardCall(command: string, home = homedir(), ctx: CallContext = 
 		splices.push(...qg);
 		notes.push(`quoted ${quoted} so the program, not the shell, expands the pattern`);
 		shown.push(`quoted ${quoted}`);
+	}
+	// Claude Code: the ~/.zshenv `rm` function trashes instead (see the header).
+	const rt = ctx.harness === "claude" || !hasTrashPut() ? [] : rmTrash(groups, ctx.cwd);
+	if (rt.length > 0) {
+		rules.push("rm_trash");
+		splices.push(...rt);
+		notes.push("ran `rm` as `trash-put`, so it can be restored (`trash-list`, `trash-restore`); delete with `trash-put` directly, `command rm` only for what must not be kept");
+		shown.push("rm → trash-put");
 	}
 	if (rules.length === 0) return result("none", []);
 	return result("rewrite", rules, {
@@ -595,6 +649,7 @@ export function guard(input: GuardInput, home = homedir()): GuardResult {
 		if (command === undefined) return result("none", []);
 		return guardCall(command, home, {
 			harness: input.harness,
+			cwd: input.cwd,
 			background: input.args.run_in_background === true,
 		});
 	}
@@ -621,7 +676,8 @@ function parseGuardInput(b: Record<string, unknown>): GuardInput | string {
 	if (!tool) return "tool is required";
 	if (!isRecord(b.args)) return "args must be an object";
 	return {
-		harness: str(b.harness),
+		// `gateHarness`: the harness a replay or eval case stands for (they log as `harness: "eval"`).
+		harness: str(b.gateHarness) ?? str(b.harness),
 		cwd: str(b.cwd),
 		phase,
 		tool,

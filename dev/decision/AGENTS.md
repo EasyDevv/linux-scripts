@@ -24,6 +24,11 @@ Settle a design change against these before tuning numbers. Reopen one only on a
   General routing judgments ("pasted inspector JSON or a log is payload, not the request"; "an error
   in a running app is reproduced first") live in `prompts/find_skill/` and `evals/`, not in
   descriptions.
+- **Guard: never stop legitimate work (user, 261121).** A guard rule acts only on a call that would
+  fail or do harm, and lets the call run (rewrite, a shell setting) before it denies. Its cost on
+  legitimate calls (`guard-replay.py` › `guard cost`: a deny re-sent and then succeeding, a rewrite
+  Claude auto mode sent back or refused) is measured like its catches; a rule that costs more than it
+  saves is narrowed or removed.
 - **Verified by labelled eval plus session replay.** `decision eval` reports recall, then exact. A
   reported failure is replayed with `claude -p` (or pi) to check behaviour: was the skill read, did
   the agent ask instead of act.

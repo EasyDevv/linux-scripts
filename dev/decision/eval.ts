@@ -288,7 +288,8 @@ export async function runCases(options: RunOptions): Promise<CaseOutcome[]> {
 		const base = { index, prompt: casePrompt(c.input), expected: c.expected, metrics: {}, got: "", costUsd: 0 };
 		let parsed: unknown;
 		try {
-			parsed = runtime.parse({ ...c.input, harness: "eval", sessionId });
+			// A case keeps its harness for rules gated on it (guard `wait_loop`, `rm_trash`); the log says eval.
+			parsed = runtime.parse({ ...c.input, gateHarness: c.input.harness, harness: "eval", sessionId });
 		} catch (error) {
 			return { ...base, status: "error", error: clip(String(error)) };
 		}

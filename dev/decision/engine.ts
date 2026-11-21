@@ -65,6 +65,32 @@ export interface EngineOptions {
 
 const RETRYABLE_COOLDOWN_MS = 60_000;
 const HARD_COOLDOWN_MS = 10 * 60_000;
+/** A network blip or a timeout says nothing about the backend: park it briefly, not for a minute. */
+const TRANSIENT_COOLDOWN_MS = 10_000;
+/** A fast network failure is tried once more on the same backend while this much of the call is left. */
+const RETRY_WINDOW_MS = 1_200;
+
+/** Errors of the connection, not of the backend (261121: EPROTO from a TLS-intercepting proxy, DNS, resets). */
+const NETWORK_ERROR = /EPROTO|ECONNRESET|ECONNREFUSED|EAI_AGAIN|ETIMEDOUT|ENETUNREACH|EHOSTUNREACH|EPIPE|socket hang up|fetch failed|TLS handshake|network/i;
+
+/** Whether an error message is a connection failure that a second try may get past. */
+export function isNetworkError(message: string): boolean {
+	return NETWORK_ERROR.test(message);
+}
+
+interface Failure {
+	error: string;
+	retryable: boolean;
+	/** Connection-level: worth one immediate retry, and only a short cooldown. */
+	network?: boolean;
+	/** Timed out or aborted: a short cooldown, no retry (the call is already slow). */
+	slow?: boolean;
+}
+
+function cooldownMs(failure: Failure): number {
+	if (failure.network || failure.slow) return TRANSIENT_COOLDOWN_MS;
+	return failure.retryable ? RETRYABLE_COOLDOWN_MS : HARD_COOLDOWN_MS;
+}
 
 export function stateHash(feature: string, version: string, state: JsonObject, questions: unknown): string {
 	return createHash("sha256")
@@ -127,12 +153,13 @@ export class Engine {
 				skipped.push(`${backend.model}: daily budget reached`);
 				continue;
 			}
-			const outcome = await this.attempt(backend, request);
+			let outcome = await this.attempt(backend, request);
+			// One immediate second try for a connection blip, while the caller is still waiting.
+			if ("error" in outcome && outcome.network && this.now() - started < RETRY_WINDOW_MS) {
+				outcome = await this.attempt(backend, request);
+			}
 			if ("error" in outcome) {
-				this.cooldown.set(backend.model, {
-					until: this.now() + (outcome.retryable ? RETRYABLE_COOLDOWN_MS : HARD_COOLDOWN_MS),
-					reason: outcome.error,
-				});
+				this.cooldown.set(backend.model, { until: this.now() + cooldownMs(outcome), reason: outcome.error });
 				skipped.push(`${backend.model}: ${outcome.error}`);
 				continue;
 			}
@@ -170,22 +197,34 @@ export class Engine {
 	private async attempt(
 		backend: Backend,
 		request: DecideRequest,
-	): Promise<{ answers: Record<string, ClassifierAnswer>; costUsd: number } | { error: string; retryable: boolean }> {
+	): Promise<{ answers: Record<string, ClassifierAnswer>; costUsd: number } | Failure> {
 		const signal = AbortSignal.timeout(this.options.timeoutMs ?? 4_000);
 		try {
 			const result = await this.options.models.classify(backend.model, request.state, request.questions, signal);
 			// ClassifierResult carries no structured status, so a classifier error always takes
 			// the short cooldown: a 429 on the free SKU must not park it for ten minutes.
 			if (result.stopReason !== "stop") {
-				const detail = (result as { errorMessage?: string }).errorMessage?.slice(0, 80);
-				return { error: detail ? `${result.stopReason}: ${detail}` : result.stopReason, retryable: true };
+				const message = (result as { errorMessage?: string }).errorMessage ?? "";
+				const detail = message.slice(0, 80);
+				return {
+					error: detail ? `${result.stopReason}: ${detail}` : result.stopReason,
+					retryable: true,
+					network: isNetworkError(message),
+					slow: result.stopReason === "aborted",
+				};
 			}
 			for (const id of Object.keys(request.questions)) {
 				if (!result.answers[id]) return { error: `missing answer ${id}`, retryable: false };
 			}
 			return { answers: result.answers, costUsd: result.usage?.cost.total ?? 0 };
 		} catch (error) {
-			return { error: error instanceof Error ? error.message.slice(0, 120) : "failed", retryable: signal.aborted };
+			const message = error instanceof Error ? error.message : "";
+			return {
+				error: message ? message.slice(0, 120) : "failed",
+				retryable: signal.aborted || isNetworkError(message),
+				network: isNetworkError(message),
+				slow: signal.aborted,
+			};
 		}
 	}
 }

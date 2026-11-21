@@ -74,6 +74,64 @@ describe("Engine", () => {
 		expect(calls).toBe(1);
 	});
 
+	test("a connection blip is retried once on the same backend and does not park it", async () => {
+		let calls = 0;
+		const { engine } = harness(
+			{
+				classify: async () => {
+					calls += 1;
+					if (calls === 1) throw new Error("EPROTO: The TLS handshake failed");
+					return classifierResult("stop");
+				},
+			},
+			[{ kind: "classifier", model: "opencode/jev-1.13-free" }],
+		);
+		const d = await engine.decide(req);
+		expect(d.status).toBe("ok");
+		expect(calls).toBe(2);
+	});
+
+	test("a connection error that lasts cools the backend for seconds, not minutes", async () => {
+		let now = 0;
+		let calls = 0;
+		const records: Record<string, unknown>[] = [];
+		const engine = new Engine({
+			models: {
+				classify: async () => {
+					calls += 1;
+					throw new Error("EPROTO: The TLS handshake failed");
+				},
+				inputPrice: () => 0,
+			},
+			backends: () => [{ kind: "classifier", model: "opencode/jev-1.13-free" }],
+			budget: { exhausted: () => false, spend: () => undefined, snapshot: () => ({ day: "", spentUsd: 0, dailyUsd: 1 }) },
+			log: { write: (r) => records.push(r) },
+			now: () => now,
+		});
+		expect((await engine.decide(req)).status).toBe("unavailable");
+		expect(calls).toBe(2);
+		now += 5_000;
+		expect((await engine.decide({ ...req, state: { x: 2 } })).skipped[0]).toContain("cooling");
+		now += 6_000;
+		expect((await engine.decide({ ...req, state: { x: 3 } })).status).toBe("unavailable");
+		expect(calls).toBe(4);
+	});
+
+	test("an error that is not a connection one keeps the minute cooldown and is not retried", async () => {
+		let calls = 0;
+		const { engine } = harness(
+			{
+				classify: async () => {
+					calls += 1;
+					return { ...classifierResult("error"), errorMessage: "402 payment required" } as ClassifierResult;
+				},
+			},
+			[{ kind: "classifier", model: "opencode/jev-1.13-free" }],
+		);
+		await engine.decide(req);
+		expect(calls).toBe(1);
+	});
+
 	test("budget blocks paid backends but not free ones", async () => {
 		const { engine } = harness(
 			{},

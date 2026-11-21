@@ -55,10 +55,15 @@ describe("pkill_self", () => {
 });
 
 describe("quote_glob", () => {
-	test("--include=*.ts and -name *.md are quoted for the program", () => {
-		const r = call(`grep -rn "resolveMedia" --include=*.ts src; find . -name *.md -newer x`);
+	test("-name *.md and -g *.ts are quoted for the program", () => {
+		const r = call(`grep -rn "resolveMedia" src; find . -name *.md -newer x`);
 		expect(r.rules).toEqual(["quote_glob"]);
-		expect(r.args?.command).toBe(`grep -rn "resolveMedia" --include='*.ts' src; find . -name '*.md' -newer x`);
+		expect(r.args?.command).toBe(`grep -rn "resolveMedia" src; find . -name '*.md' -newer x`);
+	});
+
+	test("a glob glued to an option matches no file, so it passes as typed (bash, zsh no_nomatch)", () => {
+		for (const c of ["grep -rn x --include=*.ts --include=*.json .", "rg --glob=*.svelte x src"])
+			expect(call(c).action).toBe("none");
 	});
 
 	test("a shell glob over files, quoted patterns and expansions are left alone", () => {
@@ -76,6 +81,37 @@ describe("quote_glob", () => {
 		const r = call("pkill -f vite; rg -g *.ts foo src");
 		expect(r.rules).toEqual(["pkill_self", "quote_glob"]);
 		expect(r.args?.command).toBe("pkill -A -f vite; rg -g '*.ts' foo src");
+	});
+});
+
+describe("rm_trash", () => {
+	const pi = (command: string, cwd = "/home/user/dev/app") => guardCall(command, HOME, { harness: "pi", cwd });
+
+	test("rm becomes trash-put, flags kept, every rm in the line", () => {
+		const r = pi("rm -rf data/signal/shock build && ls; rm -f a.json 2>/dev/null");
+		expect(r.action).toBe("rewrite");
+		expect(r.rules).toEqual(["rm_trash"]);
+		expect(r.args?.command).toBe("trash-put -rf data/signal/shock build && ls; trash-put -f a.json 2>/dev/null");
+		expect(r.message).toContain("trash-restore");
+		expect(r.notice).toContain("rm → trash-put");
+	});
+
+	test("Claude Code (zshenv function), /tmp only, unknown flags, sudo, command rm, \\rm, git rm stay", () => {
+		expect(guardCall("rm -rf build", HOME, { harness: "claude", cwd: "/home/user/x" }).action).toBe("none");
+		for (const c of [
+			"rm -rf /tmp/claude-1000/x/scratchpad/out",
+			"rm --preserve-root -rf build",
+			"rm -I build",
+			"sudo rm -rf build",
+			"command rm -rf build",
+			"\\rm -rf build",
+			"git rm -r build",
+			"find . -name x -exec rm {} +",
+			"rm",
+		])
+			expect(pi(c).action).toBe("none");
+		expect(pi("rm -rf out", "/tmp/claude-1000/s").action).toBe("none");
+		expect(pi("rm -rf out /home/user/keep", "/tmp/claude-1000/s").args?.command).toBe("trash-put -rf out /home/user/keep");
 	});
 });
 
